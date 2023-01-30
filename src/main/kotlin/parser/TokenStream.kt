@@ -142,4 +142,8 @@ class TokenStream(private val input: Input) {
         return peek() == null
     }
 
+    fun croak(msg: String) {
+        input.croak(msg)
+    }
+
 }
