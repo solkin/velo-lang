@@ -1,8 +1,8 @@
-import org.junit.jupiter.api.Test
 import parser.StringInput
 import parser.Token
 import parser.TokenStream
 import parser.TokenType
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 

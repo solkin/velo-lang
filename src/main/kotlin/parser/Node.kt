@@ -24,7 +24,6 @@ data class LambdaNode(
 ) : Node(NodeType.LAMBDA)
 
 data class CallNode(
-    val name: String,
     val func: Node,
     val args: List<Node>,
 ) : Node(NodeType.CALL)
@@ -41,7 +40,7 @@ data class AssignNode(
 ) : Node(NodeType.ASSIGN)
 
 data class BinaryNode(
-    val operator: Char,
+    val operator: String,
     val left: Node,
     val right: Node,
 ) : Node(NodeType.BINARY)

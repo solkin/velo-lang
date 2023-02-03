@@ -54,8 +54,8 @@ class Parser(private val stream: TokenStream) {
                 stream.next()
                 val nextRight = maybeBinary(parseAtom(), hisPrec)
                 val nextLeft = when (tok.value) {
-                    '=' -> AssignNode(left = left, right = nextRight)
-                    else -> BinaryNode(operator = tok.value as Char, left = left, right = nextRight)
+                    "=" -> AssignNode(left = left, right = nextRight)
+                    else -> BinaryNode(operator = tok.value as String, left = left, right = nextRight)
                 }
                 return maybeBinary(
                     left = nextLeft,
@@ -111,13 +111,12 @@ class Parser(private val stream: TokenStream) {
 
     private fun parseCall(node: Node): Node {
         return CallNode(
-            name = "",
             func = node,
             args = delimited('(', ')', ',', ::parseExpression)
         )
     }
 
-    fun parseProg(): Node {
+    private fun parseProg(): Node {
         val prog = delimited('{', '}', ';', ::parseExpression)
         return when (prog.size) {
             0 -> falseVal
@@ -132,7 +131,7 @@ class Parser(private val stream: TokenStream) {
         })
     }
 
-    fun parseAtom(): Node {
+    private fun parseAtom(): Node {
         return maybeCall(fun(): Node {
             if (isPunc('(') != null) {
                 stream.next()
@@ -158,6 +157,15 @@ class Parser(private val stream: TokenStream) {
                 }
             }
         })
+    }
+
+    fun parse(): Node {
+        val prog = ArrayList<Node>()
+        while (!stream.eof()) {
+            prog.add(parseExpression());
+            if (!stream.eof()) skipPunc(';')
+        }
+        return ProgramNode(prog = prog)
     }
 
     private fun <T> delimited(start: Char, stop: Char, separator: Char, parser: () -> T): List<T> {
