@@ -14,7 +14,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isIdStart(ch: Char): Boolean {
-        return "abcdefjhijklmnopqrstuvwxyzABCDEFJHIJKLMNOPQRSTUVWXYZλ_".indexOf(ch) >= 0
+        return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZλ_".indexOf(ch) >= 0
     }
 
     private fun isId(ch: Char): Boolean {
