@@ -55,6 +55,13 @@ data class LetNode(
     val body: Node,
 ) : Node(NodeType.LET)
 
+// Runtime only
+data class RunnableNode(
+    val func: ((args: List<Node>) -> Node),
+) : Node(NodeType.LAMBDA)
+
+val FALSE = BoolNode(value = false)
+
 enum class NodeType(val type: String) {
     NUMBER("num"),
     STRING("str"),
@@ -67,4 +74,6 @@ enum class NodeType(val type: String) {
     BINARY("binary"),
     PROGRAM("prog"),
     LET("let"),
+
+    RUNNABLE("runnable"),
 }

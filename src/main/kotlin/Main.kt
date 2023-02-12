@@ -1,6 +1,6 @@
-import parser.Parser
-import parser.StringInput
-import parser.TokenStream
+import interpreter.Interpreter
+import interpreter.createGlobalEnvironment
+import parser.*
 
 fun main(args: Array<String>) {
     val prog = "println(\"Hello World!\");"
@@ -11,5 +11,23 @@ fun main(args: Array<String>) {
 
     val node = parser.parse()
 
-    println(node)
+    val globalEnv = createGlobalEnvironment().apply {
+        def("print", RunnableNode(
+            func = fun (args: List<Node>) : Node {
+                print(args.toString())
+                return FALSE
+            }
+        ))
+        def("println", RunnableNode(
+            func = fun (args: List<Node>) : Node {
+                println(args.toString())
+                return FALSE
+            }
+        ))
+    }
+    val interpreter = Interpreter()
+
+    val result = interpreter.evaluate(node, globalEnv)
+
+    println(result)
 }

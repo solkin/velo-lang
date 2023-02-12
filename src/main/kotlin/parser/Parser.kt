@@ -2,7 +2,6 @@ package parser
 
 class Parser(private val stream: TokenStream) {
 
-    private val falseVal = BoolNode(value = false)
     private val precedence = mapOf(
         "=" to 1,
         "||" to 2,
@@ -119,7 +118,7 @@ class Parser(private val stream: TokenStream) {
     private fun parseProg(): Node {
         val prog = delimited('{', '}', ';', ::parseExpression)
         return when (prog.size) {
-            0 -> falseVal
+            0 -> FALSE
             1 -> prog[0]
             else -> ProgramNode(prog = prog)
         }
