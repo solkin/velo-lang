@@ -90,9 +90,41 @@ class Parser(private val stream: TokenStream) {
 
     private fun parseLambda(): Node {
         return LambdaNode(
+            name = stream.peek()?.takeIf { tok ->
+                tok.type == TokenType.VARIABLE
+            }?.let { stream.next()?.value as? String },
             vars = delimited('(', ')', ',', ::parseVarname),
             body = parseExpression()
         )
+    }
+
+    private fun parseLet(): Node {
+        skipKw("let")
+        if (stream.peek()?.type == TokenType.VARIABLE) {
+            val name = stream.next()?.value as? String
+            val defs = delimited('(', ')', ',', ::parseVardef)
+            return CallNode(
+                func = LambdaNode(
+                    name = name,
+                    vars = defs.map { it.name },
+                    body = parseExpression(),
+                ),
+                args = defs.map { it.def ?: FALSE }
+            )
+        }
+        return LetNode(
+            vars = delimited('(', ')', ',', ::parseVardef),
+            body = parseExpression(),
+        )
+    }
+
+    private fun parseVardef(): VardefNode {
+        val name = parseVarname()
+        val def: Node? = if (isOp("=") != null) {
+            stream.next()
+            parseExpression()
+        } else null
+        return VardefNode(name = name, def = def)
     }
 
     private fun parseBool(): Node {
@@ -141,6 +173,7 @@ class Parser(private val stream: TokenStream) {
                 return exp
             }
             if (isPunc('{') != null) return parseProg()
+            if (isKw("let") != null) return parseLet()
             if (isKw("if") != null) return parseIf()
             if (isKw("true") != null || isKw("false") != null) return parseBool()
             if (isKw("lambda") != null || isKw("λ") != null) {
