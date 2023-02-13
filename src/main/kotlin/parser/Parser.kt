@@ -1,5 +1,7 @@
 package parser
 
+import nodes.*
+
 class Parser(private val stream: TokenStream) {
 
     private val precedence = mapOf(

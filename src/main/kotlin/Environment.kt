@@ -1,16 +1,12 @@
-package interpreter
-
-import parser.Node
-
-class Environment internal constructor(
-    private val vars: MutableMap<String, Node>,
-    private val parent: Environment?
+class Environment<T> internal constructor(
+    private val vars: MutableMap<String, T>,
+    private val parent: Environment<T>?
 ) {
 
     fun extend() = Environment(HashMap(vars), this)
 
-    fun lookup(name: String): Environment? {
-        var scope: Environment? = this
+    fun lookup(name: String): Environment<T>? {
+        var scope: Environment<T>? = this
         while (scope != null) {
             if (scope.vars.containsKey(name)) {
                 return scope
@@ -20,7 +16,7 @@ class Environment internal constructor(
         return null
     }
 
-    fun get(name: String): Node {
+    fun get(name: String): T {
         val node = vars[name]
         if (node != null) {
             return node
@@ -28,7 +24,7 @@ class Environment internal constructor(
         throw IllegalArgumentException("Undefined variable $name")
     }
 
-    fun set(name: String, value: Node): Node {
+    fun set(name: String, value: T): T {
         val scope = lookup(name)
         if (scope == null && parent != null) {
             throw IllegalArgumentException("Undefined variable $name")
@@ -37,10 +33,10 @@ class Environment internal constructor(
         return value
     }
 
-    fun def(name: String, value: Node) {
+    fun def(name: String, value: T) {
         vars[name] = value
     }
 
 }
 
-fun createGlobalEnvironment() = Environment(HashMap(), null)
+fun <T>createGlobalEnvironment() = Environment<T>(HashMap(), null)

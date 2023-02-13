@@ -1,9 +1,7 @@
-import interpreter.Interpreter
-import interpreter.createGlobalEnvironment
 import parser.*
 
 fun main(args: Array<String>) {
-    val prog = "println(\"Hello World!\");"
+    val prog = Parser::class.java.getResource("/sample1.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -11,23 +9,20 @@ fun main(args: Array<String>) {
 
     val node = parser.parse()
 
-    val globalEnv = createGlobalEnvironment().apply {
-        def("print", RunnableNode(
-            func = fun (args: List<Node>) : Node {
-                print(args.toString())
-                return FALSE
-            }
-        ))
-        def("println", RunnableNode(
-            func = fun (args: List<Node>) : Node {
-                println(args.toString())
-                return FALSE
-            }
-        ))
+    val globalEnv = createGlobalEnvironment<Any>().apply {
+        def("print", fun(args: List<Any>): Any {
+            print(args)
+            return false
+        })
+        def("println", fun(args: List<Any>): Any {
+            println(args)
+            return false
+        })
     }
-    val interpreter = Interpreter()
 
-    val result = interpreter.evaluate(node, globalEnv)
+    val time = System.currentTimeMillis()
+    val result = node.evaluate(globalEnv)
 
-    println(result)
+    val elapsed = System.currentTimeMillis() - time
+    println("\n\nRun in $elapsed ms")
 }
