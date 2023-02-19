@@ -75,6 +75,7 @@ class ParserTest {
 
         assertEquals(
             node, LambdaNode(
+                name = null,
                 vars = listOf("a"),
                 body = BoolNode(value = false)
             ).wrapProgram()
