@@ -15,3 +15,11 @@ let (x = 10) {
   };
   println(x);  ## 10
 };
+
+let (i = 1) {
+    println(i);
+    while(i < 10) {
+        i = i + 1;
+        println(i);
+    };
+}

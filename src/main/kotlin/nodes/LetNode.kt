@@ -8,8 +8,8 @@ data class LetNode(
 ) : Node() {
     override fun evaluate(env: Environment<Any>): Any {
         var e = env
+        val scope = e.extend() // TODO: check for location here or in forEach
         vars.forEach { v ->
-            val scope = e.extend()
             scope.def(v.name, v.def?.let { v.def.evaluate(e) } ?: FALSE)
             e = scope
         }
