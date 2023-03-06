@@ -1,25 +1,3 @@
-println(let loop (n = 100)
-          if n > 0 then n + loop(n - 1)
-                   else 0);
+a = list(10, {2+2}, "hello");
 
-let (x = 2, y = x + 1, z = x + y)
-  println(x + y + z);
-
-# бросает ошибку т.к. переменные привязаны к телу let
-# print(x + y + z);
-
-let (x = 10) {
-  let (x = x * 2, y = x * x) {
-    println(x);  ## 20
-    println(y);  ## 400
-  };
-  println(x);  ## 10
-};
-
-let (i = 1) {
-    println(i);
-    while(i < 10) {
-        i = i + 1;
-        println(i);
-    };
-}
+println(a);

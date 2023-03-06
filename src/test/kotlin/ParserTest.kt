@@ -183,6 +183,38 @@ class ParserTest {
     }
 
     @Test
+    fun testParseList() {
+        val input = StringInput("a = list()")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, AssignNode(
+                left = VarNode(name = "a"),
+                right = ListNode(listOf = emptyList())
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseListOf() {
+        val input = StringInput("a = list(1, 2, \"hello\")")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, AssignNode(
+                left = VarNode(name = "a"),
+                right = ListNode(listOf = arrayListOf(NumNode(1.0), NumNode(2.0), StrNode("hello")))
+            ).wrapProgram()
+        )
+    }
+
+    @Test
     fun testParseBinary() {
         val input = StringInput("a + 4")
         val stream = TokenStream(input)
