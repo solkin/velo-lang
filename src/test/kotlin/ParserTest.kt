@@ -215,6 +215,22 @@ class ParserTest {
     }
 
     @Test
+    fun testParseListAccess() {
+        val input = StringInput("list(1, 2, \"hello\")[1]")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, IndexNode(
+                list = ListNode(listOf = arrayListOf(NumNode(1.0), NumNode(2.0), StrNode("hello"))),
+                index = NumNode(1.0)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
     fun testParseBinary() {
         val input = StringInput("a + 4")
         val stream = TokenStream(input)
