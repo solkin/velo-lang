@@ -1,3 +1,5 @@
 a = list(10, {2+2}, "hello");
 
-println(a);
+if (a[2] == "hello") {
+    println(a[1]);
+}

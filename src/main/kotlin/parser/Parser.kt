@@ -72,6 +72,11 @@ class Parser(private val stream: TokenStream) {
         return if (isPunc('(') != null) parseCall(expr) else expr
     }
 
+    private fun maybeIndex(func: () -> Node): Node {
+        val expr = func()
+        return if (isPunc('[') != null) parseIndex(expr) else expr
+    }
+
     private fun parseIf(): Node {
         skipKw("if")
         val cond = parseExpression()
@@ -167,6 +172,18 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun parseIndex(node: Node): Node {
+        val index = inner('[', ']', ::parseExpression)
+        if (index == null) {
+            stream.croak("Expecting an index element: " + stream.peek().toString())
+            throw IllegalArgumentException()
+        }
+        return IndexNode(
+            list = node,
+            index = index,
+        )
+    }
+
     private fun parseProg(): Node {
         val prog = delimited('{', '}', ';', ::parseExpression)
         return when (prog.size) {
@@ -177,40 +194,40 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun parseExpression(): Node {
-        return maybeCall(fun(): Node {
-            return maybeBinary(parseAtom(), 0)
-        })
+        return maybeCall(
+            fun(): Node {
+                return maybeBinary(parseAtom(), 0)
+            }
+        )
     }
 
     private fun parseAtom(): Node {
-        return maybeCall(fun(): Node {
-            if (isPunc('(') != null) {
-                stream.next()
-                val exp = parseExpression()
-                skipPunc(')')
-                return exp
-            }
-            if (isPunc('{') != null) return parseProg()
-            if (isKw("let") != null) return parseLet()
-            if (isKw("if") != null) return parseIf()
-            if (isKw("while") != null) return parseWhile()
-            if (isKw("list") != null) return parseList()
-            if (isKw("true") != null || isKw("false") != null) return parseBool()
-            if (isKw("lambda") != null || isKw("λ") != null) {
-                stream.next()
-                return parseLambda()
-            }
-            val tok = stream.next()
-            return when (tok?.type) {
-                TokenType.VARIABLE -> VarNode(tok.value as String)
-                TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
-                TokenType.STRING -> StrNode(tok.value as String)
-                else -> {
-                    stream.croak("Unexpected token: " + stream.peek().toString())
-                    throw IllegalArgumentException()
-                }
-            }
-        })
+        return maybeIndex(
+            fun(): Node {
+                return maybeCall(fun(): Node {
+                    if (isPunc('(') != null) return inner('(', ')', ::parseExpression) ?: throw IllegalStateException()
+                    if (isPunc('{') != null) return parseProg()
+                    if (isKw("let") != null) return parseLet()
+                    if (isKw("if") != null) return parseIf()
+                    if (isKw("while") != null) return parseWhile()
+                    if (isKw("list") != null) return parseList()
+                    if (isKw("true") != null || isKw("false") != null) return parseBool()
+                    if (isKw("lambda") != null || isKw("λ") != null) {
+                        stream.next()
+                        return parseLambda()
+                    }
+                    val tok = stream.next()
+                    return when (tok?.type) {
+                        TokenType.VARIABLE -> VarNode(tok.value as String)
+                        TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
+                        TokenType.STRING -> StrNode(tok.value as String)
+                        else -> {
+                            stream.croak("Unexpected token: " + stream.peek().toString())
+                            throw IllegalArgumentException()
+                        }
+                    }
+                })
+            })
     }
 
     fun parse(): Node {
@@ -220,6 +237,16 @@ class Parser(private val stream: TokenStream) {
             if (!stream.eof()) skipPunc(';')
         }
         return ProgramNode(prog = prog)
+    }
+
+    private fun <T> inner(start: Char, stop: Char, parser: () -> T): T? {
+        if (isPunc(start) != null) {
+            stream.next()
+            val v = parser()
+            skipPunc(stop)
+            return v
+        }
+        return null
     }
 
     private fun <T> delimited(start: Char, stop: Char, separator: Char, parser: () -> T): List<T> {
