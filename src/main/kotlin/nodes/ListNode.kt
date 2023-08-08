@@ -33,6 +33,17 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 ListType(value.subList(start.value.toInt(), end.value.toInt()))
             }
 
+            "map" -> {
+                if (args?.size != 1 || args[0] !is LambdaType) {
+                    throw IllegalArgumentException("Property 'map' requires one lambda argument")
+                }
+                val lambda = args[0] as LambdaType
+                val result = value.map { item ->
+                    lambda.value().invoke(listOf(item))
+                }
+                ListType(result)
+            }
+
             else -> super.property(name, args)
         }
     }

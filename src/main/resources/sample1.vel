@@ -19,3 +19,10 @@ if (a[2] == "hello") {
     println(a[1]);
     println(a.sub(1, a.len)[1]);
 };
+
+m = a.map(
+    lambda(t) {
+        "'" + t + "'";
+    }
+);
+println(m[0]);
