@@ -6,11 +6,10 @@ data class IndexNode(
     val list: Node,
     val index: Node,
 ) : Node() {
-    override fun evaluate(env: Environment<Any>): Any {
-        val l = list.evaluate(env) as? List<*>
+    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+        val l = list.evaluate(env) as? ListType
             ?: throw IllegalArgumentException("Access index of non-list node")
-        val i = index.evaluate(env).toString().toDoubleOrNull()?.toInt()
-            ?: throw IllegalArgumentException("Expecting an integer index element")
-        return l[i] ?: false
+        val i = index.evaluate(env) as NumType
+        return l.value[i.value.toInt()]
     }
 }

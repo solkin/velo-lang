@@ -6,5 +6,5 @@ data class VardefNode(
     val name: String,
     val def: Node?,
 ) : Node() {
-    override fun evaluate(env: Environment<Any>) = env.get(name)
+    override fun evaluate(env: Environment<Type<*>>) = env.get(name)
 }

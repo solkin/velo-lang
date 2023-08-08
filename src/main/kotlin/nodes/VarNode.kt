@@ -5,5 +5,5 @@ import Environment
 data class VarNode(
     val name: String,
 ) : Node() {
-    override fun evaluate(env: Environment<Any>) = env.get(name)
+    override fun evaluate(env: Environment<Type<*>>) = env.get(name)
 }

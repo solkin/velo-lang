@@ -6,16 +6,18 @@ data class ListNode(
     val listOf: List<Node>,
 ) : Node() {
 
-    private val value = ArrayList<Any>()
+    private val value = ArrayList<Type<*>>()
 
-    override fun evaluate(env: Environment<Any>): Any {
+    override fun evaluate(env: Environment<Type<*>>): Type<*> {
         value.clear()
         listOf.forEach { node ->
-            when(val v = node.evaluate(env)) {
+            when (val v = node.evaluate(env)) {
                 is Collection<*> -> value.addAll(listOf(v))
                 else -> value.add(v)
             }
         }
-        return value
+        return ListType(value)
     }
 }
+
+class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value)

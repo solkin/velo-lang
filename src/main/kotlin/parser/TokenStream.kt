@@ -26,7 +26,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isPunctuation(ch: Char): Boolean {
-        return ",;(){}[]".indexOf(ch) >= 0
+        return ".,;(){}[]".indexOf(ch) >= 0
     }
 
     private fun isWhitespace(ch: Char): Boolean {

@@ -7,9 +7,9 @@ data class IfNode(
     val thenNode: Node,
     val elseNode: Node?,
 ) : Node() {
-    override fun evaluate(env: Environment<Any>): Any {
+    override fun evaluate(env: Environment<Type<*>>): Type<*> {
         val cond = condNode.evaluate(env)
-        if (cond != false) return thenNode.evaluate(env)
-        return elseNode?.let { elseNode.evaluate(env) } ?: false
+        if (cond.value() != false) return thenNode.evaluate(env)
+        return elseNode?.let { elseNode.evaluate(env) } ?: BoolType(false)
     }
 }

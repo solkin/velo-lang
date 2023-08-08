@@ -1,3 +1,4 @@
+import nodes.*
 import parser.*
 
 fun main(args: Array<String>) {
@@ -9,15 +10,37 @@ fun main(args: Array<String>) {
 
     val node = parser.parse()
 
-    val globalEnv = createGlobalEnvironment<Any>().apply {
-        def("print", fun(args: List<Any>): Any {
-            print(args)
-            return false
-        })
-        def("println", fun(args: List<Any>): Any {
-            println(args)
-            return false
-        })
+    val globalEnv = createGlobalEnvironment<Type<*>>().apply {
+        def(
+            "len",
+            LambdaType(
+                fun(args: List<Type<*>>): Type<*> {
+                    return when (val arg = args.takeIf { it.isNotEmpty() }?.get(0)) {
+                        is ListType -> NumType(arg.value.size.toDouble())
+                        is StrType -> NumType(arg.value.length.toDouble())
+                        else -> NumType(0.toDouble())
+                    }
+                }
+            )
+        )
+        def(
+            "print",
+            LambdaType(
+                fun(args: List<Type<*>>): Type<*> {
+                    args.forEach { print(it.value()) }
+                    return BoolType(false)
+                }
+            )
+        )
+        def(
+            "println",
+            LambdaType(
+                fun(args: List<Type<*>>): Type<*> {
+                    args.forEach { println(it.value()) }
+                    return BoolType(false)
+                }
+            )
+        )
     }
 
     val time = System.currentTimeMillis()

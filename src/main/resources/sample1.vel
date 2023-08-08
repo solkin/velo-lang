@@ -1,5 +1,13 @@
 a = list(10, {2+2}, "hello");
 
+# a[2] = "2";
+
+b = len(a);
+println(b);
+println(len("hello"));
+
+# println(a.len);
+
 if (a[2] == "hello") {
     println(a[1]);
 };
