@@ -21,10 +21,10 @@ data class ListNode(
 }
 
 class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
-    override fun property(name: String): Type<*> {
+    override fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
             "len" -> NumType(value.size.toDouble())
-            else -> super.property(name)
+            else -> super.property(name, args)
         }
     }
 }

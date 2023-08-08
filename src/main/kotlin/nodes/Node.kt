@@ -8,7 +8,7 @@ abstract class Node {
 
 abstract class Type<T>(private val t: T) {
     fun value(): T = t
-    open fun property(name: String): Type<*> {
+    open fun property(name: String, args: List<Type<*>>?): Type<*> {
         return BoolType(false)
     }
 }

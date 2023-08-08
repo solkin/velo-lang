@@ -191,17 +191,25 @@ class Parser(private val stream: TokenStream) {
 
     private fun parseProp(node: Node): Node {
         skipPunc('.')
-        val name = stream.peek()?.takeIf { tok ->
-            tok.type == TokenType.VARIABLE
-        }?.let { stream.next()?.value as? String }
-        if (name.isNullOrEmpty()) {
-            stream.croak("Property can not be empty")
-            throw IllegalArgumentException()
+
+        if (stream.peek()?.type == TokenType.VARIABLE) {
+            val name = stream.next()?.value as? String
+            if (name.isNullOrEmpty()) {
+                stream.croak("Property can not be empty")
+                throw IllegalArgumentException()
+            }
+            val args: List<Node>? = when (isPunc('(')) {
+                null -> null
+                else -> delimited('(', ')', ',', ::parseExpression)
+            }
+            return PropNode(
+                name = name,
+                args = args,
+                parent = node
+            )
         }
-        return PropNode(
-            name = name,
-            parent = node,
-        )
+        stream.croak("Invalid property syntax")
+        throw IllegalArgumentException()
     }
 
     private fun parseProg(): Node {
