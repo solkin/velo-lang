@@ -10,11 +10,12 @@ println(b);
 println(len("hello"));
 println("hello".len);
 println("hello".hash);
-println("hello".substr(1, 3));
+println("hello".sub(1, 3));
 
 println(a.len);
 println(z(5+1, 6));
 
 if (a[2] == "hello") {
     println(a[1]);
+    println(a.sub(1, a.len)[1]);
 };

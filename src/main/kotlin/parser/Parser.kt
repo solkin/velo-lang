@@ -222,9 +222,17 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun parseExpression(): Node {
-        return maybeCall(
+        return maybeProp(
             fun(): Node {
-                return maybeBinary(parseAtom(), 0)
+                return maybeIndex(
+                    fun(): Node {
+                        return maybeCall(
+                            fun(): Node {
+                                return maybeBinary(parseAtom(), 0)
+                            }
+                        )
+                    }
+                )
             }
         )
     }
