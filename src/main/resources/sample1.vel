@@ -1,12 +1,17 @@
 a = list(10, {2+2}, "hello");
 
 # a[2] = "2";
+z = lambda(t, y) {
+    19 + 2 + t - y;
+};
 
 b = len(a);
 println(b);
 println(len("hello"));
+println("hello".len);
 
-# println(a.len);
+println(a.len);
+println(z(5, 6));
 
 if (a[2] == "hello") {
     println(a[1]);
