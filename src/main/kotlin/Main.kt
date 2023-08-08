@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
         def(
             "len",
             LambdaType(
-                fun(args: List<Type<*>>): Type<*> {
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     return when (val arg = args.takeIf { it.isNotEmpty() }?.get(0)) {
                         is ListType -> NumType(arg.value.size.toDouble())
                         is StrType -> NumType(arg.value.length.toDouble())
@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
         def(
             "print",
             LambdaType(
-                fun(args: List<Type<*>>): Type<*> {
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     args.forEach { print(it.value()) }
                     return BoolType(false)
                 }
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
         def(
             "println",
             LambdaType(
-                fun(args: List<Type<*>>): Type<*> {
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     args.forEach { println(it.value()) }
                     return BoolType(false)
                 }

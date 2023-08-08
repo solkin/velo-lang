@@ -39,7 +39,7 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 }
                 val lambda = args[0] as LambdaType
                 val result = value.map { item ->
-                    lambda.value().invoke(listOf(item))
+                    lambda.value().invoke(listOf(item), this)
                 }
                 ListType(result)
             }

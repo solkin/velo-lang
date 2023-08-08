@@ -11,6 +11,6 @@ data class CallNode(
         val args = args.map {
             it.evaluate(env)
         }
-        return fnc.value.invoke(args)
+        return fnc.value.invoke(args, null)
     }
 }

@@ -13,13 +13,17 @@ data class LambdaNode(
         if (named) e = env.extend()
 
         val lambda = LambdaType(
-            fun(args: List<Type<*>>): Type<*> {
+            fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                 val scope = e.extend()
+                it?.let {
+                    scope.def("it", it)
+                }
                 vars.forEachIndexed { i, s ->
                     scope.def(s, if (i < args.size) args[i] else BoolType(false))
                 }
                 return body.evaluate(scope)
-            }
+            },
+            name
         )
         if (named) e.def(name.orEmpty(), lambda)
 
@@ -27,4 +31,6 @@ data class LambdaNode(
     }
 }
 
-class LambdaType(val value: (List<Type<*>>) -> Type<*>) : Type<(List<Type<*>>) -> Type<*>>(value)
+class LambdaType(val value: (args: List<Type<*>>, it: Type<*>?) -> Type<*>, val name: String? = null) : Type<(List<Type<*>>, Type<*>?) -> Type<*>>(value) {
+    fun name() = name
+}

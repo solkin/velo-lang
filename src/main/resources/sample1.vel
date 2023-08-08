@@ -1,4 +1,8 @@
-a = list(10, {2+2}, "hello");
+a = list(10, {2+2}, "hello").ext(
+    lambda copy() {
+        it
+    }
+);
 
 # a[2] = "2";
 z = lambda(t, y) {
@@ -20,7 +24,7 @@ if (a[2] == "hello") {
     println(a.sub(1, a.len)[1]);
 };
 
-m = a.map(
+m = a.copy().map(
     lambda(t) {
         "'" + t + "'";
     }
