@@ -11,6 +11,7 @@ abstract class Type<T>(private val t: T) {
     private val exts = HashMap<String, LambdaType>()
 
     fun value(): T = t
+
     open fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
             "ext" -> {
@@ -25,8 +26,8 @@ abstract class Type<T>(private val t: T) {
                 return this
             }
 
-            else -> exts[name]?.value()?.invoke(args.orEmpty(), this) ?: BoolType(false)
+            else -> exts[name]?.run(args = args.orEmpty(), it = this) ?: BoolType(false)
         }
-
     }
+
 }

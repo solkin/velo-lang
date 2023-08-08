@@ -31,6 +31,13 @@ data class LambdaNode(
     }
 }
 
-class LambdaType(val value: (args: List<Type<*>>, it: Type<*>?) -> Type<*>, val name: String? = null) : Type<(List<Type<*>>, Type<*>?) -> Type<*>>(value) {
+class LambdaType(val value: (args: List<Type<*>>, it: Type<*>?) -> Type<*>, val name: String? = null) :
+    Type<(List<Type<*>>, Type<*>?) -> Type<*>>(value) {
+
     fun name() = name
+
+    fun run(args: List<Type<*>>, it: Type<*>? = null): Type<*> {
+        return value.invoke(args, it)
+    }
+
 }

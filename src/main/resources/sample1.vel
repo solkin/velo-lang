@@ -30,3 +30,10 @@ m = a.copy().map(
     }
 );
 println(m[0]);
+println(
+    m.reduce(
+        lambda(acc, item) {
+            acc + ", " + item
+        }
+    )
+);

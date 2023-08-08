@@ -39,9 +39,20 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 }
                 val lambda = args[0] as LambdaType
                 val result = value.map { item ->
-                    lambda.value().invoke(listOf(item), this)
+                    lambda.run(args = listOf(item), it = this)
                 }
                 ListType(result)
+            }
+
+            "reduce" -> {
+                if (args?.size != 1 || args[0] !is LambdaType) {
+                    throw IllegalArgumentException("Property 'reduce' requires one lambda argument")
+                }
+                val lambda = args[0] as LambdaType
+                val result = value.reduce { acc, item ->
+                    lambda.run(args = listOf(acc, item), it = this)
+                }
+                result
             }
 
             else -> super.property(name, args)
