@@ -20,7 +20,7 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun skipPunc(ch: Char) {
-        if (isPunc(ch) != null) stream.next() else stream.croak("Expecting punctuation: \"$ch\"");
+        if (isPunc(ch) != null) stream.next() else stream.croak("Expecting punctuation: \"$ch\"")
     }
 
     private fun isKw(kw: String?): Token? {
@@ -30,7 +30,7 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun skipKw(kw: String?) {
-        if (isKw(kw) != null) stream.next() else stream.croak("Expecting keyword: \"$kw\"");
+        if (isKw(kw) != null) stream.next() else stream.croak("Expecting keyword: \"$kw\"")
     }
 
     private fun isOp(op: String? = null): Token? {
@@ -242,30 +242,32 @@ class Parser(private val stream: TokenStream) {
             fun(): Node {
                 return maybeIndex(
                     fun(): Node {
-                        return maybeCall(fun(): Node {
-                            if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
-                                ?: throw IllegalStateException()
-                            if (isPunc('{') != null) return parseProg()
-                            if (isKw("let") != null) return parseLet()
-                            if (isKw("if") != null) return parseIf()
-                            if (isKw("while") != null) return parseWhile()
-                            if (isKw("list") != null) return parseList()
-                            if (isKw("true") != null || isKw("false") != null) return parseBool()
-                            if (isKw("lambda") != null || isKw("λ") != null) {
-                                stream.next()
-                                return parseLambda()
-                            }
-                            val tok = stream.next()
-                            return when (tok?.type) {
-                                TokenType.VARIABLE -> VarNode(tok.value as String)
-                                TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
-                                TokenType.STRING -> StrNode(tok.value as String)
-                                else -> {
-                                    stream.croak("Unexpected token: " + stream.peek().toString())
-                                    throw IllegalArgumentException()
+                        return maybeCall(
+                            fun(): Node {
+                                if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
+                                    ?: throw IllegalStateException()
+                                if (isPunc('{') != null) return parseProg()
+                                if (isKw("let") != null) return parseLet()
+                                if (isKw("if") != null) return parseIf()
+                                if (isKw("while") != null) return parseWhile()
+                                if (isKw("list") != null) return parseList()
+                                if (isKw("true") != null || isKw("false") != null) return parseBool()
+                                if (isKw("lambda") != null || isKw("λ") != null) {
+                                    stream.next()
+                                    return parseLambda()
+                                }
+                                val tok = stream.next()
+                                return when (tok?.type) {
+                                    TokenType.VARIABLE -> VarNode(tok.value as String)
+                                    TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
+                                    TokenType.STRING -> StrNode(tok.value as String)
+                                    else -> {
+                                        stream.croak("Unexpected token: " + stream.peek().toString())
+                                        throw IllegalArgumentException()
+                                    }
                                 }
                             }
-                        })
+                        )
                     }
                 )
             }
