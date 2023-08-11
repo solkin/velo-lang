@@ -53,7 +53,7 @@ class Parser(private val stream: TokenStream) {
             }
             if (hisPrec > myPrec) {
                 stream.next()
-                val nextRight = maybeBinary(parseAtom(), hisPrec)
+                val nextRight = maybeBinary(maybePostfix(parseAtom()), hisPrec)
                 val nextLeft = when (tok.value) {
                     "=" -> AssignNode(left = left, right = nextRight)
                     else -> BinaryNode(operator = tok.value as String, left = left, right = nextRight)
@@ -67,18 +67,15 @@ class Parser(private val stream: TokenStream) {
         return left
     }
 
-    private fun maybeCall(func: () -> Node): Node {
-        val expr = func()
+    private fun maybeCall(expr: Node): Node {
         return if (isPunc('(') != null) parseCall(expr) else expr
     }
 
-    private fun maybeIndex(func: () -> Node): Node {
-        val expr = func()
+    private fun maybeIndex(expr: Node): Node {
         return if (isPunc('[') != null) parseIndex(expr) else expr
     }
 
-    private fun maybeProp(func: () -> Node): Node {
-        val expr = func()
+    private fun maybeProp(expr: Node): Node {
         return if (isPunc('.') != null) parseProp(expr) else expr
     }
 
@@ -222,56 +219,41 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun parseExpression(): Node {
-        return maybeProp(
-            fun(): Node {
-                return maybeIndex(
-                    fun(): Node {
-                        return maybeCall(
-                            fun(): Node {
-                                return maybeBinary(parseAtom(), 0)
-                            }
-                        )
-                    }
-                )
-            }
-        )
+        return maybePostfix(maybeBinary(maybePostfix(parseAtom()), 0))
+    }
+
+    private fun maybePostfix(expr: Node): Node {
+        val node = maybeProp(maybeIndex(maybeCall(expr)))
+        return if (node != expr) {
+            maybePostfix(node)
+        } else {
+            node
+        }
     }
 
     private fun parseAtom(): Node {
-        return maybeProp(
-            fun(): Node {
-                return maybeIndex(
-                    fun(): Node {
-                        return maybeCall(
-                            fun(): Node {
-                                if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
-                                    ?: throw IllegalStateException()
-                                if (isPunc('{') != null) return parseProg()
-                                if (isKw("let") != null) return parseLet()
-                                if (isKw("if") != null) return parseIf()
-                                if (isKw("while") != null) return parseWhile()
-                                if (isKw("list") != null) return parseList()
-                                if (isKw("true") != null || isKw("false") != null) return parseBool()
-                                if (isKw("lambda") != null || isKw("λ") != null) {
-                                    stream.next()
-                                    return parseLambda()
-                                }
-                                val tok = stream.next()
-                                return when (tok?.type) {
-                                    TokenType.VARIABLE -> VarNode(tok.value as String)
-                                    TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
-                                    TokenType.STRING -> StrNode(tok.value as String)
-                                    else -> {
-                                        stream.croak("Unexpected token: " + stream.peek().toString())
-                                        throw IllegalArgumentException()
-                                    }
-                                }
-                            }
-                        )
-                    }
-                )
+        if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
+            ?: throw IllegalStateException()
+        if (isPunc('{') != null) return parseProg()
+        if (isKw("let") != null) return parseLet()
+        if (isKw("if") != null) return parseIf()
+        if (isKw("while") != null) return parseWhile()
+        if (isKw("list") != null) return parseList()
+        if (isKw("true") != null || isKw("false") != null) return parseBool()
+        if (isKw("lambda") != null || isKw("λ") != null) {
+            stream.next()
+            return parseLambda()
+        }
+        val tok = stream.next()
+        return when (tok?.type) {
+            TokenType.VARIABLE -> VarNode(tok.value as String)
+            TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
+            TokenType.STRING -> StrNode(tok.value as String)
+            else -> {
+                stream.croak("Unexpected token: " + stream.peek().toString())
+                throw IllegalArgumentException()
             }
-        )
+        }
     }
 
     fun parse(): Node {
