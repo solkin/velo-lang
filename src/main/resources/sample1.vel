@@ -2,6 +2,22 @@ a = list(10, {2+2}, "hello").ext(
     lambda copy() {
         it
     }
+).ext(
+    lambda copy1() {
+        it
+    }
+).ext(
+    lambda copy2() {
+        it
+    }
+).ext(
+    lambda copy3() {
+        it
+    }
+).ext(
+    lambda copy4() {
+        it
+    }
 );
 
 # a[2] = "2";
@@ -24,7 +40,7 @@ if (a[2] == "hello") {
     println(a.sub(1, a.len)[1]);
 };
 
-m = a.copy().map(
+m = a.copy().copy1().copy2().copy3().copy4().copy3().copy2().copy1().copy().map(
     lambda(t) {
         "'" + t + "'";
     }
