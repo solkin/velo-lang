@@ -2,13 +2,16 @@ import nodes.*
 import parser.*
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/sample1.vel").readText()
+    val prog = Parser::class.java.getResource("/sample2.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
     val parser = Parser(stream)
 
+    var time = System.currentTimeMillis()
     val node = parser.parse()
+    var elapsed = System.currentTimeMillis() - time
+    println("Parse in $elapsed ms")
 
     val globalEnv = createGlobalEnvironment<Type<*>>().apply {
         def(
@@ -43,9 +46,9 @@ fun main(args: Array<String>) {
         )
     }
 
-    val time = System.currentTimeMillis()
+    time = System.currentTimeMillis()
     val result = node.evaluate(globalEnv)
 
-    val elapsed = System.currentTimeMillis() - time
-    println("\n\nRun in $elapsed ms")
+    elapsed = System.currentTimeMillis() - time
+    println("\nRun in $elapsed ms")
 }
