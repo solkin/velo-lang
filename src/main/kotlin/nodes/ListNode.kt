@@ -38,8 +38,8 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                     throw IllegalArgumentException("Property 'map' requires one lambda argument")
                 }
                 val lambda = args[0] as LambdaType
-                val result = value.map { item ->
-                    lambda.run(args = listOf(item), it = this)
+                val result = value.mapIndexed { index, item ->
+                    lambda.run(args = listOf(NumType(index.toDouble()), item), it = this)
                 }
                 ListType(result)
             }
