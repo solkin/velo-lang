@@ -14,7 +14,7 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, NumNode(
+            node, DoubleNode(
                 value = 123.5
             ).wrapProgram()
         )
@@ -177,7 +177,7 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = NumNode(value = 4.0)
+                right = IntNode(value = 4)
             ).wrapProgram()
         )
     }
@@ -200,7 +200,7 @@ class ParserTest {
 
     @Test
     fun testParseListOf() {
-        val input = StringInput("a = list(1, 2, \"hello\")")
+        val input = StringInput("a = list(1, 2.1, \"hello\")")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -209,14 +209,14 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = ListNode(listOf = arrayListOf(NumNode(1.0), NumNode(2.0), StrNode("hello")))
+                right = ListNode(listOf = arrayListOf(IntNode(1), DoubleNode(2.1), StrNode("hello")))
             ).wrapProgram()
         )
     }
 
     @Test
     fun testParseListAccess() {
-        val input = StringInput("list(1, 2, \"hello\")[1]")
+        val input = StringInput("list(1, 2.1, \"hello\")[1]")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -224,8 +224,8 @@ class ParserTest {
 
         assertEquals(
             node, IndexNode(
-                list = ListNode(listOf = arrayListOf(NumNode(1.0), NumNode(2.0), StrNode("hello"))),
-                index = NumNode(1.0)
+                list = ListNode(listOf = arrayListOf(IntNode(1), DoubleNode(2.1), StrNode("hello"))),
+                index = IntNode(1)
             ).wrapProgram()
         )
     }
@@ -242,7 +242,7 @@ class ParserTest {
             node, BinaryNode(
                 operator = "+",
                 left = VarNode(name = "a"),
-                right = NumNode(value = 4.0)
+                right = IntNode(value = 4)
             ).wrapProgram()
         )
     }

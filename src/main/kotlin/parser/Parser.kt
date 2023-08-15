@@ -247,7 +247,14 @@ class Parser(private val stream: TokenStream) {
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)
-            TokenType.NUMBER -> NumNode(tok.value.toString().toDouble())
+            TokenType.NUMBER -> when (tok.value) {
+                is Double -> DoubleNode(tok.value)
+                is Int -> IntNode(tok.value)
+                else -> {
+                    stream.croak("Unexpected number format: " + tok.value::class.java)
+                    throw IllegalArgumentException()
+                }
+            }
             TokenType.STRING -> StrNode(tok.value as String)
             else -> {
                 stream.croak("Unexpected token: " + stream.peek().toString())

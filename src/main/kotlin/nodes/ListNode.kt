@@ -23,14 +23,14 @@ data class ListNode(
 class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
     override fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
-            "len" -> NumType(value.size.toDouble())
+            "len" -> IntType(value.size)
             "sub" -> {
                 if (args?.size != 2) {
                     throw IllegalArgumentException("Property 'sub' requires (start, end) arguments")
                 }
-                val start = args[0] as NumType
-                val end = args[1] as NumType
-                ListType(value.subList(start.value.toInt(), end.value.toInt()))
+                val start = args[0].toInt()
+                val end = args[1].toInt()
+                ListType(value.subList(start, end))
             }
 
             "map" -> {
@@ -39,7 +39,7 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 }
                 val lambda = args[0] as LambdaType
                 val result = value.mapIndexed { index, item ->
-                    lambda.run(args = listOf(NumType(index.toDouble()), item), it = this)
+                    lambda.run(args = listOf(IntType(index), item), it = this)
                 }
                 ListType(result)
             }

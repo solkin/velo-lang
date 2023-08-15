@@ -1,0 +1,27 @@
+w = list(
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0)
+).ext(
+    lambda printWorld() {
+        it.map(
+            lambda(index, row) {
+                row.map(
+                    lambda(index, col) {
+                        print(col + " ")
+                    }
+                );
+                println("");
+            }
+        )
+    }
+).ext(
+    lambda nextGeneration() {
+        it
+    }
+);
+
+w.printWorld();
