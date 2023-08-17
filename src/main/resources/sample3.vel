@@ -1,8 +1,8 @@
-println(3 * "abc");
+println(3 * "abc"); # abcabcabc
 println(
     ("zibuhoker" / 3).reduce(
         lambda(acc, item) {
             acc + ", " + item
         }
     )
-);
+); # zib, uho, ker
