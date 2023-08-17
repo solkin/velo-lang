@@ -2,7 +2,7 @@ import nodes.*
 import parser.*
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/sample2.vel").readText()
+    val prog = Parser::class.java.getResource("/sample3.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -14,18 +14,6 @@ fun main(args: Array<String>) {
     println("Parse in $elapsed ms")
 
     val globalEnv = createGlobalEnvironment<Type<*>>().apply {
-        def(
-            "len",
-            LambdaType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
-                    return when (val arg = args.takeIf { it.isNotEmpty() }?.get(0)) {
-                        is ListType -> NumType(arg.value.size.toDouble())
-                        is StrType -> NumType(arg.value.length.toDouble())
-                        else -> NumType(0.toDouble())
-                    }
-                }
-            )
-        )
         def(
             "print",
             LambdaType(

@@ -1,27 +1,8 @@
-w = list(
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0)
-).ext(
-    lambda printWorld() {
-        it.map(
-            lambda(index, row) {
-                row.map(
-                    lambda(index, col) {
-                        print(col + " ")
-                    }
-                );
-                println("");
-            }
-        )
-    }
-).ext(
-    lambda nextGeneration() {
-        it
-    }
+println(3 * "abc");
+println(
+    ("zibuhoker" / 3).reduce(
+        lambda(acc, item) {
+            acc + ", " + item
+        }
+    )
 );
-
-w.printWorld();
