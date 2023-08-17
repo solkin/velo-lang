@@ -1,9 +1,5 @@
 import nodes.*
 import parser.*
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
-
 
 fun main(args: Array<String>) {
     val prog = Parser::class.java.getResource("/game-of-life.vel").readText()
