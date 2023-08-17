@@ -1,5 +1,9 @@
 import nodes.*
 import parser.*
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+
 
 fun main(args: Array<String>) {
     val prog = Parser::class.java.getResource("/game-of-life.vel").readText()
@@ -15,6 +19,14 @@ fun main(args: Array<String>) {
 
     val globalEnv = createGlobalEnvironment<Type<*>>().apply {
         def(
+            "readLine",
+            LambdaType(
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+                    return StrType(readlnOrNull().orEmpty())
+                }
+            )
+        )
+        def(
             "print",
             LambdaType(
                 fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
@@ -27,7 +39,7 @@ fun main(args: Array<String>) {
             "println",
             LambdaType(
                 fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
-                    args.forEach { println(it.value()) }
+                    args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
                     return BoolType(false)
                 }
             )

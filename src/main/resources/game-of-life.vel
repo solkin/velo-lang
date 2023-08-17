@@ -61,7 +61,9 @@ w = list(
     list(0, 0, 0, 0, 0, 0)
 );
 
-count = 5;
+print("Enter generations count: ");
+count = readLine();
+println();
 index = 0;
 while (index <= count) {
     printWorld(w);
