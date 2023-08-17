@@ -1,0 +1,71 @@
+calc = lambda(matrix, x, y) {
+     let(window = lambda(a) {
+        if (a >= 0) {
+            if (a < matrix.len) then a else a - matrix.len;
+        } else {
+            matrix.len + a;
+        }
+    }) {
+        let (cells =
+                matrix[window(y - 1)][window(x - 1)] +
+                matrix[window(y - 1)][x] +
+                matrix[window(y - 1)][window(x + 1)] +
+                matrix[y][window(x - 1)] +
+                matrix[y][window(x + 1)] +
+                matrix[window(y + 1)][window(x - 1)] +
+                matrix[window(y + 1)][x] +
+                matrix[window(y + 1)][window(x + 1)]
+        ) {
+            if cells == 2 then {
+                matrix[y][x]
+            } else if cells == 3 then {
+                1
+            } else {
+                0
+            }
+        }
+    }
+};
+
+printWorld = lambda(world) {
+    world.map(
+        lambda(index, row) {
+            row.map(
+                lambda(index, col) {
+                    print(col + " ")
+                }
+            );
+            println("");
+        }
+    )
+};
+
+nextGeneration = lambda(world) {
+    world.map(
+        lambda(y, row) {
+            row.map(
+                lambda(x, col) {
+                    calc(world, x, y);
+                }
+            );
+        }
+    );
+};
+
+w = list(
+    list(0, 1, 0, 0, 0, 0),
+    list(0, 0, 1, 0, 0, 0),
+    list(1, 1, 1, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0)
+);
+
+count = 5;
+index = 0;
+while (index <= count) {
+    printWorld(w);
+    println("--");
+    w = nextGeneration(w);
+    index = index + 1;
+};

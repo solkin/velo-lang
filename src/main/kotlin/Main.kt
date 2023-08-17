@@ -2,7 +2,7 @@ import nodes.*
 import parser.*
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/sample3.vel").readText()
+    val prog = Parser::class.java.getResource("/game-of-life.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
