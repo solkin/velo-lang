@@ -6,3 +6,4 @@ println(
         }
     )
 ); # zib, uho, ker
+println(8 % 3); # 2
