@@ -26,8 +26,8 @@ data class BinaryNode(
             ">" -> BoolType(a > b)
             "<=" -> BoolType(a <= b)
             ">=" -> BoolType(a >= b)
-            "==" -> BoolType(a == b)
-            "!=" -> BoolType(a != b)
+            "==" -> BoolType(a.value() == b.value())
+            "!=" -> BoolType(a.value() != b.value())
             else -> throw IllegalArgumentException("Can't apply operator $op")
         }
     }
