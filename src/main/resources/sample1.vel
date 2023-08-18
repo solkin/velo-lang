@@ -25,9 +25,6 @@ z = lambda(t, y) {
     19 + 2 + t - y;
 };
 
-b = len(a);
-println(b);
-println(len("hello"));
 println("hello".len);
 println("hello".hash);
 println("hello".sub(1, 3));
@@ -53,3 +50,20 @@ println(
         }
     )
 );
+
+s = subject(10);
+println(s.get);
+obs1 = s.observe(
+    lambda(v) {
+        println("observe1: " + v);
+    }
+);
+obs2 = s.observe(
+    lambda(v) {
+        println("observe2: " + v);
+    }
+);
+s.set(11);
+s.detach(obs1);
+s.set(12);
+s.notify();

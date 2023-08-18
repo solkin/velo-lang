@@ -113,6 +113,14 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun parseSubject(): Node {
+        skipKw("subject")
+        val value = inner('(', ')', ::parseExpression)
+        return SubjectNode(
+            init = value
+        )
+    }
+
     private fun parseLambda(): Node {
         return LambdaNode(
             name = stream.peek()?.takeIf { tok ->
@@ -239,6 +247,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("list") != null) return parseList()
+        if (isKw("subject") != null) return parseSubject()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("lambda") != null || isKw("λ") != null) {
             stream.next()
