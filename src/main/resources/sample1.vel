@@ -51,8 +51,8 @@ println(
     )
 );
 
-s = subject(10);
-println(s.get);
+s = subject("string");
+println("simply get value: " + s.get);
 obs1 = s.observe(
     lambda(v) {
         println("observe1: " + v);
@@ -63,7 +63,7 @@ obs2 = s.observe(
         println("observe2: " + v);
     }
 );
-s.set(11);
+s.set("changed string");
 s.detach(obs1);
-s.set(12);
+s.set("double changed string");
 s.notify();
