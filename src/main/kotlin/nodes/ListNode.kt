@@ -55,6 +55,13 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 result
             }
 
+            "plus" -> {
+                if (args == null) {
+                    throw IllegalArgumentException("Property 'plus' requires at least one argument")
+                }
+                ListType(value.plus(args))
+            }
+
             else -> super.property(name, args)
         }
     }

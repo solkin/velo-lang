@@ -67,3 +67,16 @@ s.set("changed string");
 s.detach(obs1);
 s.set("double changed string");
 s.notify();
+
+a = a + 3 + list(14, "new");
+a = a.plus("qwe", "rty", list("one"));
+a = a.ext(
+    lambda toString() {
+        it.reduce(
+            lambda(acc, item) {
+                acc + ", " + item
+            }
+        )
+    }
+);
+println(a.toString);

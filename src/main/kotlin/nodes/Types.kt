@@ -59,6 +59,11 @@ operator fun Type<*>.plus(b: Type<*>): Type<*> {
             else -> StrType(value + b.value().toString())
         }
 
+        is ListType -> when (b) {
+            is ListType -> ListType(value + b.value)
+            else -> ListType(value + b)
+        }
+
         else -> StrType(value().toString() + b.value().toString())
     }
 }
