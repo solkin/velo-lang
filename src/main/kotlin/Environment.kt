@@ -26,9 +26,6 @@ class Environment<T> internal constructor(
 
     fun set(name: String, value: T): T {
         val scope = lookup(name)
-        if (scope == null && parent != null) {
-            throw IllegalArgumentException("Undefined variable $name")
-        }
         (scope ?: this).vars[name] = value
         return value
     }
