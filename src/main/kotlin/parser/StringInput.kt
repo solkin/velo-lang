@@ -14,7 +14,7 @@ class StringInput(private val str: String) : Input {
 
     override fun next(): Char {
         val ch = getChar(pos++)
-        if (ch == '\n') {
+        if (ch == '\n' || ch == '\r') {
             line++
             col = 0
         } else {

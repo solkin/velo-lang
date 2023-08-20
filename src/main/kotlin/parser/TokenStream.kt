@@ -30,7 +30,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isWhitespace(ch: Char): Boolean {
-        return " \t\n".indexOf(ch) >= 0
+        return " \t\n\r".indexOf(ch) >= 0
     }
 
     private fun readWhile(predicate: (Char) -> Boolean): String {
