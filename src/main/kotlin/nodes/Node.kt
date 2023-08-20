@@ -13,8 +13,8 @@ abstract class Type<T>(private val t: T) {
     fun value(): T = t
 
     open fun property(name: String, args: List<Type<*>>?): Type<*> {
-        return when (name) {
-            "string" -> StrType(value().toString())
+        return exts[name]?.run(args = args.orEmpty(), it = this) ?: when (name) {
+            "string" -> StrType(toString())
             "ext" -> {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'ext' requires one named func argument")
@@ -24,11 +24,16 @@ abstract class Type<T>(private val t: T) {
                 val extName = func.name()
                     ?: throw IllegalArgumentException("Property 'ext' requires named func argument")
                 exts[extName] = func
-                return this
+                this
             }
 
-            else -> exts[name]?.run(args = args.orEmpty(), it = this) ?: BoolType(false)
+            else -> VoidType()
         }
     }
+
+    override fun toString(): String {
+        return value().toString()
+    }
+
 
 }

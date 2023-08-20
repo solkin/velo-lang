@@ -1,6 +1,6 @@
 package nodes
 
-class VoidType : Type<Unit>(Unit)
+class VoidType : Type<String>("")
 
 class ObjType(val value: Any) : Type<Any>(value) {
     override fun property(name: String, args: List<Type<*>>?): Type<*> {

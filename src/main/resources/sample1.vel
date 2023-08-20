@@ -71,7 +71,7 @@ s.notify();
 a = a + 3 + list(14, "new");
 a = a.plus("qwe", "rty", list("one"));
 a = a.ext(
-    func toString() {
+    func string() {
         it.reduce(
             func(acc, item) {
                 acc + ", " + item
@@ -79,4 +79,6 @@ a = a.ext(
         )
     }
 );
-println(a.toString);
+println(a.string);
+
+println(a.notExist + 1);
