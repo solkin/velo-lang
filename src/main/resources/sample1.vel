@@ -82,3 +82,10 @@ a = a.ext(
 println(a.string);
 
 println(a.notExist + 1);
+
+s = struct(
+    first = "First Value",
+    second = true,
+    third = a
+);
+println(s.first + "; " + s.second);

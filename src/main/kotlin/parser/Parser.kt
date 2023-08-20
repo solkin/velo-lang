@@ -113,6 +113,14 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun parseStruct(): Node {
+        skipKw("struct")
+        val elements = delimited('(', ')', ',', ::parseVardef)
+        return StructNode(
+            nodes = elements
+        )
+    }
+
     private fun parseSubject(): Node {
         skipKw("subject")
         val value = inner('(', ')', ::parseExpression)
@@ -247,6 +255,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("list") != null) return parseList()
+        if (isKw("struct") != null) return parseStruct()
         if (isKw("subject") != null) return parseSubject()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("func") != null) {
