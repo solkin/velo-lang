@@ -1,7 +1,18 @@
 package nodes
 
+class VoidType : Type<Unit>(Unit)
+
+class ObjType(val value: Any) : Type<Any>(value) {
+    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+        return when (name) {
+            "hash" -> IntType(value.hashCode())
+            else -> super.property(name, args)
+        }
+    }
+}
+
 fun Type<*>.toInt(): Int {
-    return when(this) {
+    return when (this) {
         is IntType -> this.value
         is DoubleType -> this.value.toInt()
         else -> this.value().toString().toIntOrNull() ?: 0
@@ -139,7 +150,8 @@ operator fun Type<*>.div(b: Type<*>): Type<*> {
             is IntType -> ListType(value.chunked(b.value).map { StrType(it) })
             is DoubleType -> ListType(value.chunked(b.value.toInt()).map { StrType(it) })
             else -> IntType(
-                (value.length - value.replace(b.value().toString(), "").length) / b.value().toString().length.throwIfZero()
+                (value.length - value.replace(b.value().toString(), "").length) / b.value()
+                    .toString().length.throwIfZero()
             )
         }
 

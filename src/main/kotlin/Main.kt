@@ -1,5 +1,11 @@
 import nodes.*
-import parser.*
+import parser.Parser
+import parser.StringInput
+import parser.TokenStream
+import java.awt.Container
+import javax.swing.JButton
+import javax.swing.JFrame
+
 
 fun main(args: Array<String>) {
     val prog = Parser::class.java.getResource("/sample1.vel").readText()
