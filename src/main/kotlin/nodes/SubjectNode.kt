@@ -13,15 +13,15 @@ class SubjectNode(
 
 class SubjectType(var value: Type<*>) : Type<Type<*>>(value) {
 
-    private val observers = ArrayList<LambdaType>()
+    private val observers = ArrayList<FuncType>()
 
     override fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
             "observe" -> {
                 if (args?.size != 1) {
-                    throw IllegalArgumentException("Property 'observe' requires observer lambda argument")
+                    throw IllegalArgumentException("Property 'observe' requires observer func argument")
                 }
-                val observer = args[0] as LambdaType
+                val observer = args[0] as FuncType
                 observers.add(observer)
                 observer
             }
@@ -39,9 +39,9 @@ class SubjectType(var value: Type<*>) : Type<Type<*>>(value) {
 
             "detach" -> {
                 if (args?.size != 1) {
-                    throw IllegalArgumentException("Property 'detach' requires observer lambda argument")
+                    throw IllegalArgumentException("Property 'detach' requires observer func argument")
                 }
-                val observer = args[0] as LambdaType
+                val observer = args[0] as FuncType
                 val result = observers.remove(observer)
                 BoolType(result)
             }

@@ -2,7 +2,7 @@ package nodes
 
 import Environment
 
-data class LambdaNode(
+data class FuncNode(
     val name: String?,
     val vars: List<String>,
     val body: Node,
@@ -12,7 +12,7 @@ data class LambdaNode(
         val named = !name.isNullOrEmpty()
         if (named) e = env.extend()
 
-        val lambda = LambdaType(
+        val func = FuncType(
             fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                 val scope = e.extend()
                 it?.let {
@@ -25,13 +25,13 @@ data class LambdaNode(
             },
             name
         )
-        if (named) e.def(name.orEmpty(), lambda)
+        if (named) e.def(name.orEmpty(), func)
 
-        return lambda
+        return func
     }
 }
 
-class LambdaType(val value: (args: List<Type<*>>, it: Type<*>?) -> Type<*>, val name: String? = null) :
+class FuncType(val value: (args: List<Type<*>>, it: Type<*>?) -> Type<*>, val name: String? = null) :
     Type<(List<Type<*>>, Type<*>?) -> Type<*>>(value) {
 
     fun name() = name

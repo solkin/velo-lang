@@ -1,27 +1,27 @@
 a = list(10, {2+2}, "hello").ext(
-    lambda copy() {
+    func copy() {
         it
     }
 ).ext(
-    lambda copy1() {
+    func copy1() {
         it
     }
 ).ext(
-    lambda copy2() {
+    func copy2() {
         it
     }
 ).ext(
-    lambda copy3() {
+    func copy3() {
         it
     }
 ).ext(
-    lambda copy4() {
+    func copy4() {
         it
     }
 );
 
 # a[2] = "2";
-z = lambda(t, y) {
+z = func(t, y) {
     19 + 2 + t - y;
 };
 
@@ -38,14 +38,14 @@ if (a[2] == "hello") {
 };
 
 m = a.copy().copy1().copy2().copy3().copy4().copy3().copy2().copy1().copy().map(
-    lambda(t) {
+    func(t) {
         "'" + t + "'";
     }
 );
 println(m[0]);
 println(
     m.reduce(
-        lambda(acc, item) {
+        func(acc, item) {
             acc + ", " + item
         }
     )
@@ -54,12 +54,12 @@ println(
 s = subject("string");
 println("simply get value: " + s.get);
 obs1 = s.observe(
-    lambda(v) {
+    func(v) {
         println("observe1: " + v);
     }
 );
 obs2 = s.observe(
-    lambda(v) {
+    func(v) {
         println("observe2: " + v);
     }
 );
@@ -71,9 +71,9 @@ s.notify();
 a = a + 3 + list(14, "new");
 a = a.plus("qwe", "rty", list("one"));
 a = a.ext(
-    lambda toString() {
+    func toString() {
         it.reduce(
-            lambda(acc, item) {
+            func(acc, item) {
                 acc + ", " + item
             }
         )

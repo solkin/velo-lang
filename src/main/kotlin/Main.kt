@@ -16,7 +16,7 @@ fun main(args: Array<String>) {
     val globalEnv = createGlobalEnvironment<Type<*>>().apply {
         def(
             "readLine",
-            LambdaType(
+            FuncType(
                 fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     return StrType(readlnOrNull().orEmpty())
                 }
@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
         )
         def(
             "print",
-            LambdaType(
+            FuncType(
                 fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     args.forEach { print(it.value()) }
                     return BoolType(false)
@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
         )
         def(
             "println",
-            LambdaType(
+            FuncType(
                 fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
                     args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
                     return BoolType(false)

@@ -66,15 +66,15 @@ class ParserTest {
     }
 
     @Test
-    fun testParseLambda() {
-        val input = StringInput("lambda(a) { false }")
+    fun testParseFunc() {
+        val input = StringInput("func(a) { false }")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
         val node = parser.parse()
 
         assertEquals(
-            node, LambdaNode(
+            node, FuncNode(
                 name = null,
                 vars = listOf("a"),
                 body = BoolNode(value = false)

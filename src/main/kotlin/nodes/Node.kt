@@ -8,7 +8,7 @@ abstract class Node {
 
 abstract class Type<T>(private val t: T) {
 
-    private val exts = HashMap<String, LambdaType>()
+    private val exts = HashMap<String, FuncType>()
 
     fun value(): T = t
 
@@ -16,13 +16,13 @@ abstract class Type<T>(private val t: T) {
         return when (name) {
             "ext" -> {
                 if (args?.size != 1) {
-                    throw IllegalArgumentException("Property 'ext' requires one named lambda argument")
+                    throw IllegalArgumentException("Property 'ext' requires one named func argument")
                 }
-                val lambda = args[0] as? LambdaType
-                    ?: throw IllegalArgumentException("Property 'ext' requires lambda argument")
-                val extName = lambda.name()
-                    ?: throw IllegalArgumentException("Property 'ext' requires named lambda argument")
-                exts[extName] = lambda
+                val func = args[0] as? FuncType
+                    ?: throw IllegalArgumentException("Property 'ext' requires func argument")
+                val extName = func.name()
+                    ?: throw IllegalArgumentException("Property 'ext' requires named func argument")
+                exts[extName] = func
                 return this
             }
 

@@ -7,7 +7,7 @@ data class CallNode(
     val args: List<Node>,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
-        val fnc = func.evaluate(env) as LambdaType
+        val fnc = func.evaluate(env) as FuncType
         val args = args.map {
             it.evaluate(env)
         }

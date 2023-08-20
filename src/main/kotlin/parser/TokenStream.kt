@@ -3,7 +3,7 @@ package parser
 class TokenStream(private val input: Input) {
 
     private var current: Token? = null
-    private val keywords = "if then else while list subject lambda λ let true false".split(' ').toSet()
+    private val keywords = "if then else while list subject func let true false".split(' ').toSet()
 
     private fun isKeyword(str: String): Boolean {
         return keywords.contains(str)
@@ -14,7 +14,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isIdStart(ch: Char): Boolean {
-        return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZλ_".indexOf(ch) >= 0
+        return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".indexOf(ch) >= 0
     }
 
     private fun isId(ch: Char): Boolean {

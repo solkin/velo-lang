@@ -34,23 +34,23 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
             }
 
             "map" -> {
-                if (args?.size != 1 || args[0] !is LambdaType) {
-                    throw IllegalArgumentException("Property 'map' requires one lambda argument")
+                if (args?.size != 1 || args[0] !is FuncType) {
+                    throw IllegalArgumentException("Property 'map' requires one func argument")
                 }
-                val lambda = args[0] as LambdaType
+                val func = args[0] as FuncType
                 val result = value.mapIndexed { index, item ->
-                    lambda.run(args = listOf(IntType(index), item), it = this)
+                    func.run(args = listOf(IntType(index), item), it = this)
                 }
                 ListType(result)
             }
 
             "reduce" -> {
-                if (args?.size != 1 || args[0] !is LambdaType) {
-                    throw IllegalArgumentException("Property 'reduce' requires one lambda argument")
+                if (args?.size != 1 || args[0] !is FuncType) {
+                    throw IllegalArgumentException("Property 'reduce' requires one func argument")
                 }
-                val lambda = args[0] as LambdaType
+                val func = args[0] as FuncType
                 val result = value.reduce { acc, item ->
-                    lambda.run(args = listOf(acc, item), it = this)
+                    func.run(args = listOf(acc, item), it = this)
                 }
                 result
             }

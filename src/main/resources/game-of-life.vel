@@ -1,37 +1,36 @@
-calc = lambda(matrix, x, y) {
-     let(window = lambda(a) {
+calc = func(matrix, x, y) {
+     window = func(a) {
         if (a >= 0) {
             if (a < matrix.len) then a else a - matrix.len;
         } else {
             matrix.len + a;
         }
-    }) {
-        let (cells =
-                matrix[window(y - 1)][window(x - 1)] +
-                matrix[window(y - 1)][x] +
-                matrix[window(y - 1)][window(x + 1)] +
-                matrix[y][window(x - 1)] +
-                matrix[y][window(x + 1)] +
-                matrix[window(y + 1)][window(x - 1)] +
-                matrix[window(y + 1)][x] +
-                matrix[window(y + 1)][window(x + 1)]
-        ) {
-            if cells == 2 then {
-                matrix[y][x]
-            } else if cells == 3 then {
-                1
-            } else {
-                0
-            }
-        }
+    };
+
+    cells =
+            matrix[window(y - 1)][window(x - 1)] +
+            matrix[window(y - 1)][x] +
+            matrix[window(y - 1)][window(x + 1)] +
+            matrix[y][window(x - 1)] +
+            matrix[y][window(x + 1)] +
+            matrix[window(y + 1)][window(x - 1)] +
+            matrix[window(y + 1)][x] +
+            matrix[window(y + 1)][window(x + 1)];
+
+    if cells == 2 then {
+        matrix[y][x]
+    } else if cells == 3 then {
+        1
+    } else {
+        0
     }
 };
 
-printWorld = lambda(world) {
+printWorld = func(world) {
     world.map(
-        lambda(index, row) {
+        func(index, row) {
             row.map(
-                lambda(index, col) {
+                func(index, col) {
                     print(col + " ")
                 }
             );
@@ -40,11 +39,11 @@ printWorld = lambda(world) {
     )
 };
 
-nextGeneration = lambda(world) {
+nextGeneration = func(world) {
     world.map(
-        lambda(y, row) {
+        func(y, row) {
             row.map(
-                lambda(x, col) {
+                func(x, col) {
                     calc(world, x, y);
                 }
             );

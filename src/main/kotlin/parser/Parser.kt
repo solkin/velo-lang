@@ -121,8 +121,8 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseLambda(): Node {
-        return LambdaNode(
+    private fun parseFunc(): Node {
+        return FuncNode(
             name = stream.peek()?.takeIf { tok ->
                 tok.type == TokenType.VARIABLE
             }?.let { stream.next()?.value as? String },
@@ -137,7 +137,7 @@ class Parser(private val stream: TokenStream) {
             val name = stream.next()?.value as? String
             val defs = delimited('(', ')', ',', ::parseVardef)
             return CallNode(
-                func = LambdaNode(
+                func = FuncNode(
                     name = name,
                     vars = defs.map { it.name },
                     body = parseExpression(),
@@ -249,9 +249,9 @@ class Parser(private val stream: TokenStream) {
         if (isKw("list") != null) return parseList()
         if (isKw("subject") != null) return parseSubject()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
-        if (isKw("lambda") != null || isKw("λ") != null) {
+        if (isKw("func") != null) {
             stream.next()
-            return parseLambda()
+            return parseFunc()
         }
         val tok = stream.next()
         return when (tok?.type) {
