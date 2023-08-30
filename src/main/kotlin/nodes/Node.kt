@@ -27,6 +27,13 @@ abstract class Type<T>(private val t: T) {
                 this
             }
 
+            "to" -> {
+                if (args?.size != 1) {
+                    throw IllegalArgumentException("Property 'to' requires one argument")
+                }
+                PairType(this, args[0])
+            }
+
             else -> VoidType()
         }
     }
@@ -34,6 +41,14 @@ abstract class Type<T>(private val t: T) {
     override fun toString(): String {
         return value().toString()
     }
+}
 
+interface Indexable {
+    fun get(key: Type<*>): Type<*>
+}
 
+class TypeComparator : Comparator<Type<*>> {
+    override fun compare(o1: Type<*>, o2: Type<*>): Int {
+        return o1.compareTo(o2)
+    }
 }

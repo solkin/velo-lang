@@ -39,7 +39,8 @@ operator fun <T> Type<T>.compareTo(b: Type<*>): Int {
             else -> value.compareTo(b.value().toString())
         }
 
-        else -> this.compareTo(this)
+        b -> 0
+        else -> 1
     }
 }
 
@@ -71,8 +72,8 @@ operator fun Type<*>.plus(b: Type<*>): Type<*> {
         }
 
         is ListType -> when (b) {
-            is ListType -> ListType(value + b.value)
-            else -> ListType(value + b)
+            is ListType -> ListType(list + b.list)
+            else -> ListType(list + b)
         }
 
         else -> StrType(value().toString() + b.value().toString())

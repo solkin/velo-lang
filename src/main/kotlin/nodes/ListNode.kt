@@ -20,17 +20,17 @@ data class ListNode(
     }
 }
 
-class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
+class ListType(val list: List<Type<*>>) : Type<List<Type<*>>>(list), Indexable {
     override fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
-            "len" -> IntType(value.size)
+            "len" -> IntType(list.size)
             "sub" -> {
                 if (args?.size != 2) {
                     throw IllegalArgumentException("Property 'sub' requires (start, end) arguments")
                 }
                 val start = args[0].toInt()
                 val end = args[1].toInt()
-                ListType(value.subList(start, end))
+                ListType(list.subList(start, end))
             }
 
             "map" -> {
@@ -38,7 +38,7 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                     throw IllegalArgumentException("Property 'map' requires one func argument")
                 }
                 val func = args[0] as FuncType
-                val result = value.mapIndexed { index, item ->
+                val result = list.mapIndexed { index, item ->
                     func.run(args = listOf(IntType(index), item), it = this)
                 }
                 ListType(result)
@@ -49,7 +49,7 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                     throw IllegalArgumentException("Property 'reduce' requires one func argument")
                 }
                 val func = args[0] as FuncType
-                val result = value.reduce { acc, item ->
+                val result = list.reduce { acc, item ->
                     func.run(args = listOf(acc, item), it = this)
                 }
                 result
@@ -59,10 +59,14 @@ class ListType(val value: List<Type<*>>) : Type<List<Type<*>>>(value) {
                 if (args == null) {
                     throw IllegalArgumentException("Property 'plus' requires at least one argument")
                 }
-                ListType(value.plus(args))
+                ListType(list.plus(args))
             }
 
             else -> super.property(name, args)
         }
+    }
+
+    override fun get(key: Type<*>): Type<*> {
+        return list[key.toInt()]
     }
 }

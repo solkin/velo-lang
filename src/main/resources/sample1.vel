@@ -89,3 +89,21 @@ s = struct(
     third = a
 );
 println(s.first + "; " + s.second);
+
+tr = tree("a".to("b"), "c".to(s), "d".to(2+5*9));
+# tbl = table("col1", "col2", "col3");
+println(
+    tr.reduce(
+        func (acc, entry) {
+            (acc.first + ";" + entry.first).to(acc.second + ";" + entry.second)
+        }
+    )
+);
+
+notLetA = 9;
+let (letA = 4, letB = 8) {
+    println(notLetA);
+    println(letA);
+    println(letB);
+};
+println(notLetA);

@@ -7,12 +7,10 @@ data class LetNode(
     val body: Node,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
-        var e = env
-        val scope = e.extend() // TODO: check for location here or in forEach
+        val scope = env.extend()
         vars.forEach { v ->
-            scope.def(v.name, v.def?.let { v.def.evaluate(e) } ?: BoolType(false))
-            e = scope
+            v.evaluate(scope)
         }
-        return body.evaluate(e)
+        return body.evaluate(scope)
     }
 }

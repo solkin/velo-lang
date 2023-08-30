@@ -1,10 +1,10 @@
-import nodes.*
+import nodes.BoolType
+import nodes.FuncType
+import nodes.StrType
+import nodes.Type
 import parser.Parser
 import parser.StringInput
 import parser.TokenStream
-import java.awt.Container
-import javax.swing.JButton
-import javax.swing.JFrame
 
 
 fun main(args: Array<String>) {

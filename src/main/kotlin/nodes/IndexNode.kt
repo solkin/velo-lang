@@ -7,9 +7,9 @@ data class IndexNode(
     val index: Node,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
-        val l = list.evaluate(env) as? ListType
-            ?: throw IllegalArgumentException("Access index of non-list node")
-        val i = index.evaluate(env).toInt()
-        return l.value[i]
+        val l = list.evaluate(env) as? Indexable
+            ?: throw IllegalArgumentException("Access index of non-indexable type")
+        val i = index.evaluate(env)
+        return l.get(i)
     }
 }

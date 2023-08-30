@@ -113,6 +113,14 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun parseTree(): Node {
+        skipKw("tree")
+        val elements = delimited('(', ')', ',', ::parseExpression)
+        return TreeNode(
+            treeOf = elements
+        )
+    }
+
     private fun parseStruct(): Node {
         skipKw("struct")
         val elements = delimited('(', ')', ',', ::parseVardef)
@@ -255,6 +263,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("list") != null) return parseList()
+        if (isKw("tree") != null) return parseTree()
         if (isKw("struct") != null) return parseStruct()
         if (isKw("subject") != null) return parseSubject()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
