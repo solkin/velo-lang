@@ -2,7 +2,7 @@ package nodes
 
 import Environment
 
-data class VardefNode(
+data class DefNode(
     val name: String,
     val def: Node?,
 ) : Node() {

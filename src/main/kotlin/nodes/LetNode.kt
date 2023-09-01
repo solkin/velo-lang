@@ -3,7 +3,7 @@ package nodes
 import Environment
 
 data class LetNode(
-    val vars: List<VardefNode>,
+    val vars: List<DefNode>,
     val body: Node,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {

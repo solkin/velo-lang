@@ -3,9 +3,9 @@ class Environment<T> internal constructor(
     private val parent: Environment<T>?
 ) {
 
-    fun extend() = Environment(HashMap(vars), this)
+    fun extend() = Environment(HashMap(), this)
 
-    fun lookup(name: String): Environment<T>? {
+    private fun lookup(name: String): Environment<T>? {
         var scope: Environment<T>? = this
         while (scope != null) {
             if (scope.vars.containsKey(name)) {
@@ -17,23 +17,21 @@ class Environment<T> internal constructor(
     }
 
     fun get(name: String): T {
-        val node = vars[name]
-        if (node != null) {
-            return node
-        }
-        throw IllegalArgumentException("Undefined variable $name")
+        val scope = lookup(name)
+        return scope?.vars?.get(name) ?: throw IllegalArgumentException("Undefined variable $name")
     }
 
     fun set(name: String, value: T): T {
-        val scope = lookup(name)
-        (scope ?: this).vars[name] = value
+        val scope = lookup(name) ?: throw IllegalArgumentException("Undefined variable $name")
+        scope.vars[name] = value
         return value
     }
 
     fun def(name: String, value: T) {
+        if (vars.containsKey(name)) throw IllegalArgumentException("Variable $name is already defined")
         vars[name] = value
     }
 
 }
 
-fun <T>createGlobalEnvironment() = Environment<T>(HashMap(), null)
+fun <T> createGlobalEnvironment() = Environment<T>(HashMap(), null)

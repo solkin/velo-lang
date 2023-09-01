@@ -1,5 +1,5 @@
-calc = func(matrix, x, y) {
-     window = func(a) {
+var calc = func(matrix, x, y) {
+     var window = func(a) {
         if (a >= 0) {
             if (a < matrix.len) then a else a - matrix.len;
         } else {
@@ -7,7 +7,7 @@ calc = func(matrix, x, y) {
         }
     };
 
-    cells =
+    var cells =
             matrix[window(y - 1)][window(x - 1)] +
             matrix[window(y - 1)][x] +
             matrix[window(y - 1)][window(x + 1)] +
@@ -26,7 +26,7 @@ calc = func(matrix, x, y) {
     }
 };
 
-printWorld = func(world) {
+var printWorld = func(world) {
     world.map(
         func(index, row) {
             row.map(
@@ -39,7 +39,7 @@ printWorld = func(world) {
     )
 };
 
-nextGeneration = func(world) {
+var nextGeneration = func(world) {
     world.map(
         func(y, row) {
             row.map(
@@ -51,7 +51,7 @@ nextGeneration = func(world) {
     );
 };
 
-w = list(
+var w = list(
     list(0, 1, 0, 0, 0, 0),
     list(0, 0, 1, 0, 0, 0),
     list(1, 1, 1, 0, 0, 0),
@@ -61,12 +61,12 @@ w = list(
 );
 
 print("Enter generations count: ");
-count = readLine();
+var count = readLine();
 println();
-index = 0;
-while (index <= count) {
+var idx = 0;
+while (idx <= count) {
     printWorld(w);
     println("--");
     w = nextGeneration(w);
-    index = index + 1;
+    idx = idx + 1;
 };

@@ -1,4 +1,4 @@
-a = list(10, {2+2}, "hello").ext(
+var a = list(10, {2+2}, "hello").ext(
     func copy() {
         it
     }
@@ -21,7 +21,7 @@ a = list(10, {2+2}, "hello").ext(
 );
 
 # a[2] = "2";
-z = func(t, y) {
+var z = func(t, y) {
     19 + 2 + t - y;
 };
 
@@ -37,7 +37,7 @@ if (a[2] == "hello") {
     println(a.sub(1, a.len)[1]);
 };
 
-m = a.copy().copy1().copy2().copy3().copy4().copy3().copy2().copy1().copy().map(
+var m = a.copy().copy1().copy2().copy3().copy4().copy3().copy2().copy1().copy().map(
     func(t) {
         "'" + t + "'";
     }
@@ -51,14 +51,16 @@ println(
     )
 );
 
-s = subject("string");
+var redef = 9;
+var s = subject("string");
 println("simply get value: " + s.get);
-obs1 = s.observe(
+var obs1 = s.observe(
     func(v) {
+        var redef = 10;
         println("observe1: " + v);
     }
 );
-obs2 = s.observe(
+var obs2 = s.observe(
     func(v) {
         println("observe2: " + v);
     }
@@ -90,7 +92,7 @@ s = struct(
 );
 println(s.first + "; " + s.second);
 
-tr = tree("a".to("b"), "c".to(s), "d".to(2+5*9));
+var tr = tree("a".to("b"), "c".to(s), "d".to(2+5*9));
 # tbl = table("col1", "col2", "col3");
 println(
     tr.reduce(
@@ -100,7 +102,7 @@ println(
     )
 );
 
-notLetA = 9;
+var notLetA = 9;
 let (letA = 4, letB = 8) {
     println(notLetA);
     println(letA);

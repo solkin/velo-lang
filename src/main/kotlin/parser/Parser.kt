@@ -123,7 +123,7 @@ class Parser(private val stream: TokenStream) {
 
     private fun parseStruct(): Node {
         skipKw("struct")
-        val elements = delimited('(', ')', ',', ::parseVardef)
+        val elements = delimited('(', ')', ',', ::parseDef)
         return StructNode(
             nodes = elements
         )
@@ -151,7 +151,7 @@ class Parser(private val stream: TokenStream) {
         skipKw("let")
         if (stream.peek()?.type == TokenType.VARIABLE) {
             val name = stream.next()?.value as? String
-            val defs = delimited('(', ')', ',', ::parseVardef)
+            val defs = delimited('(', ')', ',', ::parseDef)
             return CallNode(
                 func = FuncNode(
                     name = name,
@@ -162,18 +162,23 @@ class Parser(private val stream: TokenStream) {
             )
         }
         return LetNode(
-            vars = delimited('(', ')', ',', ::parseVardef),
+            vars = delimited('(', ')', ',', ::parseDef),
             body = parseExpression(),
         )
     }
 
-    private fun parseVardef(): VardefNode {
+    private fun parseVar(): DefNode {
+        skipKw("var")
+        return parseDef()
+    }
+
+    private fun parseDef(): DefNode {
         val name = parseVarname()
         val def: Node? = if (isOp("=") != null) {
             stream.next()
             parseExpression()
         } else null
-        return VardefNode(name = name, def = def)
+        return DefNode(name = name, def = def)
     }
 
     private fun parseBool(): Node {
@@ -260,6 +265,7 @@ class Parser(private val stream: TokenStream) {
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
         if (isKw("let") != null) return parseLet()
+        if (isKw("var") != null) return parseVar()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("list") != null) return parseList()
@@ -282,6 +288,7 @@ class Parser(private val stream: TokenStream) {
                     throw IllegalArgumentException()
                 }
             }
+
             TokenType.STRING -> StrNode(tok.value as String)
             else -> {
                 stream.croak("Unexpected token: " + stream.peek().toString())

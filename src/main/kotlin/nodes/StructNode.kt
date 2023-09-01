@@ -3,7 +3,7 @@ package nodes
 import Environment
 
 data class StructNode(
-    val nodes: List<VardefNode>,
+    val nodes: List<DefNode>,
 ) : Node() {
 
     private val value = ArrayList<Type<*>>()
