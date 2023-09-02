@@ -56,8 +56,12 @@ var s = subject("string");
 println("simply get value: " + s.get);
 var obs1 = s.observe(
     func(v) {
-        var redef = 10;
-        println("observe1: " + v);
+        var redef = redef + 1;
+        {
+            var redef = redef + 1;
+            println("redef: " + redef); #11
+            println("observe1: " + v);
+        }
     }
 );
 var obs2 = s.observe(

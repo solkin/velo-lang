@@ -18,7 +18,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isId(ch: Char): Boolean {
-        return isIdStart(ch) || "?!-<>=0123456789".indexOf(ch) >= 0
+        return isIdStart(ch) || "?!-<>0123456789".indexOf(ch) >= 0
     }
 
     private fun isOpChar(ch: Char): Boolean {
