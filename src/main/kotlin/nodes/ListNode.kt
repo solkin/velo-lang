@@ -44,6 +44,36 @@ class ListType(val list: List<Type<*>>) : Type<List<Type<*>>>(list), Indexable {
                 ListType(result)
             }
 
+            "forEach" -> {
+                if (args?.size != 1 || args[0] !is FuncType) {
+                    throw IllegalArgumentException("Property 'forEach' requires one func argument")
+                }
+                val func = args[0] as FuncType
+                list.forEach { item ->
+                    func.run(args = listOf(item), it = this)
+                }
+                VoidType()
+            }
+
+            "forEachIndexed" -> {
+                if (args?.size != 1 || args[0] !is FuncType) {
+                    throw IllegalArgumentException("Property 'forEachIndexed' requires one func argument")
+                }
+                val func = args[0] as FuncType
+                list.forEachIndexed { index, item ->
+                    func.run(args = listOf(IntType(index), item), it = this)
+                }
+                VoidType()
+            }
+
+            "reversed" -> {
+                if (args?.size != 0) {
+                    throw IllegalArgumentException("Property 'reversed' requires no arguments")
+                }
+                val result = list.reversed()
+                ListType(result)
+            }
+
             "reduce" -> {
                 if (args?.size != 1 || args[0] !is FuncType) {
                     throw IllegalArgumentException("Property 'reduce' requires one func argument")

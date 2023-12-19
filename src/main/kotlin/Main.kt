@@ -8,7 +8,7 @@ import parser.TokenStream
 
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/sample1.vel").readText()
+    val prog = Parser::class.java.getResource("/diamond.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
