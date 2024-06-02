@@ -6,13 +6,16 @@ import parser.Parser
 import parser.StringInput
 import parser.TokenStream
 import vm.VM
-import java.io.DataInputStream
 import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 
 fun main(args: Array<String>) {
+//    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
+//    if (true) return
+
+
     val prog = Parser::class.java.getResource("/diamond.vel").readText()
 
     val input = StringInput(prog)
