@@ -6,14 +6,51 @@ import parser.Parser
 import parser.StringInput
 import parser.TokenStream
 import vm.VM
+import vm2.SimpleParser
+import vm2.VM2
+import vm2.operations.*
 import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 
 fun main(args: Array<String>) {
-//    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
-//    if (true) return
+    val vm2 = VM2()
+    vm2.load(
+        SimpleParser(
+            operations = listOf(
+                Push(value = 2),
+                Def(index = 1),
+
+                Push(value = 2),
+                Get(index = 1),
+                Plus(),
+
+                Get(index = 1),
+                Plus(),
+
+                Set(index = 1),
+
+                Push("Value is: "),
+                Get(index = 1),
+                Print(),
+                Println(),
+
+                Push(value = 16),
+                Get(index = 1),
+                Less(),
+                If(addr = 2),
+
+                Push("Done"),
+                Println(),
+            )
+        )
+    )
+    vm2.run()
+    if (true) return
+
+    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
+    if (true) return
 
 
     val prog = Parser::class.java.getResource("/diamond.vel").readText()
