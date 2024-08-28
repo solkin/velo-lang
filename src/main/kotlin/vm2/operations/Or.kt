@@ -6,13 +6,13 @@ import java.util.*
 
 class Or: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val val1 = dataStack.remove().getBool()
-        val val2 = dataStack.remove().getBool()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val val1 = dataStack.pop().getBool()
+        val val2 = dataStack.pop().getBool()
 
         val result = ValueRecord(val1.or(val2))
 
-        dataStack.add(result)
+        dataStack.push(result)
     }
 
 }

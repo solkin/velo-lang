@@ -5,8 +5,8 @@ import java.util.*
 
 class Drop: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        dataStack.remove()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        dataStack.pop()
     }
 
 }

@@ -8,8 +8,8 @@ class Def(
     val index: Int,
 ): SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val value = dataStack.remove().get()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val value = dataStack.pop().get()
         val scope = heap.current()
         scope.def(index, ValueRecord(value))
     }

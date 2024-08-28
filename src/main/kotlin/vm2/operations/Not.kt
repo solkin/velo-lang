@@ -6,12 +6,12 @@ import java.util.*
 
 class Not: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val rec = dataStack.remove()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val rec = dataStack.pop()
 
         val result = ValueRecord(rec.getBool().not())
 
-        dataStack.add(result)
+        dataStack.push(result)
     }
 
 }

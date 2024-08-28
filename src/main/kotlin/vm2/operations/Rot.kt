@@ -5,13 +5,13 @@ import java.util.*
 
 class Rot: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val rec1 = dataStack.remove()
-        val rec2 = dataStack.remove()
-        val rec3 = dataStack.remove()
-        dataStack.add(rec2)
-        dataStack.add(rec1)
-        dataStack.add(rec3)
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val rec1 = dataStack.pop()
+        val rec2 = dataStack.pop()
+        val rec3 = dataStack.pop()
+        dataStack.push(rec2)
+        dataStack.push(rec1)
+        dataStack.push(rec3)
     }
 
 }

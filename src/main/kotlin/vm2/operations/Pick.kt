@@ -5,7 +5,7 @@ import java.util.*
 
 class Pick: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
         throw OperationNotSupportedException()
     }
 

@@ -6,13 +6,13 @@ import java.util.*
 
 class Divide: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val rec1 = dataStack.remove().getInt()
-        val rec2 = dataStack.remove().getInt()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val rec1 = dataStack.pop().getInt()
+        val rec2 = dataStack.pop().getInt()
 
         val result = ValueRecord(rec2 / rec1)
 
-        dataStack.add(result)
+        dataStack.push(result)
     }
 
 }

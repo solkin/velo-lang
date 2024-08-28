@@ -7,7 +7,7 @@ class Goto(
     private val addr: Int
 ) : Operation {
 
-    override fun exec(pc: Int, dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap): Int {
+    override fun exec(pc: Int, dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap): Int {
         return addr
     }
 

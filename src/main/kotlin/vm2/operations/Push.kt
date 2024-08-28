@@ -8,9 +8,9 @@ class Push(
     val value: Any
 ): SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
         val rec = ValueRecord(value)
-        dataStack.add(rec)
+        dataStack.push(rec)
     }
 
 }

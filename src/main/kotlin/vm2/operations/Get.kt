@@ -7,10 +7,10 @@ class Get(
     val index: Int,
 ): SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
         val scope = heap.current()
         val rec = scope.get(index)
-        dataStack.add(rec)
+        dataStack.push(rec)
     }
 
 }

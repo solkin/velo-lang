@@ -6,13 +6,13 @@ import java.util.*
 
 class Plus: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val rec1 = dataStack.remove()
-        val rec2 = dataStack.remove()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val rec1 = dataStack.pop()
+        val rec2 = dataStack.pop()
 
         val result = ValueRecord(rec1.getInt() + rec2.getInt())
 
-        dataStack.add(result)
+        dataStack.push(result)
     }
 
 }

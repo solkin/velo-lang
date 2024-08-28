@@ -17,24 +17,28 @@ class VM2 {
     }
 
     public fun run() {
-        val dataStack: Queue<Record> = LinkedList()
-        val callStack: Queue<Activation> = LinkedList()
+        val time = System.currentTimeMillis()
+
+        val dataStack: Deque<Record> = LinkedList()
+        val callStack: Deque<Activation> = LinkedList()
         val heap: Heap = ScopedHeap()
 
         var pc = 0
         try {
             while (pc < program.size) {
                 val cmd = program[pc]
+//                println("[$pc] $cmd")
                 pc = cmd.exec(pc, dataStack, callStack, heap)
             }
             println("program ended")
         } catch (ignored: HaltException) {
             println("program halted")
         } catch (ex: Throwable) {
-            println("exception was thrown")
+            println("exception was thrown on $pc: " + program[pc])
             ex.printStackTrace()
         }
-        println("vm stopped")
+        val elapsed = System.currentTimeMillis() - time
+        println("vm stopped in $elapsed ms")
     }
 
 }

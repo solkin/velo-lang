@@ -5,8 +5,8 @@ import java.util.*
 
 class Println : SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val value = dataStack.remove().get()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val value = dataStack.pop().get()
         println(value.toString())
     }
 

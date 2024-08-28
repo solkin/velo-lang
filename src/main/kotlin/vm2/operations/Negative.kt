@@ -6,12 +6,12 @@ import java.util.*
 
 class Negative: SimpleOperation {
 
-    override fun exec(dataStack: Queue<Record>, callStack: Queue<Activation>, heap: Heap) {
-        val rec = dataStack.remove().getInt()
+    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+        val rec = dataStack.pop().getInt()
 
         val result = ValueRecord(-rec)
 
-        dataStack.add(result)
+        dataStack.push(result)
     }
 
 }

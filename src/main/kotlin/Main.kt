@@ -19,41 +19,48 @@ fun main(args: Array<String>) {
     vm2.load(
         SimpleParser(
             operations = listOf(
-                Push(value = 2),
+                Push(value = "Random"),
                 Def(index = 1),
 
+                Skip(count = 19),
+
+                Get(index = 1),
                 Push(value = 2),
-                Get(index = 1),
-                Plus(),
-
-                Get(index = 1),
-                Plus(),
-
-                Set(index = 1),
-
-                Push("Value is: "),
-                Get(index = 1),
-                Print(),
-                Println(),
-
-                Push(value = 16),
-                Get(index = 1),
                 Less(),
-                If(addr = 2),
+                If(addr = 8),
+                Skip(count = 2),
+                Get(index = 1),
+                Ret(),
+                Get(index = 1),
+                Push(value = 1),
+                Minus(),
+                Push(value = 3),
+                Call(args = listOf(1)),
+                Get(index = 1),
+                Push(value = 2),
+                Minus(),
+                Push(value = 3),
+                Call(args = listOf(1)),
+                Plus(),
+                Ret(),
 
-                Push("Done"),
+                Push(value = 33),
+//                Push(value = 2),
+                Push(value = 3),
+                Call(args = listOf(1)),
+
                 Println(),
             )
         )
     )
     vm2.run()
-    if (true) return
+//    if (true) return
 
-    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
-    if (true) return
+//    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
+//    if (true) return
 
 
-    val prog = Parser::class.java.getResource("/diamond.vel").readText()
+    val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -124,7 +131,6 @@ private fun runVM(path: String) {
     vm.run()
     val elapsed1 = System.currentTimeMillis() - time1
     println("\nRun in $elapsed1 ms")
-    if (true) return
 }
 
 inline infix fun Byte.shl(other: Byte): Byte = (this.toInt() shl other.toInt()).toByte()
