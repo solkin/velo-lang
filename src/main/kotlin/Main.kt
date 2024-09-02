@@ -45,7 +45,6 @@ fun main(args: Array<String>) {
                 Ret(),
 
                 Push(value = 33),
-//                Push(value = 2),
                 Push(value = 3),
                 Call(args = listOf(1)),
 
@@ -56,9 +55,8 @@ fun main(args: Array<String>) {
     vm2.run()
 //    if (true) return
 
-//    runVM("/home/solkin/Projects/Backend/false-vm/sample.fbc")
+    runVM("/home/solkin/Projects/Backend/false-vm/fib.fbc")
 //    if (true) return
-
 
     val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
 
