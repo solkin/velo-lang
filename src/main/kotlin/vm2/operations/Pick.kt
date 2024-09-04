@@ -1,11 +1,11 @@
 package vm2.operations
 
 import vm2.*
-import java.util.*
+import vm2.Stack
 
 class Pick: SimpleOperation {
 
-    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
         throw OperationNotSupportedException()
     }
 

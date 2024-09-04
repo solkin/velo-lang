@@ -1,13 +1,13 @@
 package vm2
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.TreeMap
 
 class Scope<T> internal constructor(
     private val vars: MutableMap<Int, T>,
     val parent: Scope<T>?
 ) {
 
-    fun extend() = Scope(HashMap(), this)
+    fun extend() = Scope(TreeMap(), this)
 
     private fun lookup(index: Int): Scope<T>? {
         var scope: Scope<T>? = this
@@ -39,4 +39,4 @@ class Scope<T> internal constructor(
 
 }
 
-fun <T> createGlobalScope() = Scope<T>(HashMap(), null)
+fun <T> createGlobalScope() = Scope<T>(TreeMap(), null)

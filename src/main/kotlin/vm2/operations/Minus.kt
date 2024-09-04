@@ -2,11 +2,11 @@ package vm2.operations
 
 import vm2.*
 import vm2.records.ValueRecord
-import java.util.*
+import vm2.Stack
 
 class Minus: SimpleOperation {
 
-    override fun exec(dataStack: Deque<Record>, callStack: Deque<Activation>, heap: Heap) {
+    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
         val rec1 = dataStack.pop().getInt()
         val rec2 = dataStack.pop().getInt()
 
