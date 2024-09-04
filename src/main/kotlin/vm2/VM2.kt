@@ -17,7 +17,6 @@ class VM2 {
     }
 
     public fun run() {
-        val time = System.currentTimeMillis()
 
 //        val dataStack: Stack<Record> = LifoArrayStack(array = arrayOfNulls(2048))
 //        val callStack: Stack<Activation> = LifoArrayStack(array = arrayOfNulls(2048))
@@ -26,14 +25,16 @@ class VM2 {
         val heap: Heap = ScopedHeap()
 
         var pc = 0
+        var elapsed = 0L
         try {
             val diag = false
+            var t: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
+            val time = System.currentTimeMillis()
             while (pc < program.size) {
                 val cmd = program[pc]
 //                println("[$pc] $cmd")
-                var t: Long = 0
                 if (diag) {
                     t = System.currentTimeMillis()
                 }
@@ -54,6 +55,7 @@ class VM2 {
                     println(entry.key + "(" + times + ") -> " + entry.value + ": " + mil.toInt())
                 }
             }
+            elapsed = System.currentTimeMillis() - time
             println("program ended")
         } catch (ignored: HaltException) {
             println("program halted")
@@ -61,8 +63,7 @@ class VM2 {
             println("exception was thrown on $pc: " + program[pc])
             ex.printStackTrace()
         }
-        val elapsed = System.currentTimeMillis() - time
-        println("vm stopped in $elapsed ms")
+        println("vm stopped in $elapsed ms\n")
     }
 
 }
