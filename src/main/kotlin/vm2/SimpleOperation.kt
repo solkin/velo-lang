@@ -1,7 +1,5 @@
 package vm2
 
-import java.util.*
-
 interface SimpleOperation : Operation {
 
     override fun exec(pc: Int, dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap): Int {

@@ -1,6 +1,5 @@
 package vm2
 
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -20,6 +19,8 @@ class VM2 {
     public fun run() {
         val time = System.currentTimeMillis()
 
+//        val dataStack: Stack<Record> = LifoArrayStack(array = arrayOfNulls(2048))
+//        val callStack: Stack<Activation> = LifoArrayStack(array = arrayOfNulls(2048))
         val dataStack: Stack<Record> = LifoStack()
         val callStack: Stack<Activation> = LifoStack()
         val heap: Heap = ScopedHeap()
