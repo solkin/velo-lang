@@ -1,9 +1,11 @@
 package nodes
 
 import Environment
+import vm2.Operation
 
 abstract class Node {
     abstract fun evaluate(env: Environment<Type<*>>): Type<*>
+    open fun compile(ops: MutableList<Operation>) {}
 }
 
 abstract class Type<T>(private val t: T) {

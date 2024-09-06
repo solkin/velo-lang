@@ -7,10 +7,10 @@ import vm2.Stack
 class Plus: SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val rec1 = dataStack.pop()
-        val rec2 = dataStack.pop()
+        val rec1 = dataStack.pop().getInt()
+        val rec2 = dataStack.pop().getInt()
 
-        val result = ValueRecord(rec1.getInt() + rec2.getInt())
+        val result = ValueRecord(rec1 + rec2)
 
         dataStack.push(result)
     }

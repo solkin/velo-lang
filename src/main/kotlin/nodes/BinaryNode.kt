@@ -1,6 +1,8 @@
 package nodes
 
 import Environment
+import vm2.Operation
+import vm2.operations.*
 
 data class BinaryNode(
     val operator: String,
@@ -30,5 +32,21 @@ data class BinaryNode(
             "!=" -> BoolType(a.value() != b.value())
             else -> throw IllegalArgumentException("Can't apply operator $op")
         }
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        left.compile(ops)
+        right.compile(ops)
+        val binOp = when (operator) {
+            "+" -> Plus()
+            "-" -> Minus()
+            "*" -> Multiply()
+            "/" -> Divide()
+            "<" -> Less()
+            ">" -> More()
+            "==" -> Equals()
+            else -> throw IllegalArgumentException("Can't apply operator $operator")
+        }
+        ops.add(binOp)
     }
 }

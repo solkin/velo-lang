@@ -1,6 +1,7 @@
 package nodes
 
 import Environment
+import vm2.Operation
 
 data class ProgramNode(
     val prog: List<Node>,
@@ -10,5 +11,9 @@ data class ProgramNode(
         var v: Type<*> = BoolType(false)
         prog.forEach { v = it.evaluate(scope) }
         return v
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        prog.forEach { it.compile(ops) }
     }
 }

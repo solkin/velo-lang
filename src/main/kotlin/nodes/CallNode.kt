@@ -1,6 +1,9 @@
 package nodes
 
 import Environment
+import vm2.Operation
+import vm2.operations.Call
+import vm2.operations.Println
 
 data class CallNode(
     val func: Node,
@@ -12,5 +15,17 @@ data class CallNode(
             it.evaluate(env)
         }
         return fnc.run(args = args, it = null)
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        args.forEach { arg ->
+            arg.compile(ops)
+        }
+        if (func is VarNode && func.name == "println") {
+            ops.add(Println())
+            return
+        }
+        func.compile(ops)
+        ops.add(Call())
     }
 }

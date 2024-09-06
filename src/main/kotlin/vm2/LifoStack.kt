@@ -17,4 +17,5 @@ class LifoStack<T> : Stack<T> {
     override fun pop(): T {
         return deque.pop()
     }
+
 }

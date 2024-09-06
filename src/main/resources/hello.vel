@@ -1,0 +1,20 @@
+#var a = 2;
+#a = ((a + 2) * 6 + 6) / 3;
+#func() {
+#}();
+#var b = func() {
+#};
+#b();
+#func test() {
+#};
+#test();
+#println(a);
+
+func fib(n) {
+    if n < 2 then n else fib(n - 1) + fib(n - 2);
+};
+
+fib(15);
+
+#var n = if false then 5 else 6;
+#println(n);

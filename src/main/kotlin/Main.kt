@@ -6,54 +6,56 @@ import parser.Parser
 import parser.StringInput
 import parser.TokenStream
 import vm.VM
+import vm2.Operation
 import vm2.SimpleParser
 import vm2.VM2
-import vm2.operations.*
 import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import java.util.ArrayList
 
 fun main(args: Array<String>) {
-    val vm2 = VM2()
-    vm2.load(
-        SimpleParser(
-            operations = listOf(
-                Push(value = "Random"),
-                Def(index = 1),
-
-                Skip(count = 19),
-
-                Get(index = 1),
-                Push(value = 2),
-                Less(),
-                If(addr = 8),
-                Skip(count = 2),
-                Get(index = 1),
-                Ret(),
-                Get(index = 1),
-                Push(value = 1),
-                Minus(),
-                Push(value = 3),
-                Call(args = listOf(1)),
-                Get(index = 1),
-                Push(value = 2),
-                Minus(),
-                Push(value = 3),
-                Call(args = listOf(1)),
-                Plus(),
-                Ret(),
-
-                Push(value = 15),
-                Push(value = 3),
-                Call(args = listOf(1)),
-
-                Println(),
-            )
-        )
-    )
-    vm2.run()
-//    if (true) return
+    vm2();
+//    val vm2 = VM2()
+//    vm2.load(
+//        SimpleParser(
+//            operations = listOf(
+//                Push(value = "Random"),
+//                Def(index = 1),
+//
+//                Skip(count = 19),
+//
+//                Get(index = 1),
+//                Push(value = 2),
+//                Less(),
+//                If(addr = 8),
+//                Skip(count = 2),
+//                Get(index = 1),
+//                Ret(),
+//                Get(index = 1),
+//                Push(value = 1),
+//                Minus(),
+//                Push(value = 3),
+//                Call(args = listOf(1)),
+//                Get(index = 1),
+//                Push(value = 2),
+//                Minus(),
+//                Push(value = 3),
+//                Call(args = listOf(1)),
+//                Plus(),
+//                Ret(),
+//
+//                Push(value = 15),
+//                Push(value = 3),
+//                Call(args = listOf(1)),
+//
+//                Println(),
+//            )
+//        )
+//    )
+//    vm2.run()
+    if (true) return
 
 //    runVM("/home/solkin/Projects/Backend/false-vm/fib.fbc")
 //    if (true) return
@@ -103,6 +105,35 @@ fun main(args: Array<String>) {
 
     elapsed = System.currentTimeMillis() - time
     println("\nRun in $elapsed ms")
+}
+
+fun vm2() {
+    val prog = Parser::class.java.getResource("/hello.vel").readText()
+
+    val input = StringInput(prog)
+    val stream = TokenStream(input)
+    val parser = Parser(stream)
+
+    val node = parser.parse()
+    val globalEnv = createGlobalEnvironment<Type<*>>().apply {
+        def(
+            "println",
+            FuncType(
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+                    args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
+                    return BoolType(false)
+                }
+            )
+        )
+    }
+    node.evaluate(globalEnv)
+
+    val operations: MutableList<Operation> = ArrayList()
+    node.compile(operations)
+
+    val vm2 = VM2()
+    vm2.load(SimpleParser(operations))
+    vm2.run()
 }
 
 private fun runVM(path: String) {

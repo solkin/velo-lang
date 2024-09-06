@@ -27,14 +27,14 @@ class VM2 {
         var pc = 0
         var elapsed = 0L
         try {
-            val diag = false
+            val diag = true
             var t: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
             while (pc < program.size) {
                 val cmd = program[pc]
-//                println("[$pc] $cmd")
+                println("[$pc] $cmd")
                 if (diag) {
                     t = System.currentTimeMillis()
                 }
