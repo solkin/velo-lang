@@ -1,0 +1,23 @@
+func primes(n) {
+    var k = 0;
+    var i = 2;
+    while (k < n) {
+        var isPrime = true;
+        var divisor = 2;
+        while (divisor <= i / 2) {
+            if (i % divisor == 0) {
+                isPrime = false;
+                divisor = i;
+            } else {
+                divisor = divisor + 1;
+            };
+        };
+        if (isPrime) {
+            println(i);
+            k = k + 1;
+        };
+        i = i + 1;
+    };
+};
+
+primes(303);
