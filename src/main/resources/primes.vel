@@ -13,7 +13,11 @@ func primes(n) {
             };
         };
         if (isPrime) {
-            println(i);
+            print(i);
+            print(" ");
+            if k % 22 == 0 {
+                println("");
+            };
             k = k + 1;
         };
         i = i + 1;
@@ -21,3 +25,4 @@ func primes(n) {
 };
 
 primes(303);
+println("");

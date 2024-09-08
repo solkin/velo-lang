@@ -24,7 +24,7 @@ class VM2 {
         var pc = 0
         var elapsed = 0L
         try {
-            val diagSeq = true
+            val diagSeq = false
             val diagStat = true
             val diagOutput = StringBuilder()
             if (diagSeq) {
@@ -58,10 +58,7 @@ class VM2 {
                 diagOutput.append("====================================================\n")
                 diagOutput.append("==================== Statistics ====================\n")
                 diagOutput.append("====================================================\n")
-                val sortedMs = cmdMs.toList().sortedByDescending { entry ->
-                    val times = cmdCnt[entry.first] ?: 0
-                    entry.second.toDouble() / times
-                }
+                val sortedMs = cmdMs.toList().sortedByDescending { it.second }
                 for (entry in sortedMs) {
                     val times = cmdCnt[entry.first] ?: 0
                     val mil: Double = entry.second.toDouble() * 1000000000 / times.toDouble()
