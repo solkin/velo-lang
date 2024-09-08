@@ -143,7 +143,7 @@ class Parser(private val stream: TokenStream) {
                 tok.type == TokenType.VARIABLE
             }?.let { stream.next()?.value as? String },
             vars = delimited('(', ')', ',', ::parseVarname),
-            body = parseExpression()
+            body = parseProg()
         )
     }
 
@@ -248,15 +248,20 @@ class Parser(private val stream: TokenStream) {
     }
 
     private fun parseExpression(): Node {
-        return maybePostfix(maybeBinary(maybePostfix(parseAtom()), 0))
+        val atom = parseAtom()
+        val postfix = maybePostfix(atom)
+        val binary = maybeBinary(postfix, 0)
+        return maybePostfix(binary)
     }
 
     private fun maybePostfix(expr: Node): Node {
-        val node = maybeProp(maybeIndex(maybeCall(expr)))
-        return if (node != expr) {
-            maybePostfix(node)
+        val call = maybeCall(expr)
+        val index = maybeIndex(call)
+        val prop = maybeProp(index)
+        return if (prop != expr) {
+            maybePostfix(prop)
         } else {
-            node
+            prop
         }
     }
 

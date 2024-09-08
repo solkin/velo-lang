@@ -28,10 +28,9 @@
 
 func fib(n) {
     if n < 2 then n else {
-        var rec = func(v) {
+        func(v) {
             fib(v - 1) + fib(v - 2);
-        };
-        rec(n);
+        }(n);
     }
 };
 
