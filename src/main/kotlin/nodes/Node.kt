@@ -5,7 +5,9 @@ import vm2.Operation
 
 abstract class Node {
     abstract fun evaluate(env: Environment<Type<*>>): Type<*>
-    open fun compile(ops: MutableList<Operation>) {}
+    open fun compile(ops: MutableList<Operation>) {
+        throw NotImplementedError("Compile function for $this is not implemented")
+    }
 }
 
 abstract class Type<T>(private val t: T) {

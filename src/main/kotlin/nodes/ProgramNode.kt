@@ -2,6 +2,8 @@ package nodes
 
 import Environment
 import vm2.Operation
+import vm2.operations.Ext
+import vm2.operations.Free
 
 data class ProgramNode(
     val prog: List<Node>,
@@ -14,6 +16,8 @@ data class ProgramNode(
     }
 
     override fun compile(ops: MutableList<Operation>) {
+        ops.add(Ext())
         prog.forEach { it.compile(ops) }
+        ops.add(Free())
     }
 }
