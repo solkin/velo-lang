@@ -10,7 +10,7 @@ interface Record {
 
     fun getInt(): Int = get() as Int
 
-    fun getLong(): Long  = get() as Long
+    fun getLong(): Long = get() as Long
 
     fun getFloat(): Float = get() as Float
 
@@ -19,5 +19,8 @@ interface Record {
     fun getChar(): Char = get() as Char
 
     fun getString(): String = get() as String
+
+    @Suppress("UNCHECKED_CAST")
+    fun getSlice(): Array<Record> = get() as Array<Record>
 
 }

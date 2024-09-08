@@ -1,6 +1,9 @@
 package nodes
 
 import Environment
+import vm2.Operation
+import vm2.operations.Push
+import vm2.operations.Slice
 
 data class ListNode(
     val listOf: List<Node>,
@@ -17,6 +20,12 @@ data class ListNode(
             }
         }
         return ListType(value)
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        listOf.forEach { it.compile(ops) }
+        ops.add(Push(listOf.size))
+        ops.add(Slice())
     }
 }
 

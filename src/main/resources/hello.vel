@@ -66,3 +66,6 @@ var fib = func(num) {
 };
 
 println(fib(93));
+
+var l = list(10, 20, 30, 40, 50);
+println(l[4])

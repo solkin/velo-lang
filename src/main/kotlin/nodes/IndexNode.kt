@@ -1,6 +1,8 @@
 package nodes
 
 import Environment
+import vm2.Operation
+import vm2.operations.Index
 
 data class IndexNode(
     val list: Node,
@@ -11,5 +13,11 @@ data class IndexNode(
             ?: throw IllegalArgumentException("Access index of non-indexable type")
         val i = index.evaluate(env)
         return l.get(i)
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        list.compile(ops)
+        index.compile(ops)
+        ops.add(Index())
     }
 }
