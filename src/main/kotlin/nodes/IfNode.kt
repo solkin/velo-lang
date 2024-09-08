@@ -3,7 +3,7 @@ package nodes
 import Environment
 import vm2.Operation
 import vm2.operations.If
-import vm2.operations.Skip
+import vm2.operations.Move
 
 data class IfNode(
     val condNode: Node,
@@ -23,7 +23,7 @@ data class IfNode(
         val elseOps: MutableList<Operation> = ArrayList()
         elseNode?.run {
             compile(elseOps)
-            thenOps.add(Skip(elseOps.size))
+            thenOps.add(Move(elseOps.size))
         }
 
         condNode.compile(ops)

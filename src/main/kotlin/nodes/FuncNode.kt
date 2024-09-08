@@ -3,7 +3,6 @@ package nodes
 import Environment
 import vm2.Operation
 import vm2.operations.*
-import vm2.operations.Set
 
 data class FuncNode(
     val name: String?,
@@ -43,7 +42,7 @@ data class FuncNode(
             body.compile(funcOps)
             funcOps.add(Ret()) // TODO: create ReturnNode
 
-            ops.add(Skip(funcOps.size))
+            ops.add(Move(funcOps.size))
 
             ops.addAll(funcOps)
 

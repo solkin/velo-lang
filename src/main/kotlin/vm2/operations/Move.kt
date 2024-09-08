@@ -3,7 +3,7 @@ package vm2.operations
 import vm2.*
 import vm2.Stack
 
-class Skip(
+class Move(
     private val count: Int
 ) : Operation {
 

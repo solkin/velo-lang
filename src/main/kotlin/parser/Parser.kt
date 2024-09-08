@@ -98,7 +98,7 @@ class Parser(private val stream: TokenStream) {
     private fun parseWhile(): Node {
         skipKw("while")
         val cond = parseExpression()
-        val expr = parseExpression()
+        val expr = parseProg()
         return WhileNode(
             cond = cond,
             expr = expr,

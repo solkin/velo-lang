@@ -45,6 +45,8 @@ data class BinaryNode(
             "<" -> Less()
             ">" -> More()
             "==" -> Equals()
+            "<=" -> LessEquals()
+            ">=" -> MoreEquals()
             else -> throw IllegalArgumentException("Can't apply operator $operator")
         }
         ops.add(binOp)
