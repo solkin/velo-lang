@@ -17,8 +17,6 @@ class VM2 {
     }
 
     public fun run() {
-//        val dataStack: Stack<Record> = LifoArrayStack(array = arrayOfNulls(2048))
-//        val callStack: Stack<Activation> = LifoArrayStack(array = arrayOfNulls(2048))
         val dataStack: Stack<Record> = LifoStack()
         val callStack: Stack<Activation> = LifoStack()
         val heap: Heap = ScopedHeap()
@@ -26,15 +24,15 @@ class VM2 {
         var pc = 0
         var elapsed = 0L
         try {
-            val diag = true
+            val diag = false
             var t: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
             while (pc < program.size) {
                 val cmd = program[pc]
-                println("[$pc] $cmd")
                 if (diag) {
+                    println("[$pc] $cmd")
                     t = System.currentTimeMillis()
                 }
                 pc = cmd.exec(pc, dataStack, callStack, heap)

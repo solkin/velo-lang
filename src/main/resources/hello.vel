@@ -9,17 +9,34 @@
 #if 1 < 2 then println(1) else println(2);
 
 #func test(n) {
-#    if n < 2 then 9 else n;
+#    func rec(v) {
+#        test(3) + test(4);
+#    };
+#    if n > 5 then rec(n) else n;
 #};
-#println(test(1));
+#println(test(6));
 
 #println(a);
 
+#var notLetA = 9;
+#let (letA = 4, letB = 8) {
+#    println(notLetA);
+#    println(letA);
+#    println(letB);
+#};
+#println(notLetA);
+
 func fib(n) {
-    if n < 2 then n else fib(n - 1) + fib(n - 2);
+    if n < 2 then n else {
+        var rec = func(v) {
+            fib(v - 1) + fib(v - 2);
+        };
+        rec(n);
+    }
 };
 
-println(fib(15));
+println("Fib:");
+println(fib(25));
 
 #var n = if false then 5 else 6;
 #println(n);

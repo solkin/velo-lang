@@ -11,8 +11,6 @@ data class FuncNode(
     val body: Node,
 ) : Node() {
 
-    private var addr = 0
-
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
         var e = env
         val named = !name.isNullOrEmpty()
@@ -37,7 +35,6 @@ data class FuncNode(
     }
 
     override fun compile(ops: MutableList<Operation>) {
-        if (addr == 0) {
             val funcOps: MutableList<Operation> = ArrayList()
             vars.forEach { v ->
                 val index = v.hashCode()
@@ -48,16 +45,16 @@ data class FuncNode(
 
             ops.add(Skip(funcOps.size))
 
-            addr = ops.size
             ops.addAll(funcOps)
-        }
+
+        ops.add(Pc())
+        ops.add(Push(funcOps.size))
+        ops.add(Minus())
+        ops.add(Abs())
 
         if (!name.isNullOrEmpty()) {
-            ops.add(Push(addr))
             ops.add(Def(name.hashCode()))
         }
-
-        ops.add(Push(addr))
     }
 }
 
