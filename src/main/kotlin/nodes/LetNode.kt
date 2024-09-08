@@ -1,6 +1,9 @@
 package nodes
 
 import Environment
+import vm2.Operation
+import vm2.operations.Ext
+import vm2.operations.Free
 
 data class LetNode(
     val vars: List<DefNode>,
@@ -12,5 +15,12 @@ data class LetNode(
             v.evaluate(scope)
         }
         return body.evaluate(scope)
+    }
+
+    override fun compile(ops: MutableList<Operation>) {
+        ops.add(Ext())
+        vars.forEach { it.compile(ops) }
+        body.compile(ops)
+        ops.add(Free())
     }
 }

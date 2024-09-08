@@ -18,13 +18,13 @@
 
 #println(a);
 
-#var notLetA = 9;
-#let (letA = 4, letB = 8) {
-#    println(notLetA);
-#    println(letA);
-#    println(letB);
-#};
-#println(notLetA);
+var notLetA = 9;
+let (letA = 4, letB = 8) {
+    println(notLetA);
+    println(letA);
+    println(letB);
+};
+println(notLetA);
 
 func fib(n) {
     if n < 2 then n else {
