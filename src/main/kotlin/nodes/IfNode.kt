@@ -23,16 +23,15 @@ data class IfNode(
         val elseOps: MutableList<Operation> = ArrayList()
         elseNode?.run {
             compile(elseOps)
-            elseOps.add(Skip(thenOps.size))
+            thenOps.add(Skip(elseOps.size))
         }
 
         condNode.compile(ops)
-        val thenAddr = ops.size + 1 + elseOps.size
-        ops.add(If(thenAddr))
+        val elseSkip = thenOps.size
+        ops.add(If(elseSkip))
+        ops.addAll(thenOps)
         if (elseOps.isNotEmpty()) {
             ops.addAll(elseOps)
         }
-        ops.addAll(thenOps)
-
     }
 }

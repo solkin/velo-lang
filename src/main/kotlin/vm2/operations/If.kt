@@ -4,16 +4,12 @@ import vm2.*
 import vm2.Stack
 
 class If(
-    private val addr: Int
+    private val elseSkip: Int
 ) : Operation {
 
     override fun exec(pc: Int, dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap): Int {
         val flag = dataStack.pop().getBool()
-        return if (flag) {
-            addr
-        } else {
-            pc + 1
-        }
+        return pc + 1 + if (flag) 0 else elseSkip
     }
 
 }
