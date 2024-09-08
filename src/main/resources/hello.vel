@@ -5,16 +5,19 @@
 #var b = func() {
 #};
 #b();
-#func test() {
-#};
-#test();
+
+func test(n) {
+    if n < 2 then println(9) else println(n);
+};
+test(1);
+
 #println(a);
 
-func fib(n) {
-    if n < 2 then n else fib(n - 1) + fib(n - 2);
-};
+#func fib(n) {
+#    if n < 2 then n else fib(n - 1) + fib(n - 2);
+#};
 
-fib(15);
+#fib(15);
 
 #var n = if false then 5 else 6;
 #println(n);

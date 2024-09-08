@@ -17,7 +17,6 @@ class VM2 {
     }
 
     public fun run() {
-
 //        val dataStack: Stack<Record> = LifoArrayStack(array = arrayOfNulls(2048))
 //        val callStack: Stack<Activation> = LifoArrayStack(array = arrayOfNulls(2048))
         val dataStack: Stack<Record> = LifoStack()
