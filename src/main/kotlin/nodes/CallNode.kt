@@ -3,6 +3,7 @@ package nodes
 import Environment
 import vm2.Operation
 import vm2.operations.Call
+import vm2.operations.Print
 import vm2.operations.Println
 
 data class CallNode(
@@ -23,6 +24,10 @@ data class CallNode(
         }
         if (func is VarNode && func.name == "println") {
             ops.add(Println())
+            return
+        }
+        if (func is VarNode && func.name == "print") {
+            ops.add(Print())
             return
         }
         func.compile(ops)

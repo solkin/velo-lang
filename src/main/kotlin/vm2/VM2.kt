@@ -24,19 +24,26 @@ class VM2 {
         var pc = 0
         var elapsed = 0L
         try {
-            val diag = false
+            val diagSeq = true
+            val diagStat = true
+            var diagOutput = StringBuilder()
+            diagOutput.append("====================================================\n")
+            diagOutput.append("===================== Sequence =====================\n")
+            diagOutput.append("====================================================\n")
             var t: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
             while (pc < program.size) {
                 val cmd = program[pc]
-                if (diag) {
-                    println("[$pc] $cmd")
+                if (diagSeq) {
+                    diagOutput.append("[$pc] ${cmd.javaClass.name}\n")
+                }
+                if (diagStat) {
                     t = System.currentTimeMillis()
                 }
                 pc = cmd.exec(pc, dataStack, callStack, heap)
-                if (diag) {
+                if (diagStat) {
                     val e = System.currentTimeMillis() - t
                     val name = cmd.javaClass.name
                     val pe = cmdMs[name] ?: 0
@@ -45,12 +52,22 @@ class VM2 {
                     cmdCnt[name] = pi + 1
                 }
             }
-            if (diag) {
-                for (entry in cmdMs) {
-                    val times = cmdCnt[entry.key] ?: 0
-                    val mil: Double = entry.value.toDouble() * 100000000 / times.toDouble()
-                    println(entry.key + "(" + times + ") -> " + entry.value + ": " + mil.toInt())
+            if (diagStat) {
+                diagOutput.append("====================================================\n")
+                diagOutput.append("==================== Statistics ====================\n")
+                diagOutput.append("====================================================\n")
+                val sortedMs = cmdMs.toList().sortedByDescending { entry ->
+                    val times = cmdCnt[entry.first] ?: 0
+                    entry.second.toDouble() / times
                 }
+                for (entry in sortedMs) {
+                    val times = cmdCnt[entry.first] ?: 0
+                    val mil: Double = entry.second.toDouble() * 1000000000 / times.toDouble()
+                    diagOutput.append(entry.first.padEnd(30, '.') + "$times times".padEnd(15, ' ') + "/ ${entry.second} ms".padEnd(8, ' ') + "-> ${mil.toInt()} ms/bil\n")
+                }
+            }
+            if (diagOutput.isNotBlank()) {
+                println(diagOutput.toString())
             }
             elapsed = System.currentTimeMillis() - time
             println("program ended")

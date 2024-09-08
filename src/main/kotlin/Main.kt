@@ -126,8 +126,8 @@ fun vm2() {
             )
         )
     }
-    node.evaluate(globalEnv)
-
+//    node.evaluate(globalEnv)
+//if (true) return
     val operations: MutableList<Operation> = ArrayList()
     node.compile(operations)
 
