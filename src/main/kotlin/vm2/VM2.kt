@@ -26,10 +26,12 @@ class VM2 {
         try {
             val diagSeq = true
             val diagStat = true
-            var diagOutput = StringBuilder()
-            diagOutput.append("====================================================\n")
-            diagOutput.append("===================== Sequence =====================\n")
-            diagOutput.append("====================================================\n")
+            val diagOutput = StringBuilder()
+            if (diagSeq) {
+                diagOutput.append("====================================================\n")
+                diagOutput.append("===================== Sequence =====================\n")
+                diagOutput.append("====================================================\n")
+            }
             var t: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
