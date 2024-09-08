@@ -42,7 +42,6 @@ data class FuncNode(
             vars.forEach { v ->
                 val index = v.hashCode()
                 funcOps.add(Def(index))
-                funcOps.add(Set(index))
             }
             body.compile(funcOps)
             funcOps.add(Ret()) // TODO: create ReturnNode
