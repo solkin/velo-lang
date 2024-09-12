@@ -3,6 +3,8 @@ package nodes
 import Environment
 import vm2.Operation
 import vm2.operations.Push
+import vm2.operations.StrLen
+import vm2.operations.SubStr
 
 data class StrNode(
     val value: String,
@@ -11,6 +13,14 @@ data class StrNode(
 
     override fun compile(ops: MutableList<Operation>) {
         ops.add(Push(value))
+    }
+
+    override fun property(name: String, ops: MutableList<Operation>) {
+        when(name) {
+            "sub" -> ops.add(SubStr())
+            "len" -> ops.add(StrLen())
+            else -> throw IllegalArgumentException("Property $name is not supported")
+        }
     }
 }
 

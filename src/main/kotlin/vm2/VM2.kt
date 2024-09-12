@@ -25,7 +25,7 @@ class VM2 {
         var elapsed = 0L
         try {
             val diagSeq = false
-            val diagStat = true
+            val diagStat = false
             val diagOutput = StringBuilder()
             if (diagSeq) {
                 diagOutput.append("====================================================\n")

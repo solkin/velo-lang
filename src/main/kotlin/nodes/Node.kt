@@ -8,6 +8,9 @@ abstract class Node {
     open fun compile(ops: MutableList<Operation>) {
         throw NotImplementedError("Compile function for $this is not implemented")
     }
+    open fun property(name: String, ops: MutableList<Operation>) {
+        throw NotImplementedError("Type ${javaClass.name} has no properties")
+    }
 }
 
 abstract class Type<T>(private val t: T) {

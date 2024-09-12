@@ -16,45 +16,7 @@ import java.io.IOException
 import java.util.ArrayList
 
 fun main(args: Array<String>) {
-    vm2();
-//    val vm2 = VM2()
-//    vm2.load(
-//        SimpleParser(
-//            operations = listOf(
-//                Push(value = "Random"),
-//                Def(index = 1),
-//
-//                Skip(count = 19),
-//
-//                Get(index = 1),
-//                Push(value = 2),
-//                Less(),
-//                If(addr = 8),
-//                Skip(count = 2),
-//                Get(index = 1),
-//                Ret(),
-//                Get(index = 1),
-//                Push(value = 1),
-//                Minus(),
-//                Push(value = 3),
-//                Call(args = listOf(1)),
-//                Get(index = 1),
-//                Push(value = 2),
-//                Minus(),
-//                Push(value = 3),
-//                Call(args = listOf(1)),
-//                Plus(),
-//                Ret(),
-//
-//                Push(value = 15),
-//                Push(value = 3),
-//                Call(args = listOf(1)),
-//
-//                Println(),
-//            )
-//        )
-//    )
-//    vm2.run()
+    vm2()
     if (true) return
 
 //    runVM("/home/solkin/Projects/Backend/false-vm/fib.fbc")

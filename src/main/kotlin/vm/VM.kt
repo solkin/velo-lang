@@ -1,7 +1,5 @@
 package vm
 
-import java.util.*
-
 class VM(
     size: Int,
     dataStack: Int,

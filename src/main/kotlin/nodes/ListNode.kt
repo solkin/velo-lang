@@ -2,8 +2,7 @@ package nodes
 
 import Environment
 import vm2.Operation
-import vm2.operations.Push
-import vm2.operations.Slice
+import vm2.operations.*
 
 data class ListNode(
     val listOf: List<Node>,
@@ -26,6 +25,14 @@ data class ListNode(
         listOf.forEach { it.compile(ops) }
         ops.add(Push(listOf.size))
         ops.add(Slice())
+    }
+
+    override fun property(name: String, ops: MutableList<Operation>) {
+        when(name) {
+            "sub" -> ops.add(SubSlice())
+            "len" -> ops.add(SliceLen())
+            else -> throw IllegalArgumentException("Property $name is not supported")
+        }
     }
 }
 

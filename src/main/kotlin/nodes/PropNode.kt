@@ -16,6 +16,7 @@ data class PropNode(
 
     override fun compile(ops: MutableList<Operation>) {
         parent.compile(ops)
-        args.orEmpty().forEach { it.compile(ops) }
+        args.orEmpty().reversed().forEach { it.compile(ops) }
+        parent.property(name, ops)
     }
 }
