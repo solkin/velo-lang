@@ -51,12 +51,12 @@ data class PropNode(
 
                 val exprOps: MutableList<Operation> = ArrayList()
                 with(exprOps) {
+                    // index
+                    add(Get(i))
                     // item
                     add(Get(list))
                     add(Get(i))
                     add(Index())
-                    // index
-                    add(Get(i))
                     // func
                     add(Get(func))
                     // call func

@@ -35,7 +35,7 @@ data class FuncNode(
 
     override fun compile(ops: MutableList<Operation>) {
         val funcOps: MutableList<Operation> = ArrayList()
-        vars.forEach { v ->
+        vars.reversed().forEach { v ->
             val index = v.hashCode()
             funcOps.add(Def(index))
         }

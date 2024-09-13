@@ -1,14 +1,75 @@
-var l = list(10, 20, 30, 40, 50);
+var calc = func(matrix, x, y) {
+     var window = func(a) {
+        if (a >= 0) {
+            if (a < matrix.size) then a else a - matrix.size;
+        } else {
+            matrix.size + a;
+        }
+    };
 
-var r = l.map(func(index, item) {
-    var a = item - 25;
-    a > 0;
-});
-var i = 0;
-while (i < l.size) {
-    print(l[i]);
-    print("-");
-    println(r[i]);
-    i = i + 1;
+    var cells =
+            matrix[window(y - 1)][window(x - 1)] +
+            matrix[window(y - 1)][x] +
+            matrix[window(y - 1)][window(x + 1)] +
+            matrix[y][window(x - 1)] +
+            matrix[y][window(x + 1)] +
+            matrix[window(y + 1)][window(x - 1)] +
+            matrix[window(y + 1)][x] +
+            matrix[window(y + 1)][window(x + 1)];
+
+    if cells == 2 then {
+        matrix[y][x]
+    } else if cells == 3 then {
+        1
+    } else {
+        0
+    }
 };
+
+var printWorld = func(world) {
+    world.map(
+        func(index, row) {
+            row.map(
+                func(index, col) {
+                    print(col);
+                    print(" ");
+                    0
+                }
+            );
+            println("");
+            0;
+        }
+    )
+};
+
+var nextGeneration = func(world) {
+    world.map(
+        func(y, row) {
+            row.map(
+                func(x, col) {
+                    calc(world, x, y)
+                }
+            );
+        }
+    );
+};
+
+var w = list(
+    list(0, 1, 0, 0, 0, 0),
+    list(0, 0, 1, 0, 0, 0),
+    list(1, 1, 1, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0),
+    list(0, 0, 0, 0, 0, 0)
+);
+
+print("Enter generations count: ");
+var count = 5;
 println("");
+var idx = 1;
+while (idx <= count) {
+    w = nextGeneration(w);
+    printWorld(w);
+    println("--");
+    idx = idx + 1;
+};
