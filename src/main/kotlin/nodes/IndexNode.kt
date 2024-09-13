@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Index
 
 data class IndexNode(
@@ -15,9 +15,9 @@ data class IndexNode(
         return l.get(i)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        list.compile(ops)
-        index.compile(ops)
-        ops.add(Index())
+    override fun compile(ctx: CompilerContext) {
+        list.compile(ctx)
+        index.compile(ctx)
+        ctx.add(Index())
     }
 }

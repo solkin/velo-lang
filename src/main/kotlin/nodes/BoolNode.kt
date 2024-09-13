@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Push
 
 data class BoolNode(
@@ -9,8 +9,8 @@ data class BoolNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = BoolType(value)
 
-    override fun compile(ops: MutableList<Operation>) {
-        ops.add(Push(value))
+    override fun compile(ctx: CompilerContext) {
+        ctx.add(Push(value))
     }
 }
 

@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.If
 import vm2.operations.Move
 
@@ -16,16 +16,16 @@ data class WhileNode(
         return BoolType(false)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        val condOps: MutableList<Operation> = ArrayList()
-        cond.compile(condOps)
+    override fun compile(ctx: CompilerContext) {
+        val condCtx = ctx.fork()
+        cond.compile(condCtx)
 
-        val exprOps: MutableList<Operation> = ArrayList()
-        expr.compile(exprOps)
-        exprOps.add(Move(-(exprOps.size + condOps.size + 2))) // +2 because to move and if is not included
+        val exprCtx = ctx.fork()
+        expr.compile(exprCtx)
+        exprCtx.add(Move(-(exprCtx.size() + condCtx.size() + 2))) // +2 because to move and if is not included
 
-        ops.addAll(condOps)
-        ops.add(If(exprOps.size))
-        ops.addAll(exprOps)
+        ctx.merge(condCtx)
+        ctx.add(If(exprCtx.size()))
+        ctx.merge(exprCtx)
     }
 }

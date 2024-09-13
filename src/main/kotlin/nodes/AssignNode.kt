@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Set
 
 data class AssignNode(
@@ -13,9 +13,9 @@ data class AssignNode(
         return env.set(left.name, right.evaluate(env))
     }
 
-    override fun compile(ops: MutableList<Operation>) {
+    override fun compile(ctx: CompilerContext) {
         if (left !is VarNode) throw IllegalArgumentException("Cannot assign to $left")
-        right.compile(ops)
-        ops.add(Set(left.name.hashCode()))
+        right.compile(ctx)
+        ctx.add(Set(ctx.varIndex(left.name)))
     }
 }

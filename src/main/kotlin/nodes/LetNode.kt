@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Ext
 import vm2.operations.Free
 
@@ -17,10 +17,10 @@ data class LetNode(
         return body.evaluate(scope)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        ops.add(Ext())
-        vars.forEach { it.compile(ops) }
-        body.compile(ops)
-        ops.add(Free())
+    override fun compile(ctx: CompilerContext) {
+        ctx.add(Ext())
+        vars.forEach { it.compile(ctx) }
+        body.compile(ctx)
+        ctx.add(Free())
     }
 }

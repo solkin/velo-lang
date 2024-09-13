@@ -1,26 +1,16 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Push
-import vm2.operations.StrLen
-import vm2.operations.SubStr
 
 data class StrNode(
     val value: String,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = StrType(value)
 
-    override fun compile(ops: MutableList<Operation>) {
-        ops.add(Push(value))
-    }
-
-    override fun property(name: String, ops: MutableList<Operation>) {
-        when(name) {
-            "str" -> ops.add(SubStr())
-            "len" -> ops.add(StrLen())
-            else -> throw IllegalArgumentException("Property $name is not supported")
-        }
+    override fun compile(ctx: CompilerContext) {
+        ctx.add(Push(value))
     }
 }
 

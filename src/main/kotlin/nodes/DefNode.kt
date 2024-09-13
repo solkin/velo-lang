@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Def
 import vm2.operations.Push
 
@@ -15,8 +15,8 @@ data class DefNode(
         return value
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        def?.compile(ops) ?: let { ops.add(Push(value = 0)) }
-        ops.add(Def(name.hashCode()))
+    override fun compile(ctx: CompilerContext) {
+        def?.compile(ctx) ?: let { ctx.add(Push(value = 0)) }
+        ctx.add(Def(ctx.varIndex(name)))
     }
 }

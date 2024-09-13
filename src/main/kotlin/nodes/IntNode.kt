@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Push
 
 data class IntNode(
@@ -9,8 +9,8 @@ data class IntNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = IntType(value)
 
-    override fun compile(ops: MutableList<Operation>) {
-        ops.add(Push(value))
+    override fun compile(ctx: CompilerContext) {
+        ctx.add(Push(value))
     }
 }
 

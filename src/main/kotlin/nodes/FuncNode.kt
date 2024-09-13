@@ -1,5 +1,6 @@
 package nodes
 
+import CompilerContext
 import Environment
 import vm2.Operation
 import vm2.operations.*
@@ -33,26 +34,26 @@ data class FuncNode(
         return func
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        val funcOps: MutableList<Operation> = ArrayList()
+    override fun compile(ctx: CompilerContext) {
+        val funcOps = ctx.fork()
         vars.reversed().forEach { v ->
-            val index = v.hashCode()
+            val index = ctx.varIndex(v)
             funcOps.add(Def(index))
         }
         body.compile(funcOps)
-        funcOps.add(Ret()) // TODO: create ReturnNode
+        funcOps.add(Ret())
 
-        ops.add(Move(funcOps.size))
+        ctx.add(Move(funcOps.size()))
 
-        ops.addAll(funcOps)
+        ctx.merge(funcOps)
 
-        ops.add(Pc())
-        ops.add(Push(funcOps.size))
-        ops.add(Minus())
-        ops.add(Abs())
+        ctx.add(Pc())
+        ctx.add(Push(funcOps.size()))
+        ctx.add(Minus())
+        ctx.add(Abs())
 
         if (!name.isNullOrEmpty()) {
-            ops.add(Def(name.hashCode()))
+            ctx.add(Def(ctx.varIndex(name)))
         }
     }
 }

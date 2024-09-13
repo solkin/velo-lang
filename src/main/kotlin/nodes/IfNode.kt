@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.If
 import vm2.operations.Move
 
@@ -16,22 +16,22 @@ data class IfNode(
         return elseNode?.let { elseNode.evaluate(env) } ?: BoolType(false)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        val thenOps: MutableList<Operation> = ArrayList()
-        thenNode.compile(thenOps)
+    override fun compile(ctx: CompilerContext) {
+        val thenCtx = ctx.fork()
+        thenNode.compile(thenCtx)
 
-        val elseOps: MutableList<Operation> = ArrayList()
+        val elseCtx = ctx.fork()
         elseNode?.run {
-            compile(elseOps)
-            thenOps.add(Move(elseOps.size))
+            compile(elseCtx)
+            thenCtx.add(Move(elseCtx.size()))
         }
 
-        condNode.compile(ops)
-        val elseSkip = thenOps.size
-        ops.add(If(elseSkip))
-        ops.addAll(thenOps)
-        if (elseOps.isNotEmpty()) {
-            ops.addAll(elseOps)
+        condNode.compile(ctx)
+        val elseSkip = thenCtx.size()
+        ctx.add(If(elseSkip))
+        ctx.merge(thenCtx)
+        if (elseCtx.isNotEmpty()) {
+            ctx.merge(elseCtx)
         }
     }
 }

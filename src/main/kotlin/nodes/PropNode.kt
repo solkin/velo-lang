@@ -1,5 +1,6 @@
 package nodes
 
+import CompilerContext
 import Environment
 import vm2.Operation
 import vm2.operations.*
@@ -16,41 +17,41 @@ data class PropNode(
         return v.property(name, a)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        parent.compile(ops)
-        args.orEmpty().reversed().forEach { it.compile(ops) }
-//        parent.property(name, ops)
+    override fun compile(ctx: CompilerContext) {
+        parent.compile(ctx)
+        args.orEmpty().reversed().forEach { it.compile(ctx) }
+//        parent.property(name, ctx)
         when(name) {
-            "str" -> ops.add(SubStr())
-            "len" -> ops.add(StrLen())
+            "str" -> ctx.add(SubStr())
+            "len" -> ctx.add(StrLen())
 
-            "subSlice" -> ops.add(SubSlice())
-            "size" -> ops.add(SliceLen())
+            "subSlice" -> ctx.add(SubSlice())
+            "size" -> ctx.add(SliceLen())
             "map" -> {
                 val func = 2
-                ops.add(Def(func))
+                ctx.add(Def(func))
 
-                ops.add(Dup())
-                ops.add(SliceLen())
+                ctx.add(Dup())
+                ctx.add(SliceLen())
                 val size = 1
-                ops.add(Def(size))
+                ctx.add(Def(size))
 
-                ops.add(Push(0))
+                ctx.add(Push(0))
                 val i = 3
-                ops.add(Def(i))
+                ctx.add(Def(i))
 
                 val list = 4
-                ops.add(Def(list))
+                ctx.add(Def(list))
 
-                val condOps: MutableList<Operation> = ArrayList()
-                with(condOps) {
+                val condCtx: MutableList<Operation> = ArrayList()
+                with(condCtx) {
                     add(Get(i))
                     add(Get(size))
                     add(Less())
                 }
 
-                val exprOps: MutableList<Operation> = ArrayList()
-                with(exprOps) {
+                val exprCtx: MutableList<Operation> = ArrayList()
+                with(exprCtx) {
                     // index
                     add(Get(i))
                     // item
@@ -67,14 +68,14 @@ data class PropNode(
                     add(Plus())
                     add(Set(i))
                 }
-                exprOps.add(Move(-(exprOps.size + condOps.size + 2))) // +2 because to move and if is not included
+                exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
 
-                ops.addAll(condOps)
-                ops.add(If(exprOps.size))
-                ops.addAll(exprOps)
+                ctx.addAll(condCtx)
+                ctx.add(If(exprCtx.size))
+                ctx.addAll(exprCtx)
 
-                ops.add(Get(size))
-                ops.add(Slice())
+                ctx.add(Get(size))
+                ctx.add(Slice())
             }
             else -> throw IllegalArgumentException("Property $name is not supported")
         }

@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.*
 
 data class BinaryNode(
@@ -34,9 +34,9 @@ data class BinaryNode(
         }
     }
 
-    override fun compile(ops: MutableList<Operation>) {
-        left.compile(ops)
-        right.compile(ops)
+    override fun compile(ctx: CompilerContext) {
+        left.compile(ctx)
+        right.compile(ctx)
         val binOp = when (operator) {
             "+" -> Plus()
             "-" -> Minus()
@@ -52,6 +52,6 @@ data class BinaryNode(
             "||" -> Or()
             else -> throw IllegalArgumentException("Can't apply operator $operator")
         }
-        ops.add(binOp)
+        ctx.add(binOp)
     }
 }

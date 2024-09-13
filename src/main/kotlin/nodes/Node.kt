@@ -1,15 +1,12 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 
 abstract class Node {
     abstract fun evaluate(env: Environment<Type<*>>): Type<*>
-    open fun compile(ops: MutableList<Operation>) {
+    open fun compile(ctx: CompilerContext) {
         throw NotImplementedError("Compile function for $this is not implemented")
-    }
-    open fun property(name: String, ops: MutableList<Operation>) {
-        throw NotImplementedError("Type ${javaClass.name} has no properties")
     }
 }
 

@@ -6,7 +6,6 @@ import parser.Parser
 import parser.StringInput
 import parser.TokenStream
 import vm.VM
-import vm2.Operation
 import vm2.SimpleParser
 import vm2.VM2
 import java.io.EOFException
@@ -99,11 +98,11 @@ fun vm2() {
     }
     node.evaluate(globalEnv)
     //if (true) return
-    val operations: MutableList<Operation> = ArrayList()
-    node.compile(operations)
+    val ctx = CompilerContext(ops = ArrayList(), vars = HashMap())
+    node.compile(ctx)
 
     val vm2 = VM2()
-    vm2.load(SimpleParser(operations))
+    vm2.load(SimpleParser(ctx.operations()))
     vm2.run()
 }
 

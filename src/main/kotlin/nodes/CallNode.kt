@@ -1,7 +1,7 @@
 package nodes
 
+import CompilerContext
 import Environment
-import vm2.Operation
 import vm2.operations.Call
 import vm2.operations.Print
 import vm2.operations.Println
@@ -18,19 +18,19 @@ data class CallNode(
         return fnc.run(args = args, it = null)
     }
 
-    override fun compile(ops: MutableList<Operation>) {
+    override fun compile(ctx: CompilerContext) {
         args.forEach { arg ->
-            arg.compile(ops)
+            arg.compile(ctx)
         }
         if (func is VarNode && func.name == "println") {
-            ops.add(Println())
+            ctx.add(Println())
             return
         }
         if (func is VarNode && func.name == "print") {
-            ops.add(Print())
+            ctx.add(Print())
             return
         }
-        func.compile(ops)
-        ops.add(Call())
+        func.compile(ctx)
+        ctx.add(Call())
     }
 }
