@@ -20,7 +20,6 @@ data class PropNode(
     override fun compile(ctx: CompilerContext) {
         parent.compile(ctx)
         args.orEmpty().reversed().forEach { it.compile(ctx) }
-//        parent.property(name, ctx)
         when(name) {
             "str" -> ctx.add(SubStr())
             "len" -> ctx.add(StrLen())
@@ -28,19 +27,19 @@ data class PropNode(
             "subSlice" -> ctx.add(SubSlice())
             "size" -> ctx.add(SliceLen())
             "map" -> {
-                val func = 2
+                val func = ctx.varIndex("_func")
                 ctx.add(Def(func))
 
                 ctx.add(Dup())
                 ctx.add(SliceLen())
-                val size = 1
+                val size = ctx.varIndex("_size")
                 ctx.add(Def(size))
 
                 ctx.add(Push(0))
-                val i = 3
+                val i = ctx.varIndex("_i")
                 ctx.add(Def(i))
 
-                val list = 4
+                val list = ctx.varIndex("_list")
                 ctx.add(Def(list))
 
                 val condCtx: MutableList<Operation> = ArrayList()
