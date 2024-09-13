@@ -2,7 +2,8 @@ package nodes
 
 import CompilerContext
 import Environment
-import vm2.operations.*
+import vm2.operations.Push
+import vm2.operations.Slice
 
 data class ListNode(
     val listOf: List<Node>,

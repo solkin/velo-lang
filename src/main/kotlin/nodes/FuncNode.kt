@@ -2,8 +2,13 @@ package nodes
 
 import CompilerContext
 import Environment
-import vm2.Operation
-import vm2.operations.*
+import vm2.operations.Abs
+import vm2.operations.Def
+import vm2.operations.Minus
+import vm2.operations.Move
+import vm2.operations.Pc
+import vm2.operations.Push
+import vm2.operations.Ret
 
 data class FuncNode(
     val name: String?,

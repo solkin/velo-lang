@@ -2,7 +2,18 @@ package nodes
 
 import CompilerContext
 import Environment
-import vm2.operations.*
+import vm2.operations.And
+import vm2.operations.Divide
+import vm2.operations.Equals
+import vm2.operations.Less
+import vm2.operations.LessEquals
+import vm2.operations.Minus
+import vm2.operations.More
+import vm2.operations.MoreEquals
+import vm2.operations.Multiply
+import vm2.operations.Or
+import vm2.operations.Plus
+import vm2.operations.Rem
 
 data class BinaryNode(
     val operator: String,

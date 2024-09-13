@@ -1,6 +1,7 @@
 package vm2
 
-import java.util.*
+import java.util.ArrayDeque
+import java.util.Deque
 
 class LifoStack<T> : Stack<T> {
 

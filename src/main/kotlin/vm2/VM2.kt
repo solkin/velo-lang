@@ -1,8 +1,5 @@
 package vm2
 
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-
 class VM2 {
 
     private var program: List<Operation> = emptyList()

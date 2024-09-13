@@ -1,6 +1,27 @@
 package parser
 
-import nodes.*
+import nodes.AssignNode
+import nodes.BinaryNode
+import nodes.BoolNode
+import nodes.CallNode
+import nodes.DefNode
+import nodes.DoubleNode
+import nodes.FALSE
+import nodes.FuncNode
+import nodes.IfNode
+import nodes.IndexNode
+import nodes.IntNode
+import nodes.LetNode
+import nodes.ListNode
+import nodes.Node
+import nodes.ProgramNode
+import nodes.PropNode
+import nodes.StrNode
+import nodes.StructNode
+import nodes.SubjectNode
+import nodes.TreeNode
+import nodes.VarNode
+import nodes.WhileNode
 
 class Parser(private val stream: TokenStream) {
 

@@ -1,8 +1,11 @@
 package vm2.operations
 
-import vm2.*
-import vm2.records.ValueRecord
+import vm2.Activation
+import vm2.Heap
+import vm2.Record
+import vm2.SimpleOperation
 import vm2.Stack
+import vm2.records.ValueRecord
 
 class Less: SimpleOperation {
 

@@ -3,8 +3,22 @@ package nodes
 import CompilerContext
 import Environment
 import vm2.Operation
-import vm2.operations.*
+import vm2.operations.Call
+import vm2.operations.Def
+import vm2.operations.Dup
+import vm2.operations.Get
+import vm2.operations.If
+import vm2.operations.Index
+import vm2.operations.Less
+import vm2.operations.Move
+import vm2.operations.Plus
+import vm2.operations.Push
 import vm2.operations.Set
+import vm2.operations.Slice
+import vm2.operations.SliceLen
+import vm2.operations.StrLen
+import vm2.operations.SubSlice
+import vm2.operations.SubStr
 
 data class PropNode(
     val name: String,
