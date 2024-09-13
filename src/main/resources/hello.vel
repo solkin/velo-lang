@@ -63,13 +63,15 @@ var w = list(
     list(0, 0, 0, 0, 0, 0)
 );
 
-print("Enter generations count: ");
-var count = 5;
+print("===========");
+var count = 15;
 println("");
 var idx = 1;
 while (idx <= count) {
     w = nextGeneration(w);
     printWorld(w);
-    println("--");
+    if (idx < count) {
+        println("--");
+    };
     idx = idx + 1;
 };
