@@ -34,17 +34,17 @@ data class FuncNode(
     }
 
     override fun compile(ops: MutableList<Operation>) {
-            val funcOps: MutableList<Operation> = ArrayList()
-            vars.forEach { v ->
-                val index = v.hashCode()
-                funcOps.add(Def(index))
-            }
-            body.compile(funcOps)
-            funcOps.add(Ret()) // TODO: create ReturnNode
+        val funcOps: MutableList<Operation> = ArrayList()
+        vars.forEach { v ->
+            val index = v.hashCode()
+            funcOps.add(Def(index))
+        }
+        body.compile(funcOps)
+        funcOps.add(Ret()) // TODO: create ReturnNode
 
-            ops.add(Move(funcOps.size))
+        ops.add(Move(funcOps.size))
 
-            ops.addAll(funcOps)
+        ops.addAll(funcOps)
 
         ops.add(Pc())
         ops.add(Push(funcOps.size))

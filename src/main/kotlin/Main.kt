@@ -70,7 +70,7 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/primes.vel").readText()
+    val prog = Parser::class.java.getResource("/hello.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -78,6 +78,15 @@ fun vm2() {
 
     val node = parser.parse()
     val globalEnv = createGlobalEnvironment<Type<*>>().apply {
+        def(
+            "print",
+            FuncType(
+                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+                    args.forEach { print(it.value()) }
+                    return BoolType(false)
+                }
+            )
+        )
         def(
             "println",
             FuncType(
@@ -88,8 +97,8 @@ fun vm2() {
             )
         )
     }
-//    node.evaluate(globalEnv)
-//if (true) return
+    node.evaluate(globalEnv)
+    //if (true) return
     val operations: MutableList<Operation> = ArrayList()
     node.compile(operations)
 

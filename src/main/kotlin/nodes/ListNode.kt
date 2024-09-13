@@ -30,7 +30,57 @@ data class ListNode(
     override fun property(name: String, ops: MutableList<Operation>) {
         when(name) {
             "sub" -> ops.add(SubSlice())
-            "len" -> ops.add(SliceLen())
+            "size" -> ops.add(SliceLen())
+            "map" -> {
+                val func = 2
+                ops.add(Def(func))
+
+                ops.add(Dup())
+                ops.add(SliceLen())
+                val size = 1
+                ops.add(Def(size))
+
+                ops.add(Push(0))
+                val i = 3
+                ops.add(Def(i))
+
+                val list = 4
+                ops.add(Def(list))
+
+                val condOps: MutableList<Operation> = ArrayList()
+                with(condOps) {
+                    add(Get(i))
+                    add(Get(size))
+                    add(Less())
+                }
+
+                val exprOps: MutableList<Operation> = ArrayList()
+                with(exprOps) {
+                    // item
+                    add(Get(list))
+                    add(Get(i))
+                    add(Index())
+                    // index
+                    add(Get(i))
+                    // func
+                    add(Get(func))
+                    // call func
+                    add(Call())
+                    // increment i
+                    add(Get(i))
+                    add(Push(1))
+                    add(Plus())
+                    add(Set(i))
+                }
+                exprOps.add(Move(-(exprOps.size + condOps.size + 2))) // +2 because to move and if is not included
+
+                ops.addAll(condOps)
+                ops.add(If(exprOps.size))
+                ops.addAll(exprOps)
+
+                ops.add(Get(size))
+                ops.add(Slice())
+            }
             else -> throw IllegalArgumentException("Property $name is not supported")
         }
     }
@@ -39,7 +89,7 @@ data class ListNode(
 class ListType(val list: List<Type<*>>) : Type<List<Type<*>>>(list), Indexable {
     override fun property(name: String, args: List<Type<*>>?): Type<*> {
         return when (name) {
-            "len" -> IntType(list.size)
+            "size" -> IntType(list.size)
             "sub" -> {
                 if (args?.size != 2) {
                     throw IllegalArgumentException("Property 'sub' requires (start, end) arguments")

@@ -17,7 +17,7 @@ data class StrNode(
 
     override fun property(name: String, ops: MutableList<Operation>) {
         when(name) {
-            "sub" -> ops.add(SubStr())
+            "str" -> ops.add(SubStr())
             "len" -> ops.add(StrLen())
             else -> throw IllegalArgumentException("Property $name is not supported")
         }
@@ -29,7 +29,7 @@ class StrType(val value: String) : Type<String>(value) {
         return when (name) {
             "len" -> IntType(value.length)
             "hash" -> IntType(value.hashCode())
-            "sub" -> {
+            "str" -> {
                 if (args?.size != 2) {
                     throw IllegalArgumentException("Property 'sub' requires (start, end) arguments")
                 }
