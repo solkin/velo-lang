@@ -1,16 +1,19 @@
+import nodes.DataType
 import vm2.Operation
 
 data class CompilerContext(
     private val ops: MutableList<Operation>,
-    private val vars: MutableMap<String, Int>,
+    private val vars: MutableMap<String, Var>,
 ) {
 
-    fun varIndex(name: String): Int {
-        return vars[name] ?: let {
-            val index = vars.size
-            vars[name] = vars.size
-            index
-        }
+    fun getVar(name: String): Var? {
+        return vars[name]
+    }
+
+    fun defVar(name: String, type: DataType): Var {
+        val v = Var(index = vars.size, type = type)
+        vars[name] = v
+        return v
     }
 
     fun add(op: Operation) {
@@ -41,3 +44,8 @@ data class CompilerContext(
         this.ops.addAll(ctx.ops)
     }
 }
+
+data class Var(
+    val index: Int,
+    val type: DataType,
+)

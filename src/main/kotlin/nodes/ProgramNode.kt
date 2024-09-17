@@ -15,9 +15,11 @@ data class ProgramNode(
         return v
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         ctx.add(Ext())
-        prog.forEach { it.compile(ctx) }
+        var type = DataType.VOID
+        prog.forEach { type = it.compile(ctx) }
         ctx.add(Free())
+        return type
     }
 }

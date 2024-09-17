@@ -1,9 +1,25 @@
 package parser
 
+import nodes.DataType
+
 class TokenStream(private val input: Input) {
 
     private var current: Token? = null
-    private val keywords = "if then else while list tree struct subject func let var true false".split(' ').toSet()
+    private val keywords = listOf(
+        "if",
+        "then",
+        "else",
+        "while",
+        "list",
+        "tree",
+        "struct",
+        "subject",
+        "func",
+        "let",
+        "slice",
+        "true",
+        "false"
+    ).plus(DataType.values().map { it.type }).toSet()
 
     private fun isKeyword(str: String): Boolean {
         return keywords.contains(str)

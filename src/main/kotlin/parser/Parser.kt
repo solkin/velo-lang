@@ -21,7 +21,10 @@ import nodes.StructNode
 import nodes.SubjectNode
 import nodes.TreeNode
 import nodes.VarNode
+import nodes.DataType
 import nodes.WhileNode
+import nodes.getDefault
+import nodes.getDefaultNode
 
 class Parser(private val stream: TokenStream) {
 
@@ -33,6 +36,7 @@ class Parser(private val stream: TokenStream) {
         "+" to 10, "-" to 10,
         "*" to 20, "/" to 20, "%" to 20,
     )
+    private val types = DataType.values().map { it.type }
 
     private fun isPunc(ch: Char?): Token? {
         return stream.peek()?.takeIf { tok ->
@@ -52,6 +56,23 @@ class Parser(private val stream: TokenStream) {
 
     private fun skipKw(kw: String?) {
         if (isKw(kw) != null) stream.next() else stream.croak("Expecting keyword: \"$kw\"")
+    }
+
+    private fun isDef(): Token? {
+        return stream.peek()?.takeIf { tok ->
+            tok.type == TokenType.KEYWORD && types.find { kw -> tok.value == kw } != null
+        }
+    }
+
+    private fun parseDefType(): DataType {
+        val tok = isDef()?.let { tok -> DataType.values().find { kw -> tok.value == kw.type } }
+        if (tok != null) {
+            stream.next()
+        } else {
+            stream.croak("Expecting def type one of: \"$types\"")
+            throw IllegalArgumentException()
+        }
+        return tok
     }
 
     private fun isOp(op: String? = null): Token? {
@@ -163,7 +184,7 @@ class Parser(private val stream: TokenStream) {
             name = stream.peek()?.takeIf { tok ->
                 tok.type == TokenType.VARIABLE
             }?.let { stream.next()?.value as? String },
-            vars = delimited('(', ')', ',', ::parseVarname),
+            defs = delimited('(', ')', ',', ::parseDef),
             body = parseProg()
         )
     }
@@ -176,10 +197,10 @@ class Parser(private val stream: TokenStream) {
             return CallNode(
                 func = FuncNode(
                     name = name,
-                    vars = defs.map { it.name },
+                    defs = defs,
                     body = parseExpression(),
                 ),
-                args = defs.map { it.def ?: FALSE }
+                args = defs.map { it.def ?: it.type.getDefaultNode() }
             )
         }
         return LetNode(
@@ -188,18 +209,14 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseVar(): DefNode {
-        skipKw("var")
-        return parseDef()
-    }
-
     private fun parseDef(): DefNode {
+        val type = parseDefType()
         val name = parseVarname()
         val def: Node? = if (isOp("=") != null) {
             stream.next()
             parseExpression()
         } else null
-        return DefNode(name = name, def = def)
+        return DefNode(name = name, type = type, def = def)
     }
 
     private fun parseBool(): Node {
@@ -290,8 +307,8 @@ class Parser(private val stream: TokenStream) {
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
+        if (isDef() != null) return parseDef()
         if (isKw("let") != null) return parseLet()
-        if (isKw("var") != null) return parseVar()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("list") != null) return parseList()

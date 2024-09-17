@@ -15,9 +15,10 @@ data class IndexNode(
         return l.get(i)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         list.compile(ctx)
         index.compile(ctx)
         ctx.add(Index())
+        return DataType.VOID // TODO: replace with real type
     }
 }

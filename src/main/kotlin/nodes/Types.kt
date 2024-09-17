@@ -1,5 +1,42 @@
 package nodes
 
+enum class DataType(val type: String) {
+    BYTE("byte"),
+    INT("int"),
+    FLOAT("float"),
+    STRING("str"),
+    BOOLEAN("bool"),
+    SLICE("slice"),
+    FUNCTION("fn"),
+    VOID("void"),
+}
+
+fun DataType.getDefault(): Any {
+    return when (this) {
+        DataType.BYTE -> 0
+        DataType.INT -> 0
+        DataType.FLOAT -> 0f
+        DataType.STRING -> ""
+        DataType.BOOLEAN -> false
+        DataType.SLICE -> 0
+        DataType.FUNCTION -> 0
+        DataType.VOID -> Unit
+    }
+}
+
+fun DataType.getDefaultNode(): Node {
+    return when (this) {
+        DataType.BYTE -> IntNode(0)
+        DataType.INT -> IntNode(0)
+        DataType.FLOAT -> DoubleNode(0.0)
+        DataType.STRING -> StrNode("")
+        DataType.BOOLEAN -> BoolNode(false)
+        DataType.SLICE -> ListNode(listOf = emptyList())
+        DataType.FUNCTION -> IntNode(0)
+        DataType.VOID -> ProgramNode(emptyList())
+    }
+}
+
 class VoidType : Type<String>("")
 
 class ObjType(val value: Any) : Type<Any>(value) {

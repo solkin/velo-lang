@@ -22,10 +22,11 @@ data class ListNode(
         return ListType(value)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         listOf.forEach { it.compile(ctx) }
         ctx.add(Push(listOf.size))
         ctx.add(Slice())
+        return DataType.SLICE
     }
 
 }

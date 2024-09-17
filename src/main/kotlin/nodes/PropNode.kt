@@ -31,10 +31,10 @@ data class PropNode(
         return v.property(name, a)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         parent.compile(ctx)
         args.orEmpty().reversed().forEach { it.compile(ctx) }
-        when(name) {
+        /*when(name) {
             "str" -> ctx.add(SubStr())
             "len" -> ctx.add(StrLen())
 
@@ -91,6 +91,7 @@ data class PropNode(
                 ctx.add(Slice())
             }
             else -> throw IllegalArgumentException("Property $name is not supported")
-        }
+        }*/
+        throw IllegalArgumentException("Property $name is not supported")
     }
 }

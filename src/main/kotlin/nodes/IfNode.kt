@@ -16,14 +16,19 @@ data class IfNode(
         return elseNode?.let { elseNode.evaluate(env) } ?: BoolType(false)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         val thenCtx = ctx.fork()
-        thenNode.compile(thenCtx)
+        val thenType = thenNode.compile(thenCtx)
 
         val elseCtx = ctx.fork()
-        elseNode?.run {
-            compile(elseCtx)
+        val elseType = elseNode?.let { elseNode ->
+            val type = elseNode.compile(elseCtx)
             thenCtx.add(Move(elseCtx.size()))
+            type
+        } ?: DataType.VOID
+
+        if (elseType != DataType.VOID && thenType != elseType) {
+            throw IllegalArgumentException("Then and else return types are differ: $thenType / $elseType")
         }
 
         condNode.compile(ctx)
@@ -33,5 +38,6 @@ data class IfNode(
         if (elseCtx.isNotEmpty()) {
             ctx.merge(elseCtx)
         }
+        return thenType
     }
 }

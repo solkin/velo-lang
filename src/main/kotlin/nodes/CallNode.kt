@@ -18,19 +18,20 @@ data class CallNode(
         return fnc.run(args = args, it = null)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         args.forEach { arg ->
             arg.compile(ctx)
         }
         if (func is VarNode && func.name == "println") {
             ctx.add(Println())
-            return
+            return DataType.VOID
         }
         if (func is VarNode && func.name == "print") {
             ctx.add(Print())
-            return
+            return DataType.VOID
         }
-        func.compile(ctx)
+        val type = func.compile(ctx)
         ctx.add(Call())
+        return type
     }
 }

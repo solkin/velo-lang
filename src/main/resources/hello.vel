@@ -1,25 +1,10 @@
-func traverse(index, col) {
-    print(col);
-    print(" ");
-    false
-};
+str s = "s";
+bool b = true;
+int i = 1;
+byte c = 2;
+float f = 3.0;
+slice l = list();
+fn n = func(){};
 
-var printWorld = func(world) {
-    world.map(
-        func(index, row) {
-            var res = row.map(traverse);
-            println(" ");
-            res
-        }
-    )
-};
-
-var w = list(
-    list(0, 1, 0, 0, 0, 0),
-    list(0, 0, 1, 0, 0, 0),
-    list(1, 1, 1, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0)
-);
-var r = printWorld(w);
+println("--");
+println(if b then i else 1);

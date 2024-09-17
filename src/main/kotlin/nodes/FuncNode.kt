@@ -12,7 +12,7 @@ import vm2.operations.Ret
 
 data class FuncNode(
     val name: String?,
-    val vars: List<String>,
+    val defs: List<DefNode>,
     val body: Node,
 ) : Node() {
 
@@ -27,8 +27,8 @@ data class FuncNode(
                 it?.let {
                     scope.def("it", it)
                 }
-                vars.forEachIndexed { i, s ->
-                    scope.def(s, if (i < args.size) args[i] else BoolType(false))
+                defs.forEachIndexed { i, s ->
+                    scope.def(s.name, if (i < args.size) args[i] else BoolType(false))
                 }
                 return body.evaluate(scope)
             },
@@ -39,13 +39,13 @@ data class FuncNode(
         return func
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         val funcOps = ctx.fork()
-        vars.reversed().forEach { v ->
-            val index = ctx.varIndex(v)
-            funcOps.add(Def(index))
+        defs.reversed().forEach { def ->
+            val v = ctx.defVar(def.name, def.type)
+            funcOps.add(Def(v.index))
         }
-        body.compile(funcOps)
+        val type = body.compile(funcOps)
         funcOps.add(Ret())
 
         ctx.add(Move(funcOps.size()))
@@ -58,8 +58,10 @@ data class FuncNode(
         ctx.add(Abs())
 
         if (!name.isNullOrEmpty()) {
-            ctx.add(Def(ctx.varIndex(name)))
+            val v = ctx.defVar(name, DataType.FUNCTION)
+            ctx.add(Def(v.index))
         }
+        return type
     }
 }
 

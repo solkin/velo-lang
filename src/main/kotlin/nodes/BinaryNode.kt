@@ -45,9 +45,10 @@ data class BinaryNode(
         }
     }
 
-    override fun compile(ctx: CompilerContext) {
-        left.compile(ctx)
-        right.compile(ctx)
+    override fun compile(ctx: CompilerContext): DataType {
+        val leftType = left.compile(ctx)
+        val rightType = right.compile(ctx)
+        if (leftType != rightType) throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")
         val binOp = when (operator) {
             "+" -> Plus()
             "-" -> Minus()
@@ -64,5 +65,6 @@ data class BinaryNode(
             else -> throw IllegalArgumentException("Can't apply operator $operator")
         }
         ctx.add(binOp)
+        return leftType
     }
 }

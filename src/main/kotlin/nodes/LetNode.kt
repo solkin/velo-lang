@@ -17,10 +17,12 @@ data class LetNode(
         return body.evaluate(scope)
     }
 
-    override fun compile(ctx: CompilerContext) {
+    override fun compile(ctx: CompilerContext): DataType {
         ctx.add(Ext())
-        vars.forEach { it.compile(ctx) }
+        var type = DataType.VOID
+        vars.forEach { type = it.compile(ctx) }
         body.compile(ctx)
         ctx.add(Free())
+        return type
     }
 }

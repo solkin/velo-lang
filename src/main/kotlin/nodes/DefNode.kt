@@ -7,6 +7,7 @@ import vm2.operations.Push
 
 data class DefNode(
     val name: String,
+    val type: DataType,
     val def: Node?,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
@@ -15,8 +16,10 @@ data class DefNode(
         return value
     }
 
-    override fun compile(ctx: CompilerContext) {
-        def?.compile(ctx) ?: let { ctx.add(Push(value = 0)) }
-        ctx.add(Def(ctx.varIndex(name)))
+    override fun compile(ctx: CompilerContext): DataType {
+        def?.compile(ctx) ?: let { ctx.add(Push(value = type.getDefault())) }
+        val v = ctx.defVar(name, type)
+        ctx.add(Def(v.index))
+        return DataType.VOID
     }
 }
