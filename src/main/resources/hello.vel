@@ -1,15 +1,15 @@
+func traverse(index, col) {
+    print(col);
+    print(" ");
+    false
+};
+
 var printWorld = func(world) {
     world.map(
         func(index, row) {
-            row.map(
-                func(index, col) {
-                    print(col);
-                    print(" ");
-                    index
-                }
-            );
-            println("");
-            index
+            var res = row.map(traverse);
+            println(" ");
+            res
         }
     )
 };
