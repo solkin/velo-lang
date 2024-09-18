@@ -16,7 +16,7 @@ data class WhileNode(
         return BoolType(false)
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         val condCtx = ctx.fork()
         cond.compile(condCtx)
 

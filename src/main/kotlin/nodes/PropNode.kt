@@ -31,7 +31,7 @@ data class PropNode(
         return v.property(name, a)
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         parent.compile(ctx)
         args.orEmpty().reversed().forEach { it.compile(ctx) }
         /*when(name) {

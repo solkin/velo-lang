@@ -6,7 +6,6 @@ import nodes.BoolNode
 import nodes.CallNode
 import nodes.DefNode
 import nodes.DoubleNode
-import nodes.FALSE
 import nodes.FuncNode
 import nodes.IfNode
 import nodes.IndexNode
@@ -22,6 +21,18 @@ import nodes.SubjectNode
 import nodes.TreeNode
 import nodes.VarNode
 import nodes.DataType
+import nodes.PairNode
+import nodes.VMBoolean
+import nodes.VMByte
+import nodes.VMFloat
+import nodes.VMFunction
+import nodes.VMInt
+import nodes.VMPair
+import nodes.VMSlice
+import nodes.VMString
+import nodes.VMType
+import nodes.VMVoid
+import nodes.VoidNode
 import nodes.WhileNode
 import nodes.getDefault
 import nodes.getDefaultNode
@@ -66,15 +77,42 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun parseDefType(): Int {
-        val tok = isDef()?.let { tok -> DataType.values().find { kw -> tok.value == kw.type } }
+    private fun parseDerivedTypes(count: Int): List<VMType> {
+        val ders = isPunc('[')
+            ?.let { delimited('[', ']', ',', ::parseDefType) }
+            ?: emptyList()
+        return ders.takeIf { it.size == count } ?: run {
+            stream.croak("Derived types count is ${ders.size} but must be $count")
+            throw IllegalArgumentException()
+        }
+    }
+
+    private fun parseDefType(): VMType {
+        val tok = isDef()
         if (tok != null) {
             stream.next()
         } else {
             stream.croak("Expecting def type one of: \"$types\"")
             throw IllegalArgumentException()
         }
-        return tok.mask()
+        val dataType = DataType.values().first { kw ->
+            tok.value == kw.type
+        }
+        val type = when (dataType) {
+            DataType.BYTE -> VMByte
+            DataType.INT -> VMInt
+            DataType.FLOAT -> VMFloat
+            DataType.STRING -> VMString
+            DataType.BOOLEAN -> VMBoolean
+            DataType.PAIR -> {
+                val derived = parseDerivedTypes(count = 2)
+                VMPair(first = derived[0], second = derived[1])
+            }
+            DataType.SLICE -> VMSlice(parseDerivedTypes(count = 1).first())
+            DataType.FUNCTION -> VMFunction(parseDerivedTypes(count = 1).first())
+            DataType.VOID -> VMVoid
+        }
+        return type
     }
 
     private fun isOp(op: String? = null): Token? {
@@ -149,11 +187,27 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseList(): Node {
-        skipKw("list")
+    private fun parseSlice(): Node {
+        skipKw("sliceOf")
+        val type = parseDerivedTypes(count = 1).first()
         val elements = delimited('(', ')', ',', ::parseExpression)
         return ListNode(
-            listOf = elements
+            listOf = elements,
+            type = type,
+        )
+    }
+
+    private fun parsePair(): Node {
+        skipKw("pairOf")
+        val type = parseDerivedTypes(count = 2).first()
+        val elements = delimited('(', ')', ',', ::parseExpression)
+        if (elements.size != 2) {
+            stream.croak("Pair must contain exactly two elements, but contains: ${elements.size}")
+            throw IllegalArgumentException()
+        }
+        return PairNode(
+            first = elements[0],
+            second = elements[1],
         )
     }
 
@@ -205,7 +259,7 @@ class Parser(private val stream: TokenStream) {
                     type = type,
                     body = parseExpression(),
                 ),
-                args = defs.map { it.def ?: it.type.unmask().getDefaultNode() }
+                args = defs.map { it.def ?: it.type.type.getDefaultNode() }
             )
         }
         return LetNode(
@@ -284,7 +338,7 @@ class Parser(private val stream: TokenStream) {
     private fun parseProg(): Node {
         val prog = delimited('{', '}', ';', ::parseExpression)
         return when (prog.size) {
-            0 -> FALSE
+            0 -> VoidNode()
             1 -> prog[0]
             else -> ProgramNode(prog = prog)
         }
@@ -316,7 +370,8 @@ class Parser(private val stream: TokenStream) {
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
-        if (isKw("list") != null) return parseList()
+        if (isKw("sliceOf") != null) return parseSlice()
+        if (isKw("pairOf") != null) return parsePair()
         if (isKw("tree") != null) return parseTree()
         if (isKw("struct") != null) return parseStruct()
         if (isKw("subject") != null) return parseSubject()

@@ -1,4 +1,4 @@
-import nodes.DataType
+import nodes.VMType
 import vm2.Operation
 
 data class CompilerContext(
@@ -10,7 +10,7 @@ data class CompilerContext(
         return vars[name]
     }
 
-    fun defVar(name: String, type: Int): Var {
+    fun defVar(name: String, type: VMType): Var {
         val v = Var(index = vars.size, type = type)
         vars[name] = v
         return v
@@ -47,5 +47,5 @@ data class CompilerContext(
 
 data class Var(
     val index: Int,
-    val type: Int,
+    val type: VMType,
 )

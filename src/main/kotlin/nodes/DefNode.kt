@@ -7,7 +7,7 @@ import vm2.operations.Push
 
 data class DefNode(
     val name: String,
-    val type: Int,
+    val type: VMType,
     val def: Node?,
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>): Type<*> {
@@ -16,10 +16,16 @@ data class DefNode(
         return value
     }
 
-    override fun compile(ctx: CompilerContext): Int {
-        def?.compile(ctx) ?: let { ctx.add(Push(value = type.unmask().getDefault())) }
+    override fun compile(ctx: CompilerContext): VMType {
+        val defType = def?.compile(ctx) ?: let {
+            type.default.forEach { ctx.add(Push(value = it)) }
+            type
+        }
+        if (type != defType) {
+            throw IllegalArgumentException("Illegal assign type ${defType.type} != ${type.type}")
+        }
         val v = ctx.defVar(name, type)
         ctx.add(Def(v.index))
-        return DataType.VOID.mask()
+        return VMVoid
     }
 }

@@ -7,6 +7,7 @@ import vm2.operations.Slice
 
 data class ListNode(
     val listOf: List<Node>,
+    val type: VMType,
 ) : Node() {
 
     private val value = ArrayList<Type<*>>()
@@ -22,11 +23,11 @@ data class ListNode(
         return ListType(value)
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         listOf.forEach { it.compile(ctx) }
         ctx.add(Push(listOf.size))
         ctx.add(Slice())
-        return DataType.SLICE.mask() // TODO: add derived type
+        return VMSlice(type)
     }
 
 }

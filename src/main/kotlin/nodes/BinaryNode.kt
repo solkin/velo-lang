@@ -45,7 +45,7 @@ data class BinaryNode(
         }
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
         if (leftType != rightType) throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")

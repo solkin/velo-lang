@@ -17,7 +17,7 @@ data class LetNode(
         return body.evaluate(scope)
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         ctx.add(Ext())
         vars.forEach { it.compile(ctx) }
         val type = body.compile(ctx)

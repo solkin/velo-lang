@@ -16,9 +16,9 @@ data class ProgramNode(
         return v
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         ctx.add(Ext())
-        var type = DataType.VOID.mask()
+        var type: VMType = VMVoid
         prog.forEachIndexed { index, node ->
             type = node.compile(ctx)
 //            if (type.unmask() != DataType.VOID && index != prog.size-1) {

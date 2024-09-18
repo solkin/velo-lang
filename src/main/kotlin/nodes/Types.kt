@@ -2,16 +2,84 @@ package nodes
 
 import kotlin.math.pow
 
-
 enum class DataType(val type: String) {
     BYTE("byte"),
     INT("int"),
     FLOAT("float"),
     STRING("str"),
     BOOLEAN("bool"),
+    PAIR("pair"),
     SLICE("slice"),
     FUNCTION("fn"),
     VOID("void"),
+}
+
+interface VMType {
+    val type: DataType
+    val default: List<Any>
+}
+
+object VMByte : VMType {
+    override val type: DataType
+        get() = DataType.BYTE
+    override val default: List<Any>
+        get() = listOf(0)
+}
+
+object VMInt : VMType {
+    override val type: DataType
+        get() = DataType.INT
+    override val default: List<Any>
+        get() = listOf(0)
+}
+
+object VMFloat : VMType {
+    override val type: DataType
+        get() = DataType.FLOAT
+    override val default: List<Any>
+        get() = listOf(0f)
+}
+
+object VMString : VMType {
+    override val type: DataType
+        get() = DataType.STRING
+    override val default: List<Any>
+        get() = listOf("")
+}
+
+object VMBoolean : VMType {
+    override val type: DataType
+        get() = DataType.BOOLEAN
+    override val default: List<Any>
+        get() = listOf(false)
+}
+
+data class VMPair(val first: VMType, val second: VMType) : VMType {
+    override val type: DataType
+        get() = DataType.PAIR
+    override val default: List<Any>
+        get() = listOf(0, 0)
+}
+
+data class VMSlice(val derived: VMType) : VMType {
+    override val type: DataType
+        get() = DataType.SLICE
+    override val default: List<Any>
+        get() = listOf(0)
+}
+
+data class VMFunction(val derived: VMType) : VMType {
+    override val type: DataType
+        get() = DataType.FUNCTION
+    override val default: List<Any>
+        get() = listOf(0)
+}
+
+object VMVoid : VMType {
+    override val type: DataType
+        get() = DataType.VOID
+    override val default: List<Any>
+        get() = emptyList()
 }
 
 private const val MASK_STEP = 4
@@ -39,6 +107,7 @@ fun DataType.getDefault(): Any {
         DataType.FLOAT -> 0f
         DataType.STRING -> ""
         DataType.BOOLEAN -> false
+        DataType.PAIR -> 0
         DataType.SLICE -> 0
         DataType.FUNCTION -> 0
         DataType.VOID -> Unit
@@ -52,13 +121,12 @@ fun DataType.getDefaultNode(): Node {
         DataType.FLOAT -> DoubleNode(0.0)
         DataType.STRING -> StrNode("")
         DataType.BOOLEAN -> BoolNode(false)
-        DataType.SLICE -> ListNode(listOf = emptyList())
+        DataType.PAIR -> PairNode(first = VoidNode(), second = null)
+        DataType.SLICE -> ListNode(listOf = emptyList(), VMVoid)
         DataType.FUNCTION -> IntNode(0)
         DataType.VOID -> ProgramNode(emptyList())
     }
 }
-
-class VoidType : Type<String>("")
 
 class ObjType(val value: Any) : Type<Any>(value) {
     override fun property(name: String, args: List<Type<*>>?): Type<*> {

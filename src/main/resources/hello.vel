@@ -1,10 +1,11 @@
 str s = "s";
 bool b = true;
 int i = 1;
-byte c = 2;
+#byte c = 2;
 float f = 3.0;
-slice l = list();
-fn n = func(){};
+slice[int] l = sliceOf[int]();
+#pair[int,int] p = pairOf[int,int](1, 1);
+fn[void] n = func() void {};
 
 println("--");
 println(if b then i else 1);

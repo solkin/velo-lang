@@ -9,12 +9,10 @@ data class BoolNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = BoolType(value)
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         ctx.add(Push(value))
-        return DataType.BOOLEAN.mask()
+        return VMBoolean
     }
 }
 
 class BoolType(val value: Boolean) : Type<Boolean>(value)
-
-val FALSE = BoolNode(value = false)

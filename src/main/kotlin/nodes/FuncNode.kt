@@ -14,7 +14,7 @@ import vm2.operations.Ret
 data class FuncNode(
     val name: String?,
     val defs: List<DefNode>,
-    val type: Int,
+    val type: VMType,
     val body: Node,
 ) : Node() {
 
@@ -41,8 +41,8 @@ data class FuncNode(
         return func
     }
 
-    override fun compile(ctx: CompilerContext): Int {
-        val derivedType = DataType.FUNCTION.mask().derive(depth = 2, type.unmask())
+    override fun compile(ctx: CompilerContext): VMType {
+        val derivedType = VMFunction(derived = type)
 
         // Insert function address to stack
         ctx.add(Pc())

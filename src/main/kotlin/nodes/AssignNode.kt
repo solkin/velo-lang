@@ -13,11 +13,14 @@ data class AssignNode(
         return env.set(left.name, right.evaluate(env))
     }
 
-    override fun compile(ctx: CompilerContext): Int {
+    override fun compile(ctx: CompilerContext): VMType {
         if (left !is VarNode) throw IllegalArgumentException("Cannot assign to $left")
-        right.compile(ctx)
+        val type = right.compile(ctx)
         val v = ctx.getVar(left.name) ?: throw IllegalArgumentException("Variable ${left.name} is not defined")
+        if (v.type.type != type.type) {
+            throw IllegalArgumentException("Illegal assign type ${type.type} != ${v.type.type}")
+        }
         ctx.add(Set(v.index))
-        return DataType.VOID.mask()
+        return VMVoid
     }
 }
