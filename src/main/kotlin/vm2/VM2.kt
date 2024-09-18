@@ -70,8 +70,7 @@ class VM2 {
         } catch (ignored: HaltException) {
             println("program halted")
         } catch (ex: Throwable) {
-            println("exception was thrown on $pc: " + program[pc])
-            ex.printStackTrace()
+            println("!! exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
         }
         println("vm stopped in $elapsed ms\n")
     }

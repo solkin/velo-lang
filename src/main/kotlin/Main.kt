@@ -73,13 +73,7 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-//    val sm1 = DataType.BYTE.mask().derive(4, DataType.INT).derive(3, DataType.FUNCTION)
-//    println(sm1.toString(2))
-//    println(sm1.unmask(1))
-//    println(sm1.unmask(4))
-//    println(sm1.unmask(3))
-//    if (true) return
-    val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
+    val prog = Parser::class.java.getResource("/primes.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -106,10 +100,19 @@ fun vm2() {
             )
         )
     }
-    node.evaluate(globalEnv)
-    //if (true) return
+    try {
+        node.evaluate(globalEnv)
+    } catch (ex: Throwable) {
+        println("!! interpreter halted with an exception: ${ex.message}")
+    }
+
     val ctx = CompilerContext(ops = ArrayList(), vars = HashMap())
-    node.compile(ctx)
+    try {
+        node.compile(ctx)
+    } catch (ex: Throwable) {
+        println("!! compilation failed")
+        println(ex.message)
+    }
 
     val vm2 = VM2()
     vm2.load(SimpleParser(ctx.operations()))
