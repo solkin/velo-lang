@@ -9,7 +9,7 @@ data class VarNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = env.get(name)
 
-    override fun compile(ctx: CompilerContext): DataType {
+    override fun compile(ctx: CompilerContext): Int {
         val v = ctx.getVar(name) ?: throw IllegalArgumentException("Variable $name is not defined")
         ctx.add(Get(v.index))
         return v.type

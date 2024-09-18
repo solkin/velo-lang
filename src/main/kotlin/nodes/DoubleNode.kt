@@ -9,9 +9,9 @@ data class DoubleNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = DoubleType(value)
 
-    override fun compile(ctx: CompilerContext): DataType {
+    override fun compile(ctx: CompilerContext): Int {
         ctx.add(Push(value))
-        return DataType.FLOAT
+        return DataType.FLOAT.mask()
     }
 }
 

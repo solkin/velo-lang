@@ -1,5 +1,8 @@
 package nodes
 
+import kotlin.math.pow
+
+
 enum class DataType(val type: String) {
     BYTE("byte"),
     INT("int"),
@@ -9,6 +12,24 @@ enum class DataType(val type: String) {
     SLICE("slice"),
     FUNCTION("fn"),
     VOID("void"),
+}
+
+private const val MASK_STEP = 4
+
+fun DataType.mask(depth: Int = 1): Int {
+    return (ordinal + 1) shl MASK_STEP * (depth - 1)
+}
+
+fun Int.unmask(depth: Int = 1): DataType {
+    val o = (2.toDouble().pow(depth * MASK_STEP.toDouble()) - 1).toInt()
+    val v = this and o
+    val u = v shr MASK_STEP * (depth - 1)
+    val index = (u - 1).takeIf { it >= 0 } ?: throw IllegalArgumentException("Mask $depth not found")
+    return DataType.values()[index]
+}
+
+fun Int.derive(depth: Int, type: DataType): Int {
+    return this or type.mask(depth)
 }
 
 fun DataType.getDefault(): Any {

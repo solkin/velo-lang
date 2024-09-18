@@ -1,9 +1,9 @@
-func primes(n) {
-    var k = 0;
-    var i = 2;
+func primes(int n) {
+    int k = 0;
+    int i = 2;
     while (k < n) {
-        var isPrime = true;
-        var divisor = 2;
+        bool isPrime = true;
+        int divisor = 2;
         while (divisor <= i / 2) {
             if (i % divisor == 0) {
                 isPrime = false;

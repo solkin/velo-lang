@@ -2,6 +2,7 @@ package nodes
 
 import CompilerContext
 import Environment
+import vm2.operations.Drop
 import vm2.operations.Ext
 import vm2.operations.Free
 
@@ -15,10 +16,15 @@ data class ProgramNode(
         return v
     }
 
-    override fun compile(ctx: CompilerContext): DataType {
+    override fun compile(ctx: CompilerContext): Int {
         ctx.add(Ext())
-        var type = DataType.VOID
-        prog.forEach { type = it.compile(ctx) }
+        var type = DataType.VOID.mask()
+        prog.forEachIndexed { index, node ->
+            type = node.compile(ctx)
+//            if (type.unmask() != DataType.VOID && index != prog.size-1) {
+//                ctx.add(Drop())
+//            }
+        }
         ctx.add(Free())
         return type
     }

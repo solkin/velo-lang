@@ -1,7 +1,11 @@
 import nodes.BoolType
+import nodes.DataType
 import nodes.FuncType
 import nodes.StrType
 import nodes.Type
+import nodes.derive
+import nodes.mask
+import nodes.unmask
 import parser.Parser
 import parser.StringInput
 import parser.TokenStream
@@ -12,6 +16,7 @@ import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
+import javax.xml.crypto.Data
 
 fun main(args: Array<String>) {
     vm2()
@@ -68,7 +73,13 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/hello.vel").readText()
+//    val sm1 = DataType.BYTE.mask().derive(4, DataType.INT).derive(3, DataType.FUNCTION)
+//    println(sm1.toString(2))
+//    println(sm1.unmask(1))
+//    println(sm1.unmask(4))
+//    println(sm1.unmask(3))
+//    if (true) return
+    val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)

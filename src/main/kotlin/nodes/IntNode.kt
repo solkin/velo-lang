@@ -9,9 +9,9 @@ data class IntNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = IntType(value)
 
-    override fun compile(ctx: CompilerContext): DataType {
+    override fun compile(ctx: CompilerContext): Int {
         ctx.add(Push(value))
-        return DataType.INT
+        return DataType.INT.mask()
     }
 }
 

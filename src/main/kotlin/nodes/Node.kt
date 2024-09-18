@@ -5,7 +5,7 @@ import Environment
 
 abstract class Node {
     abstract fun evaluate(env: Environment<Type<*>>): Type<*>
-    open fun compile(ctx: CompilerContext): DataType {
+    open fun compile(ctx: CompilerContext): Int {
         throw NotImplementedError("Compile function for $this is not implemented")
     }
 }

@@ -9,9 +9,9 @@ data class StrNode(
 ) : Node() {
     override fun evaluate(env: Environment<Type<*>>) = StrType(value)
 
-    override fun compile(ctx: CompilerContext): DataType {
+    override fun compile(ctx: CompilerContext): Int {
         ctx.add(Push(value))
-        return DataType.STRING
+        return DataType.STRING.mask()
     }
 }
 

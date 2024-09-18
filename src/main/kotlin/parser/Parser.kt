@@ -25,6 +25,8 @@ import nodes.DataType
 import nodes.WhileNode
 import nodes.getDefault
 import nodes.getDefaultNode
+import nodes.mask
+import nodes.unmask
 
 class Parser(private val stream: TokenStream) {
 
@@ -64,7 +66,7 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun parseDefType(): DataType {
+    private fun parseDefType(): Int {
         val tok = isDef()?.let { tok -> DataType.values().find { kw -> tok.value == kw.type } }
         if (tok != null) {
             stream.next()
@@ -72,7 +74,7 @@ class Parser(private val stream: TokenStream) {
             stream.croak("Expecting def type one of: \"$types\"")
             throw IllegalArgumentException()
         }
-        return tok
+        return tok.mask()
     }
 
     private fun isOp(op: String? = null): Token? {
@@ -185,7 +187,8 @@ class Parser(private val stream: TokenStream) {
                 tok.type == TokenType.VARIABLE
             }?.let { stream.next()?.value as? String },
             defs = delimited('(', ')', ',', ::parseDef),
-            body = parseProg()
+            type = parseDefType(),
+            body = parseProg(),
         )
     }
 
@@ -194,13 +197,15 @@ class Parser(private val stream: TokenStream) {
         if (stream.peek()?.type == TokenType.VARIABLE) {
             val name = stream.next()?.value as? String
             val defs = delimited('(', ')', ',', ::parseDef)
+            val type = parseDefType()
             return CallNode(
                 func = FuncNode(
                     name = name,
                     defs = defs,
+                    type = type,
                     body = parseExpression(),
                 ),
-                args = defs.map { it.def ?: it.type.getDefaultNode() }
+                args = defs.map { it.def ?: it.type.unmask().getDefaultNode() }
             )
         }
         return LetNode(
