@@ -4,4 +4,4 @@ func fib(int n) int {
 
 let(int res = fib(15)) {
     println(res);
-}
+};
