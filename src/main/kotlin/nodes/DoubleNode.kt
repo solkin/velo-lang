@@ -7,12 +7,12 @@ import vm2.operations.Push
 data class DoubleNode(
     val value: Double,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>) = DoubleType(value)
+    override fun evaluate(env: Environment<Value<*>>) = DoubleValue(value)
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         ctx.add(Push(value))
-        return VMFloat
+        return FloatType
     }
 }
 
-class DoubleType(val value: Double) : Type<Double>(value)
+class DoubleValue(val value: Double) : Value<Double>(value)

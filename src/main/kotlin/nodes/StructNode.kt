@@ -6,22 +6,22 @@ data class StructNode(
     val nodes: List<DefNode>,
 ) : Node() {
 
-    private val value = ArrayList<Type<*>>()
+    private val value = ArrayList<Value<*>>()
 
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
         value.clear()
-        val map = HashMap<String, Type<*>>()
+        val map = HashMap<String, Value<*>>()
         nodes.forEach { v ->
-            map[v.name] = v.def?.let { v.def.evaluate(env) } ?: BoolType(false)
+            map[v.name] = v.def?.let { v.def.evaluate(env) } ?: BoolValue(false)
         }
-        return StructType(map)
+        return StructValue(map)
     }
 }
 
-class StructType(val value: Map<String, Type<*>>) : Type<Map<String, Type<*>>>(value) {
-    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+class StructValue(val value: Map<String, Value<*>>) : Value<Map<String, Value<*>>>(value) {
+    override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return value[name] ?: when (name) {
-            "len" -> IntType(value.size)
+            "len" -> IntValue(value.size)
             else -> super.property(name, args)
         }
     }

@@ -2,36 +2,19 @@ package nodes
 
 import CompilerContext
 import Environment
-import vm2.Operation
-import vm2.operations.Call
-import vm2.operations.Def
-import vm2.operations.Dup
-import vm2.operations.Get
-import vm2.operations.If
-import vm2.operations.Index
-import vm2.operations.Less
-import vm2.operations.Move
-import vm2.operations.Plus
-import vm2.operations.Push
-import vm2.operations.Set
-import vm2.operations.Slice
-import vm2.operations.SliceLen
-import vm2.operations.StrLen
-import vm2.operations.SubSlice
-import vm2.operations.SubStr
 
 data class PropNode(
     val name: String,
     val args: List<Node>?,
     val parent: Node
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
         val v = parent.evaluate(env)
         val a = args?.map { it.evaluate(env) }
         return v.property(name, a)
     }
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         parent.compile(ctx)
         args.orEmpty().reversed().forEach { it.compile(ctx) }
         /*when(name) {

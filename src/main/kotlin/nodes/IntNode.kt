@@ -7,12 +7,12 @@ import vm2.operations.Push
 data class IntNode(
     val value: Int,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>) = IntType(value)
+    override fun evaluate(env: Environment<Value<*>>) = IntValue(value)
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         ctx.add(Push(value))
-        return VMInt
+        return IntType
     }
 }
 
-class IntType(val value: Int) : Type<Int>(value)
+class IntValue(val value: Int) : Value<Int>(value)

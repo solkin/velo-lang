@@ -9,14 +9,14 @@ data class WhileNode(
     val cond: Node,
     val expr: Node,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
         while (cond.evaluate(env).value() != false) {
             expr.evaluate(env)
         }
-        return BoolType(false)
+        return BoolValue(false)
     }
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         val condCtx = ctx.fork()
         cond.compile(condCtx)
 

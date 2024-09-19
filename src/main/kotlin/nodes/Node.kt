@@ -4,26 +4,26 @@ import CompilerContext
 import Environment
 
 abstract class Node {
-    abstract fun evaluate(env: Environment<Type<*>>): Type<*>
-    open fun compile(ctx: CompilerContext): VMType {
+    abstract fun evaluate(env: Environment<Value<*>>): Value<*>
+    open fun compile(ctx: CompilerContext): Type {
         throw NotImplementedError("Compile function for $this is not implemented")
     }
 }
 
-abstract class Type<T>(private val t: T) {
+abstract class Value<T>(private val t: T) {
 
-    private val exts = HashMap<String, FuncType>()
+    private val exts = HashMap<String, FuncValue>()
 
     fun value(): T = t
 
-    open fun property(name: String, args: List<Type<*>>?): Type<*> {
+    open fun property(name: String, args: List<Value<*>>?): Value<*> {
         return exts[name]?.run(args = args.orEmpty(), it = this) ?: when (name) {
-            "string" -> StrType(toString())
+            "string" -> StrValue(toString())
             "ext" -> {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'ext' requires one named func argument")
                 }
-                val func = args[0] as? FuncType
+                val func = args[0] as? FuncValue
                     ?: throw IllegalArgumentException("Property 'ext' requires func argument")
                 val extName = func.name()
                     ?: throw IllegalArgumentException("Property 'ext' requires named func argument")
@@ -35,10 +35,10 @@ abstract class Type<T>(private val t: T) {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'to' requires one argument")
                 }
-                PairType(this, args[0])
+                PairValue(this, args[0])
             }
 
-            else -> VoidType()
+            else -> VoidValue()
         }
     }
 
@@ -48,11 +48,11 @@ abstract class Type<T>(private val t: T) {
 }
 
 interface Indexable {
-    fun get(key: Type<*>): Type<*>
+    fun get(key: Value<*>): Value<*>
 }
 
-class TypeComparator : Comparator<Type<*>> {
-    override fun compare(o1: Type<*>, o2: Type<*>): Int {
+class ValueComparator : Comparator<Value<*>> {
+    override fun compare(o1: Value<*>, o2: Value<*>): Int {
         return o1.compareTo(o2)
     }
 }

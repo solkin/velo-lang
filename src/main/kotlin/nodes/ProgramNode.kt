@@ -9,19 +9,19 @@ import vm2.operations.Free
 data class ProgramNode(
     val prog: List<Node>,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
         val scope = env.extend()
-        var v: Type<*> = BoolType(false)
+        var v: Value<*> = BoolValue(false)
         prog.forEach { v = it.evaluate(scope) }
         return v
     }
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         ctx.add(Ext())
-        var type: VMType = VMVoid
+        var type: Type = VoidType
         prog.forEachIndexed { index, node ->
             type = node.compile(ctx)
-            if (type != VMVoid && index != prog.size-1) {
+            if (type != VoidType && index != prog.size-1) {
                 ctx.add(Drop())
             }
         }

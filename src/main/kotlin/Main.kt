@@ -1,11 +1,7 @@
-import nodes.BoolType
-import nodes.DataType
-import nodes.FuncType
-import nodes.StrType
-import nodes.Type
-import nodes.derive
-import nodes.mask
-import nodes.unmask
+import nodes.BoolValue
+import nodes.FuncValue
+import nodes.StrValue
+import nodes.Value
 import parser.Parser
 import parser.StringInput
 import parser.TokenStream
@@ -16,7 +12,6 @@ import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import javax.xml.crypto.Data
 
 fun main(args: Array<String>) {
     vm2()
@@ -36,30 +31,30 @@ fun main(args: Array<String>) {
     var elapsed = System.currentTimeMillis() - time
     println("Parse in $elapsed ms")
 
-    val globalEnv = createGlobalEnvironment<Type<*>>().apply {
+    val globalEnv = createGlobalEnvironment<Value<*>>().apply {
         def(
             "readLine",
-            FuncType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
-                    return StrType(readlnOrNull().orEmpty())
+            FuncValue(
+                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
+                    return StrValue(readlnOrNull().orEmpty())
                 }
             )
         )
         def(
             "print",
-            FuncType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+            FuncValue(
+                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
                     args.forEach { print(it.value()) }
-                    return BoolType(false)
+                    return BoolValue(false)
                 }
             )
         )
         def(
             "println",
-            FuncType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+            FuncValue(
+                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
                     args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
-                    return BoolType(false)
+                    return BoolValue(false)
                 }
             )
         )
@@ -73,29 +68,29 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/fibonacci.vel").readText()
+    val prog = Parser::class.java.getResource("/primes.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
     val parser = Parser(stream)
 
     val node = parser.parse()
-    val globalEnv = createGlobalEnvironment<Type<*>>().apply {
+    val globalEnv = createGlobalEnvironment<Value<*>>().apply {
         def(
             "print",
-            FuncType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+            FuncValue(
+                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
                     args.forEach { print(it.value()) }
-                    return BoolType(false)
+                    return BoolValue(false)
                 }
             )
         )
         def(
             "println",
-            FuncType(
-                fun(args: List<Type<*>>, it: Type<*>?): Type<*> {
+            FuncValue(
+                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
                     args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
-                    return BoolType(false)
+                    return BoolValue(false)
                 }
             )
         )

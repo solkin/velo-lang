@@ -20,32 +20,32 @@ data class BinaryNode(
     val left: Node,
     val right: Node,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> = applyOp(
+    override fun evaluate(env: Environment<Value<*>>): Value<*> = applyOp(
         operator,
         left.evaluate(env),
         right.evaluate(env)
     )
 
-    private fun applyOp(op: String, a: Type<*>, b: Type<*>): Type<*> {
+    private fun applyOp(op: String, a: Value<*>, b: Value<*>): Value<*> {
         return when (op) {
             "+" -> a + b
             "-" -> a - b
             "*" -> a * b
             "/" -> a / b
             "%" -> a % b
-            "&&" -> BoolType(a.asBool() && b.asBool())
-            "||" -> BoolType(if (a.asBool()) a.asBool() else b.asBool())
-            "<" -> BoolType(a < b)
-            ">" -> BoolType(a > b)
-            "<=" -> BoolType(a <= b)
-            ">=" -> BoolType(a >= b)
-            "==" -> BoolType(a.value() == b.value())
-            "!=" -> BoolType(a.value() != b.value())
+            "&&" -> BoolValue(a.asBool() && b.asBool())
+            "||" -> BoolValue(if (a.asBool()) a.asBool() else b.asBool())
+            "<" -> BoolValue(a < b)
+            ">" -> BoolValue(a > b)
+            "<=" -> BoolValue(a <= b)
+            ">=" -> BoolValue(a >= b)
+            "==" -> BoolValue(a.value() == b.value())
+            "!=" -> BoolValue(a.value() != b.value())
             else -> throw IllegalArgumentException("Can't apply operator $op")
         }
     }
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
         if (leftType != rightType) throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")

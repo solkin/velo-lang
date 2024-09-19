@@ -7,44 +7,44 @@ data class TreeNode(
     val treeOf: List<Node>,
 ) : Node() {
 
-    private val tree = TreeMap<Type<*>, Type<*>>(TypeComparator())
+    private val tree = TreeMap<Value<*>, Value<*>>(ValueComparator())
 
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
         tree.clear()
         treeOf.forEach { item ->
             val entry = item.evaluate(env)
-            if (entry !is PairType) {
+            if (entry !is PairValue) {
                 throw IllegalArgumentException("Pair expected as tree constructor argument")
             }
             val key = entry.value().first
             val value = entry.value().second
             tree[key] = value
         }
-        return TreeType(tree)
+        return TreeValue(tree)
     }
 }
 
-class TreeType(val tree: TreeMap<Type<*>, Type<*>>) : Type<TreeMap<Type<*>, Type<*>>>(tree), Indexable {
-    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+class TreeValue(val tree: TreeMap<Value<*>, Value<*>>) : Value<TreeMap<Value<*>, Value<*>>>(tree), Indexable {
+    override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
-            "len" -> IntType(tree.size)
+            "len" -> IntValue(tree.size)
             "keys" -> {
-                ListType(tree.keys.toList())
+                ListValue(tree.keys.toList())
             }
 
             "values" -> {
-                ListType(tree.values.toList())
+                ListValue(tree.values.toList())
             }
 
             "reduce" -> {
-                if (args?.size != 1 || args[0] !is FuncType) {
+                if (args?.size != 1 || args[0] !is FuncValue) {
                     throw IllegalArgumentException("Property 'reduce' requires one func argument")
                 }
-                val func = args[0] as FuncType
-                var acc: Type<*> = VoidType()
+                val func = args[0] as FuncValue
+                var acc: Value<*> = VoidValue()
                 tree.forEach { entry ->
-                    val pair = PairType(entry.key, entry.value)
-                    acc = if (acc is VoidType) {
+                    val pair = PairValue(entry.key, entry.value)
+                    acc = if (acc is VoidValue) {
                         pair
                     } else {
                         func.run(args = listOf(acc, pair), it = this)
@@ -58,7 +58,7 @@ class TreeType(val tree: TreeMap<Type<*>, Type<*>>) : Type<TreeMap<Type<*>, Type
                     throw IllegalArgumentException("Property 'put' requires at least one pair argument")
                 }
                 args.forEach { item ->
-                    if (item is PairType) {
+                    if (item is PairValue) {
                         tree[item.value().first] = item.value().second
                     } else {
                         throw IllegalArgumentException("Property 'put' requires pairs as argument")
@@ -71,7 +71,7 @@ class TreeType(val tree: TreeMap<Type<*>, Type<*>>) : Type<TreeMap<Type<*>, Type
         }
     }
 
-    override fun get(key: Type<*>): Type<*> {
-        return tree[key] ?: VoidType()
+    override fun get(key: Value<*>): Value<*> {
+        return tree[key] ?: VoidValue()
     }
 }

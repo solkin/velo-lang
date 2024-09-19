@@ -5,23 +5,23 @@ import Environment
 class SubjectNode(
     private val init: Node?
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
-        val initValue = init?.evaluate(env) ?: BoolType(value = false)
-        return SubjectType(initValue)
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
+        val initValue = init?.evaluate(env) ?: BoolValue(value = false)
+        return SubjectValue(initValue)
     }
 }
 
-class SubjectType(var value: Type<*>) : Type<Type<*>>(value) {
+class SubjectValue(var value: Value<*>) : Value<Value<*>>(value) {
 
-    private val observers = ArrayList<FuncType>()
+    private val observers = ArrayList<FuncValue>()
 
-    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+    override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
             "observe" -> {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'observe' requires observer func argument")
                 }
-                val observer = args[0] as FuncType
+                val observer = args[0] as FuncValue
                 observers.add(observer)
                 observer
             }
@@ -41,9 +41,9 @@ class SubjectType(var value: Type<*>) : Type<Type<*>>(value) {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'detach' requires observer func argument")
                 }
-                val observer = args[0] as FuncType
+                val observer = args[0] as FuncValue
                 val result = observers.remove(observer)
-                BoolType(result)
+                BoolValue(result)
             }
 
             "notify" -> {

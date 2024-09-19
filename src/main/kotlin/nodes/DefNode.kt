@@ -7,25 +7,25 @@ import vm2.operations.Push
 
 data class DefNode(
     val name: String,
-    val type: VMType,
+    val type: Type,
     val def: Node?,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>): Type<*> {
-        val value = def?.let { def.evaluate(env) } ?: VoidType()
+    override fun evaluate(env: Environment<Value<*>>): Value<*> {
+        val value = def?.let { def.evaluate(env) } ?: VoidValue()
         env.def(name, value)
         return value
     }
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         val defType = def?.compile(ctx) ?: let {
             type.default.forEach { ctx.add(Push(value = it)) }
             type
         }
         if (type != defType) {
-            throw IllegalArgumentException("Illegal assign type ${defType.type} != ${type.type}")
+            throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
         val v = ctx.defVar(name, type)
         ctx.add(Def(v.index))
-        return VMVoid
+        return VoidType
     }
 }

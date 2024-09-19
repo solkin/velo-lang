@@ -20,24 +20,21 @@ import nodes.StructNode
 import nodes.SubjectNode
 import nodes.TreeNode
 import nodes.VarNode
-import nodes.DataType
+import nodes.BaseType
 import nodes.PairNode
-import nodes.VMBoolean
-import nodes.VMByte
-import nodes.VMFloat
-import nodes.VMFunction
-import nodes.VMInt
-import nodes.VMPair
-import nodes.VMSlice
-import nodes.VMString
-import nodes.VMType
-import nodes.VMVoid
+import nodes.BooleanType
+import nodes.ByteType
+import nodes.FloatType
+import nodes.FunctionType
+import nodes.IntType
+import nodes.PairType
+import nodes.SliceType
+import nodes.StringType
+import nodes.Type
+import nodes.VoidType
 import nodes.VoidNode
 import nodes.WhileNode
-import nodes.getDefault
 import nodes.getDefaultNode
-import nodes.mask
-import nodes.unmask
 
 class Parser(private val stream: TokenStream) {
 
@@ -49,7 +46,7 @@ class Parser(private val stream: TokenStream) {
         "+" to 10, "-" to 10,
         "*" to 20, "/" to 20, "%" to 20,
     )
-    private val types = DataType.values().map { it.type }
+    private val types = BaseType.values().map { it.type }
 
     private fun isPunc(ch: Char?): Token? {
         return stream.peek()?.takeIf { tok ->
@@ -77,7 +74,7 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun parseDerivedTypes(count: Int): List<VMType> {
+    private fun parseDerivedTypes(count: Int): List<Type> {
         val ders = isPunc('[')
             ?.let { delimited('[', ']', ',', ::parseDefType) }
             ?: emptyList()
@@ -87,7 +84,7 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun parseDefType(): VMType {
+    private fun parseDefType(): Type {
         val tok = isDef()
         if (tok != null) {
             stream.next()
@@ -95,22 +92,22 @@ class Parser(private val stream: TokenStream) {
             stream.croak("Expecting def type one of: \"$types\"")
             throw IllegalArgumentException()
         }
-        val dataType = DataType.values().first { kw ->
+        val dataType = BaseType.values().first { kw ->
             tok.value == kw.type
         }
         val type = when (dataType) {
-            DataType.BYTE -> VMByte
-            DataType.INT -> VMInt
-            DataType.FLOAT -> VMFloat
-            DataType.STRING -> VMString
-            DataType.BOOLEAN -> VMBoolean
-            DataType.PAIR -> {
+            BaseType.BYTE -> ByteType
+            BaseType.INT -> IntType
+            BaseType.FLOAT -> FloatType
+            BaseType.STRING -> StringType
+            BaseType.BOOLEAN -> BooleanType
+            BaseType.PAIR -> {
                 val derived = parseDerivedTypes(count = 2)
-                VMPair(first = derived[0], second = derived[1])
+                PairType(first = derived[0], second = derived[1])
             }
-            DataType.SLICE -> VMSlice(parseDerivedTypes(count = 1).first())
-            DataType.FUNCTION -> VMFunction(parseDerivedTypes(count = 1).first())
-            DataType.VOID -> VMVoid
+            BaseType.SLICE -> SliceType(parseDerivedTypes(count = 1).first())
+            BaseType.FUNCTION -> FunctionType(parseDerivedTypes(count = 1).first())
+            BaseType.VOID -> VoidType
         }
         return type
     }

@@ -7,12 +7,12 @@ import vm2.operations.Push
 data class BoolNode(
     val value: Boolean,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>) = BoolType(value)
+    override fun evaluate(env: Environment<Value<*>>) = BoolValue(value)
 
-    override fun compile(ctx: CompilerContext): VMType {
+    override fun compile(ctx: CompilerContext): Type {
         ctx.add(Push(value))
-        return VMBoolean
+        return BooleanType
     }
 }
 
-class BoolType(val value: Boolean) : Type<Boolean>(value)
+class BoolValue(val value: Boolean) : Value<Boolean>(value)

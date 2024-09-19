@@ -1,8 +1,8 @@
 package nodes
 
-import kotlin.math.pow
+import CompilerContext
 
-enum class DataType(val type: String) {
+enum class BaseType(val type: String) {
     BYTE("byte"),
     INT("int"),
     FLOAT("float"),
@@ -14,154 +14,125 @@ enum class DataType(val type: String) {
     VOID("void"),
 }
 
-interface VMType {
-    val type: DataType
+interface Type {
+    val type: BaseType
     val default: List<Any>
+    fun property(name: String, ctx: CompilerContext) {
+        throw IllegalArgumentException("Property $name on $this is not supported")
+    }
 }
 
-object VMByte : VMType {
-    override val type: DataType
-        get() = DataType.BYTE
+object ByteType : Type {
+    override val type: BaseType
+        get() = BaseType.BYTE
     override val default: List<Any>
         get() = listOf(0)
 }
 
-object VMInt : VMType {
-    override val type: DataType
-        get() = DataType.INT
+object IntType : Type {
+    override val type: BaseType
+        get() = BaseType.INT
     override val default: List<Any>
         get() = listOf(0)
 }
 
-object VMFloat : VMType {
-    override val type: DataType
-        get() = DataType.FLOAT
+object FloatType : Type {
+    override val type: BaseType
+        get() = BaseType.FLOAT
     override val default: List<Any>
         get() = listOf(0f)
 }
 
-object VMString : VMType {
-    override val type: DataType
-        get() = DataType.STRING
+object StringType : Type {
+    override val type: BaseType
+        get() = BaseType.STRING
     override val default: List<Any>
         get() = listOf("")
 }
 
-object VMBoolean : VMType {
-    override val type: DataType
-        get() = DataType.BOOLEAN
+object BooleanType : Type {
+    override val type: BaseType
+        get() = BaseType.BOOLEAN
     override val default: List<Any>
         get() = listOf(false)
 }
 
-data class VMPair(val first: VMType, val second: VMType) : VMType {
-    override val type: DataType
-        get() = DataType.PAIR
+data class PairType(val first: Type, val second: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.PAIR
     override val default: List<Any>
         get() = listOf(0, 0)
 }
 
-data class VMSlice(val derived: VMType) : VMType {
-    override val type: DataType
-        get() = DataType.SLICE
+data class SliceType(val derived: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.SLICE
     override val default: List<Any>
         get() = listOf(0)
 }
 
-data class VMFunction(val derived: VMType) : VMType {
-    override val type: DataType
-        get() = DataType.FUNCTION
+data class FunctionType(val derived: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.FUNCTION
     override val default: List<Any>
         get() = listOf(0)
 }
 
-object VMVoid : VMType {
-    override val type: DataType
-        get() = DataType.VOID
+object VoidType : Type {
+    override val type: BaseType
+        get() = BaseType.VOID
     override val default: List<Any>
         get() = emptyList()
 }
 
-private const val MASK_STEP = 4
-
-fun DataType.mask(depth: Int = 1): Int {
-    return (ordinal + 1) shl MASK_STEP * (depth - 1)
-}
-
-fun Int.unmask(depth: Int = 1): DataType {
-    val o = (2.toDouble().pow(depth * MASK_STEP.toDouble()) - 1).toInt()
-    val v = this and o
-    val u = v shr MASK_STEP * (depth - 1)
-    val index = (u - 1).takeIf { it >= 0 } ?: throw IllegalArgumentException("Mask $depth not found")
-    return DataType.values()[index]
-}
-
-fun Int.derive(depth: Int, type: DataType): Int {
-    return this or type.mask(depth)
-}
-
-fun DataType.getDefault(): Any {
+fun BaseType.getDefaultNode(): Node {
     return when (this) {
-        DataType.BYTE -> 0
-        DataType.INT -> 0
-        DataType.FLOAT -> 0f
-        DataType.STRING -> ""
-        DataType.BOOLEAN -> false
-        DataType.PAIR -> 0
-        DataType.SLICE -> 0
-        DataType.FUNCTION -> 0
-        DataType.VOID -> Unit
+        BaseType.BYTE -> IntNode(0)
+        BaseType.INT -> IntNode(0)
+        BaseType.FLOAT -> DoubleNode(0.0)
+        BaseType.STRING -> StrNode("")
+        BaseType.BOOLEAN -> BoolNode(false)
+        BaseType.PAIR -> PairNode(first = VoidNode(), second = null)
+        BaseType.SLICE -> ListNode(listOf = emptyList(), VoidType)
+        BaseType.FUNCTION -> IntNode(0)
+        BaseType.VOID -> ProgramNode(emptyList())
     }
 }
 
-fun DataType.getDefaultNode(): Node {
-    return when (this) {
-        DataType.BYTE -> IntNode(0)
-        DataType.INT -> IntNode(0)
-        DataType.FLOAT -> DoubleNode(0.0)
-        DataType.STRING -> StrNode("")
-        DataType.BOOLEAN -> BoolNode(false)
-        DataType.PAIR -> PairNode(first = VoidNode(), second = null)
-        DataType.SLICE -> ListNode(listOf = emptyList(), VMVoid)
-        DataType.FUNCTION -> IntNode(0)
-        DataType.VOID -> ProgramNode(emptyList())
-    }
-}
-
-class ObjType(val value: Any) : Type<Any>(value) {
-    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+class ObjValue(val value: Any) : Value<Any>(value) {
+    override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
-            "hash" -> IntType(value.hashCode())
+            "hash" -> IntValue(value.hashCode())
             else -> super.property(name, args)
         }
     }
 }
 
-fun Type<*>.toInt(): Int {
+fun Value<*>.toInt(): Int {
     return when (this) {
-        is IntType -> this.value
-        is DoubleType -> this.value.toInt()
+        is IntValue -> this.value
+        is DoubleValue -> this.value.toInt()
         else -> this.value().toString().toIntOrNull() ?: 0
     }
 }
 
-operator fun <T> Type<T>.compareTo(b: Type<*>): Int {
+operator fun <T> Value<T>.compareTo(b: Value<*>): Int {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> value.compareTo(b.value)
-            is DoubleType -> value.compareTo(b.value)
+        is IntValue -> when (b) {
+            is IntValue -> value.compareTo(b.value)
+            is DoubleValue -> value.compareTo(b.value)
             else -> value.compareTo(b.value().toString().toIntOrNull() ?: 0)
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> value.compareTo(b.value)
-            is DoubleType -> value.compareTo(b.value)
+        is DoubleValue -> when (b) {
+            is IntValue -> value.compareTo(b.value)
+            is DoubleValue -> value.compareTo(b.value)
             else -> value.compareTo(b.value().toString().toDoubleOrNull() ?: 0.0)
         }
 
-        is StrType -> when (b) {
-            is IntType -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
-            is DoubleType -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
+        is StrValue -> when (b) {
+            is IntValue -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
+            is DoubleValue -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
             else -> value.compareTo(b.value().toString())
         }
 
@@ -170,80 +141,80 @@ operator fun <T> Type<T>.compareTo(b: Type<*>): Int {
     }
 }
 
-fun Type<*>.asBool(): Boolean {
-    return (this as? BoolType)?.value() ?: throw IllegalArgumentException("Expected boolean but got $this")
+fun Value<*>.asBool(): Boolean {
+    return (this as? BoolValue)?.value() ?: throw IllegalArgumentException("Expected boolean but got $this")
 }
 
-operator fun Type<*>.plus(b: Type<*>): Type<*> {
+operator fun Value<*>.plus(b: Value<*>): Value<*> {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> IntType(value + b.value)
-            is DoubleType -> DoubleType(value + b.value)
-            is StrType -> StrType(value.toString() + b.value)
-            else -> StrType(value.toString() + b.value().toString())
+        is IntValue -> when (b) {
+            is IntValue -> IntValue(value + b.value)
+            is DoubleValue -> DoubleValue(value + b.value)
+            is StrValue -> StrValue(value.toString() + b.value)
+            else -> StrValue(value.toString() + b.value().toString())
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> DoubleType(value + b.value)
-            is DoubleType -> DoubleType(value + b.value)
-            is StrType -> StrType(value.toString() + b.value)
-            else -> StrType(value.toString() + b.value().toString())
+        is DoubleValue -> when (b) {
+            is IntValue -> DoubleValue(value + b.value)
+            is DoubleValue -> DoubleValue(value + b.value)
+            is StrValue -> StrValue(value.toString() + b.value)
+            else -> StrValue(value.toString() + b.value().toString())
         }
 
-        is StrType -> when (b) {
-            is IntType -> StrType(value + b.value)
-            is DoubleType -> StrType(value + b.value)
-            is StrType -> StrType(value + b.value)
-            else -> StrType(value + b.value().toString())
+        is StrValue -> when (b) {
+            is IntValue -> StrValue(value + b.value)
+            is DoubleValue -> StrValue(value + b.value)
+            is StrValue -> StrValue(value + b.value)
+            else -> StrValue(value + b.value().toString())
         }
 
-        is ListType -> when (b) {
-            is ListType -> ListType(list + b.list)
-            else -> ListType(list + b)
+        is ListValue -> when (b) {
+            is ListValue -> ListValue(list + b.list)
+            else -> ListValue(list + b)
         }
 
-        else -> StrType(value().toString() + b.value().toString())
+        else -> StrValue(value().toString() + b.value().toString())
     }
 }
 
-operator fun Type<*>.minus(b: Type<*>): Type<*> {
+operator fun Value<*>.minus(b: Value<*>): Value<*> {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> IntType(value - b.value)
-            is DoubleType -> DoubleType(value - b.value)
-            else -> IntType(value - (b.value().toString().toIntOrNull() ?: 0))
+        is IntValue -> when (b) {
+            is IntValue -> IntValue(value - b.value)
+            is DoubleValue -> DoubleValue(value - b.value)
+            else -> IntValue(value - (b.value().toString().toIntOrNull() ?: 0))
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> DoubleType(value - b.value)
-            is DoubleType -> DoubleType(value - b.value)
-            else -> DoubleType(value - (b.value().toString().toDoubleOrNull() ?: 0.0))
+        is DoubleValue -> when (b) {
+            is IntValue -> DoubleValue(value - b.value)
+            is DoubleValue -> DoubleValue(value - b.value)
+            else -> DoubleValue(value - (b.value().toString().toDoubleOrNull() ?: 0.0))
         }
 
-        is StrType -> StrType(value.replace(b.value().toString(), ""))
+        is StrValue -> StrValue(value.replace(b.value().toString(), ""))
         else -> this
     }
 }
 
-operator fun Type<*>.times(b: Type<*>): Type<*> {
+operator fun Value<*>.times(b: Value<*>): Value<*> {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> IntType(value * b.value)
-            is DoubleType -> DoubleType(value * b.value)
-            is StrType -> StrType(b.value.repeat(value))
-            else -> IntType(value * (b.value().toString().toIntOrNull() ?: 0))
+        is IntValue -> when (b) {
+            is IntValue -> IntValue(value * b.value)
+            is DoubleValue -> DoubleValue(value * b.value)
+            is StrValue -> StrValue(b.value.repeat(value))
+            else -> IntValue(value * (b.value().toString().toIntOrNull() ?: 0))
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> DoubleType(value * b.value)
-            is DoubleType -> DoubleType(value * b.value)
-            is StrType -> StrType(b.value.repeat(value.toInt()))
-            else -> DoubleType(value * (b.value().toString().toDoubleOrNull() ?: 0.0))
+        is DoubleValue -> when (b) {
+            is IntValue -> DoubleValue(value * b.value)
+            is DoubleValue -> DoubleValue(value * b.value)
+            is StrValue -> StrValue(b.value.repeat(value.toInt()))
+            else -> DoubleValue(value * (b.value().toString().toDoubleOrNull() ?: 0.0))
         }
 
-        is StrType -> when (b) {
-            is IntType -> StrType(value.repeat(b.value))
-            is DoubleType -> StrType(value.repeat(b.value.toInt()))
+        is StrValue -> when (b) {
+            is IntValue -> StrValue(value.repeat(b.value))
+            is DoubleValue -> StrValue(value.repeat(b.value.toInt()))
             else -> this
         }
 
@@ -259,24 +230,24 @@ private fun Double.throwIfZero(): Double {
     return if (this == 0.0) throw IllegalArgumentException("Division by zero") else this
 }
 
-operator fun Type<*>.div(b: Type<*>): Type<*> {
+operator fun Value<*>.div(b: Value<*>): Value<*> {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> DoubleType(value.toDouble() / b.value.throwIfZero())
-            is DoubleType -> DoubleType(value / b.value.throwIfZero())
-            else -> IntType(value / (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
+        is IntValue -> when (b) {
+            is IntValue -> DoubleValue(value.toDouble() / b.value.throwIfZero())
+            is DoubleValue -> DoubleValue(value / b.value.throwIfZero())
+            else -> IntValue(value / (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> DoubleType(value / b.value.throwIfZero())
-            is DoubleType -> DoubleType(value / b.value.throwIfZero())
-            else -> DoubleType(value / (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
+        is DoubleValue -> when (b) {
+            is IntValue -> DoubleValue(value / b.value.throwIfZero())
+            is DoubleValue -> DoubleValue(value / b.value.throwIfZero())
+            else -> DoubleValue(value / (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
         }
 
-        is StrType -> when (b) {
-            is IntType -> ListType(value.chunked(b.value).map { StrType(it) })
-            is DoubleType -> ListType(value.chunked(b.value.toInt()).map { StrType(it) })
-            else -> IntType(
+        is StrValue -> when (b) {
+            is IntValue -> ListValue(value.chunked(b.value).map { StrValue(it) })
+            is DoubleValue -> ListValue(value.chunked(b.value.toInt()).map { StrValue(it) })
+            else -> IntValue(
                 (value.length - value.replace(b.value().toString(), "").length) / b.value()
                     .toString().length.throwIfZero()
             )
@@ -286,24 +257,24 @@ operator fun Type<*>.div(b: Type<*>): Type<*> {
     }
 }
 
-operator fun Type<*>.rem(b: Type<*>): Type<*> {
+operator fun Value<*>.rem(b: Value<*>): Value<*> {
     return when (this) {
-        is IntType -> when (b) {
-            is IntType -> DoubleType(value.toDouble() % b.value.throwIfZero())
-            is DoubleType -> DoubleType(value % b.value.throwIfZero())
-            else -> IntType(value % (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
+        is IntValue -> when (b) {
+            is IntValue -> DoubleValue(value.toDouble() % b.value.throwIfZero())
+            is DoubleValue -> DoubleValue(value % b.value.throwIfZero())
+            else -> IntValue(value % (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
         }
 
-        is DoubleType -> when (b) {
-            is IntType -> DoubleType(value % b.value.throwIfZero())
-            is DoubleType -> DoubleType(value % b.value.throwIfZero())
-            else -> DoubleType(value % (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
+        is DoubleValue -> when (b) {
+            is IntValue -> DoubleValue(value % b.value.throwIfZero())
+            is DoubleValue -> DoubleValue(value % b.value.throwIfZero())
+            else -> DoubleValue(value % (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
         }
 
-        is StrType -> when (b) {
-            is IntType -> IntType(value.length % b.value.throwIfZero())
-            is DoubleType -> IntType(value.length % b.value().toInt().throwIfZero())
-            else -> IntType(value.length % b.value().toString().length.throwIfZero())
+        is StrValue -> when (b) {
+            is IntValue -> IntValue(value.length % b.value.throwIfZero())
+            is DoubleValue -> IntValue(value.length % b.value().toInt().throwIfZero())
+            else -> IntValue(value.length % b.value().toString().length.throwIfZero())
         }
 
         else -> this

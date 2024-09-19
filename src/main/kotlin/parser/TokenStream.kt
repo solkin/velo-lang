@@ -1,6 +1,6 @@
 package parser
 
-import nodes.DataType
+import nodes.BaseType
 
 class TokenStream(private val input: Input) {
 
@@ -20,7 +20,7 @@ class TokenStream(private val input: Input) {
         "slice",
         "true",
         "false"
-    ).plus(DataType.values().map { it.type }).toSet()
+    ).plus(BaseType.values().map { it.type }).toSet()
 
     private fun isKeyword(str: String): Boolean {
         return keywords.contains(str)

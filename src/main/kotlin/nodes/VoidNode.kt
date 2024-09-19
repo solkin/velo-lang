@@ -4,11 +4,11 @@ import CompilerContext
 import Environment
 
 class VoidNode : Node() {
-    override fun evaluate(env: Environment<Type<*>>) = VoidType()
+    override fun evaluate(env: Environment<Value<*>>) = VoidValue()
 
-    override fun compile(ctx: CompilerContext): VMType {
-        return VMVoid
+    override fun compile(ctx: CompilerContext): Type {
+        return VoidType
     }
 }
 
-class VoidType : Type<String>("")
+class VoidValue : Value<String>("")

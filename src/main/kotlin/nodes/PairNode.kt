@@ -6,14 +6,14 @@ data class PairNode(
     val first: Node,
     val second: Node?,
 ) : Node() {
-    override fun evaluate(env: Environment<Type<*>>) = PairType(
+    override fun evaluate(env: Environment<Value<*>>) = PairValue(
         first = first.evaluate(env),
-        second = second?.evaluate(env) ?: VoidType()
+        second = second?.evaluate(env) ?: VoidValue()
     )
 }
 
-class PairType(val first: Type<*>, val second: Type<*>) : Type<Pair<Type<*>, Type<*>>>(t = first to second) {
-    override fun property(name: String, args: List<Type<*>>?): Type<*> {
+class PairValue(val first: Value<*>, val second: Value<*>) : Value<Pair<Value<*>, Value<*>>>(t = first to second) {
+    override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
             "first" -> first
             "second" -> second
