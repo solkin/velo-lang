@@ -11,4 +11,11 @@ class VoidNode : Node() {
     }
 }
 
+object VoidType : Type {
+    override val type: BaseType
+        get() = BaseType.VOID
+
+    override fun default(ctx: CompilerContext) {}
+}
+
 class VoidValue : Value<String>("")

@@ -18,7 +18,7 @@ data class DefNode(
 
     override fun compile(ctx: CompilerContext): Type {
         val defType = def?.compile(ctx) ?: let {
-            type.default.forEach { ctx.add(Push(value = it)) }
+            type.default(ctx)
             type
         }
         if (type != defType) {

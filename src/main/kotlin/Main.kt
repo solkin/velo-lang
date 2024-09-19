@@ -1,6 +1,6 @@
 import nodes.BoolValue
 import nodes.FuncValue
-import nodes.StrValue
+import nodes.StringValue
 import nodes.Value
 import parser.Parser
 import parser.StringInput
@@ -36,7 +36,7 @@ fun main(args: Array<String>) {
             "readLine",
             FuncValue(
                 fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
-                    return StrValue(readlnOrNull().orEmpty())
+                    return StringValue(readlnOrNull().orEmpty())
                 }
             )
         )
@@ -68,7 +68,7 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/primes.vel").readText()
+    val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)

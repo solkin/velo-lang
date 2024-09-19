@@ -5,27 +5,27 @@ import nodes.BinaryNode
 import nodes.BoolNode
 import nodes.CallNode
 import nodes.DefNode
-import nodes.DoubleNode
+import nodes.FloatNode
 import nodes.FuncNode
 import nodes.IfNode
 import nodes.IndexNode
 import nodes.IntNode
 import nodes.LetNode
-import nodes.ListNode
+import nodes.SliceNode
 import nodes.Node
 import nodes.ProgramNode
 import nodes.PropNode
-import nodes.StrNode
+import nodes.StringNode
 import nodes.StructNode
 import nodes.SubjectNode
 import nodes.TreeNode
 import nodes.VarNode
 import nodes.BaseType
 import nodes.PairNode
-import nodes.BooleanType
+import nodes.BoolType
 import nodes.ByteType
 import nodes.FloatType
-import nodes.FunctionType
+import nodes.FuncType
 import nodes.IntType
 import nodes.PairType
 import nodes.SliceType
@@ -100,13 +100,13 @@ class Parser(private val stream: TokenStream) {
             BaseType.INT -> IntType
             BaseType.FLOAT -> FloatType
             BaseType.STRING -> StringType
-            BaseType.BOOLEAN -> BooleanType
+            BaseType.BOOLEAN -> BoolType
             BaseType.PAIR -> {
                 val derived = parseDerivedTypes(count = 2)
                 PairType(first = derived[0], second = derived[1])
             }
             BaseType.SLICE -> SliceType(parseDerivedTypes(count = 1).first())
-            BaseType.FUNCTION -> FunctionType(parseDerivedTypes(count = 1).first())
+            BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
         }
         return type
@@ -188,7 +188,7 @@ class Parser(private val stream: TokenStream) {
         skipKw("sliceOf")
         val type = parseDerivedTypes(count = 1).first()
         val elements = delimited('(', ')', ',', ::parseExpression)
-        return ListNode(
+        return SliceNode(
             listOf = elements,
             type = type,
         )
@@ -381,7 +381,7 @@ class Parser(private val stream: TokenStream) {
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)
             TokenType.NUMBER -> when (tok.value) {
-                is Double -> DoubleNode(tok.value)
+                is Double -> FloatNode(tok.value)
                 is Int -> IntNode(tok.value)
                 else -> {
                     stream.croak("Unexpected number format: " + tok.value::class.java)
@@ -389,7 +389,7 @@ class Parser(private val stream: TokenStream) {
                 }
             }
 
-            TokenType.STRING -> StrNode(tok.value as String)
+            TokenType.STRING -> StringNode(tok.value as String)
             else -> {
                 stream.croak("Unexpected token: " + stream.peek().toString())
                 throw IllegalArgumentException()

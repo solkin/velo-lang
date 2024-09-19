@@ -15,4 +15,13 @@ data class IntNode(
     }
 }
 
+object IntType : Type {
+    override val type: BaseType
+        get() = BaseType.INT
+
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = 0))
+    }
+}
+
 class IntValue(val value: Int) : Value<Int>(value)

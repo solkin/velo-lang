@@ -5,7 +5,7 @@ import Environment
 import vm2.operations.Push
 import vm2.operations.Slice
 
-data class ListNode(
+data class SliceNode(
     val listOf: List<Node>,
     val type: Type,
 ) : Node() {
@@ -20,7 +20,7 @@ data class ListNode(
                 else -> value.add(v)
             }
         }
-        return ListValue(value)
+        return SliceValue(value)
     }
 
     override fun compile(ctx: CompilerContext): Type {
@@ -32,7 +32,16 @@ data class ListNode(
 
 }
 
-class ListValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexable {
+data class SliceType(val derived: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.SLICE
+
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = 0))
+    }
+}
+
+class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexable {
     override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
             "size" -> IntValue(list.size)
@@ -42,7 +51,7 @@ class ListValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexab
                 }
                 val start = args[0].toInt()
                 val end = args[1].toInt()
-                ListValue(list.subList(start, end))
+                SliceValue(list.subList(start, end))
             }
 
             "map" -> {
@@ -53,7 +62,7 @@ class ListValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexab
                 val result = list.mapIndexed { index, item ->
                     func.run(args = listOf(IntValue(index), item), it = this)
                 }
-                ListValue(result)
+                SliceValue(result)
             }
 
             "forEach" -> {
@@ -83,7 +92,7 @@ class ListValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexab
                     throw IllegalArgumentException("Property 'reversed' requires no arguments")
                 }
                 val result = list.reversed()
-                ListValue(result)
+                SliceValue(result)
             }
 
             "reduce" -> {
@@ -101,7 +110,7 @@ class ListValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexab
                 if (args == null) {
                     throw IllegalArgumentException("Property 'plus' requires at least one argument")
                 }
-                ListValue(list.plus(args))
+                SliceValue(list.plus(args))
             }
 
             else -> super.property(name, args)

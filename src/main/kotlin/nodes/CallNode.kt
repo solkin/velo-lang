@@ -30,7 +30,7 @@ data class CallNode(
             ctx.add(Print())
             return VoidType
         }
-        val type = (func.compile(ctx) as? FunctionType)?.derived
+        val type = (func.compile(ctx) as? FuncType)?.derived
             ?: throw IllegalArgumentException("Call on non-function type")
         ctx.add(Call())
         return type

@@ -11,7 +11,16 @@ data class BoolNode(
 
     override fun compile(ctx: CompilerContext): Type {
         ctx.add(Push(value))
-        return BooleanType
+        return BoolType
+    }
+}
+
+object BoolType : Type {
+    override val type: BaseType
+        get() = BaseType.BOOLEAN
+
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = false))
     }
 }
 

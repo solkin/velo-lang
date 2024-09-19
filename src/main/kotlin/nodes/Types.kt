@@ -1,6 +1,7 @@
 package nodes
 
 import CompilerContext
+import vm2.operations.Push
 
 enum class BaseType(val type: String) {
     BYTE("byte"),
@@ -16,7 +17,7 @@ enum class BaseType(val type: String) {
 
 interface Type {
     val type: BaseType
-    val default: List<Any>
+    fun default(ctx: CompilerContext)
     fun property(name: String, ctx: CompilerContext) {
         throw IllegalArgumentException("Property $name on $this is not supported")
     }
@@ -25,75 +26,21 @@ interface Type {
 object ByteType : Type {
     override val type: BaseType
         get() = BaseType.BYTE
-    override val default: List<Any>
-        get() = listOf(0)
-}
 
-object IntType : Type {
-    override val type: BaseType
-        get() = BaseType.INT
-    override val default: List<Any>
-        get() = listOf(0)
-}
-
-object FloatType : Type {
-    override val type: BaseType
-        get() = BaseType.FLOAT
-    override val default: List<Any>
-        get() = listOf(0f)
-}
-
-object StringType : Type {
-    override val type: BaseType
-        get() = BaseType.STRING
-    override val default: List<Any>
-        get() = listOf("")
-}
-
-object BooleanType : Type {
-    override val type: BaseType
-        get() = BaseType.BOOLEAN
-    override val default: List<Any>
-        get() = listOf(false)
-}
-
-data class PairType(val first: Type, val second: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.PAIR
-    override val default: List<Any>
-        get() = listOf(0, 0)
-}
-
-data class SliceType(val derived: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.SLICE
-    override val default: List<Any>
-        get() = listOf(0)
-}
-
-data class FunctionType(val derived: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.FUNCTION
-    override val default: List<Any>
-        get() = listOf(0)
-}
-
-object VoidType : Type {
-    override val type: BaseType
-        get() = BaseType.VOID
-    override val default: List<Any>
-        get() = emptyList()
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = 0))
+    }
 }
 
 fun BaseType.getDefaultNode(): Node {
     return when (this) {
         BaseType.BYTE -> IntNode(0)
         BaseType.INT -> IntNode(0)
-        BaseType.FLOAT -> DoubleNode(0.0)
-        BaseType.STRING -> StrNode("")
+        BaseType.FLOAT -> FloatNode(0.0)
+        BaseType.STRING -> StringNode("")
         BaseType.BOOLEAN -> BoolNode(false)
         BaseType.PAIR -> PairNode(first = VoidNode(), second = null)
-        BaseType.SLICE -> ListNode(listOf = emptyList(), VoidType)
+        BaseType.SLICE -> SliceNode(listOf = emptyList(), VoidType)
         BaseType.FUNCTION -> IntNode(0)
         BaseType.VOID -> ProgramNode(emptyList())
     }
@@ -111,7 +58,7 @@ class ObjValue(val value: Any) : Value<Any>(value) {
 fun Value<*>.toInt(): Int {
     return when (this) {
         is IntValue -> this.value
-        is DoubleValue -> this.value.toInt()
+        is FloatValue -> this.value.toInt()
         else -> this.value().toString().toIntOrNull() ?: 0
     }
 }
@@ -120,19 +67,19 @@ operator fun <T> Value<T>.compareTo(b: Value<*>): Int {
     return when (this) {
         is IntValue -> when (b) {
             is IntValue -> value.compareTo(b.value)
-            is DoubleValue -> value.compareTo(b.value)
+            is FloatValue -> value.compareTo(b.value)
             else -> value.compareTo(b.value().toString().toIntOrNull() ?: 0)
         }
 
-        is DoubleValue -> when (b) {
+        is FloatValue -> when (b) {
             is IntValue -> value.compareTo(b.value)
-            is DoubleValue -> value.compareTo(b.value)
+            is FloatValue -> value.compareTo(b.value)
             else -> value.compareTo(b.value().toString().toDoubleOrNull() ?: 0.0)
         }
 
-        is StrValue -> when (b) {
+        is StringValue -> when (b) {
             is IntValue -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
-            is DoubleValue -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
+            is FloatValue -> (value.toDoubleOrNull() ?: 0.0).compareTo(b.value)
             else -> value.compareTo(b.value().toString())
         }
 
@@ -149,31 +96,31 @@ operator fun Value<*>.plus(b: Value<*>): Value<*> {
     return when (this) {
         is IntValue -> when (b) {
             is IntValue -> IntValue(value + b.value)
-            is DoubleValue -> DoubleValue(value + b.value)
-            is StrValue -> StrValue(value.toString() + b.value)
-            else -> StrValue(value.toString() + b.value().toString())
+            is FloatValue -> FloatValue(value + b.value)
+            is StringValue -> StringValue(value.toString() + b.value)
+            else -> StringValue(value.toString() + b.value().toString())
         }
 
-        is DoubleValue -> when (b) {
-            is IntValue -> DoubleValue(value + b.value)
-            is DoubleValue -> DoubleValue(value + b.value)
-            is StrValue -> StrValue(value.toString() + b.value)
-            else -> StrValue(value.toString() + b.value().toString())
+        is FloatValue -> when (b) {
+            is IntValue -> FloatValue(value + b.value)
+            is FloatValue -> FloatValue(value + b.value)
+            is StringValue -> StringValue(value.toString() + b.value)
+            else -> StringValue(value.toString() + b.value().toString())
         }
 
-        is StrValue -> when (b) {
-            is IntValue -> StrValue(value + b.value)
-            is DoubleValue -> StrValue(value + b.value)
-            is StrValue -> StrValue(value + b.value)
-            else -> StrValue(value + b.value().toString())
+        is StringValue -> when (b) {
+            is IntValue -> StringValue(value + b.value)
+            is FloatValue -> StringValue(value + b.value)
+            is StringValue -> StringValue(value + b.value)
+            else -> StringValue(value + b.value().toString())
         }
 
-        is ListValue -> when (b) {
-            is ListValue -> ListValue(list + b.list)
-            else -> ListValue(list + b)
+        is SliceValue -> when (b) {
+            is SliceValue -> SliceValue(list + b.list)
+            else -> SliceValue(list + b)
         }
 
-        else -> StrValue(value().toString() + b.value().toString())
+        else -> StringValue(value().toString() + b.value().toString())
     }
 }
 
@@ -181,17 +128,17 @@ operator fun Value<*>.minus(b: Value<*>): Value<*> {
     return when (this) {
         is IntValue -> when (b) {
             is IntValue -> IntValue(value - b.value)
-            is DoubleValue -> DoubleValue(value - b.value)
+            is FloatValue -> FloatValue(value - b.value)
             else -> IntValue(value - (b.value().toString().toIntOrNull() ?: 0))
         }
 
-        is DoubleValue -> when (b) {
-            is IntValue -> DoubleValue(value - b.value)
-            is DoubleValue -> DoubleValue(value - b.value)
-            else -> DoubleValue(value - (b.value().toString().toDoubleOrNull() ?: 0.0))
+        is FloatValue -> when (b) {
+            is IntValue -> FloatValue(value - b.value)
+            is FloatValue -> FloatValue(value - b.value)
+            else -> FloatValue(value - (b.value().toString().toDoubleOrNull() ?: 0.0))
         }
 
-        is StrValue -> StrValue(value.replace(b.value().toString(), ""))
+        is StringValue -> StringValue(value.replace(b.value().toString(), ""))
         else -> this
     }
 }
@@ -200,21 +147,21 @@ operator fun Value<*>.times(b: Value<*>): Value<*> {
     return when (this) {
         is IntValue -> when (b) {
             is IntValue -> IntValue(value * b.value)
-            is DoubleValue -> DoubleValue(value * b.value)
-            is StrValue -> StrValue(b.value.repeat(value))
+            is FloatValue -> FloatValue(value * b.value)
+            is StringValue -> StringValue(b.value.repeat(value))
             else -> IntValue(value * (b.value().toString().toIntOrNull() ?: 0))
         }
 
-        is DoubleValue -> when (b) {
-            is IntValue -> DoubleValue(value * b.value)
-            is DoubleValue -> DoubleValue(value * b.value)
-            is StrValue -> StrValue(b.value.repeat(value.toInt()))
-            else -> DoubleValue(value * (b.value().toString().toDoubleOrNull() ?: 0.0))
+        is FloatValue -> when (b) {
+            is IntValue -> FloatValue(value * b.value)
+            is FloatValue -> FloatValue(value * b.value)
+            is StringValue -> StringValue(b.value.repeat(value.toInt()))
+            else -> FloatValue(value * (b.value().toString().toDoubleOrNull() ?: 0.0))
         }
 
-        is StrValue -> when (b) {
-            is IntValue -> StrValue(value.repeat(b.value))
-            is DoubleValue -> StrValue(value.repeat(b.value.toInt()))
+        is StringValue -> when (b) {
+            is IntValue -> StringValue(value.repeat(b.value))
+            is FloatValue -> StringValue(value.repeat(b.value.toInt()))
             else -> this
         }
 
@@ -233,20 +180,20 @@ private fun Double.throwIfZero(): Double {
 operator fun Value<*>.div(b: Value<*>): Value<*> {
     return when (this) {
         is IntValue -> when (b) {
-            is IntValue -> DoubleValue(value.toDouble() / b.value.throwIfZero())
-            is DoubleValue -> DoubleValue(value / b.value.throwIfZero())
+            is IntValue -> FloatValue(value.toDouble() / b.value.throwIfZero())
+            is FloatValue -> FloatValue(value / b.value.throwIfZero())
             else -> IntValue(value / (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
         }
 
-        is DoubleValue -> when (b) {
-            is IntValue -> DoubleValue(value / b.value.throwIfZero())
-            is DoubleValue -> DoubleValue(value / b.value.throwIfZero())
-            else -> DoubleValue(value / (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
+        is FloatValue -> when (b) {
+            is IntValue -> FloatValue(value / b.value.throwIfZero())
+            is FloatValue -> FloatValue(value / b.value.throwIfZero())
+            else -> FloatValue(value / (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
         }
 
-        is StrValue -> when (b) {
-            is IntValue -> ListValue(value.chunked(b.value).map { StrValue(it) })
-            is DoubleValue -> ListValue(value.chunked(b.value.toInt()).map { StrValue(it) })
+        is StringValue -> when (b) {
+            is IntValue -> SliceValue(value.chunked(b.value).map { StringValue(it) })
+            is FloatValue -> SliceValue(value.chunked(b.value.toInt()).map { StringValue(it) })
             else -> IntValue(
                 (value.length - value.replace(b.value().toString(), "").length) / b.value()
                     .toString().length.throwIfZero()
@@ -260,20 +207,20 @@ operator fun Value<*>.div(b: Value<*>): Value<*> {
 operator fun Value<*>.rem(b: Value<*>): Value<*> {
     return when (this) {
         is IntValue -> when (b) {
-            is IntValue -> DoubleValue(value.toDouble() % b.value.throwIfZero())
-            is DoubleValue -> DoubleValue(value % b.value.throwIfZero())
+            is IntValue -> FloatValue(value.toDouble() % b.value.throwIfZero())
+            is FloatValue -> FloatValue(value % b.value.throwIfZero())
             else -> IntValue(value % (b.value().toString().toIntOrNull() ?: 0).throwIfZero())
         }
 
-        is DoubleValue -> when (b) {
-            is IntValue -> DoubleValue(value % b.value.throwIfZero())
-            is DoubleValue -> DoubleValue(value % b.value.throwIfZero())
-            else -> DoubleValue(value % (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
+        is FloatValue -> when (b) {
+            is IntValue -> FloatValue(value % b.value.throwIfZero())
+            is FloatValue -> FloatValue(value % b.value.throwIfZero())
+            else -> FloatValue(value % (b.value().toString().toDoubleOrNull() ?: 0.0).throwIfZero())
         }
 
-        is StrValue -> when (b) {
+        is StringValue -> when (b) {
             is IntValue -> IntValue(value.length % b.value.throwIfZero())
-            is DoubleValue -> IntValue(value.length % b.value().toInt().throwIfZero())
+            is FloatValue -> IntValue(value.length % b.value().toInt().throwIfZero())
             else -> IntValue(value.length % b.value().toString().length.throwIfZero())
         }
 

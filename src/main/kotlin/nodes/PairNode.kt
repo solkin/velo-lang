@@ -1,6 +1,8 @@
 package nodes
 
+import CompilerContext
 import Environment
+import vm2.operations.Push
 
 data class PairNode(
     val first: Node,
@@ -10,6 +12,16 @@ data class PairNode(
         first = first.evaluate(env),
         second = second?.evaluate(env) ?: VoidValue()
     )
+}
+
+data class PairType(val first: Type, val second: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.PAIR
+
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = 0))
+        ctx.add(Push(value = 0))
+    }
 }
 
 class PairValue(val first: Value<*>, val second: Value<*>) : Value<Pair<Value<*>, Value<*>>>(t = first to second) {

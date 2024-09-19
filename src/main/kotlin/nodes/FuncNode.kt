@@ -40,7 +40,7 @@ data class FuncNode(
     }
 
     override fun compile(ctx: CompilerContext): Type {
-        var resultType: Type = FunctionType(derived = type)
+        var resultType: Type = FuncType(derived = type)
 
         // Insert function address to stack
         val named = !name.isNullOrEmpty()
@@ -74,6 +74,15 @@ data class FuncNode(
         ctx.merge(funcOps)
 
         return resultType
+    }
+}
+
+data class FuncType(val derived: Type) : Type {
+    override val type: BaseType
+        get() = BaseType.FUNCTION
+
+    override fun default(ctx: CompilerContext) {
+        ctx.add(Push(value = 0))
     }
 }
 

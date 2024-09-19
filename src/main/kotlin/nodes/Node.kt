@@ -18,7 +18,7 @@ abstract class Value<T>(private val t: T) {
 
     open fun property(name: String, args: List<Value<*>>?): Value<*> {
         return exts[name]?.run(args = args.orEmpty(), it = this) ?: when (name) {
-            "string" -> StrValue(toString())
+            "string" -> StringValue(toString())
             "ext" -> {
                 if (args?.size != 1) {
                     throw IllegalArgumentException("Property 'ext' requires one named func argument")

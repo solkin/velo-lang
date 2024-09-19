@@ -14,7 +14,7 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, DoubleNode(
+            node, FloatNode(
                 value = 123.5
             ).wrapProgram()
         )
@@ -29,7 +29,7 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, StrNode(
+            node, StringNode(
                 value = "Hello World"
             ).wrapProgram()
         )
@@ -93,7 +93,7 @@ class ParserTest {
         assertEquals(
             node, CallNode(
                 func = VarNode(name = "println"),
-                args = listOf(StrNode(value = "Hello, World!"))
+                args = listOf(StringNode(value = "Hello, World!"))
             ).wrapProgram()
         )
     }
@@ -193,7 +193,7 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = ListNode(listOf = emptyList())
+                right = SliceNode(listOf = emptyList())
             ).wrapProgram()
         )
     }
@@ -209,7 +209,7 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = ListNode(listOf = arrayListOf(IntNode(1), DoubleNode(2.1), StrNode("hello")))
+                right = SliceNode(listOf = arrayListOf(IntNode(1), FloatNode(2.1), StringNode("hello")))
             ).wrapProgram()
         )
     }
@@ -224,7 +224,7 @@ class ParserTest {
 
         assertEquals(
             node, IndexNode(
-                list = ListNode(listOf = arrayListOf(IntNode(1), DoubleNode(2.1), StrNode("hello"))),
+                list = SliceNode(listOf = arrayListOf(IntNode(1), FloatNode(2.1), StringNode("hello"))),
                 index = IntNode(1)
             ).wrapProgram()
         )
@@ -257,7 +257,7 @@ class ParserTest {
 
         assertEquals(
             node, ProgramNode(
-                prog = listOf(BoolNode(value = true), StrNode(value = "String"))
+                prog = listOf(BoolNode(value = true), StringNode(value = "String"))
             ).wrapProgram()
         )
     }
