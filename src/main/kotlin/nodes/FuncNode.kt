@@ -42,16 +42,19 @@ data class FuncNode(
     }
 
     override fun compile(ctx: CompilerContext): VMType {
-        val derivedType = VMFunction(derived = type)
+        var resultType: VMType = VMFunction(derived = type)
 
         // Insert function address to stack
+        val named = !name.isNullOrEmpty()
+        val defCmdCount = if (named) 5 else 4 // Five/four commands from Pc() to function body
         ctx.add(Pc())
-        ctx.add(Push(value = 5)) // Five commands from Pc() to function body
+        ctx.add(Push(value = defCmdCount))
         ctx.add(Plus())
         // Define var and move address to var if name is defined
-        if (!name.isNullOrEmpty()) {
-            val v = ctx.defVar(name, derivedType)
+        if (named) {
+            val v = ctx.defVar(name.orEmpty(), resultType)
             ctx.add(Def(v.index))
+            resultType = VMVoid
         }
 
         // Compile body
@@ -72,7 +75,7 @@ data class FuncNode(
         // Add function operations to real context
         ctx.merge(funcOps)
 
-        return derivedType
+        return resultType
     }
 }
 

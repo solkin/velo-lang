@@ -21,9 +21,9 @@ data class ProgramNode(
         var type: VMType = VMVoid
         prog.forEachIndexed { index, node ->
             type = node.compile(ctx)
-//            if (type.unmask() != DataType.VOID && index != prog.size-1) {
-//                ctx.add(Drop())
-//            }
+            if (type != VMVoid && index != prog.size-1) {
+                ctx.add(Drop())
+            }
         }
         ctx.add(Free())
         return type

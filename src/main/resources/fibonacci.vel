@@ -1,8 +1,8 @@
-var fib = func(num) {
-    var a = 0;
-    var b = 1;
-    var tmp = 0;
-    var i = 2;
+fn[int] fib = func (int num) int {
+    int a = 0;
+    int b = 1;
+    int tmp = 0;
+    int i = 2;
     while (i <= num) {
         tmp = a + b;
         a = b;
@@ -12,4 +12,5 @@ var fib = func(num) {
     b;
 };
 
-println("Fib: " + fib(93));
+println("Fib: ");
+println(fib(93));

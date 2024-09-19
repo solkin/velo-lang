@@ -73,7 +73,7 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/primes.vel").readText()
+    val prog = Parser::class.java.getResource("/fibonacci.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
