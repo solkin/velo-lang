@@ -16,9 +16,10 @@ data class IndexNode(
     }
 
     override fun compile(ctx: CompilerContext): Type {
-        list.compile(ctx)
+        val type = list.compile(ctx)
+        type as? SliceType ?: throw IllegalArgumentException("Index on non-indexable type $type")
         index.compile(ctx)
         ctx.add(Index())
-        return VoidType // TODO: replace with real type
+        return type.derived
     }
 }
