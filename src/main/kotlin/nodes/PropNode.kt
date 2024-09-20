@@ -15,66 +15,10 @@ data class PropNode(
     }
 
     override fun compile(ctx: CompilerContext): Type {
-        parent.compile(ctx)
-        args.orEmpty().reversed().forEach { it.compile(ctx) }
-        /*when(name) {
-            "str" -> ctx.add(SubStr())
-            "len" -> ctx.add(StrLen())
-
-            "subSlice" -> ctx.add(SubSlice())
-            "size" -> ctx.add(SliceLen())
-            "map" -> {
-                val func = ctx.varIndex("_func")
-                ctx.add(Def(func))
-
-                ctx.add(Dup())
-                ctx.add(SliceLen())
-                val size = ctx.varIndex("_size")
-                ctx.add(Def(size))
-
-                ctx.add(Push(0))
-                val i = ctx.varIndex("_i")
-                ctx.add(Def(i))
-
-                val list = ctx.varIndex("_list")
-                ctx.add(Def(list))
-
-                val condCtx: MutableList<Operation> = ArrayList()
-                with(condCtx) {
-                    add(Get(i))
-                    add(Get(size))
-                    add(Less())
-                }
-
-                val exprCtx: MutableList<Operation> = ArrayList()
-                with(exprCtx) {
-                    // index
-                    add(Get(i))
-                    // item
-                    add(Get(list))
-                    add(Get(i))
-                    add(Index())
-                    // func
-                    add(Get(func))
-                    // call func
-                    add(Call())
-                    // increment i
-                    add(Get(i))
-                    add(Push(1))
-                    add(Plus())
-                    add(Set(i))
-                }
-                exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
-
-                ctx.addAll(condCtx)
-                ctx.add(If(exprCtx.size))
-                ctx.addAll(exprCtx)
-
-                ctx.add(Get(size))
-                ctx.add(Slice())
-            }
-            else -> throw IllegalArgumentException("Property $name is not supported")
-        }*/
-        throw IllegalArgumentException("Property $name is not supported")
+        val type = parent.compile(ctx)
+        val argsType = args.orEmpty().reversed().map { it.compile(ctx) }
+        val typeProps = propMap[type.type] ?: throw IllegalArgumentException("Type ${type.type} has no $name propery")
+        val prop = typeProps[name] ?: throw IllegalArgumentException("Property $name of ${type.type} is not supported")
+        return prop.compile(type, args = argsType, ctx)
     }
 }

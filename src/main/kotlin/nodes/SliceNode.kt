@@ -2,8 +2,21 @@ package nodes
 
 import CompilerContext
 import Environment
+import vm2.Operation
+import vm2.operations.Call
+import vm2.operations.Def
+import vm2.operations.Dup
+import vm2.operations.Get
+import vm2.operations.If
+import vm2.operations.Index
+import vm2.operations.Less
+import vm2.operations.Move
+import vm2.operations.Plus
 import vm2.operations.Push
 import vm2.operations.Slice
+import vm2.operations.SliceLen
+import vm2.operations.SubSlice
+import vm2.operations.Set
 
 data class SliceNode(
     val listOf: List<Node>,
@@ -38,6 +51,79 @@ data class SliceType(val derived: Type) : Type {
 
     override fun default(ctx: CompilerContext) {
         ctx.add(Push(value = 0))
+    }
+}
+
+object SliceLenProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+        ctx.add(SliceLen())
+        return IntType
+    }
+}
+
+object SubSliceProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+        type as SliceType
+        ctx.add(SubSlice())
+        return SliceType(type.derived)
+    }
+}
+
+object MapSliceProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+        type as SliceType
+        val arg = args.first() as FuncType
+
+        val func = ctx.defVar("_func", arg)
+        ctx.add(Def(func.index))
+
+        ctx.add(Dup())
+        ctx.add(SliceLen())
+        val size = ctx.defVar("_size", IntType)
+        ctx.add(Def(size.index))
+
+        ctx.add(Push(0))
+        val i = ctx.defVar("_i", IntType)
+        ctx.add(Def(i.index))
+
+        val slice = ctx.defVar("_slice", SliceType(arg.derived))
+        ctx.add(Def(slice.index))
+
+        val condCtx: MutableList<Operation> = ArrayList()
+        with(condCtx) {
+            add(Get(i.index))
+            add(Get(size.index))
+            add(Less())
+        }
+
+        val exprCtx: MutableList<Operation> = ArrayList()
+        with(exprCtx) {
+            // index
+            add(Get(i.index))
+            // item
+            add(Get(slice.index))
+            add(Get(i.index))
+            add(Index())
+            // func
+            add(Get(func.index))
+            // call func
+            add(Call())
+            // increment i
+            add(Get(i.index))
+            add(Push(1))
+            add(Plus())
+            add(Set(i.index))
+        }
+        exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
+
+        ctx.addAll(condCtx)
+        ctx.add(If(exprCtx.size))
+        ctx.addAll(exprCtx)
+
+        ctx.add(Get(size.index))
+        ctx.add(Slice())
+
+        return SliceType(type.derived)
     }
 }
 

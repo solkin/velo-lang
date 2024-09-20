@@ -18,9 +18,6 @@ enum class BaseType(val type: String) {
 interface Type {
     val type: BaseType
     fun default(ctx: CompilerContext)
-    fun property(name: String, ctx: CompilerContext) {
-        throw IllegalArgumentException("Property $name on $this is not supported")
-    }
 }
 
 object ByteType : Type {

@@ -3,6 +3,8 @@ package nodes
 import CompilerContext
 import Environment
 import vm2.operations.Push
+import vm2.operations.StrLen
+import vm2.operations.SubStr
 
 data class StringNode(
     val value: String,
@@ -24,12 +26,26 @@ object StringType : Type {
     }
 }
 
+object SubStrProp: Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+        ctx.add(SubStr())
+        return StringType
+    }
+}
+
+object StrLenProp: Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+        ctx.add(StrLen())
+        return IntType
+    }
+}
+
 class StringValue(val value: String) : Value<String>(value) {
     override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
             "len" -> IntValue(value.length)
             "hash" -> IntValue(value.hashCode())
-            "str" -> {
+            "sub" -> {
                 if (args?.size != 2) {
                     throw IllegalArgumentException("Property 'sub' requires (start, end) arguments")
                 }
