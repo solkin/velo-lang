@@ -1,5 +1,5 @@
-var calc = func(matrix, x, y) {
-     var window = func(a) {
+fn[int] calc = func(slice[slice[int]] matrix, int x, int y) int {
+     fn[int] window = func(int a) int {
         if (a >= 0) {
             if (a < matrix.len) then a else a - matrix.len;
         } else {
@@ -7,7 +7,7 @@ var calc = func(matrix, x, y) {
         }
     };
 
-    var cells =
+    int cells =
             matrix[window(y - 1)][window(x - 1)] +
             matrix[window(y - 1)][x] +
             matrix[window(y - 1)][window(x + 1)] +
@@ -26,11 +26,11 @@ var calc = func(matrix, x, y) {
     }
 };
 
-var printWorld = func(world) {
+fn[void] printWorld = func(slice[slice[int]] world) void {
     world.map(
-        func(index, row) {
+        func(int index, slice[int] row) slice[int] {
             row.map(
-                func(index, col) {
+                func(int index, int col) int {
                     print(col + " ")
                 }
             );
@@ -39,11 +39,11 @@ var printWorld = func(world) {
     )
 };
 
-var nextGeneration = func(world) {
+fn[slice[slice[int]]] nextGeneration = func(slice[slice[int]] world) slice[slice[int]] {
     world.map(
-        func(y, row) {
+        func(int y, slice[int] row) slice[int] {
             row.map(
-                func(x, col) {
+                func(int x, int col) int {
                     calc(world, x, y);
                 }
             );
@@ -51,19 +51,19 @@ var nextGeneration = func(world) {
     );
 };
 
-var w = list(
-    list(0, 1, 0, 0, 0, 0),
-    list(0, 0, 1, 0, 0, 0),
-    list(1, 1, 1, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0),
-    list(0, 0, 0, 0, 0, 0)
+slice[slice[int]] w = sliceOf[slice[int]](
+    sliceOf[int](0, 1, 0, 0, 0, 0),
+    sliceOf[int](0, 0, 1, 0, 0, 0),
+    sliceOf[int](1, 1, 1, 0, 0, 0),
+    sliceOf[int](0, 0, 0, 0, 0, 0),
+    sliceOf[int](0, 0, 0, 0, 0, 0),
+    sliceOf[int](0, 0, 0, 0, 0, 0)
 );
 
 print("Enter generations count: ");
-var count = readLine();
+int count = 5; # TODO: readLine();
 println();
-var idx = 0;
+int idx = 0;
 while (idx <= count) {
     printWorld(w);
     println("--");
