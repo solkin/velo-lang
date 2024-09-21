@@ -1,7 +1,7 @@
-import parser.StringInput
-import parser.Token
-import parser.TokenStream
-import parser.TokenType
+import compiler.parser.StringInput
+import compiler.parser.Token
+import compiler.parser.TokenStream
+import compiler.parser.TokenType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

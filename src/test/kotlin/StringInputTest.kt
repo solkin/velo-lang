@@ -1,5 +1,5 @@
-import parser.Input
-import parser.StringInput
+import compiler.parser.Input
+import compiler.parser.StringInput
 import java.lang.Character.MIN_VALUE
 import kotlin.test.Test
 import kotlin.test.assertEquals

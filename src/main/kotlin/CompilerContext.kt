@@ -1,4 +1,4 @@
-import nodes.Type
+import compiler.nodes.Type
 import vm2.Operation
 
 data class CompilerContext(

@@ -1,10 +1,11 @@
-import nodes.BoolValue
-import nodes.FuncValue
-import nodes.StringValue
-import nodes.Value
-import parser.Parser
-import parser.StringInput
-import parser.TokenStream
+import compiler.createGlobalEnvironment
+import compiler.nodes.BoolValue
+import compiler.nodes.FuncValue
+import compiler.nodes.StringValue
+import compiler.nodes.Value
+import compiler.parser.Parser
+import compiler.parser.StringInput
+import compiler.parser.TokenStream
 import vm2.SimpleParser
 import vm2.VM2
 
