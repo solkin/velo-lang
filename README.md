@@ -94,7 +94,7 @@ To compile and run program from file you need to specify file path started with 
 ### License
     MIT License
     
-    Copyright (c) 2022 Igor Solkin
+    Copyright (c) 2024 Igor Solkin
     
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
