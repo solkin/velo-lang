@@ -1,4 +1,5 @@
-import compiler.CompilerContext
+import compiler.Context
+import compiler.Heap
 import compiler.createGlobalEnvironment
 import compiler.nodes.BoolValue
 import compiler.nodes.FuncValue
@@ -98,12 +99,13 @@ fun vm2() {
         println("!! interpreter halted with an exception: ${ex.message}")
     }
 
-    val ctx = CompilerContext(ops = ArrayList(), vars = HashMap())
+    val ctx = Context(ops = ArrayList(), heap = Heap())
     try {
         node.compile(ctx)
     } catch (ex: Throwable) {
         println("!! compilation failed")
         println(ex.message)
+        return
     }
 
     val vm = VM()

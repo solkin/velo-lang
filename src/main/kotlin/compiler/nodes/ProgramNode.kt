@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Drop
 import vm.operations.Ext
@@ -16,8 +16,9 @@ data class ProgramNode(
         return v
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         ctx.add(Ext())
+        ctx.heap.extend()
         var type: Type = VoidType
         prog.forEachIndexed { index, node ->
             type = node.compile(ctx)
@@ -26,6 +27,7 @@ data class ProgramNode(
             }
         }
         ctx.add(Free())
+        ctx.heap.free()
         return type
     }
 }

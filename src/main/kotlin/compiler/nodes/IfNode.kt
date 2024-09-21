@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.If
 import vm.operations.Move
@@ -16,7 +16,7 @@ data class IfNode(
         return elseNode?.let { elseNode.evaluate(env) } ?: BoolValue(false)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val thenCtx = ctx.fork()
         val thenType = thenNode.compile(thenCtx)
 

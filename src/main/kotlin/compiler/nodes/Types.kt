@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import vm.operations.Push
 
 enum class BaseType(val type: String) {
@@ -17,14 +17,14 @@ enum class BaseType(val type: String) {
 
 interface Type {
     val type: BaseType
-    fun default(ctx: CompilerContext)
+    fun default(ctx: Context)
 }
 
 object ByteType : Type {
     override val type: BaseType
         get() = BaseType.BYTE
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
 }

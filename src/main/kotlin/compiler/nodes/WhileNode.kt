@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.If
 import vm.operations.Move
@@ -16,7 +16,7 @@ data class WhileNode(
         return BoolValue(false)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val condCtx = ctx.fork()
         cond.compile(condCtx)
 

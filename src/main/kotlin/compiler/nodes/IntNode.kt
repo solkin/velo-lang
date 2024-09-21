@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Push
 
@@ -9,7 +9,7 @@ data class IntNode(
 ) : Node() {
     override fun evaluate(env: Environment<Value<*>>) = IntValue(value)
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         ctx.add(Push(value))
         return IntType
     }
@@ -19,7 +19,7 @@ object IntType : Type {
     override val type: BaseType
         get() = BaseType.INT
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
 }

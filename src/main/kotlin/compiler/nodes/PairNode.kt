@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Push
 
@@ -18,7 +18,7 @@ data class PairType(val first: Type, val second: Type) : Type {
     override val type: BaseType
         get() = BaseType.PAIR
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
         ctx.add(Push(value = 0))
     }

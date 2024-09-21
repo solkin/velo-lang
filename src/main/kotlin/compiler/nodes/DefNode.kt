@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Def
 
@@ -15,7 +15,7 @@ data class DefNode(
         return value
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val defType = def?.compile(ctx) ?: let {
             type.default(ctx)
             type
@@ -23,7 +23,7 @@ data class DefNode(
         if (type != defType) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
-        val v = ctx.defVar(name, type)
+        val v = ctx.heap.current().def(name, type)
         ctx.add(Def(v.index))
         return VoidType
     }

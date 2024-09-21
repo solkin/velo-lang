@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.And
 import vm.operations.Divide
@@ -45,7 +45,7 @@ data class BinaryNode(
         }
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
         if (leftType != rightType) {

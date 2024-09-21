@@ -1,8 +1,10 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Def
+import vm.operations.Ext
+import vm.operations.Free
 import vm.operations.Move
 import vm.operations.Pc
 import vm.operations.Plus
@@ -39,7 +41,7 @@ data class FuncNode(
         return func
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         var resultType: Type = FuncType(derived = type)
 
         // Insert function address to stack
@@ -50,21 +52,25 @@ data class FuncNode(
         ctx.add(Plus())
         // Define var and move address to var if name is defined
         if (named) {
-            val v = ctx.defVar(name.orEmpty(), resultType)
+            val v = ctx.heap.current().def(name.orEmpty(), resultType)
             ctx.add(Def(v.index))
             resultType = VoidType
         }
 
         // Compile body
         val funcOps = ctx.fork()
+        funcOps.heap.extend()
+        funcOps.add(Ext())
         defs.reversed().forEach { def ->
-            val v = funcOps.defVar(def.name, def.type)
+            val v = funcOps.heap.current().def(def.name, def.type)
             funcOps.add(Def(v.index))
         }
         val retType = body.compile(funcOps)
         if (retType != type) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
+        funcOps.heap.free()
+        funcOps.add(Free())
         funcOps.add(Ret())
 
         // Skip function body
@@ -81,7 +87,7 @@ data class FuncType(val derived: Type) : Type {
     override val type: BaseType
         get() = BaseType.FUNCTION
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
 }

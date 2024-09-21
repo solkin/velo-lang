@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 
 data class PropNode(
@@ -14,7 +14,7 @@ data class PropNode(
         return v.property(name, a)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val parentType = parent.compile(ctx)
         val argsType = args.orEmpty().reversed().map { it.compile(ctx) }
         val typeProps = propMap[parentType.type] ?: throw IllegalArgumentException("Type ${parentType.type} has no $name property")

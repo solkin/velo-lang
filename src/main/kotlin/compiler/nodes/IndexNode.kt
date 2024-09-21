@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Index
 
@@ -15,7 +15,7 @@ data class IndexNode(
         return l.get(i)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         val type = list.compile(ctx)
         type as? SliceType ?: throw IllegalArgumentException("Index on non-indexable type $type")
         index.compile(ctx)

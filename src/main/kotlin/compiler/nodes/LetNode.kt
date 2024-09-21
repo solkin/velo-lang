@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Ext
 import vm.operations.Free
@@ -17,11 +17,13 @@ data class LetNode(
         return body.evaluate(scope)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         ctx.add(Ext())
+        ctx.heap.extend()
         vars.forEach { it.compile(ctx) }
         val type = body.compile(ctx)
         ctx.add(Free())
+        ctx.heap.free()
         return type
     }
 }

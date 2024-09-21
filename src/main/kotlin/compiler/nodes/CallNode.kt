@@ -1,8 +1,10 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Call
+import vm.operations.Ext
+import vm.operations.Free
 import vm.operations.Print
 import vm.operations.Println
 
@@ -18,7 +20,7 @@ data class CallNode(
         return fnc.run(args = args, it = null)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         args.forEach { arg ->
             arg.compile(ctx)
         }

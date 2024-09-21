@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.Operation
 import vm.operations.Call
@@ -38,7 +38,7 @@ data class SliceNode(
         return SliceValue(value)
     }
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         listOf.forEach { it.compile(ctx) }
         ctx.add(Push(listOf.size))
         ctx.add(Slice())
@@ -51,20 +51,20 @@ data class SliceType(val derived: Type) : Type {
     override val type: BaseType
         get() = BaseType.SLICE
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
 }
 
 object SliceLenProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(SliceLen())
         return IntType
     }
 }
 
 object SubSliceProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as SliceType
         ctx.add(SubSlice())
         return SliceType(type.derived)
@@ -72,25 +72,26 @@ object SubSliceProp : Prop {
 }
 
 object MapSliceProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as SliceType
         val arg = args.first() as FuncType
 
         ctx.add(Ext())
+        ctx.heap.extend()
 
-        val func = ctx.defVar("_func", arg)
+        val func = ctx.heap.current().def(name = "@func", type = arg)
         ctx.add(Def(func.index))
 
         ctx.add(Dup())
         ctx.add(SliceLen())
-        val size = ctx.defVar("_size", IntType)
+        val size = ctx.heap.current().def(name = "@size", type = IntType)
         ctx.add(Def(size.index))
 
         ctx.add(Push(0))
-        val i = ctx.defVar("_i", IntType)
+        val i = ctx.heap.current().def(name = "@i", type = IntType)
         ctx.add(Def(i.index))
 
-        val slice = ctx.defVar("_slice", SliceType(arg.derived))
+        val slice = ctx.heap.current().def(name = "@slice", type = SliceType(arg.derived))
         ctx.add(Def(slice.index))
 
         val condCtx: MutableList<Operation> = ArrayList()
@@ -128,6 +129,7 @@ object MapSliceProp : Prop {
         ctx.add(Slice())
 
         ctx.add(Free())
+        ctx.heap.free()
 
         return SliceType(type.derived)
     }

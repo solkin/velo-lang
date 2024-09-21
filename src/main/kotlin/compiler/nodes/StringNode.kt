@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 import vm.operations.Push
 import vm.operations.StrLen
@@ -11,7 +11,7 @@ data class StringNode(
 ) : Node() {
     override fun evaluate(env: Environment<Value<*>>) = StringValue(value)
 
-    override fun compile(ctx: CompilerContext): Type {
+    override fun compile(ctx: Context): Type {
         ctx.add(Push(value))
         return StringType
     }
@@ -21,20 +21,20 @@ object StringType : Type {
     override val type: BaseType
         get() = BaseType.STRING
 
-    override fun default(ctx: CompilerContext) {
+    override fun default(ctx: Context) {
         ctx.add(Push(value = ""))
     }
 }
 
 object SubStrProp: Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(SubStr())
         return StringType
     }
 }
 
 object StrLenProp: Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(StrLen())
         return IntType
     }

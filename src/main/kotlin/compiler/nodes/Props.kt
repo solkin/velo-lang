@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 
 val propMap = mapOf(
     BaseType.STRING to mapOf(
@@ -15,5 +15,5 @@ val propMap = mapOf(
 )
 
 interface Prop {
-    fun compile(type: Type, args: List<Type>, ctx: CompilerContext): Type
+    fun compile(type: Type, args: List<Type>, ctx: Context): Type
 }

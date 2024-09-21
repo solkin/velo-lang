@@ -1,11 +1,11 @@
 package compiler.nodes
 
-import compiler.CompilerContext
+import compiler.Context
 import compiler.Environment
 
 abstract class Node {
     abstract fun evaluate(env: Environment<Value<*>>): Value<*>
-    open fun compile(ctx: CompilerContext): Type {
+    open fun compile(ctx: Context): Type {
         throw NotImplementedError("Compile function for $this is not implemented")
     }
 }
