@@ -10,9 +10,21 @@ import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import vm.SimpleParser
 import vm.VM
+import java.io.File
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/primes.vel").readText()
+    if (args.isEmpty()) {
+        println("File path is required")
+        return
+    }
+    val path = args[0]
+    val prog = if (path.startsWith("res://")) {
+        Parser::class.java.getResource(path.substring(5))?.readText() ?: return
+    } else if (path.startsWith("file://")) {
+        File(path.substring(7)).readText()
+    } else {
+        return
+    }
 
     val input = StringInput(prog)
     val stream = TokenStream(input)

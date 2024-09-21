@@ -1,11 +1,18 @@
+fn[int] test = func(int a) int {
+    func(int a, int b) int {
+        a + b
+    }(a, 1);
+};
+
 func traverse(slice[slice[int]] matrix) slice[slice[int]] {
     matrix.map(
         func(int index, slice[int] row) slice[int] {
             row.map(
                 func(int index, int col) int {
-                    print(col);
+                    int v = test(col);
+                    print(v);
                     print(" ");
-                    col;
+                    v;
                 }
             );
             println("");
