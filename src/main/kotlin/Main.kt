@@ -68,7 +68,7 @@ fun main(args: Array<String>) {
 }
 
 fun vm2() {
-    val prog = Parser::class.java.getResource("/game-of-life.vel").readText()
+    val prog = Parser::class.java.getResource("/test.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)

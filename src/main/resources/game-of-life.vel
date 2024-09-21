@@ -1,5 +1,5 @@
-fn[int] calc = func(slice[slice[int]] matrix, int x, int y) int {
-     fn[int] window = func(int a) int {
+func calc(slice[slice[int]] matrix, int x, int y) int {
+     func window(int a) int {
         if (a >= 0) {
             if (a < matrix.len) then a else a - matrix.len;
         } else {
@@ -26,20 +26,23 @@ fn[int] calc = func(slice[slice[int]] matrix, int x, int y) int {
     }
 };
 
-fn[void] printWorld = func(slice[slice[int]] world) void {
+func printWorld(slice[slice[int]] world) slice[slice[int]] {
     world.map(
         func(int index, slice[int] row) slice[int] {
             row.map(
                 func(int index, int col) int {
-                    print(col + " ")
+                    print(col);
+                    print(" ");
+                    col;
                 }
             );
             println("");
+            row
         }
     )
 };
 
-fn[slice[slice[int]]] nextGeneration = func(slice[slice[int]] world) slice[slice[int]] {
+func nextGeneration(slice[slice[int]] world) slice[slice[int]] {
     world.map(
         func(int y, slice[int] row) slice[int] {
             row.map(
@@ -62,7 +65,7 @@ slice[slice[int]] w = sliceOf[slice[int]](
 
 print("Enter generations count: ");
 int count = 5; # TODO: readLine();
-println();
+println("");
 int idx = 0;
 while (idx <= count) {
     printWorld(w);

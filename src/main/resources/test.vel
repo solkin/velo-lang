@@ -1,0 +1,18 @@
+func printWorld(slice[slice[int]] world) slice[slice[int]] {
+    world.map(
+        func(int index, slice[int] row) slice[int] {
+            row.map(
+                func(int index, int col) int {
+                    col;
+                }
+            );
+            row;
+        }
+    )
+};
+
+slice[slice[int]] w = sliceOf[slice[int]](
+    sliceOf[int](0),
+);
+
+printWorld(w);
