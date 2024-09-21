@@ -1,12 +1,15 @@
 import compiler.nodes.AssignNode
 import compiler.nodes.BinaryNode
 import compiler.nodes.BoolNode
+import compiler.nodes.BoolType
 import compiler.nodes.CallNode
+import compiler.nodes.DefNode
 import compiler.nodes.FloatNode
 import compiler.nodes.FuncNode
 import compiler.nodes.IfNode
 import compiler.nodes.IndexNode
 import compiler.nodes.IntNode
+import compiler.nodes.IntType
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.SliceNode
@@ -15,8 +18,6 @@ import compiler.nodes.VarNode
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
-import nodes.*
-import parser.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -84,7 +85,7 @@ class ParserTest {
 
     @Test
     fun testParseFunc() {
-        val input = StringInput("func(a) { false }")
+        val input = StringInput("func(int a) bool { false }")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -93,7 +94,8 @@ class ParserTest {
         assertEquals(
             node, FuncNode(
                 name = null,
-                vars = listOf("a"),
+                defs = listOf(DefNode("a", IntType, def = null)),
+                type = BoolType,
                 body = BoolNode(value = false)
             ).wrapProgram()
         )
@@ -200,8 +202,8 @@ class ParserTest {
     }
 
     @Test
-    fun testParseList() {
-        val input = StringInput("a = list()")
+    fun testParseSlice() {
+        val input = StringInput("a = sliceOf[int]()")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -210,14 +212,14 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = SliceNode(listOf = emptyList())
+                right = SliceNode(listOf = emptyList(), IntType)
             ).wrapProgram()
         )
     }
 
     @Test
-    fun testParseListOf() {
-        val input = StringInput("a = list(1, 2.1, \"hello\")")
+    fun testParseSliceOf() {
+        val input = StringInput("a = sliceOf[int](1, 2, 5)")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -226,14 +228,14 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = SliceNode(listOf = arrayListOf(IntNode(1), FloatNode(2.1), StringNode("hello")))
+                right = SliceNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), type = IntType)
             ).wrapProgram()
         )
     }
 
     @Test
-    fun testParseListAccess() {
-        val input = StringInput("list(1, 2.1, \"hello\")[1]")
+    fun testParseSliceAccess() {
+        val input = StringInput("sliceOf[int](1, 2, 5)[1]")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -241,7 +243,7 @@ class ParserTest {
 
         assertEquals(
             node, IndexNode(
-                list = SliceNode(listOf = arrayListOf(IntNode(1), FloatNode(2.1), StringNode("hello"))),
+                list = SliceNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
                 index = IntNode(1)
             ).wrapProgram()
         )
