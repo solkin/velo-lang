@@ -5,13 +5,8 @@ import nodes.Value
 import parser.Parser
 import parser.StringInput
 import parser.TokenStream
-import vm.VM
 import vm2.SimpleParser
 import vm2.VM2
-import java.io.EOFException
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
 
 fun main(args: Array<String>) {
     vm2()
@@ -113,31 +108,3 @@ fun vm2() {
     vm2.load(SimpleParser(ctx.operations()))
     vm2.run()
 }
-
-private fun runVM(path: String) {
-    val f = File(path)
-    val img = IntArray((f.length() / 4).toInt())
-    var c = 0
-    FileInputStream(f).use { inp ->
-        try {
-            while (true) {
-                val ch1: Int = inp.read()
-                val ch2: Int = inp.read()
-                val ch3: Int = inp.read()
-                val ch4: Int = inp.read()
-                if ((ch1 or ch2 or ch3 or ch4) < 0) throw EOFException()
-                val i = ((ch1 shl 0) + (ch2 shl 8) + (ch3 shl 16) + (ch4 shl 24))
-                img[c++] = i
-            }
-        } catch (ignored: IOException) {
-        }
-    }
-    val vm = VM(102400, 512, 512)
-    vm.load(img)
-    val time1 = System.currentTimeMillis()
-    vm.run()
-    val elapsed1 = System.currentTimeMillis() - time1
-    println("\nRun in $elapsed1 ms")
-}
-
-inline infix fun Byte.shl(other: Byte): Byte = (this.toInt() shl other.toInt()).toByte()
