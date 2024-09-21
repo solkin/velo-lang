@@ -2,12 +2,12 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Def
-import vm2.operations.Move
-import vm2.operations.Pc
-import vm2.operations.Plus
-import vm2.operations.Push
-import vm2.operations.Ret
+import vm.operations.Def
+import vm.operations.Move
+import vm.operations.Pc
+import vm.operations.Plus
+import vm.operations.Push
+import vm.operations.Ret
 
 data class FuncNode(
     val name: String?,

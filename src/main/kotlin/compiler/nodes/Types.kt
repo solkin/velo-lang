@@ -1,7 +1,7 @@
 package compiler.nodes
 
 import compiler.CompilerContext
-import vm2.operations.Push
+import vm.operations.Push
 
 enum class BaseType(val type: String) {
     BYTE("byte"),

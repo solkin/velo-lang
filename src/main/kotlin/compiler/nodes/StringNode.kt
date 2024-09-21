@@ -2,9 +2,9 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Push
-import vm2.operations.StrLen
-import vm2.operations.SubStr
+import vm.operations.Push
+import vm.operations.StrLen
+import vm.operations.SubStr
 
 data class StringNode(
     val value: String,

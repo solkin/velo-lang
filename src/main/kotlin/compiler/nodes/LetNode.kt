@@ -2,8 +2,8 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Ext
-import vm2.operations.Free
+import vm.operations.Ext
+import vm.operations.Free
 
 data class LetNode(
     val vars: List<DefNode>,

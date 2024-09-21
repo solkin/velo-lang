@@ -2,23 +2,23 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.Operation
-import vm2.operations.Call
-import vm2.operations.Def
-import vm2.operations.Dup
-import vm2.operations.Ext
-import vm2.operations.Free
-import vm2.operations.Get
-import vm2.operations.If
-import vm2.operations.Index
-import vm2.operations.Less
-import vm2.operations.Move
-import vm2.operations.Plus
-import vm2.operations.Push
-import vm2.operations.Slice
-import vm2.operations.SliceLen
-import vm2.operations.SubSlice
-import vm2.operations.Set
+import vm.Operation
+import vm.operations.Call
+import vm.operations.Def
+import vm.operations.Dup
+import vm.operations.Ext
+import vm.operations.Free
+import vm.operations.Get
+import vm.operations.If
+import vm.operations.Index
+import vm.operations.Less
+import vm.operations.Move
+import vm.operations.Plus
+import vm.operations.Push
+import vm.operations.Slice
+import vm.operations.SliceLen
+import vm.operations.SubSlice
+import vm.operations.Set
 
 data class SliceNode(
     val listOf: List<Node>,

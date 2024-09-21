@@ -1,7 +1,7 @@
 package compiler
 
 import compiler.nodes.Type
-import vm2.Operation
+import vm.Operation
 
 data class CompilerContext(
     private val ops: MutableList<Operation>,

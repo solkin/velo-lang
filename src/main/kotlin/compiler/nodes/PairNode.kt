@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Push
+import vm.operations.Push
 
 data class PairNode(
     val first: Node,

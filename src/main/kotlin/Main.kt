@@ -7,8 +7,8 @@ import compiler.nodes.Value
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
-import vm2.SimpleParser
-import vm2.VM2
+import vm.SimpleParser
+import vm.VM
 
 fun main(args: Array<String>) {
     vm2()
@@ -106,7 +106,7 @@ fun vm2() {
         println(ex.message)
     }
 
-    val vm2 = VM2()
-    vm2.load(SimpleParser(ctx.operations()))
-    vm2.run()
+    val vm = VM()
+    vm.load(SimpleParser(ctx.operations()))
+    vm.run()
 }

@@ -2,8 +2,8 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.If
-import vm2.operations.Move
+import vm.operations.If
+import vm.operations.Move
 
 data class IfNode(
     val condNode: Node,

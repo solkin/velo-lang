@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Def
+import vm.operations.Def
 
 data class DefNode(
     val name: String,

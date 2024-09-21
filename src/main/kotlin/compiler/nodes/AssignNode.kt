@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Set
+import vm.operations.Set
 
 data class AssignNode(
     val left: Node,

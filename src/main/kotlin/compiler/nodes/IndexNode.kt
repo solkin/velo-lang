@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Index
+import vm.operations.Index
 
 data class IndexNode(
     val list: Node,

@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Get
+import vm.operations.Get
 
 data class VarNode(
     val name: String,

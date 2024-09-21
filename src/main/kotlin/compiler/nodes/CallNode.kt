@@ -2,9 +2,9 @@ package compiler.nodes
 
 import compiler.CompilerContext
 import compiler.Environment
-import vm2.operations.Call
-import vm2.operations.Print
-import vm2.operations.Println
+import vm.operations.Call
+import vm.operations.Print
+import vm.operations.Println
 
 data class CallNode(
     val func: Node,
