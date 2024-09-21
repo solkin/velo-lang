@@ -10,6 +10,7 @@ import compiler.nodes.IfNode
 import compiler.nodes.IndexNode
 import compiler.nodes.IntNode
 import compiler.nodes.IntType
+import compiler.nodes.LetNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.SliceNode
@@ -267,6 +268,40 @@ class ParserTest {
     }
 
     @Test
+    fun testParseDef() {
+        val input = StringInput("int a")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, DefNode(
+                name = "a",
+                type = IntType,
+                def = null
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseDefAssign() {
+        val input = StringInput("int a = 5")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, DefNode(
+                name = "a",
+                type = IntType,
+                def = IntNode(value = 5)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
     fun testParseProgram() {
         val input = StringInput("{true;\"String\"}")
         val stream = TokenStream(input)
@@ -277,6 +312,28 @@ class ParserTest {
         assertEquals(
             node, ProgramNode(
                 prog = listOf(BoolNode(value = true), StringNode(value = "String"))
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseLet() {
+        val input = StringInput("let(int a = 5) { false }")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, LetNode(
+                vars = listOf(
+                    DefNode(
+                        name = "a",
+                        type = IntType,
+                        def = IntNode(value = 5)
+                    )
+                ),
+                body = BoolNode(value = false)
             ).wrapProgram()
         )
     }
