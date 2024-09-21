@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
     val prog = if (path.startsWith("res://")) {
         Parser::class.java.getResource(path.substring(5))?.readText() ?: return
     } else if (path.startsWith("file://")) {
-        File(path.substring(7)).readText()
+        File(path.substring(6)).readText()
     } else {
         return
     }
