@@ -2,13 +2,15 @@ package compiler
 
 import compiler.nodes.Type
 import java.util.TreeMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class Scope internal constructor(
     private val vars: MutableMap<String, Var>,
-    val parent: Scope?
+    val parent: Scope?,
+    private val enumerator: AtomicInteger,
 ) {
 
-    fun extend() = Scope(TreeMap(), this)
+    fun extend() = Scope(TreeMap(), this, enumerator)
 
     private fun lookup(name: String): Scope? {
         var scope: Scope? = this
@@ -30,11 +32,16 @@ class Scope internal constructor(
         if (vars.containsKey(name)) {
             throw IllegalArgumentException("Variable $name is already defined")
         }
-        val v = Var(index = vars.size, type = type)
+        val v = Var(index = enumerator.incrementAndGet(), type = type)
         vars[name] = v
         return v
     }
 
 }
 
-fun createGlobalScope() = Scope(TreeMap(), null)
+data class Var(
+    val index: Int,
+    val type: Type,
+)
+
+fun createGlobalScope() = Scope(TreeMap(), null, AtomicInteger(1))

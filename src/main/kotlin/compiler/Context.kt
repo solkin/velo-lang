@@ -36,8 +36,3 @@ data class Context(
         this.ops.addAll(ctx.ops)
     }
 }
-
-data class Var(
-    val index: Int,
-    val type: Type,
-)
