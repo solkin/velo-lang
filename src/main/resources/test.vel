@@ -21,7 +21,7 @@ func traverse(slice[slice[int]] matrix) slice[slice[int]] {
     );
 };
 
-slice[slice[int]] matrix = sliceOf[slice[int]](
+auto matrix = sliceOf[slice[int]](
     sliceOf[int](0, 4, 6, 3, 5),
     sliceOf[int](8, 4, 2, 5, 1)
 );

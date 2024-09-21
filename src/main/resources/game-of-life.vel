@@ -7,7 +7,7 @@ func calc(slice[slice[int]] matrix, int x, int y) int {
         }
     };
 
-    int cells =
+    auto cells =
             matrix[window(y - 1)][window(x - 1)] +
             matrix[window(y - 1)][x] +
             matrix[window(y - 1)][window(x + 1)] +
@@ -54,7 +54,7 @@ func nextGeneration(slice[slice[int]] world) slice[slice[int]] {
     );
 };
 
-slice[slice[int]] w = sliceOf[slice[int]](
+auto w = sliceOf[slice[int]](
     sliceOf[int](0, 1, 0, 0, 0, 0),
     sliceOf[int](0, 0, 1, 0, 0, 0),
     sliceOf[int](1, 1, 1, 0, 0, 0),

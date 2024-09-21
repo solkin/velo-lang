@@ -13,6 +13,7 @@ enum class BaseType(val type: String) {
     SLICE("slice"),
     FUNCTION("fn"),
     VOID("void"),
+    AUTO("auto"),
 }
 
 interface Type {
@@ -40,6 +41,16 @@ fun BaseType.getDefaultNode(): Node {
         BaseType.SLICE -> SliceNode(listOf = emptyList(), VoidType)
         BaseType.FUNCTION -> IntNode(0)
         BaseType.VOID -> ProgramNode(emptyList())
+        BaseType.AUTO -> throw Exception("Type auto has no default value")
+    }
+}
+
+object AutoType : Type {
+    override val type: BaseType
+        get() = BaseType.AUTO
+
+    override fun default(ctx: Context) {
+        throw Exception("Type auto has no default value")
     }
 }
 

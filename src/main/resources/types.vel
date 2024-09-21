@@ -5,5 +5,7 @@ int i = 1;
 float f = 3.0;
 slice[slice[int]] l = sliceOf[slice[int]]();
 fn[void] n = func() void {};
+auto a = 3.0;
+a = 6.5;
 # Pair parsing is supported, compilation is not
 # pair[int,int] p = pairOf[int,int](1, 1);

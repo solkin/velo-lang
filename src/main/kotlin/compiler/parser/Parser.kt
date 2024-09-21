@@ -1,6 +1,7 @@
 package compiler.parser
 
 import compiler.nodes.AssignNode
+import compiler.nodes.AutoType
 import compiler.nodes.BinaryNode
 import compiler.nodes.BoolNode
 import compiler.nodes.CallNode
@@ -108,6 +109,7 @@ class Parser(private val stream: TokenStream) {
             BaseType.SLICE -> SliceType(parseDerivedTypes(count = 1).first())
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
+            BaseType.AUTO -> AutoType
         }
         return type
     }

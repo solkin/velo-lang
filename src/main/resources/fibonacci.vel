@@ -1,4 +1,4 @@
-fn[int] fib = func (int num) int {
+auto fib = func (int num) int {
     int a = 0;
     int b = 1;
     int tmp = 0;

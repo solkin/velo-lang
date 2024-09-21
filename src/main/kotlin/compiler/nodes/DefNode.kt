@@ -20,10 +20,10 @@ data class DefNode(
             type.default(ctx)
             type
         }
-        if (type != defType) {
+        if (type != defType && type.type != AutoType.type) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
-        val v = ctx.enumerator.def(name, type)
+        val v = ctx.enumerator.def(name, defType)
         ctx.add(Def(v.index))
         return VoidType
     }
