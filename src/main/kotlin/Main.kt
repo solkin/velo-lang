@@ -12,13 +12,7 @@ import vm.SimpleParser
 import vm.VM
 
 fun main(args: Array<String>) {
-    vm2()
-    if (true) return
-
-//    runVM("/home/solkin/Projects/Backend/false-vm/fib.fbc")
-//    if (true) return
-
-    val prog = Parser::class.java.getResource("/fibonacci-recursive.vel").readText()
+    val prog = Parser::class.java.getResource("/fibonacci.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)
@@ -27,7 +21,7 @@ fun main(args: Array<String>) {
     var time = System.currentTimeMillis()
     val node = parser.parse()
     var elapsed = System.currentTimeMillis() - time
-    println("Parse in $elapsed ms")
+    println("Parsed in $elapsed ms")
 
     val globalEnv = createGlobalEnvironment<Value<*>>().apply {
         def(
@@ -57,56 +51,29 @@ fun main(args: Array<String>) {
             )
         )
     }
+    println()
 
     time = System.currentTimeMillis()
-    val result = node.evaluate(globalEnv)
-
-    elapsed = System.currentTimeMillis() - time
-    println("\nRun in $elapsed ms")
-}
-
-fun vm2() {
-    val prog = Parser::class.java.getResource("/test.vel").readText()
-
-    val input = StringInput(prog)
-    val stream = TokenStream(input)
-    val parser = Parser(stream)
-
-    val node = parser.parse()
-    val globalEnv = createGlobalEnvironment<Value<*>>().apply {
-        def(
-            "print",
-            FuncValue(
-                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
-                    args.forEach { print(it.value()) }
-                    return BoolValue(false)
-                }
-            )
-        )
-        def(
-            "println",
-            FuncValue(
-                fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
-                    args.takeIf { it.isNotEmpty() }?.forEach { println(it.value()) } ?: println()
-                    return BoolValue(false)
-                }
-            )
-        )
-    }
     try {
         node.evaluate(globalEnv)
     } catch (ex: Throwable) {
-        println("!! interpreter halted with an exception: ${ex.message}")
+        println("!! Interpreter halted with an exception: ${ex.message}")
     }
+
+    elapsed = System.currentTimeMillis() - time
+    println("\nRun in $elapsed ms")
 
     val ctx = Context(ops = ArrayList(), enumerator = Enumerator())
     try {
+        time = System.currentTimeMillis()
         node.compile(ctx)
+        elapsed = System.currentTimeMillis() - time
+        println("Compiled in $elapsed ms")
     } catch (ex: Throwable) {
-        println("!! compilation failed")
-        println(ex.message)
+        println("!! Compilation failed: ${ex.message}")
         return
     }
+    println()
 
     val vm = VM()
     vm.load(SimpleParser(ctx.operations()))

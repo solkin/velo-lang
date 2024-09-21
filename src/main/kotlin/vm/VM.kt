@@ -66,13 +66,13 @@ class VM {
                 println(diagOutput.toString())
             }
             elapsed = System.currentTimeMillis() - time
-            println("program ended")
+            println("\nProgram ended")
         } catch (ignored: HaltException) {
-            println("program halted")
+            println("\nProgram halted")
         } catch (ex: Throwable) {
-            println("!! exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
+            println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
         }
-        println("vm stopped in $elapsed ms\n")
+        println("VM stopped in $elapsed ms")
     }
 
 }

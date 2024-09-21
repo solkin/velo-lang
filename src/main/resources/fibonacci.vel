@@ -12,5 +12,5 @@ fn[int] fib = func (int num) int {
     b;
 };
 
-println("Fib: ");
+print("Fib: ");
 println(fib(93));
