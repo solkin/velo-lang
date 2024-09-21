@@ -12,7 +12,7 @@ import vm.SimpleParser
 import vm.VM
 
 fun main(args: Array<String>) {
-    val prog = Parser::class.java.getResource("/fibonacci.vel").readText()
+    val prog = Parser::class.java.getResource("/primes.vel").readText()
 
     val input = StringInput(prog)
     val stream = TokenStream(input)

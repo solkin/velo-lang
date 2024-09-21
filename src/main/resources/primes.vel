@@ -15,7 +15,7 @@ func primes(int n) void {
         if (isPrime) {
             print(i);
             print(" ");
-            if k % 22 == 0 {
+            if (k + 1) % 20 == 0 {
                 println("");
             };
             k = k + 1;
