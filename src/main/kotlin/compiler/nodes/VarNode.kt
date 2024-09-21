@@ -10,7 +10,7 @@ data class VarNode(
     override fun evaluate(env: Environment<Value<*>>) = env.get(name)
 
     override fun compile(ctx: Context): Type {
-        val v = ctx.heap.current().get(name)
+        val v = ctx.enumerator.get(name)
         ctx.add(Get(v.index))
         return v.type
     }

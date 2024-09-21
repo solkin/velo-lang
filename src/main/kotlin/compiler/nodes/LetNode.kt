@@ -19,11 +19,11 @@ data class LetNode(
 
     override fun compile(ctx: Context): Type {
         ctx.add(Ext())
-        ctx.heap.extend()
+        ctx.enumerator.extend()
         vars.forEach { it.compile(ctx) }
         val type = body.compile(ctx)
         ctx.add(Free())
-        ctx.heap.free()
+        ctx.enumerator.free()
         return type
     }
 }

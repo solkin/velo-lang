@@ -1,11 +1,10 @@
 package compiler
 
-import compiler.nodes.Type
 import vm.Operation
 
 data class Context(
     private val ops: MutableList<Operation>,
-    val heap: Heap,
+    val enumerator: Enumerator,
 ) {
 
     fun add(op: Operation) {
@@ -29,7 +28,7 @@ data class Context(
     }
 
     fun fork(): Context {
-        return Context(ops = ArrayList(), heap)
+        return Context(ops = ArrayList(), enumerator)
     }
 
     fun merge(ctx: Context) {

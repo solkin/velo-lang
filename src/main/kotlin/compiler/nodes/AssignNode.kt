@@ -16,7 +16,7 @@ data class AssignNode(
     override fun compile(ctx: Context): Type {
         if (left !is VarNode) throw IllegalArgumentException("Cannot assign to $left")
         val type = right.compile(ctx)
-        val v = ctx.heap.current().get(left.name)
+        val v = ctx.enumerator.get(left.name)
         if (v.type.type != type.type) {
             throw IllegalArgumentException("Illegal assign type $type != ${v.type}")
         }

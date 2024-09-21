@@ -1,10 +1,14 @@
 package compiler
 
-class Heap {
+import compiler.nodes.Type
+
+class Enumerator {
 
     private var scope = createGlobalScope()
 
-    fun current(): Scope = scope
+    fun get(name: String): Var = scope.get(name)
+
+    fun def(name: String, type: Type): Var = scope.def(name, type)
 
     fun extend(): Scope {
         val extScope = scope.extend()

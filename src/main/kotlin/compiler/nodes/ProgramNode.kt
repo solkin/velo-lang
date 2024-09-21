@@ -18,7 +18,7 @@ data class ProgramNode(
 
     override fun compile(ctx: Context): Type {
         ctx.add(Ext())
-        ctx.heap.extend()
+        ctx.enumerator.extend()
         var type: Type = VoidType
         prog.forEachIndexed { index, node ->
             type = node.compile(ctx)
@@ -27,7 +27,7 @@ data class ProgramNode(
             }
         }
         ctx.add(Free())
-        ctx.heap.free()
+        ctx.enumerator.free()
         return type
     }
 }

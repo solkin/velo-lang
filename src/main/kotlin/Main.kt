@@ -1,5 +1,5 @@
 import compiler.Context
-import compiler.Heap
+import compiler.Enumerator
 import compiler.createGlobalEnvironment
 import compiler.nodes.BoolValue
 import compiler.nodes.FuncValue
@@ -99,7 +99,7 @@ fun vm2() {
         println("!! interpreter halted with an exception: ${ex.message}")
     }
 
-    val ctx = Context(ops = ArrayList(), heap = Heap())
+    val ctx = Context(ops = ArrayList(), enumerator = Enumerator())
     try {
         node.compile(ctx)
     } catch (ex: Throwable) {

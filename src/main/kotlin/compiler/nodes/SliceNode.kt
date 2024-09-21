@@ -77,21 +77,21 @@ object MapSliceProp : Prop {
         val arg = args.first() as FuncType
 
         ctx.add(Ext())
-        ctx.heap.extend()
+        ctx.enumerator.extend()
 
-        val func = ctx.heap.current().def(name = "@func", type = arg)
+        val func = ctx.enumerator.def(name = "@func", type = arg)
         ctx.add(Def(func.index))
 
         ctx.add(Dup())
         ctx.add(SliceLen())
-        val size = ctx.heap.current().def(name = "@size", type = IntType)
+        val size = ctx.enumerator.def(name = "@size", type = IntType)
         ctx.add(Def(size.index))
 
         ctx.add(Push(0))
-        val i = ctx.heap.current().def(name = "@i", type = IntType)
+        val i = ctx.enumerator.def(name = "@i", type = IntType)
         ctx.add(Def(i.index))
 
-        val slice = ctx.heap.current().def(name = "@slice", type = SliceType(arg.derived))
+        val slice = ctx.enumerator.def(name = "@slice", type = SliceType(arg.derived))
         ctx.add(Def(slice.index))
 
         val condCtx: MutableList<Operation> = ArrayList()
@@ -129,7 +129,7 @@ object MapSliceProp : Prop {
         ctx.add(Slice())
 
         ctx.add(Free())
-        ctx.heap.free()
+        ctx.enumerator.free()
 
         return SliceType(type.derived)
     }

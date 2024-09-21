@@ -23,7 +23,7 @@ data class DefNode(
         if (type != defType) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
-        val v = ctx.heap.current().def(name, type)
+        val v = ctx.enumerator.def(name, type)
         ctx.add(Def(v.index))
         return VoidType
     }
