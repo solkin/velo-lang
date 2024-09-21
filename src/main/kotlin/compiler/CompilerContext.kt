@@ -1,3 +1,5 @@
+package compiler
+
 import compiler.nodes.Type
 import vm2.Operation
 

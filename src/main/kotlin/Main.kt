@@ -1,3 +1,4 @@
+import compiler.CompilerContext
 import compiler.createGlobalEnvironment
 import compiler.nodes.BoolValue
 import compiler.nodes.FuncValue

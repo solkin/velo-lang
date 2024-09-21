@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import CompilerContext
+import compiler.CompilerContext
 import vm2.operations.Push
 
 enum class BaseType(val type: String) {

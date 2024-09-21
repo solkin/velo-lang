@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import CompilerContext
+import compiler.CompilerContext
 import compiler.Environment
 
 data class PropNode(

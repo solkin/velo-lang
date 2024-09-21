@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import CompilerContext
+import compiler.CompilerContext
 
 val propMap = mapOf(
     BaseType.STRING to mapOf(

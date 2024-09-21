@@ -1,6 +1,6 @@
 package compiler.nodes
 
-import CompilerContext
+import compiler.CompilerContext
 import compiler.Environment
 import vm2.operations.Def
 import vm2.operations.Move
