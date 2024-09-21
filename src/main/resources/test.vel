@@ -1,18 +1,22 @@
-func printWorld(slice[slice[int]] world) slice[slice[int]] {
-    world.map(
+func traverse(slice[slice[int]] matrix) slice[slice[int]] {
+    matrix.map(
         func(int index, slice[int] row) slice[int] {
             row.map(
                 func(int index, int col) int {
+                    print(col);
+                    print(" ");
                     col;
                 }
             );
+            println("");
             row;
         }
-    )
+    );
 };
 
-slice[slice[int]] w = sliceOf[slice[int]](
-    sliceOf[int](0),
+slice[slice[int]] matrix = sliceOf[slice[int]](
+    sliceOf[int](0, 4, 6, 3, 5),
+    sliceOf[int](8, 4, 2, 5, 1)
 );
 
-printWorld(w);
+traverse(matrix);

@@ -6,6 +6,8 @@ import vm2.Operation
 import vm2.operations.Call
 import vm2.operations.Def
 import vm2.operations.Dup
+import vm2.operations.Ext
+import vm2.operations.Free
 import vm2.operations.Get
 import vm2.operations.If
 import vm2.operations.Index
@@ -74,6 +76,8 @@ object MapSliceProp : Prop {
         type as SliceType
         val arg = args.first() as FuncType
 
+        ctx.add(Ext())
+
         val func = ctx.defVar("_func", arg)
         ctx.add(Def(func.index))
 
@@ -122,6 +126,8 @@ object MapSliceProp : Prop {
 
         ctx.add(Get(size.index))
         ctx.add(Slice())
+
+        ctx.add(Free())
 
         return SliceType(type.derived)
     }

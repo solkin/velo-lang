@@ -15,10 +15,10 @@ data class PropNode(
     }
 
     override fun compile(ctx: CompilerContext): Type {
-        val type = parent.compile(ctx)
+        val parentType = parent.compile(ctx)
         val argsType = args.orEmpty().reversed().map { it.compile(ctx) }
-        val typeProps = propMap[type.type] ?: throw IllegalArgumentException("Type ${type.type} has no $name property")
-        val prop = typeProps[name] ?: throw IllegalArgumentException("Property $name of ${type.type} is not supported")
-        return prop.compile(type, args = argsType, ctx)
+        val typeProps = propMap[parentType.type] ?: throw IllegalArgumentException("Type ${parentType.type} has no $name property")
+        val prop = typeProps[name] ?: throw IllegalArgumentException("Property $name of ${parentType.type} is not supported")
+        return prop.compile(parentType, args = argsType, ctx)
     }
 }

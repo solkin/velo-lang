@@ -11,6 +11,11 @@ data class CompilerContext(
     }
 
     fun defVar(name: String, type: Type): Var {
+        // TODO: check scopes
+        val exist = vars[name]
+        if (exist != null) {
+            return exist
+        }
         val v = Var(index = vars.size, type = type)
         vars[name] = v
         return v
