@@ -7,15 +7,15 @@ import vm.SimpleOperation
 import vm.Stack
 import vm.records.ValueRecord
 
-class Equals: SimpleOperation {
+class StrCon : SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val val1 = dataStack.pop()
-        val val2 = dataStack.pop()
+        val str1 = dataStack.pop().getString()
+        val str2 = dataStack.pop().getString()
 
-        val result = ValueRecord(val1 == val2)
+        val rec = ValueRecord(str2 + str1)
 
-        dataStack.push(result)
+        dataStack.push(rec)
     }
 
 }

@@ -314,7 +314,8 @@ class Parser(private val stream: TokenStream) {
     private fun parseProp(node: Node): Node {
         skipPunc('.')
 
-        if (stream.peek()?.type == TokenType.VARIABLE) {
+        val tok = stream.peek()
+        if (tok?.type == TokenType.VARIABLE || tok?.type == TokenType.KEYWORD) {
             val name = stream.next()?.value as? String
             if (name.isNullOrEmpty()) {
                 stream.croak("Property can not be empty")

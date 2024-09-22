@@ -2,7 +2,7 @@ package vm.records
 
 import vm.Record
 
-class ValueRecord(
+data class ValueRecord(
     private val value: Any
 ) : Record {
 
