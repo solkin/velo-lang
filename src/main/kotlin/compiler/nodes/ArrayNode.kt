@@ -18,6 +18,7 @@ import vm.operations.Plus
 import vm.operations.Push
 import vm.operations.ArrayOf
 import vm.operations.ArrLen
+import vm.operations.ArrPlus
 import vm.operations.SubArr
 import vm.operations.Set
 
@@ -77,6 +78,18 @@ object ArrayConProp : Prop {
         type as ArrayType
         if (args.size != 1 && type != args.first()) throw Exception("Property 'con' requires same type array as argument")
         ctx.add(ArrCon())
+        return ArrayType(type.derived)
+    }
+}
+
+object ArrayPlusProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as ArrayType
+        if (args.isEmpty()) throw Exception("Property 'plus' requires at least one argument")
+        if (args.find { it.type != type.derived.type } != null) {
+            throw Exception("Property 'plus' arguments must be array-typed")
+        }
+        ctx.add(ArrPlus())
         return ArrayType(type.derived)
     }
 }

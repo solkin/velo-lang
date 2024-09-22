@@ -15,6 +15,7 @@ val propMap = mapOf(
         "sub" to SubArrayProp,
         "len" to ArrayLenProp,
         "con" to ArrayConProp,
+        "plus" to ArrayPlusProp,
         "map" to MapArrayProp,
     )
 )
