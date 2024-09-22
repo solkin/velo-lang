@@ -1,0 +1,30 @@
+func symbolAt(str s, int i) str {
+    s.sub(i, i + 1);
+};
+
+func getRLE(str s) str {
+    if (s.len > 0) {
+        str currentChar = s.sub(0, 1);
+        int currentCharCount = 1;
+        str sb = "";
+        int i = 1;
+        while (i <= s.len) {
+            str c = if i < s.len then s.sub(i, i + 1) else "0";
+            if (i == s.len || currentCharCount == 9 || c != currentChar) {
+                sb = sb.con(currentChar);
+                if (currentCharCount > 1) {
+                    sb = sb.con(currentCharCount.str);
+                };
+                currentCharCount = 1;
+                currentChar = c;
+            } else {
+                currentCharCount = currentCharCount + 1;
+            };
+            i = i + 1;
+        };
+        s = sb;
+    };
+    s;
+};
+
+println(getRLE("Hhhhhhhhhhhhhheeeellooooo")); # Hh9h4e4l2o5
