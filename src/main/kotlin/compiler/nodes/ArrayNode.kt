@@ -41,7 +41,12 @@ data class ArrayNode(
     }
 
     override fun compile(ctx: Context): Type {
-        listOf.forEach { it.compile(ctx) }
+        listOf.forEach {
+            val itemType = it.compile(ctx)
+            if (itemType.type != type.type) {
+                throw Exception("Array element \"$it\" type ${itemType.type} is differ from array type ${type.type}")
+            }
+        }
         ctx.add(Push(listOf.size))
         ctx.add(ArrOf())
         return ArrayType(type)
