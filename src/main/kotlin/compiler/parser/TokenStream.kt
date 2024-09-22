@@ -10,14 +10,13 @@ class TokenStream(private val input: Input) {
         "then",
         "else",
         "while",
-        "sliceOf",
+        "arrayOf",
         "pairOf",
         "tree",
         "struct",
         "subject",
         "func",
         "let",
-        "slice",
         "true",
         "false"
     ).plus(BaseType.values().map { it.type }).toSet()

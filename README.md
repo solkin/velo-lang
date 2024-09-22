@@ -17,7 +17,7 @@ str s = "s";
 bool b = true;
 int i = 1;
 float f = 3.0;
-auto l = sliceOf[slice[int]]();
+auto l = arrayOf[array[int]]();
 auto n = func() void {};
 ```
 **Functions and lambdas.** Velo lang supports functions
@@ -62,9 +62,9 @@ while (i <= 5) {
     i = i + 1;
 };
 ```
-**Slices**
+**Arrays**
 ```
-auto s = sliceOf[int](37, 58, 25, 17, 19);
+auto s = arrayOf[int](37, 58, 25, 17, 19);
 println(s.len);           # 5
 println(s[3]);            # 17
 println(s.sub(1, 4)[1]);  # 25

@@ -5,15 +5,16 @@ import vm.Heap
 import vm.Record
 import vm.SimpleOperation
 import vm.Stack
+import vm.records.ValueRecord
 
-class Index : SimpleOperation {
+class ArrayOf : SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val index = dataStack.pop().getInt()
-        val array = dataStack.pop().getArray()
-
-        val rec = array[index]
-
+        val size = dataStack.pop().getInt()
+        val array = Array(size, { i ->
+            dataStack.pop()
+        }).apply { reverse() }
+        val rec = ValueRecord(array)
         dataStack.push(rec)
     }
 

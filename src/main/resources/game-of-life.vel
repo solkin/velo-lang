@@ -1,4 +1,4 @@
-func calc(slice[slice[int]] matrix, int x, int y) int {
+func calc(array[array[int]] matrix, int x, int y) int {
      func window(int a) int {
         if (a >= 0) {
             if (a < matrix.len) then a else a - matrix.len;
@@ -26,9 +26,9 @@ func calc(slice[slice[int]] matrix, int x, int y) int {
     }
 };
 
-func printWorld(slice[slice[int]] world) slice[slice[int]] {
+func printWorld(array[array[int]] world) array[array[int]] {
     world.map(
-        func(int index, slice[int] row) slice[int] {
+        func(int index, array[int] row) array[int] {
             row.map(
                 func(int index, int col) int {
                     print(col);
@@ -42,9 +42,9 @@ func printWorld(slice[slice[int]] world) slice[slice[int]] {
     )
 };
 
-func nextGeneration(slice[slice[int]] world) slice[slice[int]] {
+func nextGeneration(array[array[int]] world) array[array[int]] {
     world.map(
-        func(int y, slice[int] row) slice[int] {
+        func(int y, array[int] row) array[int] {
             row.map(
                 func(int x, int col) int {
                     calc(world, x, y);
@@ -54,13 +54,13 @@ func nextGeneration(slice[slice[int]] world) slice[slice[int]] {
     );
 };
 
-auto w = sliceOf[slice[int]](
-    sliceOf[int](0, 1, 0, 0, 0, 0),
-    sliceOf[int](0, 0, 1, 0, 0, 0),
-    sliceOf[int](1, 1, 1, 0, 0, 0),
-    sliceOf[int](0, 0, 0, 0, 0, 0),
-    sliceOf[int](0, 0, 0, 0, 0, 0),
-    sliceOf[int](0, 0, 0, 0, 0, 0)
+auto w = arrayOf[array[int]](
+    arrayOf[int](0, 1, 0, 0, 0, 0),
+    arrayOf[int](0, 0, 1, 0, 0, 0),
+    arrayOf[int](1, 1, 1, 0, 0, 0),
+    arrayOf[int](0, 0, 0, 0, 0, 0),
+    arrayOf[int](0, 0, 0, 0, 0, 0),
+    arrayOf[int](0, 0, 0, 0, 0, 0)
 );
 
 print("Enter generations count: ");

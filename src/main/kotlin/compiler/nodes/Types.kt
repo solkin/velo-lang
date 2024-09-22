@@ -10,7 +10,7 @@ enum class BaseType(val type: String) {
     STRING("str"),
     BOOLEAN("bool"),
     PAIR("pair"),
-    SLICE("slice"),
+    ARRAY("array"),
     FUNCTION("fn"),
     VOID("void"),
     AUTO("auto"),
@@ -38,7 +38,7 @@ fun BaseType.getDefaultNode(): Node {
         BaseType.STRING -> StringNode("")
         BaseType.BOOLEAN -> BoolNode(false)
         BaseType.PAIR -> PairNode(first = VoidNode(), second = null)
-        BaseType.SLICE -> SliceNode(listOf = emptyList(), VoidType)
+        BaseType.ARRAY -> ArrayNode(listOf = emptyList(), VoidType)
         BaseType.FUNCTION -> IntNode(0)
         BaseType.VOID -> ProgramNode(emptyList())
         BaseType.AUTO -> throw Exception("Type auto has no default value")
@@ -123,9 +123,9 @@ operator fun Value<*>.plus(b: Value<*>): Value<*> {
             else -> StringValue(value + b.value().toString())
         }
 
-        is SliceValue -> when (b) {
-            is SliceValue -> SliceValue(list + b.list)
-            else -> SliceValue(list + b)
+        is ArrayValue -> when (b) {
+            is ArrayValue -> ArrayValue(list + b.list)
+            else -> ArrayValue(list + b)
         }
 
         else -> StringValue(value().toString() + b.value().toString())
@@ -200,8 +200,8 @@ operator fun Value<*>.div(b: Value<*>): Value<*> {
         }
 
         is StringValue -> when (b) {
-            is IntValue -> SliceValue(value.chunked(b.value).map { StringValue(it) })
-            is FloatValue -> SliceValue(value.chunked(b.value.toInt()).map { StringValue(it) })
+            is IntValue -> ArrayValue(value.chunked(b.value).map { StringValue(it) })
+            is FloatValue -> ArrayValue(value.chunked(b.value.toInt()).map { StringValue(it) })
             else -> IntValue(
                 (value.length - value.replace(b.value().toString(), "").length) / b.value()
                     .toString().length.throwIfZero()

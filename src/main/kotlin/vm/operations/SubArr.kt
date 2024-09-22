@@ -6,15 +6,17 @@ import vm.Record
 import vm.SimpleOperation
 import vm.Stack
 import vm.records.ValueRecord
+import java.util.Arrays
 
-class Slice : SimpleOperation {
+class SubArr : SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val size = dataStack.pop().getInt()
-        val slice = Array(size, { i ->
-            dataStack.pop()
-        }).apply { reverse() }
-        val rec = ValueRecord(slice)
+        val start = dataStack.pop().getInt()
+        val end = dataStack.pop().getInt()
+        val array = dataStack.pop().getArray()
+
+        val rec = ValueRecord(Arrays.copyOfRange(array, start, end))
+
         dataStack.push(rec)
     }
 

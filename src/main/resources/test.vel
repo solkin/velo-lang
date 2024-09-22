@@ -4,9 +4,9 @@ fn[int] test = func(int a) int {
     }(a, 1);
 };
 
-func traverse(slice[slice[int]] matrix) slice[slice[int]] {
+func traverse(array[array[int]] matrix) array[array[int]] {
     matrix.map(
-        func(int index, slice[int] row) slice[int] {
+        func(int index, array[int] row) array[int] {
             row.map(
                 func(int index, int col) int {
                     int v = test(col);
@@ -21,9 +21,10 @@ func traverse(slice[slice[int]] matrix) slice[slice[int]] {
     );
 };
 
-auto matrix = sliceOf[slice[int]](
-    sliceOf[int](0, 4, 6, 3, 5),
-    sliceOf[int](8, 4, 2, 5, 1)
+auto matrix = arrayOf[array[int]](
+    arrayOf[int](0, 4, 6, 3, 5),
+    arrayOf[int](8, 4, 2, 5, 1)
 );
+matrix = matrix.con(arrayOf[int](arrayOf[int](2, 1, 3, 7, 8)));
 
 traverse(matrix);

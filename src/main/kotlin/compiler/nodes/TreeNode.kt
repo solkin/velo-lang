@@ -29,11 +29,11 @@ class TreeValue(val tree: TreeMap<Value<*>, Value<*>>) : Value<TreeMap<Value<*>,
         return when (name) {
             "len" -> IntValue(tree.size)
             "keys" -> {
-                SliceValue(tree.keys.toList())
+                ArrayValue(tree.keys.toList())
             }
 
             "values" -> {
-                SliceValue(tree.values.toList())
+                ArrayValue(tree.values.toList())
             }
 
             "reduce" -> {

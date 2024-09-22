@@ -7,12 +7,12 @@ import vm.SimpleOperation
 import vm.Stack
 import vm.records.ValueRecord
 
-class SliceLen : SimpleOperation {
+class ArrLen : SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val slice = dataStack.pop().getSlice()
+        val array = dataStack.pop().getArray()
 
-        val rec = ValueRecord(slice.size)
+        val rec = ValueRecord(array.size)
 
         dataStack.push(rec)
     }

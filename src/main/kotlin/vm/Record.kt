@@ -21,6 +21,6 @@ interface Record {
     fun getString(): String = get() as String
 
     @Suppress("UNCHECKED_CAST")
-    fun getSlice(): Array<Record> = get() as Array<Record>
+    fun getArray(): Array<Record> = get() as Array<Record>
 
 }

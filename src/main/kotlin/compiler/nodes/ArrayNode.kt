@@ -3,6 +3,7 @@ package compiler.nodes
 import compiler.Context
 import compiler.Environment
 import vm.Operation
+import vm.operations.ArrCon
 import vm.operations.Call
 import vm.operations.Def
 import vm.operations.Dup
@@ -15,12 +16,12 @@ import vm.operations.Less
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
-import vm.operations.Slice
-import vm.operations.SliceLen
-import vm.operations.SubSlice
+import vm.operations.ArrayOf
+import vm.operations.ArrLen
+import vm.operations.SubArr
 import vm.operations.Set
 
-data class SliceNode(
+data class ArrayNode(
     val listOf: List<Node>,
     val type: Type,
 ) : Node() {
@@ -35,45 +36,54 @@ data class SliceNode(
                 else -> value.add(v)
             }
         }
-        return SliceValue(value)
+        return ArrayValue(value)
     }
 
     override fun compile(ctx: Context): Type {
         listOf.forEach { it.compile(ctx) }
         ctx.add(Push(listOf.size))
-        ctx.add(Slice())
-        return SliceType(type)
+        ctx.add(ArrayOf())
+        return ArrayType(type)
     }
 
 }
 
-data class SliceType(val derived: Type) : Type {
+data class ArrayType(val derived: Type) : Type {
     override val type: BaseType
-        get() = BaseType.SLICE
+        get() = BaseType.ARRAY
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
 }
 
-object SliceLenProp : Prop {
+object ArrayLenProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(SliceLen())
+        ctx.add(ArrLen())
         return IntType
     }
 }
 
-object SubSliceProp : Prop {
+object SubArrayProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        type as SliceType
-        ctx.add(SubSlice())
-        return SliceType(type.derived)
+        type as ArrayType
+        ctx.add(SubArr())
+        return ArrayType(type.derived)
     }
 }
 
-object MapSliceProp : Prop {
+object ArrayConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        type as SliceType
+        type as ArrayType
+        if (args.size != 1 && type != args.first()) throw Exception("Property 'con' requires same type array as argument")
+        ctx.add(ArrCon())
+        return ArrayType(type.derived)
+    }
+}
+
+object MapArrayProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as ArrayType
         val arg = args.first() as FuncType
 
         ctx.add(Ext())
@@ -83,7 +93,7 @@ object MapSliceProp : Prop {
         ctx.add(Def(func.index))
 
         ctx.add(Dup())
-        ctx.add(SliceLen())
+        ctx.add(ArrLen())
         val size = ctx.enumerator.def(name = "@size", type = IntType)
         ctx.add(Def(size.index))
 
@@ -91,8 +101,8 @@ object MapSliceProp : Prop {
         val i = ctx.enumerator.def(name = "@i", type = IntType)
         ctx.add(Def(i.index))
 
-        val slice = ctx.enumerator.def(name = "@slice", type = SliceType(arg.derived))
-        ctx.add(Def(slice.index))
+        val array = ctx.enumerator.def(name = "@array", type = ArrayType(arg.derived))
+        ctx.add(Def(array.index))
 
         val condCtx: MutableList<Operation> = ArrayList()
         with(condCtx) {
@@ -106,7 +116,7 @@ object MapSliceProp : Prop {
             // index
             add(Get(i.index))
             // item
-            add(Get(slice.index))
+            add(Get(array.index))
             add(Get(i.index))
             add(Index())
             // func
@@ -126,16 +136,16 @@ object MapSliceProp : Prop {
         ctx.addAll(exprCtx)
 
         ctx.add(Get(size.index))
-        ctx.add(Slice())
+        ctx.add(ArrayOf())
 
         ctx.add(Free())
         ctx.enumerator.free()
 
-        return SliceType(type.derived)
+        return ArrayType(type.derived)
     }
 }
 
-class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexable {
+class ArrayValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexable {
     override fun property(name: String, args: List<Value<*>>?): Value<*> {
         return when (name) {
             "size" -> IntValue(list.size)
@@ -145,7 +155,15 @@ class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexa
                 }
                 val start = args[0].toInt()
                 val end = args[1].toInt()
-                SliceValue(list.subList(start, end))
+                ArrayValue(list.subList(start, end))
+            }
+
+            "con" -> {
+                if (args?.size != 1) {
+                    throw IllegalArgumentException("Property 'con' requires array as argument")
+                }
+                val arr = args[0] as ArrayValue
+                ArrayValue(list + arr.list)
             }
 
             "map" -> {
@@ -156,7 +174,7 @@ class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexa
                 val result = list.mapIndexed { index, item ->
                     func.run(args = listOf(IntValue(index), item), it = this)
                 }
-                SliceValue(result)
+                ArrayValue(result)
             }
 
             "forEach" -> {
@@ -186,7 +204,7 @@ class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexa
                     throw IllegalArgumentException("Property 'reversed' requires no arguments")
                 }
                 val result = list.reversed()
-                SliceValue(result)
+                ArrayValue(result)
             }
 
             "reduce" -> {
@@ -204,7 +222,7 @@ class SliceValue(val list: List<Value<*>>) : Value<List<Value<*>>>(list), Indexa
                 if (args == null) {
                     throw IllegalArgumentException("Property 'plus' requires at least one argument")
                 }
-                SliceValue(list.plus(args))
+                ArrayValue(list.plus(args))
             }
 
             else -> super.property(name, args)

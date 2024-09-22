@@ -11,10 +11,11 @@ val propMap = mapOf(
         "len" to StrLenProp,
         "con" to StrConProp,
     ),
-    BaseType.SLICE to mapOf(
-        "sub" to SubSliceProp,
-        "len" to SliceLenProp,
-        "map" to MapSliceProp,
+    BaseType.ARRAY to mapOf(
+        "sub" to SubArrayProp,
+        "len" to ArrayLenProp,
+        "con" to ArrayConProp,
+        "map" to MapArrayProp,
     )
 )
 

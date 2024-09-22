@@ -13,7 +13,7 @@ import compiler.nodes.IntType
 import compiler.nodes.LetNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
-import compiler.nodes.SliceNode
+import compiler.nodes.ArrayNode
 import compiler.nodes.StringNode
 import compiler.nodes.VarNode
 import compiler.parser.Parser
@@ -203,8 +203,8 @@ class ParserTest {
     }
 
     @Test
-    fun testParseSlice() {
-        val input = StringInput("a = sliceOf[int]()")
+    fun testParseArrayOf() {
+        val input = StringInput("a = arrayOf[int]()")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -213,14 +213,14 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = SliceNode(listOf = emptyList(), IntType)
+                right = ArrayNode(listOf = emptyList(), IntType)
             ).wrapProgram()
         )
     }
 
     @Test
-    fun testParseSliceOf() {
-        val input = StringInput("a = sliceOf[int](1, 2, 5)")
+    fun testParseArrayOfOf() {
+        val input = StringInput("a = arrayOf[int](1, 2, 5)")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -229,14 +229,14 @@ class ParserTest {
         assertEquals(
             node, AssignNode(
                 left = VarNode(name = "a"),
-                right = SliceNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), type = IntType)
+                right = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), type = IntType)
             ).wrapProgram()
         )
     }
 
     @Test
-    fun testParseSliceAccess() {
-        val input = StringInput("sliceOf[int](1, 2, 5)[1]")
+    fun testParseArrayOfAccess() {
+        val input = StringInput("arrayOf[int](1, 2, 5)[1]")
         val stream = TokenStream(input)
         val parser = Parser(stream)
 
@@ -244,7 +244,7 @@ class ParserTest {
 
         assertEquals(
             node, IndexNode(
-                list = SliceNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
+                list = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
                 index = IntNode(1)
             ).wrapProgram()
         )

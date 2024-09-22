@@ -12,7 +12,7 @@ import compiler.nodes.IfNode
 import compiler.nodes.IndexNode
 import compiler.nodes.IntNode
 import compiler.nodes.LetNode
-import compiler.nodes.SliceNode
+import compiler.nodes.ArrayNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.PropNode
@@ -29,7 +29,7 @@ import compiler.nodes.FloatType
 import compiler.nodes.FuncType
 import compiler.nodes.IntType
 import compiler.nodes.PairType
-import compiler.nodes.SliceType
+import compiler.nodes.ArrayType
 import compiler.nodes.StringType
 import compiler.nodes.Type
 import compiler.nodes.VoidType
@@ -106,7 +106,7 @@ class Parser(private val stream: TokenStream) {
                 val derived = parseDerivedTypes(count = 2)
                 PairType(first = derived[0], second = derived[1])
             }
-            BaseType.SLICE -> SliceType(parseDerivedTypes(count = 1).first())
+            BaseType.ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
             BaseType.AUTO -> AutoType
@@ -186,11 +186,11 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseSlice(): Node {
-        skipKw("sliceOf")
+    private fun parseArrayOf(): Node {
+        skipKw("arrayOf")
         val type = parseDerivedTypes(count = 1).first()
         val elements = delimited('(', ')', ',', ::parseExpression)
-        return SliceNode(
+        return ArrayNode(
             listOf = elements,
             type = type,
         )
@@ -370,7 +370,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
-        if (isKw("sliceOf") != null) return parseSlice()
+        if (isKw("arrayOf") != null) return parseArrayOf()
         if (isKw("pairOf") != null) return parsePair()
         if (isKw("tree") != null) return parseTree()
         if (isKw("struct") != null) return parseStruct()
