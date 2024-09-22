@@ -16,7 +16,7 @@ import vm.operations.Less
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
-import vm.operations.ArrayOf
+import vm.operations.ArrOf
 import vm.operations.ArrLen
 import vm.operations.ArrPlus
 import vm.operations.SubArr
@@ -43,7 +43,7 @@ data class ArrayNode(
     override fun compile(ctx: Context): Type {
         listOf.forEach { it.compile(ctx) }
         ctx.add(Push(listOf.size))
-        ctx.add(ArrayOf())
+        ctx.add(ArrOf())
         return ArrayType(type)
     }
 
@@ -149,7 +149,7 @@ object MapArrayProp : Prop {
         ctx.addAll(exprCtx)
 
         ctx.add(Get(size.index))
-        ctx.add(ArrayOf())
+        ctx.add(ArrOf())
 
         ctx.add(Free())
         ctx.enumerator.free()

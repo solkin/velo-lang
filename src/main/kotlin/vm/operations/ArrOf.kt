@@ -7,7 +7,7 @@ import vm.SimpleOperation
 import vm.Stack
 import vm.records.ValueRecord
 
-class ArrayOf : SimpleOperation {
+class ArrOf : SimpleOperation {
 
     override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
         val size = dataStack.pop().getInt()
