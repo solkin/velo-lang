@@ -19,7 +19,6 @@ import compiler.nodes.PropNode
 import compiler.nodes.StringNode
 import compiler.nodes.StructNode
 import compiler.nodes.SubjectNode
-import compiler.nodes.TreeNode
 import compiler.nodes.VarNode
 import compiler.nodes.BaseType
 import compiler.nodes.PairNode
@@ -210,27 +209,11 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseTree(): Node {
-        skipKw("tree")
-        val elements = delimited('(', ')', ',', ::parseExpression)
-        return TreeNode(
-            treeOf = elements
-        )
-    }
-
     private fun parseStruct(): Node {
         skipKw("struct")
         val elements = delimited('(', ')', ',', ::parseDef)
         return StructNode(
             nodes = elements
-        )
-    }
-
-    private fun parseSubject(): Node {
-        skipKw("subject")
-        val value = inner('(', ')', ::parseExpression)
-        return SubjectNode(
-            init = value
         )
     }
 
@@ -372,9 +355,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("while") != null) return parseWhile()
         if (isKw("arrayOf") != null) return parseArrayOf()
         if (isKw("pairOf") != null) return parsePair()
-        if (isKw("tree") != null) return parseTree()
         if (isKw("struct") != null) return parseStruct()
-        if (isKw("subject") != null) return parseSubject()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("func") != null) {
             stream.next()
