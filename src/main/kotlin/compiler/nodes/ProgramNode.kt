@@ -1,7 +1,6 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Environment
 import vm.operations.Drop
 import vm.operations.Ext
 import vm.operations.Free
@@ -9,13 +8,6 @@ import vm.operations.Free
 data class ProgramNode(
     val prog: List<Node>,
 ) : Node() {
-    override fun evaluate(env: Environment<Value<*>>): Value<*> {
-        val scope = env.extend()
-        var v: Value<*> = BoolValue(false)
-        prog.forEach { v = it.evaluate(scope) }
-        return v
-    }
-
     override fun compile(ctx: Context): Type {
         ctx.add(Ext())
         ctx.enumerator.extend()

@@ -1,7 +1,6 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Environment
 import vm.operations.If
 import vm.operations.Move
 
@@ -9,13 +8,6 @@ data class WhileNode(
     val cond: Node,
     val expr: Node,
 ) : Node() {
-    override fun evaluate(env: Environment<Value<*>>): Value<*> {
-        while (cond.evaluate(env).value() != false) {
-            expr.evaluate(env)
-        }
-        return BoolValue(false)
-    }
-
     override fun compile(ctx: Context): Type {
         val condCtx = ctx.fork()
         cond.compile(condCtx)

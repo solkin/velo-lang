@@ -18,7 +18,6 @@ import compiler.nodes.ProgramNode
 import compiler.nodes.PropNode
 import compiler.nodes.StringNode
 import compiler.nodes.StructNode
-import compiler.nodes.SubjectNode
 import compiler.nodes.VarNode
 import compiler.nodes.BaseType
 import compiler.nodes.PairNode

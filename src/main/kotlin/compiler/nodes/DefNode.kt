@@ -1,7 +1,6 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Environment
 import vm.operations.Def
 
 data class DefNode(
@@ -9,12 +8,6 @@ data class DefNode(
     val type: Type,
     val def: Node?,
 ) : Node() {
-    override fun evaluate(env: Environment<Value<*>>): Value<*> {
-        val value = def?.let { def.evaluate(env) } ?: VoidValue()
-        env.def(name, value)
-        return value
-    }
-
     override fun compile(ctx: Context): Type {
         val defType = def?.compile(ctx) ?: let {
             type.default(ctx)

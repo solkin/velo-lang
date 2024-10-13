@@ -1,11 +1,8 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Environment
 
 class VoidNode : Node() {
-    override fun evaluate(env: Environment<Value<*>>) = VoidValue()
-
     override fun compile(ctx: Context): Type {
         return VoidType
     }
@@ -17,5 +14,3 @@ object VoidType : Type {
 
     override fun default(ctx: Context) {}
 }
-
-class VoidValue : Value<String>("")

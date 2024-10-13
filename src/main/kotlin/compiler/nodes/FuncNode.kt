@@ -1,7 +1,6 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Environment
 import vm.operations.Def
 import vm.operations.Ext
 import vm.operations.Free
@@ -17,30 +16,6 @@ data class FuncNode(
     val type: Type,
     val body: Node,
 ) : Node() {
-
-    override fun evaluate(env: Environment<Value<*>>): Value<*> {
-        var e = env
-        val named = !name.isNullOrEmpty()
-//        if (named) e = env.extend()
-
-        val func = FuncValue(
-            fun(args: List<Value<*>>, it: Value<*>?): Value<*> {
-                val scope = e.extend()
-                it?.let {
-                    scope.def("it", it)
-                }
-                defs.forEachIndexed { i, s ->
-                    scope.def(s.name, if (i < args.size) args[i] else BoolValue(false))
-                }
-                return body.evaluate(scope)
-            },
-            name
-        )
-        if (named) e.def(name.orEmpty(), func)
-
-        return func
-    }
-
     override fun compile(ctx: Context): Type {
         var resultType: Type = FuncType(derived = type)
 
@@ -90,15 +65,4 @@ data class FuncType(val derived: Type) : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
-}
-
-class FuncValue(val value: (args: List<Value<*>>, it: Value<*>?) -> Value<*>, val name: String? = null) :
-    Value<(List<Value<*>>, Value<*>?) -> Value<*>>(value) {
-
-    fun name() = name
-
-    fun run(args: List<Value<*>>, it: Value<*>? = null): Value<*> {
-        return value.invoke(args, it)
-    }
-
 }
