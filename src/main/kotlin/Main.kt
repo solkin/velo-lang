@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
         time = System.currentTimeMillis()
         node.compile(ctx)
         elapsed = System.currentTimeMillis() - time
-        println("Compiled in $elapsed ms")
+        println("Compiled in $elapsed ms [${ctx.size()} ops]")
     } catch (ex: Throwable) {
         println("!! Compilation failed: ${ex.message}")
         return
