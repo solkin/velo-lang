@@ -1,5 +1,7 @@
 package vm
 
+import vm.records.ValueRecord
+
 interface Record {
 
     fun get(): Any
@@ -22,5 +24,8 @@ interface Record {
 
     @Suppress("UNCHECKED_CAST")
     fun getArray(): Array<Record> = get() as Array<Record>
+
+    @Suppress("UNCHECKED_CAST")
+    fun getPair(): Pair<Record, Record> = get() as Pair<Record, Record>
 
 }

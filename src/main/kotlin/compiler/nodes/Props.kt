@@ -17,6 +17,10 @@ val propMap = mapOf(
         "con" to ArrayConProp,
         "plus" to ArrayPlusProp,
         "map" to MapArrayProp,
+    ),
+    BaseType.PAIR to mapOf(
+        "first" to FirstProp,
+        "second" to SecondProp,
     )
 )
 

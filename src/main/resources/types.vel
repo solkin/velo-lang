@@ -7,5 +7,4 @@ array[array[int]] l = arrayOf[array[int]]();
 fn[void] n = func() void {};
 auto a = 3.0;
 a = 6.5;
-# Pair parsing is supported, compilation is not
-# pair[int,int] p = pairOf[int,int](1, 1);
+pair[int,int] p = pairOf[int,int](1, "second");
