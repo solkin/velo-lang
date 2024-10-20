@@ -19,7 +19,7 @@ int i = 1;
 float f = 3.0;
 auto l = arrayOf[array[int]]();
 auto n = func() void {};
-auto p = pairOf[int,int](1, "second");
+auto p = pairOf[int,str](1, "second");
 ```
 **Functions and lambdas.** Velo lang supports functions
 ```
@@ -84,7 +84,7 @@ println(s.sub(5, 11)); # String
 ```
 **Pairs**
 ```
-auto p = pairOf[int,int](1, "second");
+auto p = pairOf[int,str](1, "second");
 println(p.first);  # 1
 println(p.second); # second
 ```
