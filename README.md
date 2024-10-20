@@ -82,7 +82,6 @@ str s = "Test String";
 println(s.len);        # 11
 println(s.sub(5, 11)); # String
 ```
-```
 **Pairs**
 ```
 auto p = pairOf[int,int](1, "second");
