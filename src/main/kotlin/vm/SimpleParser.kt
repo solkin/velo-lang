@@ -17,4 +17,5 @@ class SimpleParser(
     override fun eof(): Boolean {
         return !iterator.hasNext()
     }
+
 }

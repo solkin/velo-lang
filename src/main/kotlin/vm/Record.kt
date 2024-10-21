@@ -1,7 +1,5 @@
 package vm
 
-import vm.records.ValueRecord
-
 interface Record {
 
     fun get(): Any
