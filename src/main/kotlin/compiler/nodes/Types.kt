@@ -11,6 +11,7 @@ enum class BaseType(val type: String) {
     BOOLEAN("bool"),
     PAIR("pair"),
     ARRAY("array"),
+    STRUCT("struct"),
     FUNCTION("fn"),
     VOID("void"),
     AUTO("auto"),
@@ -39,6 +40,7 @@ fun BaseType.getDefaultNode(): Node {
         BaseType.BOOLEAN -> BoolNode(false)
         BaseType.PAIR -> PairNode(first = VoidNode(), second = null)
         BaseType.ARRAY -> ArrayNode(listOf = emptyList(), VoidType)
+        BaseType.STRUCT -> VoidNode()
         BaseType.FUNCTION -> IntNode(0)
         BaseType.VOID -> ProgramNode(emptyList())
         BaseType.AUTO -> throw Exception("Type auto has no default value")

@@ -12,6 +12,7 @@ class TokenStream(private val input: Input) {
         "while",
         "arrayOf",
         "pairOf",
+        "type",
         "struct",
         "func",
         "let",

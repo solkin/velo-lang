@@ -105,6 +105,7 @@ class Parser(private val stream: TokenStream) {
                 PairType(first = derived[0], second = derived[1])
             }
             BaseType.ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
+            BaseType.STRUCT -> VoidType
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
             BaseType.AUTO -> AutoType
@@ -208,12 +209,29 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseStruct(): Node {
-        skipKw("struct")
-        val elements = delimited('(', ')', ',', ::parseDef)
-        return StructNode(
-            nodes = elements
-        )
+    private fun parseTypeDef(): Node {
+        skipKw("type")
+        val name = stream.peek()?.takeIf { tok ->
+            tok.type == TokenType.VARIABLE
+        }?.let { stream.next()?.value as? String } ?: run {
+            stream.croak("Type must have a name")
+            throw Exception()
+        }
+        return when {
+            isKw("struct") != null -> {
+                skipKw("struct")
+                val elements = delimited('(', ')', ',', ::parseDef)
+                StructNode(
+                    name = name,
+                    nodes = elements
+                )
+            }
+            else -> {
+                val type = stream.next()
+                stream.croak("Unknown type definition ${type?.value}")
+                throw Exception()
+            }
+        }
     }
 
     private fun parseFunc(): Node {
@@ -348,13 +366,13 @@ class Parser(private val stream: TokenStream) {
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
+        if (isKw("type") != null) return parseTypeDef()
         if (isDef() != null) return parseDef()
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("arrayOf") != null) return parseArrayOf()
         if (isKw("pairOf") != null) return parsePair()
-        if (isKw("struct") != null) return parseStruct()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("func") != null) {
             stream.next()
