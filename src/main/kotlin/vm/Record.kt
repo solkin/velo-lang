@@ -26,4 +26,7 @@ interface Record {
     @Suppress("UNCHECKED_CAST")
     fun getPair(): Pair<Record, Record> = get() as Pair<Record, Record>
 
+    @Suppress("UNCHECKED_CAST")
+    fun getStruct(): ArrayList<Record> = get() as ArrayList<Record>
+
 }

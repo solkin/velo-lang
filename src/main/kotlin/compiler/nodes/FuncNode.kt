@@ -65,4 +65,6 @@ data class FuncType(val derived: Type) : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
+
+    override fun prop(name: String): Prop? = null
 }

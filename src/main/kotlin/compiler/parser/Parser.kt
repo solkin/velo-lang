@@ -197,7 +197,7 @@ class Parser(private val stream: TokenStream) {
 
     private fun parsePair(): Node {
         skipKw("pairOf")
-        val type = parseDerivedTypes(count = 2).first()
+        parseDerivedTypes(count = 2)
         val elements = delimited('(', ')', ',', ::parseExpression)
         if (elements.size != 2) {
             stream.croak("Pair must contain exactly two elements, but contains: ${elements.size}")
@@ -223,7 +223,7 @@ class Parser(private val stream: TokenStream) {
                 val elements = delimited('(', ')', ',', ::parseDef)
                 StructNode(
                     name = name,
-                    nodes = elements
+                    defs = elements
                 )
             }
             else -> {

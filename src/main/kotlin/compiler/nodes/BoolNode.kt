@@ -19,4 +19,6 @@ object BoolType : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = false))
     }
+
+    override fun prop(name: String): Prop? = null
 }

@@ -19,4 +19,6 @@ object FloatType : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0f))
     }
+
+    override fun prop(name: String): Prop? = null
 }

@@ -13,4 +13,6 @@ object VoidType : Type {
         get() = BaseType.VOID
 
     override fun default(ctx: Context) {}
+
+    override fun prop(name: String): Prop? = null
 }

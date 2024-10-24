@@ -20,9 +20,16 @@ object IntType : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
+
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "str" -> IntStrProp
+            else -> null
+        }
+    }
 }
 
-object IntStrProp: Prop {
+object IntStrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(IntStr())
         return StringType

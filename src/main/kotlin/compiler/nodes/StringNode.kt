@@ -22,23 +22,32 @@ object StringType : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = ""))
     }
+
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "sub" -> SubStrProp
+            "len" -> StrLenProp
+            "con" -> StrConProp
+            else -> null
+        }
+    }
 }
 
-object SubStrProp: Prop {
+object SubStrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(SubStr())
         return StringType
     }
 }
 
-object StrLenProp: Prop {
+object StrLenProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(StrLen())
         return IntType
     }
 }
 
-object StrConProp: Prop {
+object StrConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(StrCon())
         return StringType

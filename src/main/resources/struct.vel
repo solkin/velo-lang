@@ -1,8 +1,10 @@
-type intPair struct(
-  int a = 0,
-  int b = 1
+type IntPair struct(
+  int a,
+  int b,
+  str c
 ); # компилируется в функцию, создающую структуру - по сути, конструктор типа
 
-intPair p = intPair(a = 5, b = 7); # вызывается функция, которая возвращает кастомный тип данных intPair
+auto p = IntPair(5, 7, "string"); # вызывается функция, которая возвращает кастомный тип данных intPair
 
+println(p.c);
 println(p.a + p.b); # организация доступа к именованным props структур

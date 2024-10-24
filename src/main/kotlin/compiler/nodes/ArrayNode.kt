@@ -45,6 +45,17 @@ data class ArrayType(val derived: Type) : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
+
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "sub" -> SubArrayProp
+            "len" -> ArrayLenProp
+            "con" -> ArrayConProp
+            "plus" -> ArrayPlusProp
+            "map" -> MapArrayProp
+            else -> null
+        }
+    }
 }
 
 object ArrayLenProp : Prop {

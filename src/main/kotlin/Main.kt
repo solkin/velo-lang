@@ -1,5 +1,6 @@
 import compiler.Context
 import compiler.Enumerator
+import compiler.TypeRegistry
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
@@ -30,7 +31,7 @@ fun main(args: Array<String>) {
     var elapsed = System.currentTimeMillis() - time
     println("Parsed in $elapsed ms")
 
-    val ctx = Context(ops = ArrayList(), enumerator = Enumerator())
+    val ctx = Context(ops = ArrayList(), enumerator = Enumerator(), types = TypeRegistry())
     try {
         time = System.currentTimeMillis()
         node.compile(ctx)

@@ -26,6 +26,14 @@ data class PairType(val first: Type, val second: Type) : Type {
         ctx.add(Push(value = 0))
         ctx.add(Push(value = 0))
     }
+
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "first" -> FirstProp
+            "second" -> SecondProp
+            else -> null
+        }
+    }
 }
 
 object FirstProp: Prop {

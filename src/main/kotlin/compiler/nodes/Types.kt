@@ -20,6 +20,7 @@ enum class BaseType(val type: String) {
 interface Type {
     val type: BaseType
     fun default(ctx: Context)
+    fun prop(name: String): Prop?
 }
 
 object ByteType : Type {
@@ -29,6 +30,8 @@ object ByteType : Type {
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
     }
+
+    override fun prop(name: String): Prop? = null
 }
 
 fun BaseType.getDefaultNode(): Node {
@@ -54,4 +57,6 @@ object AutoType : Type {
     override fun default(ctx: Context) {
         throw Exception("Type auto has no default value")
     }
+
+    override fun prop(name: String): Prop? = null
 }
