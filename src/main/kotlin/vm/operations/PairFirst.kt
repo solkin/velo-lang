@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -8,10 +8,10 @@ import vm.Stack
 
 class PairFirst : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val pair = dataStack.pop().getPair()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val pair = subs.pop().getPair()
 
-        dataStack.push(pair.first)
+        subs.push(pair.first)
     }
 
 }

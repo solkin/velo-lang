@@ -1,6 +1,5 @@
 package vm.operations
 
-import vm.Activation
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -8,13 +7,13 @@ import vm.Stack
 
 class Index : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val index = dataStack.pop().getInt()
-        val array = dataStack.pop().getArray()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val index = subs.pop().getInt()
+        val array = subs.pop().getArray()
 
         val rec = array[index]
 
-        dataStack.push(rec)
+        subs.push(rec)
     }
 
 }

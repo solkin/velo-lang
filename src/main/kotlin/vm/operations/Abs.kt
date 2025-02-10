@@ -1,6 +1,5 @@
 package vm.operations
 
-import vm.Activation
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -10,12 +9,12 @@ import kotlin.math.abs
 
 class Abs: SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val rec = dataStack.pop()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val rec = subs.pop()
 
         val result = ValueRecord(abs(rec.getInt()))
 
-        dataStack.push(result)
+        subs.push(result)
     }
 
 }

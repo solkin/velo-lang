@@ -1,17 +1,22 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
+import vm.LifoStack
 import vm.Operation
-import vm.Record
 import vm.Stack
 
-class Call : Operation {
+class Call(val args: Int) : Operation {
 
-    override fun exec(pc: Int, dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap): Int {
-        val addr = dataStack.pop().getInt()
-        val activation = Activation(addr = pc + 1)
-        callStack.push(activation)
+    override fun exec(pc: Int, stack: Stack<Frame>, heap: Heap): Int {
+        val addr = stack.peek().subs.pop().getInt()
+        val frame = Frame(addr = pc + 1, subs = LifoStack())
+        Array(size = args, init = {
+            stack.peek().subs.pop()
+        }).reversedArray().forEach { arg ->
+            frame.subs.push(arg)
+        }
+        stack.push(frame)
         return addr
     }
 

@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -9,13 +9,13 @@ import vm.records.ValueRecord
 
 class Equals: SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val val1 = dataStack.pop()
-        val val2 = dataStack.pop()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val val1 = subs.pop()
+        val val2 = subs.pop()
 
         val result = ValueRecord(val1 == val2)
 
-        dataStack.push(result)
+        subs.push(result)
     }
 
 }

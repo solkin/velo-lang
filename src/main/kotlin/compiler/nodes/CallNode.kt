@@ -23,7 +23,7 @@ data class CallNode(
         }
         val type = (func.compile(ctx) as? FuncType)?.derived
             ?: throw IllegalArgumentException("Call on non-function type")
-        ctx.add(Call())
+        ctx.add(Call(args.size))
         return type
     }
 }

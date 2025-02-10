@@ -2,11 +2,11 @@ package vm
 
 interface SimpleOperation : Operation {
 
-    override fun exec(pc: Int, dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap): Int {
-        exec(dataStack, callStack, heap)
+    override fun exec(pc: Int, stack: Stack<Frame>, heap: Heap): Int {
+        exec(stack.peek().subs, heap)
         return pc + 1
     }
 
-    fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap)
+    fun exec(subs: Stack<Record>, heap: Heap)
 
 }

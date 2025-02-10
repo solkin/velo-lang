@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -9,14 +9,14 @@ import vm.records.ValueRecord
 
 class SubStr : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val start = dataStack.pop().getInt()
-        val end = dataStack.pop().getInt()
-        val str = dataStack.pop().getString()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val start = subs.pop().getInt()
+        val end = subs.pop().getInt()
+        val str = subs.pop().getString()
 
         val rec = ValueRecord(str.substring(start, end))
 
-        dataStack.push(rec)
+        subs.push(rec)
     }
 
 }

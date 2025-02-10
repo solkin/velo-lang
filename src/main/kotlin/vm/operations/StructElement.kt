@@ -1,6 +1,5 @@
 package vm.operations
 
-import vm.Activation
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -8,11 +7,11 @@ import vm.Stack
 
 class StructElement : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val index = dataStack.pop().getInt()
-        val struct = dataStack.pop().getStruct()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val index = subs.pop().getInt()
+        val struct = subs.pop().getStruct()
 
-        dataStack.push(struct[index])
+        subs.push(struct[index])
     }
 
 }

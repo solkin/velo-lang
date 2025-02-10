@@ -4,7 +4,7 @@ class VM {
 
     private var program: List<Operation> = emptyList()
 
-    public fun load(parser: Parser) {
+    fun load(parser: Parser) {
         val operations = ArrayList<Operation>()
         while (!parser.eof()) {
             val cmd = parser.next() ?: break
@@ -13,10 +13,12 @@ class VM {
         program = operations
     }
 
-    public fun run() {
-        val dataStack: Stack<Record> = LifoStack()
-        val callStack: Stack<Activation> = LifoStack()
+    fun run() {
+        val stack: Stack<Frame> = LifoStack()
         val heap: Heap = ScopedHeap()
+
+        val initFrame = Frame(0, LifoStack())
+        stack.push(initFrame)
 
         var pc = 0
         var elapsed = 0L
@@ -41,7 +43,7 @@ class VM {
                 if (diagStat) {
                     t = System.currentTimeMillis()
                 }
-                pc = cmd.exec(pc, dataStack, callStack, heap)
+                pc = cmd.exec(pc, stack, heap)
                 if (diagStat) {
                     val e = System.currentTimeMillis() - t
                     val name = cmd.javaClass.name
@@ -71,6 +73,7 @@ class VM {
             println("\nProgram halted")
         } catch (ex: Throwable) {
             println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
+            ex.printStackTrace()
         }
         println("VM stopped in $elapsed ms")
     }

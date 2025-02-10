@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -11,9 +11,9 @@ class Push(
     val value: Any
 ): SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
+    override fun exec(subs: Stack<Record>, heap: Heap) {
         val rec = ValueRecord(value)
-        dataStack.push(rec)
+        subs.push(rec)
     }
 
 }

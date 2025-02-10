@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -10,14 +10,14 @@ import java.util.Arrays
 
 class SubArr : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val start = dataStack.pop().getInt()
-        val end = dataStack.pop().getInt()
-        val array = dataStack.pop().getArray()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val start = subs.pop().getInt()
+        val end = subs.pop().getInt()
+        val array = subs.pop().getArray()
 
         val rec = ValueRecord(Arrays.copyOfRange(array, start, end))
 
-        dataStack.push(rec)
+        subs.push(rec)
     }
 
 }

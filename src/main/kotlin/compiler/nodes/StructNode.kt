@@ -2,19 +2,13 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
-import vm.operations.Ext
-import vm.operations.Free
-import vm.operations.Push
 import vm.operations.MakeStruct
 import vm.operations.Move
-import vm.operations.PairFirst
 import vm.operations.Pc
 import vm.operations.Plus
+import vm.operations.Push
 import vm.operations.Ret
 import vm.operations.StructElement
-import vm.operations.SubStr
-import java.util.SortedMap
-import java.util.TreeMap
 
 data class StructNode(
     val name: String,
@@ -26,7 +20,7 @@ data class StructNode(
             elements[def.name] = def.type
         }
 
-        val resultType: Type = FuncType(derived = StructType(name, elements))
+        val resultType: Type = FuncType(derived = StructType(elements))
 
         // Insert function address to stack
         val defCmdCount = 5
@@ -54,7 +48,7 @@ data class StructNode(
     }
 }
 
-data class StructType(val name: String, val elements: Map<String, Type>) : Type {
+data class StructType(val elements: Map<String, Type>) : Type {
     override val type: BaseType
         get() = BaseType.STRUCT
 

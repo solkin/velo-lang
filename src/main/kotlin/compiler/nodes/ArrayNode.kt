@@ -135,7 +135,7 @@ object MapArrayProp : Prop {
             // func
             add(Get(func.index))
             // call func
-            add(Call())
+            add(Call(args = 2))
             // increment i
             add(Get(i.index))
             add(Push(1))

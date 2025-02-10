@@ -28,7 +28,7 @@ class StringInput(private val str: String) : Input {
     }
 
     override fun croak(msg: String) {
-        throw Error("$msg ($line:$col)");
+        throw Error("$msg ($line:$col)")
     }
 
     private fun getChar(p: Int): Char {

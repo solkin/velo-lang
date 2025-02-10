@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.OperationNotSupportedException
 import vm.Record
@@ -9,7 +9,7 @@ import vm.Stack
 
 class Pick: SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
+    override fun exec(subs: Stack<Record>, heap: Heap) {
         throw OperationNotSupportedException()
     }
 

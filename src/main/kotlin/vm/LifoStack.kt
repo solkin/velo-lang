@@ -19,4 +19,8 @@ class LifoStack<T> : Stack<T> {
         return deque.pop()
     }
 
+    override fun empty(): Boolean {
+        return deque.isEmpty()
+    }
+
 }

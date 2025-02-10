@@ -1,6 +1,5 @@
 package vm.operations
 
-import vm.Activation
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -9,13 +8,13 @@ import vm.records.ValueRecord
 
 class ArrOf : SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val size = dataStack.pop().getInt()
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val size = subs.pop().getInt()
         val array = Array(size, { i ->
-            dataStack.pop()
+            subs.pop()
         }).apply { reverse() }
         val rec = ValueRecord(array)
-        dataStack.push(rec)
+        subs.push(rec)
     }
 
 }

@@ -1,6 +1,6 @@
 package vm.operations
 
-import vm.Activation
+import vm.Frame
 import vm.Heap
 import vm.Record
 import vm.SimpleOperation
@@ -8,13 +8,13 @@ import vm.Stack
 
 class Rot: SimpleOperation {
 
-    override fun exec(dataStack: Stack<Record>, callStack: Stack<Activation>, heap: Heap) {
-        val rec1 = dataStack.pop()
-        val rec2 = dataStack.pop()
-        val rec3 = dataStack.pop()
-        dataStack.push(rec2)
-        dataStack.push(rec1)
-        dataStack.push(rec3)
+    override fun exec(subs: Stack<Record>, heap: Heap) {
+        val rec1 = subs.pop()
+        val rec2 = subs.pop()
+        val rec3 = subs.pop()
+        subs.push(rec2)
+        subs.push(rec1)
+        subs.push(rec3)
     }
 
 }

@@ -29,6 +29,7 @@ import compiler.nodes.IntType
 import compiler.nodes.PairType
 import compiler.nodes.ArrayType
 import compiler.nodes.StringType
+import compiler.nodes.StructType
 import compiler.nodes.Type
 import compiler.nodes.VoidType
 import compiler.nodes.VoidNode
@@ -105,7 +106,7 @@ class Parser(private val stream: TokenStream) {
                 PairType(first = derived[0], second = derived[1])
             }
             BaseType.ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
-            BaseType.STRUCT -> VoidType
+            BaseType.STRUCT -> StructType(emptyMap())
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
             BaseType.AUTO -> AutoType
