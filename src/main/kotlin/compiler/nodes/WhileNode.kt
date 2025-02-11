@@ -6,7 +6,7 @@ import vm.operations.Move
 
 data class WhileNode(
     val cond: Node,
-    val expr: Node,
+    val expr: ScopeNode,
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val condCtx = ctx.fork()

@@ -1,22 +1,23 @@
 package vm.operations
 
 import vm.Frame
-import vm.Heap
 import vm.LifoStack
 import vm.Operation
 import vm.Stack
+import java.util.TreeMap
 
 class Call(val args: Int) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, heap: Heap): Int {
-        val addr = stack.peek().subs.pop().getInt()
-        val frame = Frame(addr = pc + 1, subs = LifoStack())
+    override fun exec(pc: Int, stack: Stack<Frame>): Int {
+        val thisFrame = stack.peek()
+        val addr = thisFrame.subs.pop().getInt()
+        val newFrame = Frame(addr = pc + 1, subs = LifoStack(), vars = TreeMap(), parent = thisFrame)
         Array(size = args, init = {
-            stack.peek().subs.pop()
+            thisFrame.subs.pop()
         }).reversedArray().forEach { arg ->
-            frame.subs.push(arg)
+            newFrame.subs.push(arg)
         }
-        stack.push(frame)
+        stack.push(newFrame)
         return addr
     }
 

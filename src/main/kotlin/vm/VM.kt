@@ -1,5 +1,9 @@
 package vm
 
+import java.io.PrintStream
+import java.io.PrintWriter
+import java.util.TreeMap
+
 class VM {
 
     private var program: List<Operation> = emptyList()
@@ -15,9 +19,8 @@ class VM {
 
     fun run() {
         val stack: Stack<Frame> = LifoStack()
-        val heap: Heap = ScopedHeap()
 
-        val initFrame = Frame(0, LifoStack())
+        val initFrame = Frame(addr = 0, subs = LifoStack(), vars = TreeMap(), parent = null)
         stack.push(initFrame)
 
         var pc = 0
@@ -43,7 +46,7 @@ class VM {
                 if (diagStat) {
                     t = System.currentTimeMillis()
                 }
-                pc = cmd.exec(pc, stack, heap)
+                pc = cmd.exec(pc, stack)
                 if (diagStat) {
                     val e = System.currentTimeMillis() - t
                     val name = cmd.javaClass.name
@@ -73,9 +76,34 @@ class VM {
             println("\nProgram halted")
         } catch (ex: Throwable) {
             println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
+            stack.printStackTrace()
             ex.printStackTrace()
         }
         println("VM stopped in $elapsed ms")
     }
 
+}
+
+fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
+    while(!empty()) {
+        val frame = pop()
+        out.println("\tat addr=${frame.addr}")
+        if (frame.subs.empty()) {
+            out.println("\t\tframe stack empty")
+        } else {
+            out.println("\t\tframe stack:")
+            while (!frame.subs.empty()) {
+                val record = frame.subs.pop()
+                out.println("\t\t> ${record.get()}")
+            }
+        }
+        if (frame.subs.empty()) {
+            out.println("\t\tframe vars empty")
+        } else {
+            out.println("\t\tframe vars:")
+            frame.vars.forEach { (key, value) ->
+                out.println("\t\t> $key = $value")
+            }
+        }
+    }
 }

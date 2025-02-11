@@ -3,11 +3,12 @@ package compiler.nodes
 import compiler.Context
 import vm.Operation
 import vm.operations.ArrCon
+import vm.operations.ArrLen
+import vm.operations.ArrOf
+import vm.operations.ArrPlus
 import vm.operations.Call
 import vm.operations.Def
 import vm.operations.Dup
-import vm.operations.Ext
-import vm.operations.Free
 import vm.operations.Get
 import vm.operations.If
 import vm.operations.Index
@@ -15,11 +16,8 @@ import vm.operations.Less
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
-import vm.operations.ArrOf
-import vm.operations.ArrLen
-import vm.operations.ArrPlus
-import vm.operations.SubArr
 import vm.operations.Set
+import vm.operations.SubArr
 
 data class ArrayNode(
     val listOf: List<Node>,
@@ -99,7 +97,6 @@ object MapArrayProp : Prop {
         type as ArrayType
         val arg = args.first() as FuncType
 
-        ctx.add(Ext())
         ctx.enumerator.extend()
 
         val func = ctx.enumerator.def(name = "@func", type = arg)
@@ -117,42 +114,46 @@ object MapArrayProp : Prop {
         val array = ctx.enumerator.def(name = "@array", type = ArrayType(arg.derived))
         ctx.add(Def(array.index))
 
-        val condCtx: MutableList<Operation> = ArrayList()
-        with(condCtx) {
-            add(Get(i.index))
-            add(Get(size.index))
-            add(Less())
-        }
+//        val derived = ctx.wrapScope { ctx ->
+            val condCtx: MutableList<Operation> = ArrayList()
+            with(condCtx) {
+                add(Get(i.index))
+                add(Get(size.index))
+                add(Less())
+            }
 
-        val exprCtx: MutableList<Operation> = ArrayList()
-        with(exprCtx) {
-            // index
-            add(Get(i.index))
-            // item
-            add(Get(array.index))
-            add(Get(i.index))
-            add(Index())
-            // func
-            add(Get(func.index))
-            // call func
-            add(Call(args = 2))
-            // increment i
-            add(Get(i.index))
-            add(Push(1))
-            add(Plus())
-            add(Set(i.index))
-        }
-        exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
+            val exprCtx: MutableList<Operation> = ArrayList()
+            with(exprCtx) {
+                // index
+                add(Get(i.index))
+                // item
+                add(Get(array.index))
+                add(Get(i.index))
+                add(Index())
+                // func
+                add(Get(func.index))
+                // call func
+                add(Call(args = 2))
+                // increment i
+                add(Get(i.index))
+                add(Push(1))
+                add(Plus())
+                add(Set(i.index))
+            }
+            exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
 
-        ctx.addAll(condCtx)
-        ctx.add(If(exprCtx.size))
-        ctx.addAll(exprCtx)
+            ctx.addAll(condCtx)
+            ctx.add(If(exprCtx.size))
+            ctx.addAll(exprCtx)
 
-        ctx.add(Get(size.index))
-        ctx.add(ArrOf())
+            ctx.add(Get(size.index))
+            ctx.add(ArrOf())
 
-        ctx.add(Free())
-        ctx.enumerator.free()
+//        context.add(Free())
+            ctx.enumerator.free()
+
+//            type.derived
+//        }
 
         return ArrayType(type.derived)
     }

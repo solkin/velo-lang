@@ -1,15 +1,12 @@
 package vm.operations
 
 import vm.Frame
-import vm.Heap
-import vm.Record
 import vm.SimpleOperation
-import vm.Stack
 
 class Println : SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val value = subs.pop().get()
+    override fun exec(frame: Frame) {
+        val value = frame.subs.pop().get()
         println(value.toString())
     }
 

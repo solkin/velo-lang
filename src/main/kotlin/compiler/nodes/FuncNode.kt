@@ -2,8 +2,6 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
-import vm.operations.Ext
-import vm.operations.Free
 import vm.operations.Move
 import vm.operations.Pc
 import vm.operations.Plus
@@ -35,7 +33,6 @@ data class FuncNode(
         // Compile body
         val funcOps = ctx.fork()
         funcOps.enumerator.extend()
-        funcOps.add(Ext())
         defs.reversed().forEach { def ->
             val v = funcOps.enumerator.def(def.name, def.type)
             funcOps.add(Def(v.index))
@@ -45,7 +42,6 @@ data class FuncNode(
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
         funcOps.enumerator.free()
-        funcOps.add(Free())
         funcOps.add(Ret())
 
         // Skip function body

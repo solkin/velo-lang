@@ -1,24 +1,23 @@
 package vm.operations
 
-import vm.Heap
+import vm.Frame
 import vm.Record
 import vm.SimpleOperation
-import vm.Stack
 import vm.records.ValueRecord
 
 class MakeStruct : SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val count = subs.pop().getInt()
+    override fun exec(frame: Frame) {
+        val count = frame.subs.pop().getInt()
 
         val elements = ArrayList<Record>()
         for (i in 0 until count) {
-            val rec = subs.pop()
+            val rec = frame.subs.pop()
             elements.add(rec)
         }
         val result = ValueRecord(elements)
 
-        subs.push(result)
+        frame.subs.push(result)
     }
 
 }

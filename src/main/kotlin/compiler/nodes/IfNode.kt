@@ -6,8 +6,8 @@ import vm.operations.Move
 
 data class IfNode(
     val condNode: Node,
-    val thenNode: Node,
-    val elseNode: Node?,
+    val thenNode: ScopeNode,
+    val elseNode: ScopeNode?,
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val thenCtx = ctx.fork()

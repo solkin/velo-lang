@@ -1,18 +1,15 @@
 package vm.operations
 
-import vm.Heap
-import vm.Record
+import vm.Frame
 import vm.SimpleOperation
-import vm.Stack
 
 class Get(
     val index: Int,
 ): SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val scope = heap.current()
-        val rec = scope.get(index)
-        subs.push(rec)
+    override fun exec(frame: Frame) {
+        val rec = frame.get(index)
+        frame.subs.push(rec)
     }
 
 }

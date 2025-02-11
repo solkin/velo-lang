@@ -1,18 +1,17 @@
 package vm.operations
 
 import vm.Frame
-import vm.Heap
-import vm.Record
 import vm.SimpleOperation
-import vm.Stack
 
 class Swap: SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val rec1 = subs.pop()
-        val rec2 = subs.pop()
-        subs.push(rec1)
-        subs.push(rec2)
+    override fun exec(frame: Frame) {
+        with(frame.subs) {
+            val rec1 = pop()
+            val rec2 = pop()
+            push(rec1)
+            push(rec2)
+        }
     }
 
 }

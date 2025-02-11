@@ -1,21 +1,18 @@
 package vm.operations
 
 import vm.Frame
-import vm.Heap
-import vm.Record
 import vm.SimpleOperation
-import vm.Stack
 import vm.records.ValueRecord
 
 class Minus: SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val rec1 = subs.pop().getInt()
-        val rec2 = subs.pop().getInt()
+    override fun exec(frame: Frame) {
+        val rec1 = frame.subs.pop().getInt()
+        val rec2 = frame.subs.pop().getInt()
 
         val result = ValueRecord(rec2 - rec1)
         
-        subs.push(result)
+        frame.subs.push(result)
     }
 
 }

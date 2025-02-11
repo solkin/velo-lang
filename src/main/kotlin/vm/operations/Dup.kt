@@ -1,16 +1,13 @@
 package vm.operations
 
 import vm.Frame
-import vm.Heap
-import vm.Record
 import vm.SimpleOperation
-import vm.Stack
 
 class Dup: SimpleOperation {
 
-    override fun exec(subs: Stack<Record>, heap: Heap) {
-        val rec = subs.peek()
-        subs.push(rec)
+    override fun exec(frame: Frame) {
+        val rec = frame.subs.peek()
+        frame.subs.push(rec)
     }
 
 }

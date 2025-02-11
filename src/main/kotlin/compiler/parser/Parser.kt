@@ -28,6 +28,7 @@ import compiler.nodes.FuncType
 import compiler.nodes.IntType
 import compiler.nodes.PairType
 import compiler.nodes.ArrayType
+import compiler.nodes.ScopeNode
 import compiler.nodes.StringType
 import compiler.nodes.StructType
 import compiler.nodes.Type
@@ -105,6 +106,7 @@ class Parser(private val stream: TokenStream) {
                 val derived = parseDerivedTypes(count = 2)
                 PairType(first = derived[0], second = derived[1])
             }
+
             BaseType.ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
             BaseType.STRUCT -> StructType(emptyMap())
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
@@ -171,8 +173,8 @@ class Parser(private val stream: TokenStream) {
         }
         return IfNode(
             condNode = cond,
-            thenNode = then,
-            elseNode = elseNode
+            thenNode = ScopeNode(then),
+            elseNode = elseNode?.let { ScopeNode(it) },
         )
     }
 
@@ -182,7 +184,7 @@ class Parser(private val stream: TokenStream) {
         val expr = parseProg()
         return WhileNode(
             cond = cond,
-            expr = expr,
+            expr = ScopeNode(expr),
         )
     }
 
@@ -227,6 +229,7 @@ class Parser(private val stream: TokenStream) {
                     defs = elements
                 )
             }
+
             else -> {
                 val type = stream.next()
                 stream.croak("Unknown type definition ${type?.value}")
@@ -262,9 +265,11 @@ class Parser(private val stream: TokenStream) {
                 args = defs.map { it.def ?: it.type.type.getDefaultNode() }
             )
         }
-        return LetNode(
-            vars = delimited('(', ')', ',', ::parseDef),
-            body = parseExpression(),
+        return ScopeNode(
+            LetNode(
+                vars = delimited('(', ')', ',', ::parseDef),
+                body = parseExpression(),
+            )
         )
     }
 
