@@ -4,7 +4,7 @@ import vm.Operation
 
 data class Context(
     private val ops: MutableList<Operation>,
-    val enumerator: Enumerator,
+    val scope: Scope,
     val types: TypeRegistry,
 ) {
 
@@ -28,8 +28,12 @@ data class Context(
         return ops
     }
 
-    fun fork(): Context {
-        return Context(ops = ArrayList(), enumerator, types)
+    fun extend(): Context {
+        return Context(ops = ArrayList(), scope.extend(), types)
+    }
+
+    fun inner(): Context {
+        return Context(ops = ArrayList(), scope, types)
     }
 
     fun merge(ctx: Context) {

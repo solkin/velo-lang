@@ -10,10 +10,10 @@ data class IfNode(
     val elseNode: ScopeNode?,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val thenCtx = ctx.fork()
+        val thenCtx = ctx.inner()
         val thenType = thenNode.compile(thenCtx)
 
-        val elseCtx = ctx.fork()
+        val elseCtx = ctx.inner()
         val elseType = elseNode?.let { elseNode ->
             val type = elseNode.compile(elseCtx)
             thenCtx.add(Move(elseCtx.size()))

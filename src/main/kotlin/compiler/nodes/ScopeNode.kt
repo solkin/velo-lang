@@ -17,10 +17,8 @@ data class ScopeNode(
 }
 
 fun Context.wrapScope(compile: (Context) -> Type): Type {
-    val scopeOps = fork()
-    enumerator.extend()
+    val scopeOps = extend()
     val type = compile(scopeOps)
-    enumerator.free()
     // Add return to scope body
     scopeOps.add(Ret())
 

@@ -1,29 +1,6 @@
-func primes(int n) void {
-    int k = 0;
-    int i = 2;
-    while (k < n) {
-        bool isPrime = true;
-        int divisor = 2;
-        while (divisor <= i / 2) {
-            if (i % divisor == 0) {
-                isPrime = false;
-                divisor = i;
-            } else {
-                divisor = divisor + 1;
-            };
-        };
-        if (isPrime) {
-            print(i);
-            print(" ");
-            if (k + 1) % 20 == 0 {
-                println("");
-            };
-            k = k + 1;
-            k = k / 0;
-        };
-        i = i + 1;
-    };
+func f(int n) int {
+    println(n);
+    if n < 2 then n else f(n - 1) + f(n - 2);
 };
 
-primes(313);
-println("");
+println(f(15));

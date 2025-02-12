@@ -25,23 +25,21 @@ data class FuncNode(
         ctx.add(Plus())
         // Define var and move address to var if name is defined
         if (named) {
-            val v = ctx.enumerator.def(name.orEmpty(), resultType)
+            val v = ctx.scope.def(name.orEmpty(), resultType)
             ctx.add(Def(v.index))
             resultType = VoidType
         }
 
         // Compile body
-        val funcOps = ctx.fork()
-        funcOps.enumerator.extend()
+        val funcOps = ctx.extend()
         defs.reversed().forEach { def ->
-            val v = funcOps.enumerator.def(def.name, def.type)
+            val v = funcOps.scope.def(def.name, def.type)
             funcOps.add(Def(v.index))
         }
         val retType = body.compile(funcOps)
         if (retType != type) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
-        funcOps.enumerator.free()
         funcOps.add(Ret())
 
         // Skip function body

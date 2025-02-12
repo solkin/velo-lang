@@ -28,11 +28,11 @@ data class StructNode(
         ctx.add(Push(value = defCmdCount))
         ctx.add(Plus())
         // Define var and move address to var if name is defined
-        val v = ctx.enumerator.def(name, resultType)
+        val v = ctx.scope.def(name, resultType)
         ctx.add(Def(v.index))
 
         // Compile body
-        val funcOps = ctx.fork()
+        val funcOps = ctx.extend()
         // Compile function body - structure constructor
         funcOps.add(Push(value = elements.size))
         funcOps.add(MakeStruct())

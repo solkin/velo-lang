@@ -97,63 +97,54 @@ object MapArrayProp : Prop {
         type as ArrayType
         val arg = args.first() as FuncType
 
-        ctx.enumerator.extend()
-
-        val func = ctx.enumerator.def(name = "@func", type = arg)
+        val func = ctx.scope.def(name = "@func", type = arg)
         ctx.add(Def(func.index))
 
         ctx.add(Dup())
         ctx.add(ArrLen())
-        val size = ctx.enumerator.def(name = "@size", type = IntType)
+        val size = ctx.scope.def(name = "@size", type = IntType)
         ctx.add(Def(size.index))
 
         ctx.add(Push(0))
-        val i = ctx.enumerator.def(name = "@i", type = IntType)
+        val i = ctx.scope.def(name = "@i", type = IntType)
         ctx.add(Def(i.index))
 
-        val array = ctx.enumerator.def(name = "@array", type = ArrayType(arg.derived))
+        val array = ctx.scope.def(name = "@array", type = ArrayType(arg.derived))
         ctx.add(Def(array.index))
 
-//        val derived = ctx.wrapScope { ctx ->
-            val condCtx: MutableList<Operation> = ArrayList()
-            with(condCtx) {
-                add(Get(i.index))
-                add(Get(size.index))
-                add(Less())
-            }
+        val condCtx: MutableList<Operation> = ArrayList()
+        with(condCtx) {
+            add(Get(i.index))
+            add(Get(size.index))
+            add(Less())
+        }
 
-            val exprCtx: MutableList<Operation> = ArrayList()
-            with(exprCtx) {
-                // index
-                add(Get(i.index))
-                // item
-                add(Get(array.index))
-                add(Get(i.index))
-                add(Index())
-                // func
-                add(Get(func.index))
-                // call func
-                add(Call(args = 2))
-                // increment i
-                add(Get(i.index))
-                add(Push(1))
-                add(Plus())
-                add(Set(i.index))
-            }
-            exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
+        val exprCtx: MutableList<Operation> = ArrayList()
+        with(exprCtx) {
+            // index
+            add(Get(i.index))
+            // item
+            add(Get(array.index))
+            add(Get(i.index))
+            add(Index())
+            // func
+            add(Get(func.index))
+            // call func
+            add(Call(args = 2))
+            // increment i
+            add(Get(i.index))
+            add(Push(1))
+            add(Plus())
+            add(Set(i.index))
+        }
+        exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
 
-            ctx.addAll(condCtx)
-            ctx.add(If(exprCtx.size))
-            ctx.addAll(exprCtx)
+        ctx.addAll(condCtx)
+        ctx.add(If(exprCtx.size))
+        ctx.addAll(exprCtx)
 
-            ctx.add(Get(size.index))
-            ctx.add(ArrOf())
-
-//        context.add(Free())
-            ctx.enumerator.free()
-
-//            type.derived
-//        }
+        ctx.add(Get(size.index))
+        ctx.add(ArrOf())
 
         return ArrayType(type.derived)
     }

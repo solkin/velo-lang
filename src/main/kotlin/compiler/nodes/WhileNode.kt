@@ -9,10 +9,10 @@ data class WhileNode(
     val expr: ScopeNode,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val condCtx = ctx.fork()
+        val condCtx = ctx.inner()
         cond.compile(condCtx)
 
-        val exprCtx = ctx.fork()
+        val exprCtx = ctx.inner()
         val type = expr.compile(exprCtx)
         exprCtx.add(Move(-(exprCtx.size() + condCtx.size() + 2))) // +2 because to move and if is not included
 
