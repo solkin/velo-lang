@@ -97,7 +97,7 @@ fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
                 out.println("\t\t> ${record.get()}")
             }
         }
-        if (frame.subs.empty()) {
+        if (frame.vars.isEmpty()) {
             out.println("\t\tframe vars empty")
         } else {
             out.println("\t\tframe vars:")
