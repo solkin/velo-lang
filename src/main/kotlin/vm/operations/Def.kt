@@ -10,7 +10,7 @@ class Def(
 
     override fun exec(frame: Frame) {
         val value = frame.subs.pop().get()
-        frame.def(index, ValueRecord(value))
+        frame.vars.def(index, ValueRecord(value))
     }
 
 }

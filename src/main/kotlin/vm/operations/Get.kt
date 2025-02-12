@@ -8,7 +8,7 @@ class Get(
 ): SimpleOperation {
 
     override fun exec(frame: Frame) {
-        val rec = frame.get(index)
+        val rec = frame.vars.get(index)
         frame.subs.push(rec)
     }
 

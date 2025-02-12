@@ -20,7 +20,7 @@ class VM {
     fun run() {
         val stack: Stack<Frame> = LifoStack()
 
-        val initFrame = Frame(addr = 0, subs = LifoStack(), vars = TreeMap(), parent = null)
+        val initFrame = Frame(addr = 0, subs = LifoStack(), vars = createVars())
         stack.push(initFrame)
 
         var pc = 0
@@ -85,7 +85,7 @@ class VM {
 }
 
 fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
-    while(!empty()) {
+    while (!empty()) {
         val frame = pop()
         out.println("\tat addr=${frame.addr}")
         if (frame.subs.empty()) {
@@ -97,12 +97,12 @@ fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
                 out.println("\t\t> ${record.get()}")
             }
         }
-        if (frame.vars.isEmpty()) {
+        if (frame.vars.empty()) {
             out.println("\t\tframe vars empty")
         } else {
             out.println("\t\tframe vars:")
-            frame.vars.forEach { (key, value) ->
-                out.println("\t\t> $key = $value")
+            frame.vars.vars.forEach { (index, record) ->
+                out.println("\t\t> $index = $record")
             }
         }
     }

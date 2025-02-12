@@ -32,7 +32,7 @@ class Scope internal constructor(
         if (vars.containsKey(name)) {
             throw IllegalArgumentException("Variable $name is already defined")
         }
-        val v = Var(index = counter.incrementAndGet(), type = type)
+        val v = Var(index = counter.getAndIncrement(), type = type)
         vars[name] = v
         return v
     }

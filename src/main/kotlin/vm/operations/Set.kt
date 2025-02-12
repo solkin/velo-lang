@@ -10,7 +10,7 @@ class Set(
 
     override fun exec(frame: Frame) {
         val value = frame.subs.pop().get()
-        frame.set(index, ValueRecord(value))
+        frame.vars.set(index, ValueRecord(value))
     }
 
 }
