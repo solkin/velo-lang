@@ -1,6 +1,30 @@
-func f(int n) int {
-    println(n);
-    if n < 2 then n else f(n - 1) + f(n - 2);
+fn[int] test = func(int a) int {
+    func(int a, int b) int {
+        a + b
+    }(a, 1);
 };
 
-println(f(15));
+func traverse(array[array[int]] matrix) array[array[int]] {
+    matrix.map(
+        func(int index, array[int] row) array[int] {
+            row.map(
+                func(int index, int col) int {
+                    int v = test(col);
+                    print(v);
+                    print(" ");
+                    v;
+                }
+            );
+            println("");
+            row;
+        }
+    );
+};
+
+auto matrix = arrayOf[array[int]](
+    arrayOf[int](0, 4, 6, 3, 5),
+    arrayOf[int](8, 4, 2, 5, 1)
+);
+matrix = matrix.con(arrayOf[array[int]](arrayOf[int](2, 1, 3, 7).plus(8)));
+
+traverse(matrix);
