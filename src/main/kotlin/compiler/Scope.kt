@@ -10,7 +10,7 @@ class Scope internal constructor(
     private val counter: AtomicInteger,
 ) {
 
-    fun extend() = Scope(TreeMap(), parent = this, counter) // TODO: replace with AtomicInteger()
+    fun extend() = Scope(TreeMap(), parent = this, AtomicInteger(counter.get()))
 
     private fun lookup(name: String): Scope? {
         var scope: Scope? = this
