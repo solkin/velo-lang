@@ -5,7 +5,6 @@ import vm.Operation
 data class Context(
     private val ops: MutableList<Operation>,
     val scope: Scope,
-    val types: TypeRegistry,
 ) {
 
     fun add(op: Operation) {
@@ -29,14 +28,15 @@ data class Context(
     }
 
     fun extend(): Context {
-        return Context(ops = ArrayList(), scope.extend(), types)
+        return Context(ops = ArrayList(), scope = scope.extend())
     }
 
     fun inner(): Context {
-        return Context(ops = ArrayList(), scope, types)
+        return Context(ops = ArrayList(), scope = scope)
     }
 
     fun merge(ctx: Context) {
         this.ops.addAll(ctx.ops)
     }
+
 }
