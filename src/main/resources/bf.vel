@@ -12,13 +12,17 @@ auto mem = arrayOf[int](
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 );
 
-auto tape = "
-++++++++[>+>++++<<-]>++>>+<[-[>>+<<-]+>>]>+[
-    -<<<[
-        ->[+[-]+>++>>>-<<]<[<]>>++++++[<<+++++>>-]+<<++.[-]<<
-    ]>.>+[>>]>+
-]
-";
+println("enter bf program (or enter for sample):");
+auto tape = input();
+if (tape.len == 0) {
+    tape = "
+        ++++++++[>+>++++<<-]>++>>+<[-[>>+<<-]+>>]>+[
+            -<<<[
+                ->[+[-]+>++>>>-<<]<[<]>>++++++[<<+++++>>-]+<<++.[-]<<
+            ]>.>+[>>]>+
+        ]
+    ";
+};
 
 int tapeLength = tape.len();
 
@@ -38,7 +42,8 @@ while(i < tapeLength) {
     } else if (c == ".") {
         print(mem[p].char());
     } else if (c == ",") {
-        println("input not supported");
+        str s = input();
+        mem.set(p, s[0]);
     } else if (c == "[") {
         if (mem[p] == 0) {
             b = b + 1;

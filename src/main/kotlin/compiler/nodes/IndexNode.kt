@@ -1,7 +1,8 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Index
+import vm.operations.ArrIndex
+import vm.operations.StrIndex
 
 data class IndexNode(
     val list: Node,
@@ -9,9 +10,19 @@ data class IndexNode(
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val type = list.compile(ctx)
-        type as? ArrayType ?: throw IllegalArgumentException("Index on non-indexable type $type")
         index.compile(ctx)
-        ctx.add(Index())
-        return type.derived
+        return when (type) {
+            is ArrayType -> {
+                ctx.add(ArrIndex())
+                type.derived
+            }
+
+            is StringType -> {
+                ctx.add(StrIndex())
+                IntType
+            }
+
+            else -> throw IllegalArgumentException("Index on non-indexable type $type")
+        }
     }
 }

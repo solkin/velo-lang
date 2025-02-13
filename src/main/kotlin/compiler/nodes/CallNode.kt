@@ -2,6 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Call
+import vm.operations.Input
 import vm.operations.Print
 import vm.operations.Println
 
@@ -20,6 +21,10 @@ data class CallNode(
         if (func is VarNode && func.name == "print") {
             ctx.add(Print())
             return VoidType
+        }
+        if (func is VarNode && func.name == "input") {
+            ctx.add(Input())
+            return StringType
         }
         val type = (func.compile(ctx) as? FuncType)?.derived
             ?: throw IllegalArgumentException("Call on non-function type")

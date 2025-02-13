@@ -12,7 +12,7 @@ import vm.operations.Def
 import vm.operations.Dup
 import vm.operations.Get
 import vm.operations.If
-import vm.operations.Index
+import vm.operations.ArrIndex
 import vm.operations.Less
 import vm.operations.Move
 import vm.operations.Plus
@@ -136,7 +136,7 @@ object MapArrayProp : Prop {
             // item
             add(Get(array.index))
             add(Get(i.index))
-            add(Index())
+            add(ArrIndex())
             // func
             add(Get(func.index))
             // call func
