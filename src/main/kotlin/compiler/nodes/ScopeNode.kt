@@ -2,10 +2,8 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Call
+import vm.operations.MakePtr
 import vm.operations.Move
-import vm.operations.Pc
-import vm.operations.Plus
-import vm.operations.Push
 import vm.operations.Ret
 
 data class ScopeNode(
@@ -23,9 +21,7 @@ fun Context.wrapScope(compile: (Context) -> Type): Type {
     scopeOps.add(Ret())
 
     // Prepare scope body address
-    add(Pc())
-    add(Push(value = 4))
-    add(Plus())
+    add(MakePtr(2))
     // Skip scope body
     add(Move(scopeOps.size()))
     // Add scope operations to real context

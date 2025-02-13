@@ -2,31 +2,28 @@ package vm
 
 interface Record {
 
-    fun get(): Any
+    fun <T> get(): T
 
-    fun getBool(): Boolean = get() as Boolean
+    fun getBool(): Boolean = get()
 
-    fun getByte(): Byte = get() as Byte
+    fun getByte(): Byte = get()
 
-    fun getInt(): Int = get() as Int
+    fun getInt(): Int = get()
 
-    fun getLong(): Long = get() as Long
+    fun getLong(): Long = get()
 
-    fun getFloat(): Float = get() as Float
+    fun getFloat(): Float = get()
 
-    fun getDouble(): Double = get() as Double
+    fun getDouble(): Double = get()
 
-    fun getChar(): Char = get() as Char
+    fun getChar(): Char = get()
 
-    fun getString(): String = get() as String
+    fun getString(): String = get()
 
-    @Suppress("UNCHECKED_CAST")
-    fun getArray(): Array<Record> = get() as Array<Record>
+    fun getArray(): Array<Record> = get()
 
-    @Suppress("UNCHECKED_CAST")
-    fun getPair(): Pair<Record, Record> = get() as Pair<Record, Record>
+    fun getPair(): Pair<Record, Record> = get()
 
-    @Suppress("UNCHECKED_CAST")
-    fun getStruct(): ArrayList<Record> = get() as ArrayList<Record>
+    fun getStruct(): ArrayList<Record> = get()
 
 }

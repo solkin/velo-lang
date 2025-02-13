@@ -2,7 +2,7 @@ package vm.operations
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.ValueRecord
+import vm.records.LinkRecord
 
 class Pair: SimpleOperation {
 
@@ -10,7 +10,7 @@ class Pair: SimpleOperation {
         val rec1 = frame.subs.pop()
         val rec2 = frame.subs.pop()
 
-        val result = ValueRecord(Pair(rec2, rec1))
+        val result = LinkRecord.create(Pair(rec2, rec1))
 
         frame.subs.push(result)
     }

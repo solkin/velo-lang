@@ -6,8 +6,8 @@ import vm.SimpleOperation
 class Println : SimpleOperation {
 
     override fun exec(frame: Frame) {
-        val value = frame.subs.pop().get()
-        println(value.toString())
+        val rec = frame.subs.pop()
+        println(rec.get<Any>().toString())
     }
 
 }

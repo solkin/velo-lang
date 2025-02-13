@@ -2,10 +2,9 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
+import vm.operations.MakePtr
 import vm.operations.MakeStruct
 import vm.operations.Move
-import vm.operations.Pc
-import vm.operations.Plus
 import vm.operations.Push
 import vm.operations.Ret
 import vm.operations.StructElement
@@ -23,10 +22,7 @@ data class StructNode(
         val resultType: Type = FuncType(derived = StructType(elements))
 
         // Insert function address to stack
-        val defCmdCount = 5
-        ctx.add(Pc())
-        ctx.add(Push(value = defCmdCount))
-        ctx.add(Plus())
+        ctx.add(MakePtr(diff = 3))
         // Define var and move address to var if name is defined
         val v = ctx.scope.def(name, resultType)
         ctx.add(Def(v.index))

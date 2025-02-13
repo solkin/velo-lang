@@ -94,7 +94,7 @@ fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
             out.println("\t\tframe stack:")
             while (!frame.subs.empty()) {
                 val record = frame.subs.pop()
-                out.println("\t\t> ${record.get()}")
+                out.println("\t\t> ${record.get<Any>()}")
             }
         }
         if (frame.vars.empty()) {

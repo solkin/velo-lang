@@ -2,10 +2,8 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
+import vm.operations.MakePtr
 import vm.operations.Move
-import vm.operations.Pc
-import vm.operations.Plus
-import vm.operations.Push
 import vm.operations.Ret
 
 data class FuncNode(
@@ -19,10 +17,8 @@ data class FuncNode(
 
         // Insert function address to stack
         val named = !name.isNullOrEmpty()
-        val defCmdCount = if (named) 5 else 4 // Five/four commands from Pc() to function body
-        ctx.add(Pc())
-        ctx.add(Push(value = defCmdCount))
-        ctx.add(Plus())
+        val defCmdCount = if (named) 3 else 2 // Five/four commands from Pc() to function body
+        ctx.add(MakePtr(defCmdCount))
         // Define var and move address to var if name is defined
         if (named) {
             val v = ctx.scope.def(name.orEmpty(), resultType)
@@ -57,7 +53,7 @@ data class FuncType(val derived: Type) : Type {
         get() = BaseType.FUNCTION
 
     override fun default(ctx: Context) {
-        ctx.add(Push(value = 0))
+        ctx.add(MakePtr(diff = 0))
     }
 
     override fun prop(name: String): Prop? = null

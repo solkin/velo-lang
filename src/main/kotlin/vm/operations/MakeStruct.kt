@@ -3,7 +3,7 @@ package vm.operations
 import vm.Frame
 import vm.Record
 import vm.SimpleOperation
-import vm.records.ValueRecord
+import vm.records.LinkRecord
 
 class MakeStruct : SimpleOperation {
 
@@ -15,7 +15,7 @@ class MakeStruct : SimpleOperation {
             val rec = frame.subs.pop()
             elements.add(rec)
         }
-        val result = ValueRecord(elements)
+        val result = LinkRecord.create(elements)
 
         frame.subs.push(result)
     }

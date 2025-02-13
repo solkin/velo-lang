@@ -6,7 +6,7 @@ import vm.records.ValueRecord
 
 class Push(
     val value: Any
-): SimpleOperation {
+) : SimpleOperation {
 
     override fun exec(frame: Frame) {
         val rec = ValueRecord(value)

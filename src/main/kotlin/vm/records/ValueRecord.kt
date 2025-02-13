@@ -6,6 +6,7 @@ data class ValueRecord(
     private val value: Any
 ) : Record {
 
-    override fun get(): Any = value
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> get(): T = value as T
 
 }

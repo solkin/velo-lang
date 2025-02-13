@@ -3,12 +3,14 @@ package vm.operations
 import vm.Frame
 import vm.Operation
 import vm.Stack
-import vm.records.ValueRecord
+import vm.records.PointerRecord
 
-class Pc : Operation {
+class MakePtr(
+    private val diff: Int
+) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>): Int {
-        val rec = ValueRecord(pc)
+        val rec = PointerRecord(pointer = pc + diff)
         stack.peek().subs.push(rec)
         return pc + 1
     }
