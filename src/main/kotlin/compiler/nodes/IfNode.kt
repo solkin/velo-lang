@@ -18,9 +18,9 @@ data class IfNode(
             val type = elseNode.compile(elseCtx)
             thenCtx.add(Move(elseCtx.size()))
             type
-        } ?: VoidType
+        }
 
-        if (elseType.type == VoidType.type && thenType.type != elseType.type) {
+        if (elseType != null && thenType.type != elseType.type) {
             throw IllegalArgumentException("Then and else return types are differ: $thenType / $elseType")
         }
 

@@ -6,6 +6,7 @@ import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.ArrOf
 import vm.operations.ArrPlus
+import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.Def
 import vm.operations.Dup
@@ -46,6 +47,7 @@ data class ArrayType(val derived: Type) : Type {
 
     override fun prop(name: String): Prop? {
         return when (name) {
+            "set" -> SetArrayProp
             "sub" -> SubArrayProp
             "len" -> ArrayLenProp
             "con" -> ArrayConProp
@@ -60,6 +62,14 @@ object ArrayLenProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(ArrLen())
         return IntType
+    }
+}
+
+object SetArrayProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as ArrayType
+        ctx.add(ArrSet())
+        return ArrayType(type.derived)
     }
 }
 
