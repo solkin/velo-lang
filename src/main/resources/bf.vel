@@ -32,9 +32,9 @@ while(i < tapeLength) {
     } else if (c == "<") {
         p = p - 1;
     } else if (c == "+") {
-        mem = mem.set(p, mem[p] + 1);
+        mem.set(p, mem[p] + 1);
     } else if (c == "-") {
-        mem = mem.set(p, mem[p] - 1);
+        mem.set(p, mem[p] - 1);
     } else if (c == ".") {
         print(mem[p].char());
     } else if (c == ",") {

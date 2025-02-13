@@ -69,7 +69,7 @@ object SetArrayProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as ArrayType
         ctx.add(ArrSet())
-        return ArrayType(type.derived)
+        return VoidType
     }
 }
 

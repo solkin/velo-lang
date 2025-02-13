@@ -2,7 +2,6 @@ package vm.operations
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.ValueRecord
 
 class ArrSet : SimpleOperation {
 
@@ -12,8 +11,6 @@ class ArrSet : SimpleOperation {
         val array = frame.subs.pop().getArray()
 
         array[index] = value
-
-        frame.subs.push(ValueRecord(array))
     }
 
 }
