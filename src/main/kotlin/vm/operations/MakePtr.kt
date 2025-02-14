@@ -6,7 +6,7 @@ import vm.Stack
 import vm.records.PointerRecord
 
 class MakePtr(
-    private val diff: Int
+    val diff: Int
 ) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>): Int {

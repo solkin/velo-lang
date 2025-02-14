@@ -5,7 +5,7 @@ import vm.Operation
 import vm.Stack
 
 class If(
-    private val elseSkip: Int
+    val elseSkip: Int
 ) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>): Int {
