@@ -11,6 +11,16 @@ import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.Def
+import vm.operations.DictArr
+import vm.operations.DictDel
+import vm.operations.DictIndex
+import vm.operations.DictKey
+import vm.operations.DictKeys
+import vm.operations.DictLen
+import vm.operations.DictOf
+import vm.operations.DictSet
+import vm.operations.DictVal
+import vm.operations.DictVals
 import vm.operations.Divide
 import vm.operations.Drop
 import vm.operations.Dup
@@ -130,7 +140,16 @@ class BytecodeOutputStream(
             is SubArr -> out.writeByte(0x32)
             is SubStr -> out.writeByte(0x33)
             is Swap -> out.writeByte(0x34)
-            is Xor -> out.writeByte(0x35)
+            is DictArr -> out.writeByte(0x36)
+            is DictDel -> out.writeByte(0x37)
+            is DictIndex -> out.writeByte(0x38)
+            is DictKey -> out.writeByte(0x39)
+            is DictKeys -> out.writeByte(0x3a)
+            is DictLen -> out.writeByte(0x3b)
+            is DictOf -> out.writeByte(0x3c)
+            is DictSet -> out.writeByte(0x3d)
+            is DictVal -> out.writeByte(0x3e)
+            is DictVals -> out.writeByte(0x3f)
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }

@@ -76,6 +76,25 @@ auto ns = s.map(
 );
 println(ns[3]);           # 20
 ```
+**Dictionary**
+```
+dict[int:str] d = dictOf[int:str](
+    1:"a",
+    2:"b",
+    3:"c"
+);
+d.set(5, "e");
+println(d.del(2));        # true
+println(d.del(20));       # false
+println(d.len);           # 3
+println(d[5]);            # e
+println(d.key(5));        # true
+println(d.key(50));       # false
+println(d.val("c"));      # true
+println(d.val("r"));      # false
+println(d.keys[0]);       # <first key>
+println(d.vals[1]);       # <second value>
+```
 **Strings**
 ```
 str s = "Test String";

@@ -5,7 +5,16 @@ dict[int:str] d = dictOf[int:str](
 );
 
 d.set(5, "e");
-d.del(2);
+println(d.del(2));
+println(d.del(20));
+println(d.len);
+println(d[5]);
+println(d.key(5));
+println(d.key(50));
+println(d.val("c"));
+println(d.val("r"));
+println(d.keys[0]);
+println(d.vals[1]);
 
 d.arr.map(
     func(int index, pair[int,str] value) int {

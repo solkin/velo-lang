@@ -11,6 +11,16 @@ import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.Def
+import vm.operations.DictArr
+import vm.operations.DictDel
+import vm.operations.DictIndex
+import vm.operations.DictKey
+import vm.operations.DictKeys
+import vm.operations.DictLen
+import vm.operations.DictOf
+import vm.operations.DictSet
+import vm.operations.DictVal
+import vm.operations.DictVals
 import vm.operations.Divide
 import vm.operations.Drop
 import vm.operations.Dup
@@ -85,8 +95,7 @@ class BytecodeInputStream(
     }
 
     private fun readOperation(): Operation {
-        val opcode = inp.readByte().toInt()
-        return when (opcode) {
+        return when (val opcode = inp.readByte().toInt()) {
             0x01 -> Abs()
             0x02 -> And()
             0x03 -> ArrCon()
@@ -140,6 +149,16 @@ class BytecodeInputStream(
             0x33 -> SubStr()
             0x34 -> Swap()
             0x35 -> Xor()
+            0x36 -> DictArr()
+            0x37 -> DictDel()
+            0x38 -> DictIndex()
+            0x39 -> DictKey()
+            0x3a -> DictKeys()
+            0x3b -> DictLen()
+            0x3c -> DictOf()
+            0x3d -> DictSet()
+            0x3e -> DictVal()
+            0x3f -> DictVals()
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }

@@ -5,10 +5,12 @@ import vm.operations.ArrLen
 import vm.operations.ArrSet
 import vm.operations.DictArr
 import vm.operations.DictDel
+import vm.operations.DictKey
 import vm.operations.DictKeys
 import vm.operations.DictLen
 import vm.operations.DictOf
 import vm.operations.DictSet
+import vm.operations.DictVal
 import vm.operations.DictVals
 import vm.operations.Push
 
@@ -49,6 +51,8 @@ data class DictType(val derived: PairType) : Type {
             "len" -> DictLenProp
             "keys" -> DictKeysProp
             "vals" -> DictValsProp
+            "key" -> DictKeyProp
+            "val" -> DictValProp
             "arr" -> DictArrProp
             else -> null
         }
@@ -75,6 +79,22 @@ object DictValsProp : Prop {
         type as DictType
         ctx.add(DictVals())
         return ArrayType(derived = type.derived.second)
+    }
+}
+
+object DictKeyProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as DictType
+        ctx.add(DictKey())
+        return BoolType
+    }
+}
+
+object DictValProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as DictType
+        ctx.add(DictVal())
+        return BoolType
     }
 }
 

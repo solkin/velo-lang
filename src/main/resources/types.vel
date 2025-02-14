@@ -4,6 +4,11 @@ int i = 1;
 #byte c = 2;
 float f = 3.0;
 array[array[int]] l = arrayOf[array[int]]();
+dict[int:str] d = dictOf[int:str](
+    1:"a",
+    2:"b",
+    3:"c"
+);
 fn[void] n = func() void {};
 auto a = 3.0;
 a = 6.5;
