@@ -11,6 +11,7 @@ enum class BaseType(val type: String) {
     BOOLEAN("bool"),
     PAIR("pair"),
     ARRAY("array"),
+    DICT("dict"),
     STRUCT("struct"),
     FUNCTION("fn"),
     VOID("void"),
@@ -43,6 +44,7 @@ fun BaseType.getDefaultNode(): Node {
         BaseType.BOOLEAN -> BoolNode(false)
         BaseType.PAIR -> PairNode(first = VoidNode(), second = null)
         BaseType.ARRAY -> ArrayNode(listOf = emptyList(), VoidType)
+        BaseType.DICT -> DictNode(dictOf = emptyMap(), keyType = VoidType, valType = VoidType)
         BaseType.STRUCT -> VoidNode()
         BaseType.FUNCTION -> IntNode(0)
         BaseType.VOID -> ProgramNode(emptyList())

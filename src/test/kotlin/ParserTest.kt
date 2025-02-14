@@ -14,7 +14,10 @@ import compiler.nodes.LetNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.ArrayNode
+import compiler.nodes.DictNode
+import compiler.nodes.ScopeNode
 import compiler.nodes.StringNode
+import compiler.nodes.StringType
 import compiler.nodes.VarNode
 import compiler.parser.Parser
 import compiler.parser.StringInput
@@ -129,7 +132,7 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = BoolNode(value = false),
+                thenNode = ScopeNode(BoolNode(value = false)),
                 elseNode = null
             ).wrapProgram()
         )
@@ -146,8 +149,8 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = BoolNode(value = false),
-                elseNode = BoolNode(value = true)
+                thenNode = ScopeNode(BoolNode(value = false)),
+                elseNode = ScopeNode(BoolNode(value = true))
             ).wrapProgram()
         )
     }
@@ -163,7 +166,7 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = BoolNode(value = false),
+                thenNode = ScopeNode(BoolNode(value = false)),
                 elseNode = null
             ).wrapProgram()
         )
@@ -180,8 +183,8 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = BoolNode(value = false),
-                elseNode = BoolNode(value = true)
+                thenNode = ScopeNode(BoolNode(value = false)),
+                elseNode = ScopeNode(BoolNode(value = true))
             ).wrapProgram()
         )
     }
@@ -246,6 +249,70 @@ class ParserTest {
             node, IndexNode(
                 list = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
                 index = IntNode(1)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseDictOf() {
+        val input = StringInput("a = dictOf[int:str]()")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, AssignNode(
+                left = VarNode(name = "a"),
+                right = DictNode(dictOf = emptyMap(), keyType = IntType, valType = StringType)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseDictOfOf() {
+        val input = StringInput("a = dictOf[int:str](1:\"a\", 2:\"b\", 5:\"c\")")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, AssignNode(
+                left = VarNode(name = "a"),
+                right = DictNode(
+                    dictOf = mapOf(
+                        Pair(IntNode(1), StringNode("a")),
+                        Pair(IntNode(2), StringNode("b")),
+                        Pair(IntNode(5), StringNode("c"))
+                    ),
+                    keyType = IntType,
+                    valType = StringType,
+                )
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseDictOfAccess() {
+        val input = StringInput("dictOf[int:bool](1:false, 2:true, 5:false)[2]")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, IndexNode(
+                list = DictNode(
+                    dictOf = mapOf(
+                        Pair(IntNode(1), BoolNode(false)),
+                        Pair(IntNode(2), BoolNode(true)),
+                        Pair(IntNode(5), BoolNode(false))
+                    ),
+                    keyType = IntType,
+                    valType = BoolType,
+                ),
+                index = IntNode(2)
             ).wrapProgram()
         )
     }
@@ -325,15 +392,18 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, LetNode(
-                vars = listOf(
-                    DefNode(
-                        name = "a",
-                        type = IntType,
-                        def = IntNode(value = 5)
-                    )
-                ),
-                body = BoolNode(value = false)
+            node,
+            ScopeNode(
+                LetNode(
+                    vars = listOf(
+                        DefNode(
+                            name = "a",
+                            type = IntType,
+                            def = IntNode(value = 5)
+                        )
+                    ),
+                    body = BoolNode(value = false)
+                )
             ).wrapProgram()
         )
     }

@@ -22,6 +22,8 @@ interface Record {
 
     fun getArray(): Array<Record> = get()
 
+    fun getDict(): MutableMap<Record, Record> = get()
+
     fun getPair(): Pair<Record, Record> = get()
 
     fun getStruct(): ArrayList<Record> = get()

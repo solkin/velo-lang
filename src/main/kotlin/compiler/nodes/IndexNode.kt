@@ -2,6 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.ArrIndex
+import vm.operations.DictIndex
 import vm.operations.StrIndex
 
 data class IndexNode(
@@ -15,6 +16,11 @@ data class IndexNode(
             is ArrayType -> {
                 ctx.add(ArrIndex())
                 type.derived
+            }
+
+            is DictType -> {
+                ctx.add(DictIndex())
+                type.derived.second
             }
 
             is StringType -> {

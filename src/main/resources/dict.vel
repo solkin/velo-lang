@@ -1,0 +1,37 @@
+dict[int:str] d = dictOf[int:str](
+    1:"a",
+    2:"b",
+    3:"c"
+);
+
+d.set(5, "e");
+d.del(2);
+
+d.arr.map(
+    func(int index, pair[int,str] value) int {
+        print(value.first.str.con("->".con(value.second.con(if (index < d.len-1) then ", " else ""))));
+        index;
+    }
+);
+
+println("");
+println("--");
+
+d.keys.map(
+    func(int index, int key) int {
+        print(key.str.con(if (index < d.len-1) then ", " else ""));
+        index;
+    }
+);
+
+println("");
+println("--");
+
+d.vals.map(
+    func(int index, str value) int {
+        print(value.con(if (index < d.len-1) then ", " else ""));
+        index;
+    }
+);
+
+println("");

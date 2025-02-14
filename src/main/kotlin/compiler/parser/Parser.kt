@@ -28,6 +28,8 @@ import compiler.nodes.FuncType
 import compiler.nodes.IntType
 import compiler.nodes.PairType
 import compiler.nodes.ArrayType
+import compiler.nodes.DictNode
+import compiler.nodes.DictType
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringType
 import compiler.nodes.StructType
@@ -75,9 +77,9 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun parseDerivedTypes(count: Int): List<Type> {
+    private fun parseDerivedTypes(count: Int, separator: Char = ','): List<Type> {
         val ders = isPunc('[')
-            ?.let { delimited('[', ']', ',', ::parseDefType) }
+            ?.let { delimited('[', ']', separator, ::parseDefType) }
             ?: emptyList()
         return ders.takeIf { it.size == count } ?: run {
             stream.croak("Derived types count is ${ders.size} but must be $count")
@@ -108,6 +110,11 @@ class Parser(private val stream: TokenStream) {
             }
 
             BaseType.ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
+            BaseType.DICT -> {
+                val types = parseDerivedTypes(count = 2, separator = ':')
+                DictType(PairType(types.first(), types.last()))
+            }
+
             BaseType.STRUCT -> StructType(emptyMap())
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
@@ -195,6 +202,29 @@ class Parser(private val stream: TokenStream) {
         return ArrayNode(
             listOf = elements,
             type = type,
+        )
+    }
+
+    private fun parseDictOf(): Node {
+        skipKw("dictOf")
+        val types = parseDerivedTypes(count = 2, separator = ':')
+        val elements = delimited('(', ')', ',', ::parseDictPair)
+        return DictNode(
+            dictOf = elements.toMap(),
+            keyType = types.first(),
+            valType = types.last(),
+        )
+    }
+
+    private fun parseDictPair(): Pair<Node, Node> {
+        val elements = delimited(separator = ':', ::parseExpression)
+        if (elements.size != 2) {
+            stream.croak("Pair must contain exactly two elements, but contains: ${elements.size}")
+            throw IllegalArgumentException()
+        }
+        return Pair(
+            first = elements[0],
+            second = elements[1],
         )
     }
 
@@ -378,6 +408,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("arrayOf") != null) return parseArrayOf()
+        if (isKw("dictOf") != null) return parseDictOf()
         if (isKw("pairOf") != null) return parsePair()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("func") != null) {
@@ -434,6 +465,24 @@ class Parser(private val stream: TokenStream) {
             a.add(parser())
         }
         skipPunc(stop)
+        return a
+    }
+
+    private fun <T> delimited(separator: Char, parser: () -> T): List<T> {
+        val a = ArrayList<T>()
+        var first = true
+        while (!stream.eof()) {
+            if (first) {
+                first = false
+            } else {
+                if (isPunc(separator) != null) {
+                    skipPunc(separator)
+                } else {
+                    break
+                }
+            }
+            a.add(parser())
+        }
         return a
     }
 
