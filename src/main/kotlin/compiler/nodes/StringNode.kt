@@ -3,6 +3,7 @@ package compiler.nodes
 import compiler.Context
 import vm.operations.Push
 import vm.operations.StrCon
+import vm.operations.StrInt
 import vm.operations.StrLen
 import vm.operations.SubStr
 
@@ -28,6 +29,7 @@ object StringType : Type {
             "sub" -> SubStrProp
             "len" -> StrLenProp
             "con" -> StrConProp
+            "int" -> StrIntProp
             else -> null
         }
     }
@@ -51,5 +53,12 @@ object StrConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(StrCon())
         return StringType
+    }
+}
+
+object StrIntProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(StrInt())
+        return IntType
     }
 }
