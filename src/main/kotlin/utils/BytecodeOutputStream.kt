@@ -58,6 +58,7 @@ import vm.operations.Rot
 import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
+import vm.operations.StrInt
 import vm.operations.StrLen
 import vm.operations.StructElement
 import vm.operations.SubArr
@@ -150,6 +151,7 @@ class BytecodeOutputStream(
             is DictSet -> out.writeByte(0x3d)
             is DictVal -> out.writeByte(0x3e)
             is DictVals -> out.writeByte(0x3f)
+            is StrInt -> out.writeByte(0x40)
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }

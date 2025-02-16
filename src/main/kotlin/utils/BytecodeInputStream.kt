@@ -58,6 +58,7 @@ import vm.operations.Rot
 import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
+import vm.operations.StrInt
 import vm.operations.StrLen
 import vm.operations.StructElement
 import vm.operations.SubArr
@@ -159,6 +160,7 @@ class BytecodeInputStream(
             0x3d -> DictSet()
             0x3e -> DictVal()
             0x3f -> DictVals()
+            0x40 -> StrInt()
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }
