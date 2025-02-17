@@ -156,6 +156,6 @@ object MapArrayProp : Prop {
         ctx.add(Get(size.index))
         ctx.add(ArrOf())
 
-        return ArrayType(type.derived)
+        return ArrayType(arg.derived)
     }
 }
