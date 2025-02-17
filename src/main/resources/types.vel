@@ -12,4 +12,4 @@ dict[int:str] d = dictOf[int:str](
 fn[void] n = func() void {};
 auto a = 3.0;
 a = 6.5;
-pair[int,int] p = pairOf[int,int](1, "second");
+pair[int, str] p = pairOf[int,int](1, "second");
