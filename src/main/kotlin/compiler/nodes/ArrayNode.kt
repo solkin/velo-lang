@@ -107,19 +107,19 @@ object MapArrayProp : Prop {
         type as ArrayType
         val arg = args.first() as FuncType
 
-        val func = ctx.scope.def(name = "@func", type = arg)
+        val func = ctx.def(name = "@func", type = arg)
         ctx.add(Def(func.index))
 
         ctx.add(Dup())
         ctx.add(ArrLen())
-        val size = ctx.scope.def(name = "@size", type = IntType)
+        val size = ctx.def(name = "@size", type = IntType)
         ctx.add(Def(size.index))
 
         ctx.add(Push(0))
-        val i = ctx.scope.def(name = "@i", type = IntType)
+        val i = ctx.def(name = "@i", type = IntType)
         ctx.add(Def(i.index))
 
-        val array = ctx.scope.def(name = "@array", type = ArrayType(arg.derived))
+        val array = ctx.def(name = "@array", type = ArrayType(arg.derived))
         ctx.add(Def(array.index))
 
         val condCtx: MutableList<Operation> = ArrayList()

@@ -16,7 +16,7 @@ data class DefNode(
         if (type != defType && type.type != AutoType.type) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
-        val v = ctx.scope.def(name, defType)
+        val v = ctx.def(name, defType)
         ctx.add(Def(v.index))
         return VoidType
     }

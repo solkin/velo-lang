@@ -12,7 +12,7 @@ class Ret : Operation {
             val value = frame.subs.pop()
             stack.peek().subs.push(value)
         }
-        return frame.addr
+        return frame.pc
     }
 
 }

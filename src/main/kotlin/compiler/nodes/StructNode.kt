@@ -24,7 +24,7 @@ data class StructNode(
         // Insert function address to stack
         ctx.add(MakePtr(diff = 3))
         // Define var and move address to var if name is defined
-        val v = ctx.scope.def(name, resultType)
+        val v = ctx.def(name, resultType)
         ctx.add(Def(v.index))
 
         // Compile body

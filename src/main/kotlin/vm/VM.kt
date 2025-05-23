@@ -1,8 +1,6 @@
 package vm
 
 import java.io.PrintStream
-import java.io.PrintWriter
-import java.util.TreeMap
 
 class VM {
 
@@ -20,7 +18,7 @@ class VM {
     fun run() {
         val stack: Stack<Frame> = LifoStack()
 
-        val initFrame = Frame(addr = 0, subs = LifoStack(), vars = createVars())
+        val initFrame = Frame(pc = 0, subs = LifoStack(), vars = createVars())
         stack.push(initFrame)
 
         var pc = 0
@@ -87,7 +85,7 @@ class VM {
 fun Stack<Frame>.printStackTrace(out: PrintStream = System.out) {
     while (!empty()) {
         val frame = pop()
-        out.println("\tat addr=${frame.addr}")
+        out.println("\tat addr=${frame.pc}")
         if (frame.subs.empty()) {
             out.println("\t\tframe stack empty")
         } else {

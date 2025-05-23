@@ -64,7 +64,7 @@ auto w = arrayOf[array[int]](
 );
 
 print("Enter generations count: ");
-int count = input().int;
+int count = 10; #input().int;
 println("");
 int idx = 0;
 while (idx <= count) {

@@ -1,6 +1,5 @@
 import compiler.Context
-import compiler.Scope
-import compiler.createScope
+import compiler.Frame
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
@@ -14,6 +13,7 @@ import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicInteger
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -80,7 +80,10 @@ fun compile(prog: String): List<Operation>? {
     var elapsed = System.currentTimeMillis() - time
     println("Parsed in $elapsed ms")
 
-    val ctx = Context(ops = ArrayList(), scope = createScope())
+    val ctx = Context(
+        parent = null,
+        Frame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), counter = AtomicInteger()),
+    )
     try {
         time = System.currentTimeMillis()
         node.compile(ctx)

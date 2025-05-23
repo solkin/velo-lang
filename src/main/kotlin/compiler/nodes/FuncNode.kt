@@ -21,7 +21,7 @@ data class FuncNode(
         ctx.add(MakePtr(defCmdCount))
         // Define var and move address to var if name is defined
         if (named) {
-            val v = ctx.scope.def(name.orEmpty(), resultType)
+            val v = ctx.def(name.orEmpty(), resultType)
             ctx.add(Def(v.index))
             resultType = VoidType
         }
@@ -29,7 +29,7 @@ data class FuncNode(
         // Compile body
         val funcOps = ctx.extend()
         defs.reversed().forEach { def ->
-            val v = funcOps.scope.def(def.name, def.type)
+            val v = funcOps.def(def.name, def.type)
             funcOps.add(Def(v.index))
         }
         val retType = body.compile(funcOps)

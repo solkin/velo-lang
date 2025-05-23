@@ -7,7 +7,7 @@ data class VarNode(
     val name: String,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val v = ctx.scope.get(name)
+        val v = ctx.get(name)
         ctx.add(Get(v.index))
         return v.type
     }
