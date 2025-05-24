@@ -45,6 +45,7 @@ data class Context(
 
     fun merge(ctx: Context) {
         frame.ops.addAll(ctx.operations())
+        println("merge frame: num ${ctx.frame.num}, ops ${ctx.frame.ops.size}, vars ${ctx.frame.vars.size}")
     }
 
     private fun lookup(name: String): Context? {
