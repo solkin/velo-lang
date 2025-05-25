@@ -1,11 +1,11 @@
 import compiler.Context
-import compiler.Frame
+import compiler.CompilerFrame
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import utils.BytecodeInputStream
 import utils.BytecodeOutputStream
-import vm.Operation
+import utils.SerializedFrame
 import vm.SimpleParser
 import vm.VM
 import java.io.DataInputStream
@@ -23,7 +23,7 @@ fun main(args: Array<String>) {
     val path = args[0]
     val bc = args.getOrNull(1)
 
-    val ops = if (path.endsWith(".vel")) {
+    val frames = if (path.endsWith(".vel")) {
         val prog = if (path.startsWith("res://")) {
             Parser::class.java.getResource(path.substring(5))?.readText() ?: return
         } else if (path.startsWith("file://")) {
@@ -34,30 +34,30 @@ fun main(args: Array<String>) {
         }
         compile(prog)
     } else if (path.endsWith(".vbc")) {
-        var ops: List<Operation>?
+        var frames: List<SerializedFrame>?
         val file = File(path)
         FileInputStream(file).use { fis ->
             DataInputStream(fis).use { dis ->
                 BytecodeInputStream(dis).use { bis ->
-                    ops = bis.readOperations().also { ops ->
-                        println("Bytecode read: ${ops.size} operations / ${file.length()} bytes")
+                    frames = bis.readFrames().also { ops ->
+                        println("Bytecode read: ${ops.size} frames / ${file.length()} bytes")
                     }
                 }
             }
         }
-        ops
+        frames
     } else {
         println("Unsupported file type")
         return
     }
 
-    if (ops != null) {
+    if (frames != null) {
         if (bc != null) {
             val file = File(bc)
             FileOutputStream(file).use { fos ->
                 DataOutputStream(fos).use { dos ->
                     BytecodeOutputStream(dos).use { bos ->
-                        bos.write(ops)
+                        bos.write(frames)
                         bos.flush()
                     }
                 }
@@ -65,12 +65,12 @@ fun main(args: Array<String>) {
             println("Bytecode written: ${file.length()} bytes")
         } else {
             println()
-            runVM(ops)
+            runVM(frames)
         }
     }
 }
 
-fun compile(prog: String): List<Operation>? {
+fun compile(prog: String): List<SerializedFrame>? {
     val input = StringInput(prog)
     val stream = TokenStream(input)
     val parser = Parser(stream)
@@ -82,19 +82,15 @@ fun compile(prog: String): List<Operation>? {
 
     val ctx = Context(
         parent = null,
-        frame = Frame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), varCounter = AtomicInteger()),
+        frame = CompilerFrame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), varCounter = AtomicInteger()),
         frameCounter = AtomicInteger(),
     )
     try {
         time = System.currentTimeMillis()
         node.compile(ctx)
         elapsed = System.currentTimeMillis() - time
-
-        val frames = ctx.frames()
-        println("Total frames: ${frames.size}")
-
-        println("Compiled in $elapsed ms [${ctx.size()} ops]")
-        return ctx.operations()
+        println("Compiled in $elapsed ms [${ctx.frames().size} frames]")
+        return ctx.frames().map { SerializedFrame(it.num, it.ops) }
     } catch (ex: Throwable) {
         println("!! Compilation failed: ${ex.message}")
     }
@@ -102,8 +98,8 @@ fun compile(prog: String): List<Operation>? {
     return null
 }
 
-fun runVM(ops: List<Operation>) {
+fun runVM(frames: List<SerializedFrame>) {
     val vm = VM()
-    vm.load(SimpleParser(ops))
+    vm.load(SimpleParser(frames))
     vm.run()
 }

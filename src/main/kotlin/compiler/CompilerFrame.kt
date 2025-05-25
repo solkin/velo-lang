@@ -4,7 +4,7 @@ import compiler.nodes.Type
 import vm.Operation
 import java.util.concurrent.atomic.AtomicInteger
 
-data class Frame(
+data class CompilerFrame(
     val num: Int,
     val ops: MutableList<Operation>,
     val vars: MutableMap<String, Var>,

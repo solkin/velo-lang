@@ -3,7 +3,6 @@ package vm.operations
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.LinkRecord
-import vm.records.ValueRecord
 
 class DictVals : SimpleOperation {
 

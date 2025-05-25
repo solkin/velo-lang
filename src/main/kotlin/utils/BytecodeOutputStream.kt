@@ -34,7 +34,7 @@ import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
-import vm.operations.MakePtr
+import vm.operations.Frame
 import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
@@ -64,7 +64,6 @@ import vm.operations.StructElement
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
-import vm.operations.Xor
 import java.io.DataOutputStream
 import java.io.OutputStream
 
@@ -80,7 +79,19 @@ class BytecodeOutputStream(
         }
     }
 
-    fun write(ops: List<Operation>) {
+    fun write(frames: List<SerializedFrame>) {
+        out.writeShort(frames.size)
+        frames.forEach { frame ->
+            write(frame)
+        }
+    }
+
+    fun write(frame: SerializedFrame) {
+        out.writeShort(frame.num)
+        writeOps(frame.ops)
+    }
+
+    fun writeOps(ops: List<Operation>) {
         out.writeShort(ops.size)
         ops.forEach { op ->
             write(op)
@@ -112,7 +123,7 @@ class BytecodeOutputStream(
             is IntStr -> out.writeByte(0x15)
             is Less -> out.writeByte(0x16)
             is LessEquals -> out.writeByte(0x17)
-            is MakePtr -> out.writeByte(0x18).also { out.writeInt(op.diff) }
+            is Frame -> out.writeByte(0x18).also { out.writeInt(op.num) }
             is MakeStruct -> out.writeByte(0x19)
             is Minus -> out.writeByte(0x1a)
             is More -> out.writeByte(0x1b)

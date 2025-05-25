@@ -1,6 +1,8 @@
 package vm
 
+import utils.SerializedFrame
+
 interface Parser {
-    fun next(): Operation?
+    fun next(): SerializedFrame?
     fun eof(): Boolean
 }

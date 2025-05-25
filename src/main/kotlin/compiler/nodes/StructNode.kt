@@ -2,9 +2,8 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
-import vm.operations.MakePtr
+import vm.operations.Frame
 import vm.operations.MakeStruct
-import vm.operations.Move
 import vm.operations.Push
 import vm.operations.Ret
 import vm.operations.StructElement
@@ -21,12 +20,6 @@ data class StructNode(
 
         val resultType: Type = FuncType(derived = StructType(elements))
 
-        // Insert function address to stack
-        ctx.add(MakePtr(diff = 3))
-        // Define var and move address to var if name is defined
-        val v = ctx.def(name, resultType)
-        ctx.add(Def(v.index))
-
         // Compile body
         val funcOps = ctx.extend()
         // Compile function body - structure constructor
@@ -34,8 +27,11 @@ data class StructNode(
         funcOps.add(MakeStruct())
         funcOps.add(Ret())
 
-        // Skip function body
-        ctx.add(Move(funcOps.size()))
+        // Insert function address to stack
+        ctx.add(Frame(num = funcOps.frame.num))
+        // Define named var
+        val v = ctx.def(name, resultType)
+        ctx.add(Def(v.index))
 
         // Add function operations to real context
         ctx.merge(funcOps)

@@ -2,8 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Def
-import vm.operations.MakePtr
-import vm.operations.Move
+import vm.operations.Frame
 import vm.operations.Ret
 
 data class FuncNode(
@@ -15,19 +14,22 @@ data class FuncNode(
     override fun compile(ctx: Context): Type {
         var resultType: Type = FuncType(derived = type)
 
-        // Insert function address to stack
+        // Define var before body frame creation (because var counter will be forked) if name is defined
         val named = !name.isNullOrEmpty()
-        val defCmdCount = if (named) 3 else 2 // Five/four commands from Pc() to function body
-        ctx.add(MakePtr(defCmdCount))
-        // Define var and move address to var if name is defined
-        if (named) {
-            val v = ctx.def(name.orEmpty(), resultType)
-            ctx.add(Def(v.index))
+        val nameVar = if (named) ctx.def(name.orEmpty(), resultType) else null
+
+        // Create body frame and fork var counter
+        val funcOps = ctx.extend()
+
+        // Insert function frame pointer into stack
+        ctx.add(Frame(num = funcOps.frame.num))
+        // Define var if named variable defined
+        nameVar?.let {
+            ctx.add(Def(index = nameVar.index))
             resultType = VoidType
         }
 
         // Compile body
-        val funcOps = ctx.extend()
         defs.reversed().forEach { def ->
             val v = funcOps.def(def.name, def.type)
             funcOps.add(Def(v.index))
@@ -37,9 +39,6 @@ data class FuncNode(
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
         funcOps.add(Ret())
-
-        // Skip function body
-        ctx.add(Move(funcOps.size()))
 
         // Add function operations to real context
         ctx.merge(funcOps)
@@ -53,7 +52,7 @@ data class FuncType(val derived: Type) : Type {
         get() = BaseType.FUNCTION
 
     override fun default(ctx: Context) {
-        ctx.add(MakePtr(diff = 0))
+        ctx.add(Frame(num = 0))
     }
 
     override fun prop(name: String): Prop? = null

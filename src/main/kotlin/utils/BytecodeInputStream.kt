@@ -34,7 +34,7 @@ import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
-import vm.operations.MakePtr
+import vm.operations.Frame
 import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
@@ -85,6 +85,22 @@ class BytecodeInputStream(
         }
     }
 
+    fun readFrames(): List<SerializedFrame> {
+        val count = inp.readShort().toInt()
+        return ArrayList<SerializedFrame>(count).apply {
+            repeat(count) {
+                val frame = readFrame()
+                add(frame)
+            }
+        }
+    }
+
+    fun readFrame(): SerializedFrame {
+        val num = inp.readShort().toInt()
+        val ops = readOperations()
+        return SerializedFrame(num, ops.toMutableList())
+    }
+
     fun readOperations(): List<Operation> {
         val count = inp.readShort().toInt()
         return ArrayList<Operation>(count).apply {
@@ -120,7 +136,7 @@ class BytecodeInputStream(
             0x15 -> IntStr()
             0x16 -> Less()
             0x17 -> LessEquals()
-            0x18 -> MakePtr(diff = inp.readInt())
+            0x18 -> Frame(num = inp.readInt())
             0x19 -> MakeStruct()
             0x1a -> Minus()
             0x1b -> More()

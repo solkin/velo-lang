@@ -1,12 +1,14 @@
 package vm
 
+import utils.SerializedFrame
+
 class SimpleParser(
-    val operations: List<Operation>
+    frames: List<SerializedFrame>
 ): Parser {
 
-    private val iterator = operations.listIterator()
+    private val iterator = frames.listIterator()
 
-    override fun next(): Operation? {
+    override fun next(): SerializedFrame? {
         return if (eof()) {
             null
         } else {

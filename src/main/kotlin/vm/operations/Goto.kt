@@ -2,13 +2,14 @@ package vm.operations
 
 import vm.Frame
 import vm.Operation
+import vm.Resources
 import vm.Stack
 
 class Goto(
     val addr: Int
 ) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>): Int {
+    override fun exec(pc: Int, stack: Stack<Frame>, resources: Resources): Int {
         return addr
     }
 

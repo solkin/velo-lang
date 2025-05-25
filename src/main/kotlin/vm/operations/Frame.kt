@@ -4,14 +4,16 @@ import vm.Frame
 import vm.Operation
 import vm.Resources
 import vm.Stack
+import vm.records.FrameRecord
 
-class If(
-    val elseSkip: Int
+class Frame(
+    val num: Int
 ) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, resources: Resources): Int {
-        val flag = stack.peek().subs.pop().getBool()
-        return pc + 1 + if (flag) 0 else elseSkip
+        val rec = FrameRecord(num)
+        stack.peek().subs.push(rec)
+        return pc + 1
     }
 
 }

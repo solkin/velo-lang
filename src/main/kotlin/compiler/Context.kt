@@ -6,12 +6,12 @@ import java.util.concurrent.atomic.AtomicInteger
 
 data class Context(
     val parent: Context?,
-    val frame: Frame,
+    val frame: CompilerFrame,
     val frameCounter: AtomicInteger,
     val subFrame: Boolean = false,
 ) {
 
-    private val frames: MutableList<Frame> = ArrayList()
+    private val frames: MutableList<CompilerFrame> = ArrayList()
 
     fun add(op: Operation) {
         frame.ops.add(op)
@@ -33,18 +33,14 @@ data class Context(
         return frame.ops
     }
 
-    fun frames(): List<Frame> {
-        return if (subFrame) {
-            frames
-        } else {
-            frames.plus(frame)
-        }
+    fun frames(): List<CompilerFrame> {
+        return if (subFrame) frames else frames.plus(frame)
     }
 
     fun extend(): Context {
         return Context(
             parent = this,
-            Frame(
+            CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
                 vars = mutableMapOf(),
@@ -57,7 +53,7 @@ data class Context(
     fun inner(): Context {
         return Context(
             parent = this,
-            Frame(
+            CompilerFrame(
                 num = frame.num,
                 ops = mutableListOf(),
                 vars = frame.vars,
@@ -70,7 +66,9 @@ data class Context(
 
     fun merge(ctx: Context) {
         frames.addAll(ctx.frames())
-        frame.ops.addAll(ctx.operations())
+        if (ctx.subFrame) {
+            frame.ops.addAll(ctx.operations())
+        }
     }
 
     private fun lookup(name: String): Context? {
@@ -86,7 +84,8 @@ data class Context(
 
     fun get(name: String): Var {
         val context = lookup(name)
-        return context?.frame?.vars?.get(name) ?: throw IllegalArgumentException("Undefined variable $name")
+        return context?.frame?.vars?.get(name) ?:
+            throw IllegalArgumentException("Undefined variable $name")
     }
 
     fun def(name: String, type: Type): Var {

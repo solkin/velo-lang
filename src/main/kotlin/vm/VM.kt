@@ -1,27 +1,23 @@
 package vm
 
+import utils.SerializedFrame
 import java.io.PrintStream
 
 class VM {
 
-    private var program: List<Operation> = emptyList()
+    val resources = Resources()
 
     fun load(parser: Parser) {
-        val operations = ArrayList<Operation>()
+        val frames = HashMap<Int, SerializedFrame>()
         while (!parser.eof()) {
-            val cmd = parser.next() ?: break
-            operations.add(cmd)
+            val frame = parser.next() ?: break
+            frames.put(frame.num, frame)
         }
-        program = operations
+        resources.frames = frames
     }
 
     fun run() {
         val stack: Stack<Frame> = LifoStack()
-
-        val initFrame = Frame(pc = 0, subs = LifoStack(), vars = createVars())
-        stack.push(initFrame)
-
-        var pc = 0
         var elapsed = 0L
         try {
             val diagSeq = false
@@ -36,15 +32,18 @@ class VM {
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
-            while (pc < program.size) {
-                val cmd = program[pc]
+            val mainFrame = resources.frames[0] ?: throw Exception("No main frame")
+            var frame = Frame(pc = 0, subs = LifoStack(), vars = createVars(), ops = mainFrame.ops)
+            stack.push(frame)
+            while (frame.pc < frame.ops.size) {
+                val cmd = frame.ops[frame.pc]
                 if (diagSeq) {
-                    diagOutput.append("[$pc] ${cmd.javaClass.name}\n")
+                    diagOutput.append("[${frame.pc}] ${cmd.javaClass.name}\n")
                 }
                 if (diagStat) {
                     t = System.currentTimeMillis()
                 }
-                pc = cmd.exec(pc, stack)
+                frame.pc = cmd.exec(pc = frame.pc, stack, resources)
                 if (diagStat) {
                     val e = System.currentTimeMillis() - t
                     val name = cmd.javaClass.name
@@ -53,6 +52,7 @@ class VM {
                     val pi = cmdCnt[name] ?: 0
                     cmdCnt[name] = pi + 1
                 }
+                frame = stack.peek()
             }
             if (diagStat) {
                 diagOutput.append("====================================================\n")
@@ -73,7 +73,7 @@ class VM {
         } catch (ignored: HaltException) {
             println("\nProgram halted")
         } catch (ex: Throwable) {
-            println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
+//            println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
             stack.printStackTrace()
             ex.printStackTrace()
         }

@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Call
-import vm.operations.MakePtr
+import vm.operations.Frame
 import vm.operations.Move
 import vm.operations.Ret
 
@@ -21,9 +21,7 @@ fun Context.wrapScope(compile: (Context) -> Type): Type {
     scopeOps.add(Ret())
 
     // Prepare scope body address
-    add(MakePtr(2))
-    // Skip scope body
-    add(Move(scopeOps.size()))
+    add(Frame(num = scopeOps.frame.num))
     // Add scope operations to real context
     merge(scopeOps)
     // Call scope body
