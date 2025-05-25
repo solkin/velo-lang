@@ -82,12 +82,17 @@ fun compile(prog: String): List<Operation>? {
 
     val ctx = Context(
         parent = null,
-        Frame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), counter = AtomicInteger()),
+        frame = Frame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), varCounter = AtomicInteger()),
+        frameCounter = AtomicInteger(),
     )
     try {
         time = System.currentTimeMillis()
         node.compile(ctx)
         elapsed = System.currentTimeMillis() - time
+
+        val frames = ctx.frames()
+        println("Total frames: ${frames.size}")
+
         println("Compiled in $elapsed ms [${ctx.size()} ops]")
         return ctx.operations()
     } catch (ex: Throwable) {

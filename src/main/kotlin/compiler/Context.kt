@@ -7,7 +7,11 @@ import java.util.concurrent.atomic.AtomicInteger
 data class Context(
     val parent: Context?,
     val frame: Frame,
+    val frameCounter: AtomicInteger,
+    val subFrame: Boolean = false,
 ) {
+
+    private val frames: MutableList<Frame> = ArrayList()
 
     fun add(op: Operation) {
         frame.ops.add(op)
@@ -29,23 +33,44 @@ data class Context(
         return frame.ops
     }
 
+    fun frames(): List<Frame> {
+        return if (subFrame) {
+            frames
+        } else {
+            frames.plus(frame)
+        }
+    }
+
     fun extend(): Context {
         return Context(
             parent = this,
-            Frame(num = frame.num + 1, ops = mutableListOf(), vars = mutableMapOf(), counter = AtomicInteger(frame.counter.get())),
+            Frame(
+                num = frameCounter.incrementAndGet(),
+                ops = mutableListOf(),
+                vars = mutableMapOf(),
+                varCounter = AtomicInteger(frame.varCounter.get()),
+            ),
+            frameCounter,
         )
     }
 
     fun inner(): Context {
         return Context(
             parent = this,
-            Frame(num = frame.num, ops = mutableListOf(), vars = mutableMapOf(), counter = frame.counter),
+            Frame(
+                num = frame.num,
+                ops = mutableListOf(),
+                vars = frame.vars,
+                varCounter = frame.varCounter,
+            ),
+            frameCounter,
+            subFrame = true,
         )
     }
 
     fun merge(ctx: Context) {
+        frames.addAll(ctx.frames())
         frame.ops.addAll(ctx.operations())
-        println("merge frame: num ${ctx.frame.num}, ops ${ctx.frame.ops.size}, vars ${ctx.frame.vars.size}")
     }
 
     private fun lookup(name: String): Context? {

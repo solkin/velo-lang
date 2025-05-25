@@ -8,14 +8,14 @@ data class Frame(
     val num: Int,
     val ops: MutableList<Operation>,
     val vars: MutableMap<String, Var>,
-    val counter: AtomicInteger,
+    val varCounter: AtomicInteger,
 ) {
 
     fun def(name: String, type: Type): Var {
         if (vars.containsKey(name)) {
             throw IllegalArgumentException("Variable $name is already defined")
         }
-        val v = Var(index = counter.getAndIncrement(), type = type)
+        val v = Var(index = varCounter.getAndIncrement(), type = type)
         vars[name] = v
         return v
     }
