@@ -1,5 +1,8 @@
 package vm
 
+import vm.records.EmptyRecord
+import vm.records.ValueRecord
+
 data class Vars(
     val vars: MutableMap<Int, Record>,
     val parent: Vars?,
@@ -26,17 +29,13 @@ data class Vars(
         return value
     }
 
-    fun def(index: Int, value: Record): Record {
-        if (vars.contains(index)) throw IllegalArgumentException("Variable $index is already defined")
-        vars[index] = value
-        return value
-    }
-
     fun empty(): Boolean = vars.isEmpty()
 
 }
 
-fun createVars(parent: Vars? = null) = Vars(
-    vars = HashMap(),
+fun createVars(vars: List<Int>, parent: Vars? = null) = Vars(
+    vars = HashMap<Int, Record>().apply {
+        putAll(vars.map { it to EmptyRecord() })
+    },
     parent = parent
 )

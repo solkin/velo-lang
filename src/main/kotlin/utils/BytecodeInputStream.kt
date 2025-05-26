@@ -10,7 +10,7 @@ import vm.operations.ArrOf
 import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Def
+import vm.operations.Set
 import vm.operations.DictArr
 import vm.operations.DictDel
 import vm.operations.DictIndex
@@ -35,6 +35,7 @@ import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
+import vm.operations.IfElse
 import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
@@ -55,7 +56,6 @@ import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
-import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -97,8 +97,19 @@ class BytecodeInputStream(
 
     fun readFrame(): SerializedFrame {
         val num = inp.readShort().toInt()
+        val vars = readVars()
         val ops = readOperations()
-        return SerializedFrame(num, ops.toMutableList())
+        return SerializedFrame(num, ops.toMutableList(), vars.toMutableList())
+    }
+
+    fun readVars(): List<Int> {
+        val count = inp.readShort().toInt()
+        return ArrayList<Int>(count).apply {
+            repeat(count) {
+                val v = inp.readShort()
+                add(v.toInt())
+            }
+        }
     }
 
     fun readOperations(): List<Operation> {
@@ -122,7 +133,6 @@ class BytecodeInputStream(
             0x07 -> ArrPlus()
             0x08 -> ArrSet()
             0x09 -> Call(args = inp.readInt())
-            0x0a -> Def(index = inp.readInt())
             0x0b -> Divide()
             0x0c -> Drop()
             0x0d -> Dup()
@@ -177,6 +187,7 @@ class BytecodeInputStream(
             0x3e -> DictVal()
             0x3f -> DictVals()
             0x40 -> StrInt()
+            0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }

@@ -10,7 +10,7 @@ import vm.operations.ArrOf
 import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Def
+import vm.operations.Set
 import vm.operations.DictArr
 import vm.operations.DictDel
 import vm.operations.DictIndex
@@ -35,6 +35,7 @@ import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
+import vm.operations.IfElse
 import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
@@ -55,7 +56,6 @@ import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
-import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -88,7 +88,15 @@ class BytecodeOutputStream(
 
     fun write(frame: SerializedFrame) {
         out.writeShort(frame.num)
+        writeVars(frame.vars)
         writeOps(frame.ops)
+    }
+
+    fun writeVars(vars: List<Int>) {
+        out.writeShort(vars.size)
+        vars.forEach { v ->
+            out.writeShort(v)
+        }
     }
 
     fun writeOps(ops: List<Operation>) {
@@ -109,7 +117,6 @@ class BytecodeOutputStream(
             is ArrPlus -> out.writeByte(0x07)
             is ArrSet -> out.writeByte(0x08)
             is Call -> out.writeByte(0x09).also { out.writeInt(op.args) }
-            is Def -> out.writeByte(0x0a).also { out.writeInt(op.index) }
             is Divide -> out.writeByte(0x0b)
             is Drop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
@@ -163,6 +170,10 @@ class BytecodeOutputStream(
             is DictVal -> out.writeByte(0x3e)
             is DictVals -> out.writeByte(0x3f)
             is StrInt -> out.writeByte(0x40)
+            is IfElse -> out.writeByte(0x41).also {
+                out.writeInt(op.thenNum)
+                out.writeInt(op.elseNum)
+            }
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -199,7 +210,7 @@ class BytecodeOutputStream(
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x01
+const val VERSION_MAJOR = 0x02
 const val VERSION_MINOR = 0x01
 
 const val BC_TYPE_BYTE = 0x01

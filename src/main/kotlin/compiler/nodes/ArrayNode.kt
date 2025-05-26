@@ -8,7 +8,7 @@ import vm.operations.ArrOf
 import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Def
+import vm.operations.Set
 import vm.operations.Dup
 import vm.operations.Get
 import vm.operations.If
@@ -17,7 +17,6 @@ import vm.operations.Less
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
-import vm.operations.Set
 import vm.operations.SubArr
 
 data class ArrayNode(
@@ -108,19 +107,19 @@ object MapArrayProp : Prop {
         val arg = args.first() as FuncType
 
         val func = ctx.def(name = "@func", type = arg)
-        ctx.add(Def(func.index))
+        ctx.add(Set(func.index))
 
         ctx.add(Dup())
         ctx.add(ArrLen())
         val size = ctx.def(name = "@size", type = IntType)
-        ctx.add(Def(size.index))
+        ctx.add(Set(size.index))
 
         ctx.add(Push(0))
         val i = ctx.def(name = "@i", type = IntType)
-        ctx.add(Def(i.index))
+        ctx.add(Set(i.index))
 
         val array = ctx.def(name = "@array", type = ArrayType(arg.derived))
-        ctx.add(Def(array.index))
+        ctx.add(Set(array.index))
 
         val condCtx: MutableList<Operation> = ArrayList()
         with(condCtx) {

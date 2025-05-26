@@ -1,7 +1,7 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Def
+import vm.operations.Set
 import vm.operations.Frame
 import vm.operations.Ret
 
@@ -25,14 +25,14 @@ data class FuncNode(
         ctx.add(Frame(num = funcOps.frame.num))
         // Define var if named variable defined
         nameVar?.let {
-            ctx.add(Def(index = nameVar.index))
+            ctx.add(Set(index = nameVar.index))
             resultType = VoidType
         }
 
         // Compile body
         defs.reversed().forEach { def ->
             val v = funcOps.def(def.name, def.type)
-            funcOps.add(Def(v.index))
+            funcOps.add(Set(v.index))
         }
         val retType = body.compile(funcOps)
         if (retType != type) {

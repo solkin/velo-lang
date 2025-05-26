@@ -13,7 +13,12 @@ class Call(val args: Int) : Operation {
         val thisFrame = stack.peek()
         val frameNum = thisFrame.subs.pop().getInt()
         val frame = resources.frames[frameNum] ?: throw Exception("Frame $frameNum not found")
-        val newFrame = Frame(pc = 0, subs = LifoStack(), vars = createVars(thisFrame.vars), ops = frame.ops)
+        val newFrame = Frame(
+            pc = 0,
+            subs = LifoStack(),
+            vars = createVars(vars = frame.vars, parent = thisFrame.vars),
+            ops = frame.ops
+        )
         Array(size = args, init = {
             thisFrame.subs.pop()
         }).reversedArray().forEach { arg ->

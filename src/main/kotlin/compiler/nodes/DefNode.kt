@@ -1,7 +1,7 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Def
+import vm.operations.Set
 
 data class DefNode(
     val name: String,
@@ -17,7 +17,7 @@ data class DefNode(
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
         val v = ctx.def(name, defType)
-        ctx.add(Def(v.index))
+        ctx.add(Set(v.index))
         return VoidType
     }
 }

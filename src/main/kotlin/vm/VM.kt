@@ -33,7 +33,7 @@ class VM {
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
             val mainFrame = resources.frames[0] ?: throw Exception("No main frame")
-            var frame = Frame(pc = 0, subs = LifoStack(), vars = createVars(), ops = mainFrame.ops)
+            var frame = Frame(pc = 0, subs = LifoStack(), vars = createVars(vars = mainFrame.vars), ops = mainFrame.ops)
             stack.push(frame)
             while (frame.pc < frame.ops.size) {
                 val cmd = frame.ops[frame.pc]

@@ -1,7 +1,7 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Def
+import vm.operations.Set
 import vm.operations.Frame
 import vm.operations.MakeStruct
 import vm.operations.Push
@@ -31,7 +31,7 @@ data class StructNode(
         ctx.add(Frame(num = funcOps.frame.num))
         // Define named var
         val v = ctx.def(name, resultType)
-        ctx.add(Def(v.index))
+        ctx.add(Set(index = v.index))
 
         // Add function operations to real context
         ctx.merge(funcOps)

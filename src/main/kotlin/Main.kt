@@ -90,7 +90,13 @@ fun compile(prog: String): List<SerializedFrame>? {
         node.compile(ctx)
         elapsed = System.currentTimeMillis() - time
         println("Compiled in $elapsed ms [${ctx.frames().size} frames]")
-        return ctx.frames().map { SerializedFrame(it.num, it.ops) }
+        return ctx.frames().map {
+            SerializedFrame(
+                num = it.num,
+                ops = it.ops,
+                vars = it.vars.map { i -> i.value.index }
+            )
+        }
     } catch (ex: Throwable) {
         println("!! Compilation failed: ${ex.message}")
     }
