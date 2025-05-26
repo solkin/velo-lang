@@ -40,7 +40,7 @@ data class FuncNode(
         }
         funcOps.add(Ret())
 
-        // Add function operations to real context
+        // Add function operations to the real context
         ctx.merge(funcOps)
 
         return resultType

@@ -171,18 +171,14 @@ class Parser(private val stream: TokenStream) {
 
     private fun parseIf(): Node {
         skipKw("if")
-        val cond = parseExpression()
+        val condNode = parseExpression()
         if (isPunc('{') == null) skipKw("then")
-        val then = parseExpression()
+        val thenNode = parseExpression()
         val elseNode = isKw("else")?.let {
             stream.next()
             parseExpression()
         }
-        return IfNode(
-            condNode = cond,
-            thenNode = ScopeNode(then),
-            elseNode = elseNode?.let { ScopeNode(it) },
-        )
+        return IfNode(condNode, thenNode, elseNode)
     }
 
     private fun parseWhile(): Node {
