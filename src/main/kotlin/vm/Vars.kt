@@ -1,7 +1,6 @@
 package vm
 
 import vm.records.EmptyRecord
-import vm.records.ValueRecord
 
 data class Vars(
     val vars: MutableMap<Int, Record>,

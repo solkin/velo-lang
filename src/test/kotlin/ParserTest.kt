@@ -132,7 +132,7 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = ScopeNode(BoolNode(value = false)),
+                thenNode = BoolNode(value = false),
                 elseNode = null
             ).wrapProgram()
         )
@@ -149,8 +149,8 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = ScopeNode(BoolNode(value = false)),
-                elseNode = ScopeNode(BoolNode(value = true))
+                thenNode = BoolNode(value = false),
+                elseNode = BoolNode(value = true)
             ).wrapProgram()
         )
     }
@@ -166,7 +166,7 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = ScopeNode(BoolNode(value = false)),
+                thenNode = BoolNode(value = false),
                 elseNode = null
             ).wrapProgram()
         )
@@ -183,8 +183,8 @@ class ParserTest {
         assertEquals(
             node, IfNode(
                 condNode = BoolNode(value = true),
-                thenNode = ScopeNode(BoolNode(value = false)),
-                elseNode = ScopeNode(BoolNode(value = true))
+                thenNode = BoolNode(value = false),
+                elseNode = BoolNode(value = true)
             ).wrapProgram()
         )
     }
