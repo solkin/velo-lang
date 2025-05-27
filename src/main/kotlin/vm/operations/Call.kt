@@ -1,24 +1,17 @@
 package vm.operations
 
 import vm.Frame
-import vm.LifoStack
+import vm.FrameLoader
 import vm.Operation
-import vm.Resources
 import vm.Stack
-import vm.createVars
 
 class Call(val args: Int) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, resources: Resources): Int {
+    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val thisFrame = stack.peek()
         val frameNum = thisFrame.subs.pop().getInt()
-        val frame = resources.frames[frameNum] ?: throw Exception("Frame $frameNum not found")
-        val newFrame = Frame(
-            pc = 0,
-            subs = LifoStack(),
-            vars = createVars(vars = frame.vars, parent = thisFrame.vars),
-            ops = frame.ops
-        )
+        val newFrame = frameLoader.loadFrame(num = frameNum, parent = thisFrame)
+            ?: throw Exception("Frame $frameNum not found")
         Array(size = args, init = {
             thisFrame.subs.pop()
         }).reversedArray().forEach { arg ->

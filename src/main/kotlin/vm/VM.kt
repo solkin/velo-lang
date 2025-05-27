@@ -5,7 +5,7 @@ import java.io.PrintStream
 
 class VM {
 
-    val resources = Resources()
+    private var frameLoader: FrameLoader? = null
 
     fun load(parser: Parser) {
         val frames = HashMap<Int, SerializedFrame>()
@@ -13,7 +13,7 @@ class VM {
             val frame = parser.next() ?: break
             frames.put(frame.num, frame)
         }
-        resources.frames = frames
+        frameLoader = GeneralFrameLoader(frames)
     }
 
     fun run() {
@@ -32,8 +32,8 @@ class VM {
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
-            val mainFrame = resources.frames[0] ?: throw Exception("No main frame")
-            var frame = Frame(pc = 0, subs = LifoStack(), vars = createVars(vars = mainFrame.vars), ops = mainFrame.ops)
+            val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
+            var frame = frameLoader.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
             stack.push(frame)
             while (frame.pc < frame.ops.size) {
                 val cmd = frame.ops[frame.pc]
@@ -43,7 +43,7 @@ class VM {
                 if (diagStat) {
                     t = System.currentTimeMillis()
                 }
-                frame.pc = cmd.exec(pc = frame.pc, stack, resources)
+                frame.pc = cmd.exec(pc = frame.pc, stack, frameLoader)
                 if (diagStat) {
                     val e = System.currentTimeMillis() - t
                     val name = cmd.javaClass.name

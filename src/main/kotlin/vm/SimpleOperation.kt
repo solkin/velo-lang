@@ -2,7 +2,7 @@ package vm
 
 interface SimpleOperation : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, resources: Resources): Int {
+    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         exec(stack.peek())
         return pc + 1
     }

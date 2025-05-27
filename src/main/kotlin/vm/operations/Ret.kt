@@ -2,12 +2,12 @@ package vm.operations
 
 import vm.Frame
 import vm.Operation
-import vm.Resources
+import vm.FrameLoader
 import vm.Stack
 
 class Ret : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, resources: Resources): Int {
+    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.pop()
         if (!frame.subs.empty()) {
             val value = frame.subs.pop()
