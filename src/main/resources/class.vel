@@ -8,6 +8,7 @@ class ValueStorage(int v) {
     };
 };
 
-#auto t = ValueStorage(3);
+auto t = ValueStorage(3);
+println(t);
 #println(t.getValue());
 #t.setValue(5);

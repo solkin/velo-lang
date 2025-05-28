@@ -26,8 +26,12 @@ data class CallNode(
             ctx.add(Input())
             return StringType
         }
-        val type = (func.compile(ctx) as? FuncType)?.derived
-            ?: throw IllegalArgumentException("Call on non-function type")
+        val returnType = func.compile(ctx)
+        val type = when (returnType) {
+            is FuncType -> returnType.derived
+            is ClassType -> returnType // TODO: named type
+            else -> throw IllegalArgumentException("Call on non-function type")
+        }
         ctx.add(Call(args.size))
         return type
     }

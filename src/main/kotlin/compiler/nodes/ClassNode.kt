@@ -2,6 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Frame
+import vm.operations.Instance
 import vm.operations.Ret
 import vm.operations.Set
 
@@ -29,6 +30,7 @@ data class ClassNode(
             classOps.add(Set(v.index))
         }
         body.compile(classOps)
+        classOps.add(Instance())
         classOps.add(Ret())
 
         // Add class operations to the real context
