@@ -50,13 +50,13 @@ data class Context(
         )
     }
 
-    fun discrete(): Context {
+    fun discrete(vars: MutableMap<String, Var> = mutableMapOf()): Context {
         return Context(
             parent = null,
             CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
-                vars = mutableMapOf(),
+                vars = vars,
                 varCounter = AtomicInteger(frame.varCounter.get()),
             ),
             frameCounter,

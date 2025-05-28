@@ -1,7 +1,9 @@
 package compiler.nodes
 
 import compiler.Context
+import compiler.Var
 import vm.operations.Frame
+import vm.operations.Get
 import vm.operations.Instance
 import vm.operations.Ret
 import vm.operations.Set
@@ -12,13 +14,13 @@ data class ClassNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val classType: Type = ClassType(name)
+        // Create class body frame with discrete context
+        val classOps = ctx.discrete()
+
+        val classType: Type = ClassType(name, num = classOps.frame.num, vars = classOps.frame.vars)
 
         // Define class type as a variable
         val nameVar = ctx.def(name, classType)
-
-        // Create class body frame with discrete context
-        val classOps = ctx.discrete()
 
         // Insert class frame pointer into stack
         ctx.add(Frame(num = classOps.frame.num))
@@ -40,7 +42,7 @@ data class ClassNode(
     }
 }
 
-data class ClassType(val name: String) : Type {
+data class ClassType(val name: String, val num: Int, val vars: MutableMap<String, Var>) : Type {
     override val type: BaseType
         get() = BaseType.CLASS
 
@@ -48,5 +50,21 @@ data class ClassType(val name: String) : Type {
         ctx.add(Frame(num = 0))
     }
 
-    override fun prop(name: String): Prop? = null
+    override fun prop(name: String): Prop? {
+        if (vars.containsKey(name)) {
+            return ClassElementProp(name)
+        }
+        return null
+    }
+}
+
+data class ClassElementProp(val name: String): Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        type as? ClassType ?: throw IllegalArgumentException("Class operation on non-class type $type")
+        val v = type.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
+        val propCtx = ctx.discrete(vars = type.vars)
+        propCtx.add(Get(v.index))
+        ctx.merge(propCtx)
+        return type.vars[name]?.type ?: throw IllegalStateException()
+    }
 }
