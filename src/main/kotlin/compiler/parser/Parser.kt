@@ -28,6 +28,8 @@ import compiler.nodes.FuncType
 import compiler.nodes.IntType
 import compiler.nodes.PairType
 import compiler.nodes.ArrayType
+import compiler.nodes.ClassNode
+import compiler.nodes.ClassType
 import compiler.nodes.DictNode
 import compiler.nodes.DictType
 import compiler.nodes.ScopeNode
@@ -95,10 +97,15 @@ class Parser(private val stream: TokenStream) {
             stream.croak("Expecting def type one of: \"$types\"")
             throw IllegalArgumentException()
         }
-        val dataType = BaseType.values().first { kw ->
+        val baseType = BaseType.values().first { kw ->
             tok.value == kw.type
         }
-        val type = when (dataType) {
+        val type = parseType(baseType)
+        return type
+    }
+
+    private fun parseType(baseType: BaseType): Type {
+        return when (baseType) {
             BaseType.BYTE -> ByteType
             BaseType.INT -> IntType
             BaseType.FLOAT -> FloatType
@@ -116,11 +123,11 @@ class Parser(private val stream: TokenStream) {
             }
 
             BaseType.STRUCT -> StructType(emptyMap())
+            BaseType.CLASS -> ClassType(parseDerivedTypes(count = 1).first().toString()) // TODO: rewrite
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
             BaseType.AUTO -> AutoType
         }
-        return type
     }
 
     private fun isOp(op: String? = null): Token? {
@@ -264,6 +271,15 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
+    private fun parseClass(): Node {
+        val className = parseVarname()
+        return ClassNode(
+            name = className,
+            defs = delimited('(', ')', ',', ::parseDef),
+            body = parseProg(),
+        )
+    }
+
     private fun parseFunc(): Node {
         return FuncNode(
             name = stream.peek()?.takeIf { tok ->
@@ -299,8 +315,31 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun maybeDef(): Node {
+        val tok = isDef()
+        if (tok != null) {
+            stream.next()
+        } else {
+            stream.croak("Definition expected: class, function or variable")
+            throw IllegalArgumentException()
+        }
+        val baseType = BaseType.values().first { kw ->
+            tok.value == kw.type
+        }
+        val nextTokType = stream.peek()?.type
+        return when {
+            baseType == BaseType.CLASS && nextTokType == TokenType.VARIABLE -> parseClass()
+            baseType == BaseType.FUNCTION && (nextTokType == TokenType.VARIABLE || isPunc('(') != null) -> parseFunc() // Start of named or anonymous function definition
+            else -> parseDefBody(type = parseType(baseType))
+        }
+    }
+
     private fun parseDef(): DefNode {
         val type = parseDefType()
+        return parseDefBody(type)
+    }
+
+    private fun parseDefBody(type: Type): DefNode {
         val name = parseVarname()
         val def: Node? = if (isOp("=") != null) {
             stream.next()
@@ -370,7 +409,7 @@ class Parser(private val stream: TokenStream) {
     private fun parseProg(): Node {
         val prog = delimited('{', '}', ';', ::parseExpression)
         return when (prog.size) {
-            0 -> VoidNode()
+            0 -> VoidNode
             1 -> prog[0]
             else -> ProgramNode(prog = prog)
         }
@@ -399,7 +438,7 @@ class Parser(private val stream: TokenStream) {
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
         if (isKw("type") != null) return parseTypeDef()
-        if (isDef() != null) return parseDef()
+        if (isDef() != null) return maybeDef()
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()

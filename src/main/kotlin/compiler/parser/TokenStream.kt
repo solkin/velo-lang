@@ -15,6 +15,7 @@ class TokenStream(private val input: Input) {
         "pairOf",
         "type",
         "struct",
+        "class",
         "func",
         "let",
         "true",

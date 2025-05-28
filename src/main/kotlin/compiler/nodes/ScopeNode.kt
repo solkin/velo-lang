@@ -3,7 +3,6 @@ package compiler.nodes
 import compiler.Context
 import vm.operations.Call
 import vm.operations.Frame
-import vm.operations.Move
 import vm.operations.Ret
 
 data class ScopeNode(

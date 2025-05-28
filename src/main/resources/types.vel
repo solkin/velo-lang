@@ -9,7 +9,7 @@ dict[int:str] d = dictOf[int:str](
     2:"b",
     3:"c"
 );
-fn[void] n = func() void {};
+func[void] n = func() void {};
 auto a = 3.0;
 a = 6.5;
 pair[int, str] p = pairOf[int,int](1, "second");

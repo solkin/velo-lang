@@ -14,11 +14,14 @@ import compiler.nodes.LetNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.ArrayNode
+import compiler.nodes.ClassNode
 import compiler.nodes.DictNode
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringNode
 import compiler.nodes.StringType
 import compiler.nodes.VarNode
+import compiler.nodes.VoidNode
+import compiler.nodes.VoidType
 import compiler.parser.Parser
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
@@ -88,7 +91,7 @@ class ParserTest {
     }
 
     @Test
-    fun testParseFunc() {
+    fun testParseAnonymousFunc() {
         val input = StringInput("func(int a) bool { false }")
         val stream = TokenStream(input)
         val parser = Parser(stream)
@@ -101,6 +104,24 @@ class ParserTest {
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = BoolType,
                 body = BoolNode(value = false)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseNamedFunc() {
+        val input = StringInput("func A(int a) void { }")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node, FuncNode(
+                name = "A",
+                defs = listOf(DefNode("a", IntType, def = null)),
+                type = VoidType,
+                body = VoidNode
             ).wrapProgram()
         )
     }
@@ -404,6 +425,30 @@ class ParserTest {
                     ),
                     body = BoolNode(value = false)
                 )
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseClass() {
+        val input = StringInput("class A(int a = 5) {}")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            node,
+            ClassNode(
+                name = "A",
+                defs = listOf(
+                    DefNode(
+                        name = "a",
+                        type = IntType,
+                        def = IntNode(value = 5)
+                    )
+                ),
+                body = VoidNode
             ).wrapProgram()
         )
     }

@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 
-class VoidNode : Node() {
+object VoidNode : Node() {
     override fun compile(ctx: Context): Type {
         return VoidType
     }

@@ -1,0 +1,13 @@
+class ValueStorage(int v) {
+    int a = v;
+    func setValue(int i) void {
+        a = i;
+    };
+    func getValue() int {
+        a;
+    };
+};
+
+auto t = ValueStorage(3);
+println(t.getValue());
+t.setValue(5);
