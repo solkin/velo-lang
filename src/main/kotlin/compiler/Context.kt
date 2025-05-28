@@ -50,6 +50,19 @@ data class Context(
         )
     }
 
+    fun discrete(): Context {
+        return Context(
+            parent = null,
+            CompilerFrame(
+                num = frameCounter.incrementAndGet(),
+                ops = mutableListOf(),
+                vars = mutableMapOf(),
+                varCounter = AtomicInteger(frame.varCounter.get()),
+            ),
+            frameCounter,
+        )
+    }
+
     fun inner(): Context {
         return Context(
             parent = this,

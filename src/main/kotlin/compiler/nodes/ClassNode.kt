@@ -2,6 +2,8 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Frame
+import vm.operations.Ret
+import vm.operations.Set
 
 data class ClassNode(
     val name: String,
@@ -9,7 +11,30 @@ data class ClassNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        return ClassType(name)
+        val classType: Type = ClassType(name)
+
+        // Define class type as a variable
+        val nameVar = ctx.def(name, classType)
+
+        // Create class body frame with discrete context
+        val classOps = ctx.discrete()
+
+        // Insert class frame pointer into stack
+        ctx.add(Frame(num = classOps.frame.num))
+        ctx.add(Set(index = nameVar.index))
+
+        // Compile class body
+        defs.reversed().forEach { def ->
+            val v = classOps.def(def.name, def.type)
+            classOps.add(Set(v.index))
+        }
+        body.compile(classOps)
+        classOps.add(Ret())
+
+        // Add class operations to the real context
+        ctx.merge(classOps)
+
+        return VoidType
     }
 }
 
