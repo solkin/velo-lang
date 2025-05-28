@@ -19,21 +19,19 @@ class VM {
     fun run() {
         val stack: Stack<Frame> = LifoStack()
         var elapsed = 0L
+        val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
+        var frame = frameLoader.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
         try {
             val diagSeq = false
             val diagStat = false
             val diagOutput = StringBuilder()
             if (diagSeq) {
-                diagOutput.append("====================================================\n")
-                diagOutput.append("===================== Sequence =====================\n")
-                diagOutput.append("====================================================\n")
+                diagOutput.append("-- Sequence\n")
             }
-            var t: Long = 0
+            var diagMs: Long = 0
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
-            val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
-            var frame = frameLoader.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
             stack.push(frame)
             while (frame.pc < frame.ops.size) {
                 val cmd = frame.ops[frame.pc]
@@ -41,11 +39,11 @@ class VM {
                     diagOutput.append("[${frame.pc}] ${cmd.javaClass.name}\n")
                 }
                 if (diagStat) {
-                    t = System.currentTimeMillis()
+                    diagMs = System.currentTimeMillis()
                 }
                 frame.pc = cmd.exec(pc = frame.pc, stack, frameLoader)
                 if (diagStat) {
-                    val e = System.currentTimeMillis() - t
+                    val e = System.currentTimeMillis() - diagMs
                     val name = cmd.javaClass.name
                     val pe = cmdMs[name] ?: 0
                     cmdMs[name] = pe + e
@@ -55,9 +53,7 @@ class VM {
                 frame = stack.peek()
             }
             if (diagStat) {
-                diagOutput.append("====================================================\n")
-                diagOutput.append("==================== Statistics ====================\n")
-                diagOutput.append("====================================================\n")
+                diagOutput.append("-- Statistics\n")
                 val sortedMs = cmdMs.toList().sortedByDescending { it.second }
                 for (entry in sortedMs) {
                     val times = cmdCnt[entry.first] ?: 0
@@ -70,10 +66,11 @@ class VM {
             }
             elapsed = System.currentTimeMillis() - time
             println("\nProgram ended")
-        } catch (ignored: HaltException) {
+        } catch (_: HaltException) {
             println("\nProgram halted")
         } catch (ex: Throwable) {
-//            println("\n!! Exception was thrown on $pc: ${program[pc].javaClass.name}: ${ex.message}")
+            val op = frame.ops[frame.pc]
+            println("\n!! Exception was thrown on ${frame.pc}: ${op.javaClass.name}: ${ex.message}")
             stack.printStackTrace()
             ex.printStackTrace()
         }
