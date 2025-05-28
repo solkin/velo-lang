@@ -39,7 +39,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, FloatNode(
+            expected = node,
+            actual = FloatNode(
                 value = 123.5
             ).wrapProgram()
         )
@@ -54,7 +55,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, StringNode(
+            expected = node,
+            actual = StringNode(
                 value = "Hello World"
             ).wrapProgram()
         )
@@ -69,7 +71,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, BoolNode(
+            expected = node,
+            actual = BoolNode(
                 value = true
             ).wrapProgram()
         )
@@ -84,7 +87,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, VarNode(
+            expected = node,
+            actual = VarNode(
                 name = "foo"
             ).wrapProgram()
         )
@@ -99,7 +103,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, FuncNode(
+            expected = node,
+            actual = FuncNode(
                 name = null,
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = BoolType,
@@ -117,7 +122,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, FuncNode(
+            expected = node,
+            actual = FuncNode(
                 name = "A",
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = VoidType,
@@ -135,7 +141,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, CallNode(
+            expected = node,
+            actual = CallNode(
                 func = VarNode(name = "println"),
                 args = listOf(StringNode(value = "Hello, World!"))
             ).wrapProgram()
@@ -151,7 +158,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IfNode(
+            expected = node,
+            actual = IfNode(
                 condNode = BoolNode(value = true),
                 thenNode = BoolNode(value = false),
                 elseNode = null
@@ -168,7 +176,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IfNode(
+            expected = node,
+            actual = IfNode(
                 condNode = BoolNode(value = true),
                 thenNode = BoolNode(value = false),
                 elseNode = BoolNode(value = true)
@@ -185,7 +194,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IfNode(
+            expected = node,
+            actual = IfNode(
                 condNode = BoolNode(value = true),
                 thenNode = BoolNode(value = false),
                 elseNode = null
@@ -202,7 +212,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IfNode(
+            expected = node,
+            actual = IfNode(
                 condNode = BoolNode(value = true),
                 thenNode = BoolNode(value = false),
                 elseNode = BoolNode(value = true)
@@ -219,7 +230,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, AssignNode(
+            expected = node,
+            actual = AssignNode(
                 left = VarNode(name = "a"),
                 right = IntNode(value = 4)
             ).wrapProgram()
@@ -235,7 +247,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, AssignNode(
+            expected = node,
+            actual = AssignNode(
                 left = VarNode(name = "a"),
                 right = ArrayNode(listOf = emptyList(), IntType)
             ).wrapProgram()
@@ -251,7 +264,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, AssignNode(
+            expected = node,
+            actual = AssignNode(
                 left = VarNode(name = "a"),
                 right = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), type = IntType)
             ).wrapProgram()
@@ -267,7 +281,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IndexNode(
+            expected = node,
+            actual = IndexNode(
                 list = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
                 index = IntNode(1)
             ).wrapProgram()
@@ -283,7 +298,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, AssignNode(
+            expected = node,
+            actual = AssignNode(
                 left = VarNode(name = "a"),
                 right = DictNode(dictOf = emptyMap(), keyType = IntType, valType = StringType)
             ).wrapProgram()
@@ -299,7 +315,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, AssignNode(
+            expected = node,
+            actual = AssignNode(
                 left = VarNode(name = "a"),
                 right = DictNode(
                     dictOf = mapOf(
@@ -323,7 +340,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, IndexNode(
+            expected = node,
+            actual = IndexNode(
                 list = DictNode(
                     dictOf = mapOf(
                         Pair(IntNode(1), BoolNode(false)),
@@ -347,7 +365,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, BinaryNode(
+            expected = node,
+            actual = BinaryNode(
                 operator = "+",
                 left = VarNode(name = "a"),
                 right = IntNode(value = 4)
@@ -364,7 +383,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, DefNode(
+            expected = node,
+            actual = DefNode(
                 name = "a",
                 type = IntType,
                 def = null
@@ -381,7 +401,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, DefNode(
+            expected = node,
+            actual = DefNode(
                 name = "a",
                 type = IntType,
                 def = IntNode(value = 5)
@@ -398,7 +419,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node, ProgramNode(
+            expected = node,
+            actual = ProgramNode(
                 prog = listOf(BoolNode(value = true), StringNode(value = "String"))
             ).wrapProgram()
         )
@@ -413,9 +435,9 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node,
-            ScopeNode(
-                LetNode(
+            expected = node,
+            actual = ScopeNode(
+                child = LetNode(
                     vars = listOf(
                         DefNode(
                             name = "a",
@@ -438,8 +460,8 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            node,
-            ClassNode(
+            expected = node,
+            actual = ClassNode(
                 name = "A",
                 defs = listOf(
                     DefNode(
