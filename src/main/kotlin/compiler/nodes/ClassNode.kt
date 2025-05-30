@@ -1,7 +1,7 @@
 package compiler.nodes
 
 import compiler.Context
-import compiler.Var
+import vm.operations.Call
 import vm.operations.Frame
 import vm.operations.Get
 import vm.operations.Instance
@@ -17,7 +17,7 @@ data class ClassNode(
         // Create class body frame with discrete context
         val classOps = ctx.discrete()
 
-        val classType: Type = ClassType(name, num = classOps.frame.num, vars = classOps.frame.vars)
+        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps)
 
         // Define class type as a variable
         val nameVar = ctx.def(name, classType)
@@ -31,7 +31,7 @@ data class ClassNode(
             val v = classOps.def(def.name, def.type)
             classOps.add(Set(v.index))
         }
-        body.compile(classOps)
+        body.compile(ctx = classOps)
         classOps.add(Instance())
         classOps.add(Ret())
 
@@ -42,7 +42,7 @@ data class ClassNode(
     }
 }
 
-data class ClassType(val name: String, val num: Int, val vars: MutableMap<String, Var>) : Type {
+data class ClassType(val name: String, val num: Int, val parent: Context?) : Type {
     override val type: BaseType
         get() = BaseType.CLASS
 
@@ -51,7 +51,8 @@ data class ClassType(val name: String, val num: Int, val vars: MutableMap<String
     }
 
     override fun prop(name: String): Prop? {
-        if (vars.containsKey(name)) {
+        parent ?: throw IllegalStateException("Class prop parent context is not defined")
+        if (parent.frame.vars.containsKey(name)) {
             return ClassElementProp(name)
         }
         return null
@@ -61,10 +62,17 @@ data class ClassType(val name: String, val num: Int, val vars: MutableMap<String
 data class ClassElementProp(val name: String): Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as? ClassType ?: throw IllegalArgumentException("Class operation on non-class type $type")
-        val v = type.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
-        val propCtx = ctx.discrete(vars = type.vars)
+        type.parent ?: throw IllegalStateException("Class prop parent context is not defined")
+        val v = type.parent.frame.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
+        val propCtx = ctx.discrete(parent = type.parent)
         propCtx.add(Get(v.index))
+        if (v.type.type == BaseType.FUNCTION) {
+            propCtx.add(Call(args = -args.size))
+        }
+        propCtx.add(Ret())
         ctx.merge(propCtx)
-        return type.vars[name]?.type ?: throw IllegalStateException()
+        ctx.add(Frame(num = propCtx.frame.num))
+        ctx.add(Call(args = args.size, classParent = true))
+        return type.parent.frame.vars[name]?.type ?: throw IllegalStateException()
     }
 }

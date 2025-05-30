@@ -28,4 +28,6 @@ interface Record {
 
     fun getStruct(): ArrayList<Record> = get()
 
+    fun getFrame(): Frame = get()
+
 }

@@ -40,7 +40,7 @@ data class Context(
     fun extend(): Context {
         return Context(
             parent = this,
-            CompilerFrame(
+            frame = CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
                 vars = mutableMapOf(),
@@ -50,13 +50,13 @@ data class Context(
         )
     }
 
-    fun discrete(vars: MutableMap<String, Var> = mutableMapOf()): Context {
+    fun discrete(parent: Context? = null): Context {
         return Context(
-            parent = null,
-            CompilerFrame(
+            parent = parent,
+            frame = CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
-                vars = vars,
+                vars = mutableMapOf(),
                 varCounter = AtomicInteger(frame.varCounter.get()),
             ),
             frameCounter,
@@ -66,7 +66,7 @@ data class Context(
     fun inner(): Context {
         return Context(
             parent = this,
-            CompilerFrame(
+            frame = CompilerFrame(
                 num = frame.num,
                 ops = mutableListOf(),
                 vars = frame.vars,

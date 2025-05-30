@@ -123,7 +123,7 @@ class Parser(private val stream: TokenStream) {
             }
 
             BaseType.STRUCT -> StructType(emptyMap())
-            BaseType.CLASS -> ClassType(parseDerivedTypes(count = 1).first().toString(), num = 0, vars = mutableMapOf()) // TODO: rewrite
+            BaseType.CLASS -> ClassType(parseDerivedTypes(count = 1).first().toString(), num = 0, parent = null) // TODO: rewrite
             BaseType.FUNCTION -> FuncType(parseDerivedTypes(count = 1).first())
             BaseType.VOID -> VoidType
             BaseType.AUTO -> AutoType

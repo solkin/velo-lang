@@ -1,15 +1,20 @@
-class ValueStorage(int v) {
-    int a = v;
-    func setValue(int i) void {
-        a = i;
+int y = 9;
+class ValueStorage(int h, str b) {
+    println(">> constructor start");
+    int a = h + 1;
+    func p() str {
+        println("method run");
+        (100+h).str.con(b);
     };
-    func getValue() int {
-        a;
+    func setA(str y) void {
+        a = y.int;
     };
+    println(p());
+    println(">> constructor end");
 };
 
-auto t = ValueStorage(3);
-#println(t);
-#println(t.a+1);
-println(t.getValue());
-#t.setValue(5);
+auto t = ValueStorage(42, "test");
+println(t.p());
+println(t.a);
+t.setA("1000");
+println(t.a);
