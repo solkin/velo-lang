@@ -66,13 +66,15 @@ data class ClassElementProp(val name: String): Prop {
         val v = type.parent.frame.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
         val propCtx = ctx.discrete(parent = type.parent)
         propCtx.add(Get(v.index))
-        if (v.type.type == BaseType.FUNCTION) {
+        var resultType = v.type
+        if (v.type is FuncType) {
             propCtx.add(Call(args = -args.size))
+            resultType = v.type.derived
         }
         propCtx.add(Ret())
         ctx.merge(propCtx)
         ctx.add(Frame(num = propCtx.frame.num))
         ctx.add(Call(args = args.size, classParent = true))
-        return type.parent.frame.vars[name]?.type ?: throw IllegalStateException()
+        return resultType
     }
 }

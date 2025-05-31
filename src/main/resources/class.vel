@@ -18,3 +18,14 @@ println(t.p());
 println(t.a);
 t.setA("1000");
 println(t.a);
+
+class Test() {
+    func test() pair[str, int] {
+        array[int] result = arrayOf[int](1);
+        pairOf[str,int]("a", 1);
+    };
+};
+
+auto ts = Test();
+auto r = ts.test("a");
+println(r.first);
