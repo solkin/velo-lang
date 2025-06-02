@@ -1,77 +1,80 @@
-func compress(str text) array[int] {
-    dict[str:int] dictionary = dictOf[str:int]();
-    int dictSize = 0;
-    while(dictSize < 256) {
-        dictionary.set(dictSize.char, dictSize);
-        dictSize = dictSize + 1;
-    };
-
-    str w = "";
-    array[int] result = arrayOf[int]();
-    int i = 0;
-    while(i < text.len) {
-        int c = text[i];
-        str wc = w.con(c.char);
-        if (dictionary.key(wc)) {
-            w = wc;
-        } else {
-            result = result.plus(dictionary[w]);
-            # Add wc to the dictionary.
-            dictionary.set(wc, dictSize);
-            dictSize = dictSize + 1;
-            w = c.char;
-        };
-        i = i + 1;
-    };
-
-    if (w != "") then result = result.plus(dictionary[w]);
-
-    result;
-};
-
-func decompress(array[int] compressed) str {
-    str result = "";
-    if (compressed.len > 0) {
-        dict[int:str] dictionary = dictOf[int:str]();
+class LZW() {
+    func compress(str text) array[int] {
+        dict[str:int] dictionary = dictOf[str:int]();
         int dictSize = 0;
         while(dictSize < 256) {
-            dictionary.set(dictSize, dictSize.char);
+            dictionary.set(dictSize.char, dictSize);
             dictSize = dictSize + 1;
         };
-        str w = compressed[0].char;
-        result = w;
-        int i = 1;
-        while (i < compressed.len) {
-            int k = compressed[i];
-            str entry = "";
-            if (dictionary.key(k)) {
-                entry = dictionary[k];
-            } else if (k == dictSize) {
-                entry = w + w[0].char;
+
+        str w = "";
+        array[int] result = arrayOf[int]();
+        int i = 0;
+        while(i < text.len) {
+            int c = text[i];
+            str wc = w.con(c.char);
+            if (dictionary.key(wc)) {
+                w = wc;
             } else {
-                println("Bad compressed k: ".con(k));
+                result = result.plus(dictionary[w]);
+                # Add wc to the dictionary.
+                dictionary.set(wc, dictSize);
+                dictSize = dictSize + 1;
+                w = c.char;
             };
-
-            result = result.con(entry);
-
-            # Add w+entry[0] to the dictionary.
-            dictionary.set(dictSize, w.con(entry[0].char));
-            dictSize = dictSize + 1;
-
-            w = entry;
-
             i = i + 1;
         };
+
+        if (w != "") then result = result.plus(dictionary[w]);
+
+        result;
     };
-    result;
+
+    func decompress(array[int] compressed) str {
+        str result = "";
+        if (compressed.len > 0) {
+            dict[int:str] dictionary = dictOf[int:str]();
+            int dictSize = 0;
+            while(dictSize < 256) {
+                dictionary.set(dictSize, dictSize.char);
+                dictSize = dictSize + 1;
+            };
+            str w = compressed[0].char;
+            result = w;
+            int i = 1;
+            while (i < compressed.len) {
+                int k = compressed[i];
+                str entry = "";
+                if (dictionary.key(k)) {
+                    entry = dictionary[k];
+                } else if (k == dictSize) {
+                    entry = w + w[0].char;
+                } else {
+                    println("Bad compressed k: ".con(k));
+                };
+
+                result = result.con(entry);
+
+                # Add w+entry[0] to the dictionary.
+                dictionary.set(dictSize, w.con(entry[0].char));
+                dictSize = dictSize + 1;
+
+                w = entry;
+
+                i = i + 1;
+            };
+        };
+        result;
+    };
 };
 
+auto lzw = LZW();
 str text = input();
 if (text.len == 0) {
     text = "TOBEORNOTTOBEORTOBEORNOT";
     println(text);
 };
-auto result = compress(text);
+auto result = lzw.compress(text);
 int i = 0;
 str bytes = "";
 str chars = "";
@@ -82,5 +85,5 @@ while(i < result.len) {
 };
 println(chars.con(" / ").con(bytes));
 
-text = decompress(result);
+text = lzw.decompress(result);
 println(text);
