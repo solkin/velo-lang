@@ -107,6 +107,33 @@ auto p = pairOf[int,str](1, "second");
 println(p.first);  # 1
 println(p.second); # second
 ```
+**Classes**
+```
+class Random(int seed) {
+    int a = 252149039;    # These Values for a and c are the actual values found
+    int c = 11;           # in the implementation of java.util.Random(), see link
+    int previous = 0;
+
+    func setSeed(int seed) void {
+        previous = seed;
+    };
+
+    func next() int {
+        int r = a * previous + c;
+        # Note: typically, one chooses only a couple of bits of this value, see link
+        previous = r;
+        r;
+    }
+};
+
+auto random = Random(12345);
+int i = 5;
+while (i > 0) {
+    auto r = random.next();
+    println(r);
+    i = i - 1;
+};
+```
 
 ### Run program
 
