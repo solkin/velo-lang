@@ -30,7 +30,7 @@ data class FuncNode(
         }
 
         // Compile body
-        defs.reversed().forEach { def ->
+        defs.reversed().forEach { def -> // TODO: check for vars types
             val v = funcOps.def(def.name, def.type)
             funcOps.add(Set(v.index))
         }
@@ -48,12 +48,15 @@ data class FuncNode(
 }
 
 data class FuncType(val derived: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.FUNCTION
+    override fun sameAs(type: Type): Boolean {
+        return type is FuncType && type.derived.sameAs(derived)
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Frame(num = 0))
     }
 
     override fun prop(name: String): Prop? = null
+
+    override fun log() = toString()
 }

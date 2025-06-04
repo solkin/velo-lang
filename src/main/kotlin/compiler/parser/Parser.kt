@@ -39,7 +39,6 @@ import compiler.nodes.Type
 import compiler.nodes.VoidType
 import compiler.nodes.VoidNode
 import compiler.nodes.WhileNode
-import compiler.nodes.getDefaultNode
 
 class Parser(private val stream: TokenStream) {
 
@@ -304,7 +303,7 @@ class Parser(private val stream: TokenStream) {
                     type = type,
                     body = parseExpression(),
                 ),
-                args = defs.map { it.def ?: it.type.type.getDefaultNode() }
+                args = defs.map { it.def ?: VoidNode }
             )
         }
         return ScopeNode(

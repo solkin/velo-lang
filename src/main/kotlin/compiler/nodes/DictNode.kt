@@ -22,12 +22,12 @@ data class DictNode(
     override fun compile(ctx: Context): Type {
         dictOf.forEach { (k, v) ->
             val itemKeyType = k.compile(ctx)
-            if (itemKeyType.type != keyType.type) {
-                throw Exception("Dict element key \"$k\" type ${itemKeyType.type} is differ from declared type ${keyType.type}")
+            if (!itemKeyType.sameAs(keyType)) {
+                throw Exception("Dict element key \"$k\" type ${itemKeyType.log()} is differ from declared type ${keyType.log()}")
             }
             val itemValType = v.compile(ctx)
-            if (itemValType.type != valType.type) {
-                throw Exception("Dict element value \"$v\" type ${itemValType.type} is differ from declared type ${valType.type}")
+            if (!itemValType.sameAs(valType)) {
+                throw Exception("Dict element value \"$v\" type ${itemValType.log()} is differ from declared type ${valType.log()}")
             }
         }
         ctx.add(Push(dictOf.size))
@@ -37,8 +37,9 @@ data class DictNode(
 }
 
 data class DictType(val derived: PairType) : Type {
-    override val type: BaseType
-        get() = BaseType.DICT
+    override fun sameAs(type: Type): Boolean {
+        return type is DictType && type.derived.sameAs(derived)
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
@@ -57,6 +58,8 @@ data class DictType(val derived: PairType) : Type {
             else -> null
         }
     }
+
+    override fun log() = toString()
 }
 
 object DictLenProp : Prop {

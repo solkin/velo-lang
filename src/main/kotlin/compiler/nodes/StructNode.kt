@@ -41,8 +41,16 @@ data class StructNode(
 }
 
 data class StructType(val elements: Map<String, Type>) : Type {
-    override val type: BaseType
-        get() = BaseType.STRUCT
+    override fun sameAs(type: Type): Boolean {
+        if (type is StructType) {
+            if (type.elements.size == elements.size) {
+                return type.elements.keys.map {
+                    elements.containsKey(it) && type.elements[it] == elements[it]
+                }.filterNot { it }.isEmpty()
+            }
+        }
+        return false
+    }
 
     override fun default(ctx: Context) {
         throw Exception("Struct has no default value")
@@ -54,6 +62,8 @@ data class StructType(val elements: Map<String, Type>) : Type {
         }
         return null
     }
+
+    override fun log() = toString()
 }
 
 data class StructElementProp(val name: String): Prop {

@@ -15,8 +15,9 @@ data class IntNode(
 }
 
 object IntType : Type {
-    override val type: BaseType
-        get() = BaseType.INT
+    override fun sameAs(type: Type): Boolean {
+        return type is IntType
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
@@ -29,6 +30,8 @@ object IntType : Type {
             else -> null
         }
     }
+
+    override fun log() = toString()
 }
 
 object IntStrProp : Prop {

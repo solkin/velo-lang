@@ -19,8 +19,9 @@ data class PairNode(
 }
 
 data class PairType(val first: Type, val second: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.PAIR
+    override fun sameAs(type: Type): Boolean {
+        return type is PairType && type.first.sameAs(first) && type.second.sameAs(second)
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
@@ -34,6 +35,8 @@ data class PairType(val first: Type, val second: Type) : Type {
             else -> null
         }
     }
+
+    override fun log() = toString()
 }
 
 object FirstProp: Prop {

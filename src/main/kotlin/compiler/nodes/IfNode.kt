@@ -19,8 +19,8 @@ data class IfNode(
         val elseType = elseNode?.compile(elseCtx)
         elseCtx.add(Ret())
 
-        if (elseType != null && thenType.type != elseType.type) {
-            throw IllegalArgumentException("Then and else return types are differ: $thenType / $elseType")
+        if (elseType != null && !thenType.sameAs(elseType)) {
+            throw IllegalArgumentException("Then and else return types are differ: ${thenType.log()} / ${elseType.log()}")
         }
 
         condNode.compile(ctx)

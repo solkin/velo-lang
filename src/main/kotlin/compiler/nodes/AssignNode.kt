@@ -11,7 +11,7 @@ data class AssignNode(
         if (left !is VarNode) throw IllegalArgumentException("Cannot assign to $left")
         val type = right.compile(ctx)
         val v = ctx.get(left.name)
-        if (v.type.type != type.type) {
+        if (!v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal assign type $type != ${v.type}")
         }
         ctx.add(Set(v.index))

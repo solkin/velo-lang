@@ -13,12 +13,15 @@ data class BoolNode(
 }
 
 object BoolType : Type {
-    override val type: BaseType
-        get() = BaseType.BOOLEAN
+    override fun sameAs(type: Type): Boolean {
+        return type is BoolType
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = false))
     }
 
     override fun prop(name: String): Prop? = null
+
+    override fun log() = toString()
 }

@@ -13,12 +13,15 @@ data class FloatNode(
 }
 
 object FloatType : Type {
-    override val type: BaseType
-        get() = BaseType.FLOAT
+    override fun sameAs(type: Type): Boolean {
+        return type is FloatType
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0f))
     }
 
     override fun prop(name: String): Prop? = null
+
+    override fun log() = toString()
 }

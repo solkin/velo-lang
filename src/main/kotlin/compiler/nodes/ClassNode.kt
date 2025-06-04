@@ -43,8 +43,9 @@ data class ClassNode(
 }
 
 data class ClassType(val name: String, val num: Int, val parent: Context?) : Type {
-    override val type: BaseType
-        get() = BaseType.CLASS
+    override fun sameAs(type: Type): Boolean {
+        return type is ClassType && type.name == name
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Frame(num = 0))
@@ -57,6 +58,8 @@ data class ClassType(val name: String, val num: Int, val parent: Context?) : Typ
         }
         return null
     }
+
+    override fun log() = toString()
 }
 
 data class ClassElementProp(val name: String): Prop {

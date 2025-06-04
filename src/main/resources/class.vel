@@ -43,3 +43,9 @@ while (i > 0) {
     println(r);
     i = i - 1;
 };
+
+class Pair(auto key, auto value) {};
+
+auto p = Pair("key", 42);
+println(p.key);
+println(p.value);

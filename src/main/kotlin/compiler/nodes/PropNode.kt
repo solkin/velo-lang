@@ -11,7 +11,7 @@ data class PropNode(
         return ctx.wrapScope { scopeCtx ->
             val parentType = parent.compile(scopeCtx)
             val argsType = args.orEmpty().reversed().map { it.compile(scopeCtx) }
-            val prop = parentType.prop(name) ?: throw IllegalArgumentException("Property '$name' of ${parentType.type} is not supported")
+            val prop = parentType.prop(name) ?: throw IllegalArgumentException("Property '$name' of ${parentType.log()} is not supported")
             prop.compile(parentType, args = argsType, scopeCtx)
         }
     }

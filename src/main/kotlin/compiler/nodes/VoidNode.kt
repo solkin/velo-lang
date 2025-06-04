@@ -9,10 +9,13 @@ object VoidNode : Node() {
 }
 
 object VoidType : Type {
-    override val type: BaseType
-        get() = BaseType.VOID
+    override fun sameAs(type: Type): Boolean {
+        return type is VoidType
+    }
 
     override fun default(ctx: Context) {}
 
     override fun prop(name: String): Prop? = null
+
+    override fun log() = toString()
 }

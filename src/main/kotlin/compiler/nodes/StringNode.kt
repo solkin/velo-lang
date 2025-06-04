@@ -17,8 +17,9 @@ data class StringNode(
 }
 
 object StringType : Type {
-    override val type: BaseType
-        get() = BaseType.STRING
+    override fun sameAs(type: Type): Boolean {
+        return type is StringType
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = ""))
@@ -33,6 +34,8 @@ object StringType : Type {
             else -> null
         }
     }
+
+    override fun log() = toString()
 }
 
 object SubStrProp : Prop {

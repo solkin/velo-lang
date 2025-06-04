@@ -26,8 +26,8 @@ data class ArrayNode(
     override fun compile(ctx: Context): Type {
         listOf.forEach {
             val itemType = it.compile(ctx)
-            if (itemType.type != type.type) {
-                throw Exception("Array element \"$it\" type ${itemType.type} is differ from array type ${type.type}")
+            if (!itemType.sameAs(type)) {
+                throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
             }
         }
         ctx.add(Push(listOf.size))
@@ -37,8 +37,9 @@ data class ArrayNode(
 }
 
 data class ArrayType(val derived: Type) : Type {
-    override val type: BaseType
-        get() = BaseType.ARRAY
+    override fun sameAs(type: Type): Boolean {
+        return type is ArrayType && type.derived.sameAs(derived)
+    }
 
     override fun default(ctx: Context) {
         ctx.add(Push(value = 0))
@@ -55,6 +56,8 @@ data class ArrayType(val derived: Type) : Type {
             else -> null
         }
     }
+
+    override fun log() = toString()
 }
 
 object ArrayLenProp : Prop {
@@ -93,7 +96,7 @@ object ArrayPlusProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as ArrayType
         if (args.isEmpty()) throw Exception("Property 'plus' requires at least one argument")
-        if (args.find { it.type != type.derived.type } != null) {
+        if (args.find { !it.sameAs(type.derived) } != null) {
             throw Exception("Property 'plus' arguments must be array-typed")
         }
         ctx.add(ArrPlus())
