@@ -452,7 +452,7 @@ class ParserTest {
     }
 
     @Test
-    fun testParseClass() {
+    fun testParseEmptyClass() {
         val input = StringInput("class A(int a = 5) {}")
         val stream = TokenStream(input)
         val parser = Parser(stream)
@@ -471,6 +471,44 @@ class ParserTest {
                     )
                 ),
                 body = VoidNode
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseClassFields() {
+        val input = StringInput("class A(int a = 5) { int b = 6; func c(int d) bool { true } }")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = ClassNode(
+                name = "A",
+                defs = listOf(
+                    DefNode(
+                        name = "a",
+                        type = IntType,
+                        def = IntNode(value = 5)
+                    )
+                ),
+                body = ProgramNode(
+                    prog = listOf(
+                        DefNode(
+                            name = "b",
+                            type = IntType,
+                            def = IntNode(value = 6)
+                        ),
+                        FuncNode(
+                            name = "c",
+                            defs = listOf(DefNode("d", IntType, def = null)),
+                            type = BoolType,
+                            body = BoolNode(value = true)
+                        )
+                    )
+                )
             ).wrapProgram()
         )
     }
