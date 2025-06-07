@@ -3,22 +3,6 @@ package compiler.nodes
 import compiler.Context
 import vm.operations.Push
 
-enum class BaseType(val type: String) {
-    BYTE("byte"),
-    INT("int"),
-    FLOAT("float"),
-    STRING("str"),
-    BOOLEAN("bool"),
-    PAIR("pair"),
-    ARRAY("array"),
-    DICT("dict"),
-    STRUCT("struct"),
-    CLASS("class"),
-    FUNCTION("func"),
-    VOID("void"),
-    AUTO("auto"),
-}
-
 interface Type {
     fun sameAs(type: Type): Boolean
     fun default(ctx: Context)

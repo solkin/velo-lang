@@ -1,11 +1,9 @@
 package compiler.parser
 
-import compiler.nodes.BaseType
-
 class TokenStream(private val input: Input) {
 
     private var current: Token? = null
-    private val keywords = listOf(
+    private val keywords = setOf(
         "if",
         "then",
         "else",
@@ -20,7 +18,7 @@ class TokenStream(private val input: Input) {
         "let",
         "true",
         "false"
-    ).plus(BaseType.values().map { it.type }).toSet()
+    ).plus(stdTypesSet)
 
     private fun isKeyword(str: String): Boolean {
         return keywords.contains(str)
@@ -164,3 +162,33 @@ class TokenStream(private val input: Input) {
     }
 
 }
+
+const val BYTE = "byte"
+const val INT = "int"
+const val FLOAT = "float"
+const val STR = "str"
+const val BOOL = "bool"
+const val PAIR = "pair"
+const val ARRAY = "array"
+const val DICT = "dict"
+const val STRUCT = "struct"
+const val CLASS = "class"
+const val FUNC = "func"
+const val VOID = "void"
+const val AUTO = "auto"
+
+val stdTypesSet = setOf(
+    BYTE,
+    INT,
+    FLOAT,
+    STR,
+    BOOL,
+    PAIR,
+    ARRAY,
+    DICT,
+    STRUCT,
+    CLASS,
+    FUNC,
+    VOID,
+    AUTO,
+)
