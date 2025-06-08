@@ -18,7 +18,7 @@ data class StructNode(
             elements[def.name] = def.type
         }
 
-        val resultType: Type = FuncType(derived = StructType(elements))
+        val resultType: Type = FuncType(derived = StructType(elements), args = elements.values.reversed().toList())
 
         // Compile body
         val funcOps = ctx.extend()

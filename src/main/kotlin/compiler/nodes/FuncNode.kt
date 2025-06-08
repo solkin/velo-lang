@@ -12,7 +12,8 @@ data class FuncNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        var resultType: Type = FuncType(derived = type)
+        val args = ArrayList<Type>()
+        var resultType: Type = FuncType(derived = type, args)
 
         // Define var before body frame creation (because var counter will be forked) if name is defined
         val named = !name.isNullOrEmpty()
@@ -30,10 +31,11 @@ data class FuncNode(
         }
 
         // Compile body
-        defs.reversed().forEach { def -> // TODO: check for vars types
+        args += defs.reversed().map { def ->
             val v = funcOps.def(def.name, def.type)
             funcOps.add(Set(v.index))
-        }
+            def.type
+        }.reversed()
         val retType = body.compile(funcOps)
         if (retType != type) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
@@ -47,7 +49,7 @@ data class FuncNode(
     }
 }
 
-data class FuncType(val derived: Type) : Type {
+data class FuncType(val derived: Type, override val args: List<Type>? = null) : Callable {
     override fun sameAs(type: Type): Boolean {
         return type is FuncType && type.derived.sameAs(derived)
     }

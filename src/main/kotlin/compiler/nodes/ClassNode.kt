@@ -17,7 +17,8 @@ data class ClassNode(
         // Create class body frame with discrete context
         val classOps = ctx.discrete()
 
-        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps)
+        val args = ArrayList<Type>()
+        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, args)
 
         // Define class type as a variable
         val nameVar = ctx.def(name, classType)
@@ -27,10 +28,11 @@ data class ClassNode(
         ctx.add(Set(index = nameVar.index))
 
         // Compile class body
-        defs.reversed().forEach { def ->
+        args += defs.reversed().map { def ->
             val v = classOps.def(def.name, def.type)
             classOps.add(Set(v.index))
-        }
+            def.type
+        }.reversed()
         body.compile(ctx = classOps)
         classOps.add(Instance())
         classOps.add(Ret())
@@ -42,7 +44,7 @@ data class ClassNode(
     }
 }
 
-data class ClassType(val name: String, val num: Int? = null, val parent: Context? = null) : Type {
+data class ClassType(val name: String, val num: Int? = null, val parent: Context? = null, val args: List<Type>? = null) : Type {
     override fun sameAs(type: Type): Boolean {
         return type is ClassType && type.name == name
     }

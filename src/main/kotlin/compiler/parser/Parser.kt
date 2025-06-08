@@ -119,7 +119,7 @@ class Parser(private val stream: TokenStream) {
                 } ?: throw IllegalArgumentException("Invalid class type specification")
             }
 
-            FUNC -> FuncType(parseDerivedTypes(count = 1).first())
+            FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
             VOID -> VoidType
             AUTO -> AutoType
             else -> throw IllegalArgumentException("Unknown type ${tok.value}")

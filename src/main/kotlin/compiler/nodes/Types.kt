@@ -10,6 +10,10 @@ interface Type {
     fun log(): String
 }
 
+interface Callable : Type {
+    val args: List<Type>?
+}
+
 object ByteType : Type {
     override fun sameAs(type: Type): Boolean {
         return type is ByteType
