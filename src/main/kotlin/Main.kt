@@ -1,6 +1,8 @@
 import compiler.Context
 import compiler.CompilerFrame
+import compiler.parser.Input
 import compiler.parser.Parser
+import compiler.parser.StreamInput
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import utils.BytecodeInputStream
@@ -24,15 +26,15 @@ fun main(args: Array<String>) {
     val bc = args.getOrNull(1)
 
     val frames = if (path.endsWith(".vel")) {
-        val prog = if (path.startsWith("res://")) {
-            Parser::class.java.getResource(path.substring(5))?.readText() ?: return
+        val stream = if (path.startsWith("res://")) {
+            Parser::class.java.getResource(path.substring(5))?.openStream() ?: return
         } else if (path.startsWith("file://")) {
-            File(path.substring(6)).readText()
+            File(path.substring(6)).inputStream()
         } else {
             println("Unsupported input scheme")
             return
         }
-        compile(prog)
+        stream.use { compile(input = StreamInput(stream)) }
     } else if (path.endsWith(".vbc")) {
         var frames: List<SerializedFrame>?
         val file = File(path)
@@ -70,8 +72,7 @@ fun main(args: Array<String>) {
     }
 }
 
-fun compile(prog: String): List<SerializedFrame>? {
-    val input = StringInput(prog)
+fun compile(input: Input): List<SerializedFrame>? {
     val stream = TokenStream(input)
     val parser = Parser(stream)
 
