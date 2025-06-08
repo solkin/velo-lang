@@ -1,75 +1,80 @@
-func calc(array[array[int]] matrix, int x, int y) int {
-     func window(int a) int {
-        if (a >= 0) {
-            if (a < matrix.len) then a else a - matrix.len;
+class GameOfLife() {
+
+    auto w = arrayOf[array[int]](
+        arrayOf[int](0, 1, 0, 0, 0, 0),
+        arrayOf[int](0, 0, 1, 0, 0, 0),
+        arrayOf[int](1, 1, 1, 0, 0, 0),
+        arrayOf[int](0, 0, 0, 0, 0, 0),
+        arrayOf[int](0, 0, 0, 0, 0, 0),
+        arrayOf[int](0, 0, 0, 0, 0, 0)
+    );
+
+    func calc(array[array[int]] matrix, int x, int y) int {
+         func window(int a) int {
+            if (a >= 0) {
+                if (a < matrix.len) then a else a - matrix.len;
+            } else {
+                matrix.len + a;
+            }
+        };
+
+        auto cells =
+                matrix[window(y - 1)][window(x - 1)] +
+                matrix[window(y - 1)][x] +
+                matrix[window(y - 1)][window(x + 1)] +
+                matrix[y][window(x - 1)] +
+                matrix[y][window(x + 1)] +
+                matrix[window(y + 1)][window(x - 1)] +
+                matrix[window(y + 1)][x] +
+                matrix[window(y + 1)][window(x + 1)];
+
+        if cells == 2 then {
+            matrix[y][x]
+        } else if cells == 3 then {
+            1
         } else {
-            matrix.len + a;
+            0
         }
     };
 
-    auto cells =
-            matrix[window(y - 1)][window(x - 1)] +
-            matrix[window(y - 1)][x] +
-            matrix[window(y - 1)][window(x + 1)] +
-            matrix[y][window(x - 1)] +
-            matrix[y][window(x + 1)] +
-            matrix[window(y + 1)][window(x - 1)] +
-            matrix[window(y + 1)][x] +
-            matrix[window(y + 1)][window(x + 1)];
+    func printWorld() array[array[int]] {
+        w.map(
+            func(int index, array[int] row) array[int] {
+                row.map(
+                    func(int index, int col) int {
+                        print(col);
+                        print(" ");
+                        col;
+                    }
+                );
+                println("");
+                row
+            }
+        )
+    };
 
-    if cells == 2 then {
-        matrix[y][x]
-    } else if cells == 3 then {
-        1
-    } else {
-        0
-    }
+    func nextGeneration() void {
+        w = w.map(
+            func(int y, array[int] row) array[int] {
+                row.map(
+                    func(int x, int col) int {
+                        calc(w, x, y);
+                    }
+                );
+            }
+        );
+    };
+
 };
 
-func printWorld(array[array[int]] world) array[array[int]] {
-    world.map(
-        func(int index, array[int] row) array[int] {
-            row.map(
-                func(int index, int col) int {
-                    print(col);
-                    print(" ");
-                    col;
-                }
-            );
-            println("");
-            row
-        }
-    )
-};
-
-func nextGeneration(array[array[int]] world) array[array[int]] {
-    world.map(
-        func(int y, array[int] row) array[int] {
-            row.map(
-                func(int x, int col) int {
-                    calc(world, x, y);
-                }
-            );
-        }
-    );
-};
-
-auto w = arrayOf[array[int]](
-    arrayOf[int](0, 1, 0, 0, 0, 0),
-    arrayOf[int](0, 0, 1, 0, 0, 0),
-    arrayOf[int](1, 1, 1, 0, 0, 0),
-    arrayOf[int](0, 0, 0, 0, 0, 0),
-    arrayOf[int](0, 0, 0, 0, 0, 0),
-    arrayOf[int](0, 0, 0, 0, 0, 0)
-);
-
+auto g = GameOfLife();
 print("Enter generations count: ");
 int count = input().int;
 println("");
 int idx = 0;
 while (idx <= count) {
-    printWorld(w);
+    g.printWorld();
     println("--");
-    w = nextGeneration(w);
+    g.nextGeneration();
     idx = idx + 1;
 };
