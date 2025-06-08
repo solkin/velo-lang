@@ -15,6 +15,7 @@ import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.ArrayNode
 import compiler.nodes.ClassNode
+import compiler.nodes.ClassType
 import compiler.nodes.DictNode
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringNode
@@ -406,6 +407,24 @@ class ParserTest {
                 name = "a",
                 type = IntType,
                 def = IntNode(value = 5)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParseClassDef() {
+        val input = StringInput("class[A] a")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = DefNode(
+                name = "a",
+                type = ClassType("A"),
+                def = null
             ).wrapProgram()
         )
     }

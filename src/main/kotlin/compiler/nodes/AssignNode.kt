@@ -14,6 +14,7 @@ data class AssignNode(
         if (!v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal assign type $type != ${v.type}")
         }
+        ctx.retype(left.name, type) // Clarify variable type from the right side of assignment
         ctx.add(Set(v.index))
         return VoidType
     }

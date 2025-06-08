@@ -50,8 +50,6 @@ class Parser(private val stream: TokenStream) {
         "*" to 20, "/" to 20, "%" to 20,
     )
 
-    private val extTypesSet = mutableSetOf<String>()
-
     private fun isPunc(ch: Char?): Token? {
         return stream.peek()?.takeIf { tok ->
             tok.type == TokenType.PUNCTUATION && (ch == null || tok.value == ch)
@@ -74,9 +72,8 @@ class Parser(private val stream: TokenStream) {
 
     private fun isDef(): Token? {
         return stream.peek()?.takeIf { tok ->
-            when(tok.type) {
+            when (tok.type) {
                 TokenType.KEYWORD -> stdTypesSet.contains(tok.value)
-                TokenType.VARIABLE -> extTypesSet.contains(tok.value)
                 else -> false
             }
         }
@@ -112,7 +109,16 @@ class Parser(private val stream: TokenStream) {
             }
 
             STRUCT -> StructType(emptyMap())
-            CLASS -> ClassType(parseDerivedTypes(count = 1).first().toString(), num = 0, parent = null) // TODO: rewrite
+            CLASS -> {
+                (
+                        delimited(start = '[', stop = ']', separator = ',', parser = ::parseExpression)
+                            .takeIf { it.size == 1 }
+                            ?.first() as? VarNode
+                )?.let { typeName ->
+                    ClassType(name = typeName.name)
+                } ?: throw IllegalArgumentException("Invalid class type specification")
+            }
+
             FUNC -> FuncType(parseDerivedTypes(count = 1).first())
             VOID -> VoidType
             AUTO -> AutoType

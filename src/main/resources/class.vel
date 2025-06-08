@@ -36,16 +36,21 @@ class Random(int seed) {
     }
 };
 
-auto random = Random(12345);
+class[Random] random = Random(12345);
 int i = 5;
 while (i > 0) {
-    auto r = random.next();
+    int r = random.next();
     println(r);
     i = i - 1;
 };
 
 class Pair(auto key, auto value) {};
 
-auto p = Pair("key", 42);
-println(p.key);
-println(p.value);
+class[Pair] p = Pair("key", 42);
+
+func printPair(class[Pair] p) void {
+    println(p.key);
+    println(p.value);
+};
+
+printPair(p);

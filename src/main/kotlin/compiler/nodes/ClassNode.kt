@@ -42,7 +42,7 @@ data class ClassNode(
     }
 }
 
-data class ClassType(val name: String, val num: Int, val parent: Context?) : Type {
+data class ClassType(val name: String, val num: Int? = null, val parent: Context? = null) : Type {
     override fun sameAs(type: Type): Boolean {
         return type is ClassType && type.name == name
     }
@@ -52,11 +52,7 @@ data class ClassType(val name: String, val num: Int, val parent: Context?) : Typ
     }
 
     override fun prop(name: String): Prop? {
-        parent ?: throw IllegalStateException("Class prop parent context is not defined")
-        if (parent.frame.vars.containsKey(name)) {
-            return ClassElementProp(name)
-        }
-        return null
+        return ClassElementProp(name)
     }
 
     override fun log() = toString()
@@ -65,6 +61,8 @@ data class ClassType(val name: String, val num: Int, val parent: Context?) : Typ
 data class ClassElementProp(val name: String): Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as? ClassType ?: throw IllegalArgumentException("Class operation on non-class type $type")
+        val type = ctx.get(type.name).type as? ClassType
+            ?: throw IllegalArgumentException("Class $type is not defined in this scope")
         type.parent ?: throw IllegalStateException("Class prop parent context is not defined")
         val v = type.parent.frame.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
         val propCtx = ctx.discrete(parent = type.parent)
