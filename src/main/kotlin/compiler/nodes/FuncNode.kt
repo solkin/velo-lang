@@ -37,7 +37,7 @@ data class FuncNode(
             def.type
         }.reversed()
         val retType = body.compile(funcOps)
-        if (retType != type) {
+        if (!retType.sameAs(type)) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
         funcOps.add(Ret())
