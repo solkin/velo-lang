@@ -19,6 +19,8 @@ println(t.a);
 t.setA("1000");
 println(t.a);
 
+#---
+
 class Random(int seed) {
     int a = 252149039;    # These Values for a and c are the actual values found
     int c = 11;           # in the implementation of java.util.Random(), see link
@@ -36,6 +38,8 @@ class Random(int seed) {
     }
 };
 
+#---
+
 class[Random] random = Random(12345);
 int i = 5;
 while (i > 0) {
@@ -43,6 +47,8 @@ while (i > 0) {
     println(r);
     i = i - 1;
 };
+
+#---
 
 class Pair(auto key, auto value) {};
 
@@ -54,3 +60,62 @@ func printPair(class[Pair] p) void {
 };
 
 printPair(p);
+
+#---
+
+class A(int z) {};
+
+class[A] a = A(42);
+
+class B(class[A] d) {
+    int f = 9;
+    func i(class[A] c) void {
+        println(c.z);
+        println(a.z);
+    };
+    func s(class[B] b) void {
+        println(b.f);
+        println(d.z+8);
+    };
+};
+
+class[B] b = B(a);
+b.i(a);
+b.s(b);
+
+#---
+
+class LinkedList() {
+
+    class Item(class[Item] prev, auto value) {};
+
+    class[Item] start;
+    class[Item] end;
+    int length = 0;
+
+    func add(auto value) void {
+        end = Item(end, value);
+        if (length == 0) {
+            start = end;
+        };
+        length = length + 1;
+    };
+
+    func get(int index) auto {
+        int i = length - 1;
+        auto item = end;
+        while (i > index) {
+            item = item.prev;
+            i = i - 1;
+        };
+        item.value;
+    };
+
+};
+
+class[LinkedList] ll = LinkedList();
+ll.add("10");
+ll.add("20");
+ll.add("30");
+
+println(ll.get(3));

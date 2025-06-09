@@ -14,8 +14,8 @@ data class ClassNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        // Create class body frame with discrete context
-        val classOps = ctx.discrete()
+        // Create class body frame with extended context
+        val classOps = ctx.extend()
 
         val args = ArrayList<Type>()
         val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, args)
