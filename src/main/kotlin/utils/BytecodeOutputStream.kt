@@ -36,7 +36,6 @@ import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
 import vm.operations.IfElse
-import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -60,7 +59,6 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.StructElement
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
@@ -131,7 +129,6 @@ class BytecodeOutputStream(
             is Less -> out.writeByte(0x16)
             is LessEquals -> out.writeByte(0x17)
             is Frame -> out.writeByte(0x18).also { out.writeInt(op.num) }
-            is MakeStruct -> out.writeByte(0x19)
             is Minus -> out.writeByte(0x1a)
             is More -> out.writeByte(0x1b)
             is MoreEquals -> out.writeByte(0x1c)
@@ -155,7 +152,6 @@ class BytecodeOutputStream(
             is StrCon -> out.writeByte(0x2e)
             is StrIndex -> out.writeByte(0x2f)
             is StrLen -> out.writeByte(0x30)
-            is StructElement -> out.writeByte(0x31)
             is SubArr -> out.writeByte(0x32)
             is SubStr -> out.writeByte(0x33)
             is Swap -> out.writeByte(0x34)
@@ -210,8 +206,8 @@ class BytecodeOutputStream(
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x02
-const val VERSION_MINOR = 0x01
+const val VERSION_MAJOR = 0x03
+const val VERSION_MINOR = 0x00
 
 const val BC_TYPE_BYTE = 0x01
 const val BC_TYPE_INT = 0x02

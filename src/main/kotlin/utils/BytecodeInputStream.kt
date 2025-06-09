@@ -36,7 +36,6 @@ import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
 import vm.operations.IfElse
-import vm.operations.MakeStruct
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -60,7 +59,6 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.StructElement
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
@@ -147,7 +145,6 @@ class BytecodeInputStream(
             0x16 -> Less()
             0x17 -> LessEquals()
             0x18 -> Frame(num = inp.readInt())
-            0x19 -> MakeStruct()
             0x1a -> Minus()
             0x1b -> More()
             0x1c -> MoreEquals()
@@ -171,7 +168,6 @@ class BytecodeInputStream(
             0x2e -> StrCon()
             0x2f -> StrIndex()
             0x30 -> StrLen()
-            0x31 -> StructElement()
             0x32 -> SubArr()
             0x33 -> SubStr()
             0x34 -> Swap()

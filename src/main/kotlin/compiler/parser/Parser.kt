@@ -17,7 +17,6 @@ import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.PropNode
 import compiler.nodes.StringNode
-import compiler.nodes.StructNode
 import compiler.nodes.VarNode
 import compiler.nodes.PairNode
 import compiler.nodes.BoolType
@@ -33,7 +32,6 @@ import compiler.nodes.DictNode
 import compiler.nodes.DictType
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringType
-import compiler.nodes.StructType
 import compiler.nodes.Type
 import compiler.nodes.VoidType
 import compiler.nodes.VoidNode
@@ -108,15 +106,14 @@ class Parser(private val stream: TokenStream) {
                 DictType(PairType(types.first(), types.last()))
             }
 
-            STRUCT -> StructType(emptyMap())
             CLASS -> {
                 (
                         delimited(start = '[', stop = ']', separator = ',', parser = ::parseExpression)
                             .takeIf { it.size == 1 }
                             ?.first() as? VarNode
-                )?.let { typeName ->
-                    ClassType(name = typeName.name)
-                } ?: throw IllegalArgumentException("Invalid class type specification")
+                        )?.let { typeName ->
+                        ClassType(name = typeName.name)
+                    } ?: throw IllegalArgumentException("Invalid class type specification")
             }
 
             FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
@@ -281,32 +278,6 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseTypeDef(): Node {
-        skipKw("type")
-        val name = stream.peek()?.takeIf { tok ->
-            tok.type == TokenType.VARIABLE
-        }?.let { stream.next()?.value as? String } ?: run {
-            stream.croak("Type must have a name")
-            throw Exception()
-        }
-        return when {
-            isKw("struct") != null -> {
-                skipKw("struct")
-                val elements = delimited('(', ')', ',', ::parseDef)
-                StructNode(
-                    name = name,
-                    defs = elements
-                )
-            }
-
-            else -> {
-                val type = stream.next()
-                stream.croak("Unknown type definition ${type?.value}")
-                throw Exception()
-            }
-        }
-    }
-
     private fun parseClass(): Node {
         val className = parseVarname()
         return ClassNode(
@@ -440,7 +411,6 @@ class Parser(private val stream: TokenStream) {
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
-        if (isKw("type") != null) return parseTypeDef()
         if (isDef() != null) return maybeDef()
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()

@@ -11,8 +11,6 @@ class TokenStream(private val input: Input) {
         "arrayOf",
         "dictOf",
         "pairOf",
-        "type",
-        "struct",
         "class",
         "func",
         "let",
@@ -171,7 +169,6 @@ const val BOOL = "bool"
 const val PAIR = "pair"
 const val ARRAY = "array"
 const val DICT = "dict"
-const val STRUCT = "struct"
 const val CLASS = "class"
 const val FUNC = "func"
 const val VOID = "void"
@@ -186,7 +183,6 @@ val stdTypesSet = setOf(
     PAIR,
     ARRAY,
     DICT,
-    STRUCT,
     CLASS,
     FUNC,
     VOID,
