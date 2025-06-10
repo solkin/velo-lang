@@ -36,6 +36,7 @@ import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
 import vm.operations.IfElse
+import vm.operations.Instance
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -184,6 +185,7 @@ class BytecodeInputStream(
             0x3f -> DictVals()
             0x40 -> StrInt()
             0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
+            0x42 -> Instance()
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }

@@ -36,6 +36,7 @@ import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Frame
 import vm.operations.IfElse
+import vm.operations.Instance
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -170,6 +171,7 @@ class BytecodeOutputStream(
                 out.writeInt(op.thenNum)
                 out.writeInt(op.elseNum)
             }
+            is Instance -> out.writeByte(0x42)
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
