@@ -6,6 +6,8 @@ interface Record {
 
     fun getBool(): Boolean = get()
 
+    fun getNumber(): Number = get()
+
     fun getByte(): Byte = get()
 
     fun getInt(): Int = get()

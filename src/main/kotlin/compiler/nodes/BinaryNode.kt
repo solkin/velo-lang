@@ -23,7 +23,7 @@ data class BinaryNode(
     override fun compile(ctx: Context): Type {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
-        if (leftType != rightType) {
+        if (!leftType.sameAs(rightType)) {
             throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")
         }
         return when (operator) {

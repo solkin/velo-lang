@@ -14,9 +14,9 @@ data class IntNode(
     }
 }
 
-object IntType : Type {
+object IntType : Numeric {
     override fun sameAs(type: Type): Boolean {
-        return type is IntType
+        return type is Numeric
     }
 
     override fun default(ctx: Context) {

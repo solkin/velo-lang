@@ -14,6 +14,8 @@ interface Callable : Type {
     val args: List<Type>?
 }
 
+interface Numeric : Type
+
 object ByteType : Type {
     override fun sameAs(type: Type): Boolean {
         return type is ByteType

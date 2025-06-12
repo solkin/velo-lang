@@ -12,9 +12,9 @@ data class FloatNode(
     }
 }
 
-object FloatType : Type {
+object FloatType : Numeric {
     override fun sameAs(type: Type): Boolean {
-        return type is FloatType
+        return type is Numeric
     }
 
     override fun default(ctx: Context) {
