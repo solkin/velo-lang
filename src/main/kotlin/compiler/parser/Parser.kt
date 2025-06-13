@@ -26,6 +26,7 @@ import compiler.nodes.FuncType
 import compiler.nodes.IntType
 import compiler.nodes.PairType
 import compiler.nodes.ArrayType
+import compiler.nodes.ByteNode
 import compiler.nodes.ClassNode
 import compiler.nodes.ClassType
 import compiler.nodes.DictNode
@@ -427,8 +428,9 @@ class Parser(private val stream: TokenStream) {
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)
             TokenType.NUMBER -> when (tok.value) {
-                is Double -> FloatNode(tok.value)
+                is Byte -> ByteNode(tok.value)
                 is Int -> IntNode(tok.value)
+                is Double -> FloatNode(tok.value)
                 else -> {
                     stream.croak("Unexpected number format: " + tok.value::class.java)
                     throw IllegalArgumentException()

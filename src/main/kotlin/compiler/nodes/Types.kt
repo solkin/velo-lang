@@ -16,20 +16,6 @@ interface Callable : Type {
 
 interface Numeric : Type
 
-object ByteType : Type {
-    override fun sameAs(type: Type): Boolean {
-        return type is ByteType
-    }
-
-    override fun default(ctx: Context) {
-        ctx.add(Push(value = 0))
-    }
-
-    override fun prop(name: String): Prop? = null
-
-    override fun log() = toString()
-}
-
 object AutoType : Type {
     override fun sameAs(type: Type) = true
 
