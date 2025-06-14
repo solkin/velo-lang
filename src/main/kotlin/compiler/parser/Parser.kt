@@ -124,7 +124,7 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
-    private fun maybeDef(): Node {
+    private fun maybeDef(native: Boolean): Node {
         val tok = isDef()
         if (tok != null) {
             stream.next()
@@ -134,8 +134,8 @@ class Parser(private val stream: TokenStream) {
         }
         val nextTokType = stream.peek()?.type
         return when {
-            tok.value == CLASS && nextTokType == TokenType.VARIABLE -> parseClass()
-            tok.value == FUNC && (nextTokType == TokenType.VARIABLE || isPunc('(') != null) -> parseFunc() // Start of named or anonymous function definition
+            tok.value == CLASS && nextTokType == TokenType.VARIABLE -> parseClass(native)
+            tok.value == FUNC && (nextTokType == TokenType.VARIABLE || isPunc('(') != null) -> parseFunc(native) // Start of named or anonymous function definition
             else -> parseDefBody(type = parseType(tok))
         }
     }
@@ -148,7 +148,7 @@ class Parser(private val stream: TokenStream) {
     private fun parseDefBody(type: Type): DefNode {
         val name = parseVarname()
         val def: Node? = if (isOp("=") != null) {
-            stream.next()
+            skipOp("=")
             parseExpression()
         } else null
         return DefNode(name = name, type = type, def = def)
@@ -170,6 +170,7 @@ class Parser(private val stream: TokenStream) {
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun skipOp(op: String?) {
         if (isOp(op) != null) stream.next() else stream.croak("Expecting operator: \"$op\"")
     }
@@ -279,23 +280,30 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parseClass(): Node {
+    private fun parseNative(): Node {
+        skipKw("native")
+        return maybeDef(native = true)
+    }
+
+    private fun parseClass(native: Boolean): Node {
         val className = parseVarname()
         return ClassNode(
             name = className,
+            native = native,
             defs = delimited('(', ')', ',', ::parseDef),
             body = parseProg(),
         )
     }
 
-    private fun parseFunc(): Node {
+    private fun parseFunc(native: Boolean): Node {
         return FuncNode(
             name = stream.peek()?.takeIf { tok ->
                 tok.type == TokenType.VARIABLE
             }?.let { stream.next()?.value as? String },
+            native = native,
             defs = delimited('(', ')', ',', ::parseDef),
             type = parseDefType(),
-            body = parseProg(),
+            body = if (native) VoidNode else parseProg(),
         )
     }
 
@@ -308,6 +316,7 @@ class Parser(private val stream: TokenStream) {
             return CallNode(
                 func = FuncNode(
                     name = name,
+                    native = false,
                     defs = defs,
                     type = type,
                     body = parseExpression(),
@@ -412,7 +421,7 @@ class Parser(private val stream: TokenStream) {
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
-        if (isDef() != null) return maybeDef()
+        if (isDef() != null) return maybeDef(native = false)
         if (isKw("let") != null) return parseLet()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
@@ -420,10 +429,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("dictOf") != null) return parseDictOf()
         if (isKw("pairOf") != null) return parsePair()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
-        if (isKw("func") != null) {
-            stream.next()
-            return parseFunc()
-        }
+        if (isKw("native") != null) return parseNative()
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)
@@ -478,6 +484,7 @@ class Parser(private val stream: TokenStream) {
         return a
     }
 
+    @Suppress("SameParameterValue")
     private fun <T> delimited(separator: Char, parser: () -> T): List<T> {
         val a = ArrayList<T>()
         var first = true

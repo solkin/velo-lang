@@ -13,6 +13,7 @@ class TokenStream(private val input: Input) {
         "pairOf",
         "class",
         "func",
+        "native",
         "let",
         "true",
         "false"

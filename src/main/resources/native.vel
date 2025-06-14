@@ -1,0 +1,9 @@
+native class System() {
+
+    native func print(str text) void;
+
+    func println(str text) void {
+        print(text.con("\n"));
+    };
+
+};

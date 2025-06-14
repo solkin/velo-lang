@@ -7,6 +7,7 @@ import vm.operations.Ret
 
 data class FuncNode(
     val name: String?,
+    val native: Boolean,
     val defs: List<DefNode>,
     val type: Type,
     val body: Node,

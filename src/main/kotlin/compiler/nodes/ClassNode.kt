@@ -10,6 +10,7 @@ import vm.operations.Set
 
 data class ClassNode(
     val name: String,
+    val native: Boolean,
     val defs: List<DefNode>,
     val body: Node,
 ) : Node() {
