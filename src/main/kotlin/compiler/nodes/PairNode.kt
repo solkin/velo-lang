@@ -37,6 +37,8 @@ data class PairType(val first: Type, val second: Type) : Type {
     }
 
     override fun log() = toString()
+
+    override fun vmType() = vm.PAIR
 }
 
 object FirstProp: Prop {

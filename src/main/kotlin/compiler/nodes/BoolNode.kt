@@ -24,4 +24,6 @@ object BoolType : Type {
     override fun prop(name: String): Prop? = null
 
     override fun log() = toString()
+
+    override fun vmType() = vm.BOOL
 }

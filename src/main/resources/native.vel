@@ -1,4 +1,4 @@
-native class System() {
+native class Sys(int pid) {
 
     native func print(str text) void;
 
@@ -7,3 +7,5 @@ native class System() {
     };
 
 };
+
+class[Sys] sys = Sys(4);

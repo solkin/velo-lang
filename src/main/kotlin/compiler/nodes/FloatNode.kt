@@ -4,7 +4,7 @@ import compiler.Context
 import vm.operations.Push
 
 data class FloatNode(
-    val value: Double,
+    val value: Float,
 ) : Node() {
     override fun compile(ctx: Context): Type {
         ctx.add(Push(value))
@@ -24,4 +24,6 @@ object FloatType : Numeric {
     override fun prop(name: String): Prop? = null
 
     override fun log() = toString()
+
+    override fun vmType() = vm.FLOAT
 }

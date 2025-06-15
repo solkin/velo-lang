@@ -58,6 +58,8 @@ data class ArrayType(val derived: Type) : Type {
     }
 
     override fun log() = toString()
+
+    override fun vmType() = vm.ARRAY
 }
 
 object ArrayLenProp : Prop {

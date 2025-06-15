@@ -1,13 +1,13 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Push
 
 interface Type {
     fun sameAs(type: Type): Boolean
     fun default(ctx: Context)
     fun prop(name: String): Prop?
     fun log(): String
+    fun vmType(): Byte
 }
 
 interface Callable : Type {
@@ -26,4 +26,6 @@ object AutoType : Type {
     override fun prop(name: String): Prop? = null
 
     override fun log() = toString()
+
+    override fun vmType() = vm.AUTO
 }

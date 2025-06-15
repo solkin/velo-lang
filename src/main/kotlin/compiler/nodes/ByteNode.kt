@@ -32,6 +32,8 @@ object ByteType : Numeric {
     }
 
     override fun log() = toString()
+
+    override fun vmType() = vm.BYTE
 }
 
 object ByteStrProp : Prop {

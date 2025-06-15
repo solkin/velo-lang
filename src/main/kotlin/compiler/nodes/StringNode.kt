@@ -36,6 +36,8 @@ object StringType : Type {
     }
 
     override fun log() = toString()
+
+    override fun vmType() = vm.STR
 }
 
 object SubStrProp : Prop {

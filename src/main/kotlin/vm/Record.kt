@@ -4,6 +4,10 @@ interface Record {
 
     fun <T> get(): T
 
+    fun <T> cast(targetClass: Class<T>): T {
+        return targetClass.cast(get())
+    }
+
     fun getBool(): Boolean = get()
 
     fun getNumber(): Number = get()

@@ -62,4 +62,6 @@ data class FuncType(val derived: Type, override val args: List<Type>? = null) : 
     override fun prop(name: String): Prop? = null
 
     override fun log() = toString()
+
+    override fun vmType() = vm.FUNC
 }

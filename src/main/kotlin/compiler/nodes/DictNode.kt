@@ -60,6 +60,8 @@ data class DictType(val derived: PairType) : Type {
     }
 
     override fun log() = toString()
+
+    override fun vmType() = vm.DICT
 }
 
 object DictLenProp : Prop {
