@@ -5,28 +5,29 @@ import vm.FrameLoader
 import vm.Operation
 import vm.Stack
 import vm.records.LinkRecord
-import vm.toJvmType
 import vm.toType
+import java.lang.reflect.Method
 import kotlin.Pair
 import kotlin.collections.List
 import kotlin.collections.map
 import kotlin.collections.toTypedArray
 
-class NativeConstructor(val name: String, val args: List<Pair<Int, Byte>>) : Operation {
+class NativeInvoke(val args: List<Pair<Int, Byte>>) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.peek()
-        val clazz = Class.forName(name)
 
-        val argTypes = args.map { Pair(it.first, it.second.toJvmType()) }
-        val constructor = clazz.getConstructor(*argTypes.map { it.second }.toTypedArray())
+        val instance = frame.subs.pop().get<Any>()
+        val method = frame.subs.pop().get<Method>()
 
-        val instance = constructor.newInstance(*args.map { arg ->
+        val nativeResult = method.invoke(instance, *args.map { arg ->
             frame.vars.get(arg.first).toType(vmType = arg.second)
         }.toTypedArray())
 
-        val result = LinkRecord.create(instance)
-        frame.subs.push(result)
+        nativeResult?.let {
+            val result = LinkRecord.create(nativeResult)
+            frame.subs.push(result)
+        }
 
         return pc + 1
     }

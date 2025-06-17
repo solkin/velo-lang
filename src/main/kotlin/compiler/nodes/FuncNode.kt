@@ -1,9 +1,12 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Set
 import vm.operations.Frame
+import vm.operations.Get
+import vm.operations.NativeFunction
+import vm.operations.NativeInvoke
 import vm.operations.Ret
+import vm.operations.Set
 
 data class FuncNode(
     val name: String?,
@@ -13,12 +16,25 @@ data class FuncNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val args = ArrayList<Type>()
-        var resultType: Type = FuncType(derived = type, args)
+        val argTypes = ArrayList<Type>()
+        var resultType: Type = FuncType(derived = type, argTypes)
 
         // Define var before body frame creation (because var counter will be forked) if name is defined
         val named = !name.isNullOrEmpty()
         val nameVar = if (named) ctx.def(name.orEmpty(), resultType) else null
+
+        if (native) {
+            name ?: throw IllegalArgumentException("Native function must have a name")
+            // Get native instance variable
+            val iv = ctx.get(name = NATIVE_INSTANCE)
+            // Put native instance to the stack
+            ctx.add(Get(index = iv.index))
+            // Add operation to find native method and put it on the stack
+            ctx.add(NativeFunction(name, argTypes = defs.map { it.type.vmType() }))
+            val fv = ctx.def(name = NATIVE_FUNCTION_PREFIX + name, type = type)
+            // Save native method instance to the class frame vars
+            ctx.add(Set(index = fv.index))
+        }
 
         // Create body frame and fork var counter
         val funcOps = ctx.extend()
@@ -32,12 +48,32 @@ data class FuncNode(
         }
 
         // Compile body
-        args += defs.reversed().map { def ->
+        val args = defs.reversed().map { def ->
             val v = funcOps.def(def.name, def.type)
             funcOps.add(Set(v.index))
-            def.type
+            v
         }.reversed()
-        val retType = body.compile(funcOps)
+        argTypes += args.map { it.type }
+        val retType = if (native) {
+            name ?: throw IllegalArgumentException("Native function must have a name")
+
+            // Get native method variable
+            val fv = ctx.get(name = NATIVE_FUNCTION_PREFIX + name)
+            // Put native method to the stack
+            funcOps.add(Get(index = fv.index))
+
+            // Get native instance variable
+            val iv = ctx.get(name = NATIVE_INSTANCE)
+            // Put native instance to the stack
+            funcOps.add(Get(index = iv.index))
+
+            // Invoke native method from the stack with specific arguments
+            funcOps.add(NativeInvoke(args = args.map { Pair(it.index, it.type.vmType()) }))
+            // Native method must return declared function type
+            type
+        } else {
+            body.compile(funcOps)
+        }
         if (!retType.sameAs(type)) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
@@ -65,3 +101,5 @@ data class FuncType(val derived: Type, override val args: List<Type>? = null) : 
 
     override fun vmType() = vm.FUNC
 }
+
+const val NATIVE_FUNCTION_PREFIX = "native@function_"

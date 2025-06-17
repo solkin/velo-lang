@@ -1,11 +1,15 @@
 native class Sys(int pid) {
 
-    native func print(str text) void;
+    native func print(str text) str;
 
-    func println(str text) void {
+    native func input() str;
+
+    func println(str text) str {
         print(text.con("\n"));
     };
 
 };
 
 class[Sys] sys = Sys(4);
+sys.println("Hello, World!");
+sys.print(sys.input());

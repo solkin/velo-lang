@@ -10,7 +10,6 @@ import vm.operations.ArrOf
 import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Set
 import vm.operations.DictArr
 import vm.operations.DictDel
 import vm.operations.DictIndex
@@ -25,18 +24,17 @@ import vm.operations.Divide
 import vm.operations.Drop
 import vm.operations.Dup
 import vm.operations.Equals
+import vm.operations.Frame
 import vm.operations.Get
 import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
-import vm.operations.Input
+import vm.operations.IfElse
+import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
-import vm.operations.Frame
-import vm.operations.IfElse
-import vm.operations.Instance
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -50,12 +48,11 @@ import vm.operations.PairFirst
 import vm.operations.PairSecond
 import vm.operations.Pick
 import vm.operations.Plus
-import vm.operations.Print
-import vm.operations.Println
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
+import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -140,7 +137,6 @@ class BytecodeInputStream(
             0x10 -> Goto(addr = inp.readInt())
             0x11 -> Halt()
             0x12 -> If(elseSkip = inp.readInt())
-            0x13 -> Input()
             0x14 -> IntChar()
             0x15 -> IntStr()
             0x16 -> Less()
@@ -159,8 +155,6 @@ class BytecodeInputStream(
             0x24 -> PairSecond()
             0x25 -> Pick()
             0x26 -> Plus()
-            0x27 -> Print()
-            0x28 -> Println()
             0x29 -> Push(value = readAny())
             0x2a -> Rem()
             0x2b -> Ret()
@@ -186,6 +180,9 @@ class BytecodeInputStream(
             0x40 -> StrInt()
             0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
             0x42 -> Instance()
+//            0x43 -> NativeConstructor()
+//            0x44 -> NativeFunction()
+//            0x45 -> NativeInvoke()
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }

@@ -38,6 +38,8 @@ data class ClassNode(
         argTypes += args.map { it.type }
         if (native) {
             classOps.add(NativeConstructor(name, args = args.map { Pair(it.index, it.type.vmType()) }))
+            val iv = classOps.def(name = NATIVE_INSTANCE, type = classType)
+            classOps.add(Set(index = iv.index))
         }
         body.compile(ctx = classOps)
         classOps.add(Instance())
@@ -94,3 +96,5 @@ data class ClassElementProp(val name: String) : Prop {
         return resultType
     }
 }
+
+const val NATIVE_INSTANCE = "native@instance"

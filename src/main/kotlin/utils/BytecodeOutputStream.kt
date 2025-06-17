@@ -10,7 +10,6 @@ import vm.operations.ArrOf
 import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Set
 import vm.operations.DictArr
 import vm.operations.DictDel
 import vm.operations.DictIndex
@@ -25,18 +24,17 @@ import vm.operations.Divide
 import vm.operations.Drop
 import vm.operations.Dup
 import vm.operations.Equals
+import vm.operations.Frame
 import vm.operations.Get
 import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
-import vm.operations.Input
+import vm.operations.IfElse
+import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
-import vm.operations.Frame
-import vm.operations.IfElse
-import vm.operations.Instance
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -50,12 +48,11 @@ import vm.operations.PairFirst
 import vm.operations.PairSecond
 import vm.operations.Pick
 import vm.operations.Plus
-import vm.operations.Print
-import vm.operations.Println
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
+import vm.operations.Set
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -124,7 +121,6 @@ class BytecodeOutputStream(
             is Goto -> out.writeByte(0x10).also { out.writeInt(op.addr) }
             is Halt -> out.writeByte(0x11)
             is If -> out.writeByte(0x12).also { out.writeInt(op.elseSkip) }
-            is Input -> out.writeByte(0x13)
             is IntChar -> out.writeByte(0x14)
             is IntStr -> out.writeByte(0x15)
             is Less -> out.writeByte(0x16)
@@ -143,8 +139,6 @@ class BytecodeOutputStream(
             is PairSecond -> out.writeByte(0x24)
             is Pick -> out.writeByte(0x25)
             is Plus -> out.writeByte(0x26)
-            is Print -> out.writeByte(0x27)
-            is Println -> out.writeByte(0x28)
             is Push -> out.writeByte(0x29).also { write(op.value) }
             is Rem -> out.writeByte(0x2a)
             is Ret -> out.writeByte(0x2b)
@@ -172,6 +166,9 @@ class BytecodeOutputStream(
                 out.writeInt(op.elseNum)
             }
             is Instance -> out.writeByte(0x42)
+//            is NativeConstructor -> out.writeByte(0x43)
+//            is NativeFunction -> out.writeByte(0x44)
+//            is NativeInvoke -> out.writeByte(0x45)
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -208,7 +205,7 @@ class BytecodeOutputStream(
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x03
+const val VERSION_MAJOR = 0x04
 const val VERSION_MINOR = 0x00
 
 const val BC_TYPE_BYTE = 0x01
