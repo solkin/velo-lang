@@ -87,7 +87,11 @@ class TokenStream(private val input: Input) {
         while (!input.eof()) {
             val ch = input.next()
             if (escaped) {
-                str += ch
+                str += when(ch) {
+                    'n' -> '\n'
+                    't' -> '\r'
+                    else -> ch
+                }
                 escaped = false
             } else if (ch == '\\') {
                 escaped = true
