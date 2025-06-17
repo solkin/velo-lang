@@ -8,20 +8,20 @@ interface Heap {
     fun <T> get(link: LinkRecord): T
 }
 
-object GlobalHeap : Heap {
+object HeapArea : Heap {
 
     private val enumerator = AtomicInteger()
-    private val heap = HashMap<Int, Any>()
+    private val area = HashMap<Int, Any>()
 
     override fun put(value: Any) : LinkRecord {
         val id = enumerator.getAndIncrement()
-        heap[id] = value
+        area[id] = value
         return LinkRecord(id)
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(link: LinkRecord): T {
-        return heap[link.id] as T ?: throw Exception("Broken heap link: $link")
+        return area[link.id] as T ?: throw Exception("Broken heap area link: $link")
     }
 
 }

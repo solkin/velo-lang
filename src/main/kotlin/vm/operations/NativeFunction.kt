@@ -4,7 +4,7 @@ import vm.Frame
 import vm.FrameLoader
 import vm.Operation
 import vm.Stack
-import vm.records.LinkRecord
+import vm.records.NativeRecord
 import vm.toJvmType
 import kotlin.collections.List
 import kotlin.collections.map
@@ -22,7 +22,7 @@ class NativeFunction(val name: String, val argTypes: List<Byte>) : Operation {
         try {
             val method = clazz.getMethod(name, *argTypes.map { it.toJvmType() }.toTypedArray())
 
-            val result = LinkRecord.create(method)
+            val result = NativeRecord.create(method)
             frame.subs.push(result)
         } catch (ex: NoSuchMethodException) {
             throw Exception("Unable to find native method $name: ${ex.message}")

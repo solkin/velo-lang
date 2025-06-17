@@ -4,7 +4,7 @@ import vm.Frame
 import vm.FrameLoader
 import vm.Operation
 import vm.Stack
-import vm.records.LinkRecord
+import vm.records.NativeRecord
 import vm.toJvmType
 import vm.toType
 import kotlin.Pair
@@ -26,7 +26,7 @@ class NativeConstructor(val name: String, val args: List<Pair<Int, Byte>>) : Ope
                 frame.vars.get(arg.first).toType(vmType = arg.second)
             }.toTypedArray())
 
-            val result = LinkRecord.create(instance)
+            val result = NativeRecord.create(instance)
             frame.subs.push(result)
         } catch (ex: NoSuchMethodException) {
             throw Exception("Unable to create native class $name instance: ${ex.message}")
