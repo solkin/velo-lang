@@ -19,10 +19,14 @@ class NativeFunction(val name: String, val argTypes: List<Byte>) : Operation {
 
         val clazz: Class<*> = instance::class.java
 
-        val method = clazz.getMethod(name, *argTypes.map { it.toJvmType() }.toTypedArray())
+        try {
+            val method = clazz.getMethod(name, *argTypes.map { it.toJvmType() }.toTypedArray())
 
-        val result = LinkRecord.create(method)
-        frame.subs.push(result)
+            val result = LinkRecord.create(method)
+            frame.subs.push(result)
+        } catch (ex: NoSuchMethodException) {
+            throw Exception("Unable to find native method $name: ${ex.message}")
+        }
 
         return pc + 1
     }

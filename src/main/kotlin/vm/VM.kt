@@ -21,9 +21,10 @@ class VM {
         var elapsed = 0L
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
         var frame = frameLoader.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
+        val diagSeq = false
+        val diagStat = false
+        val diagInfo = false
         try {
-            val diagSeq = false
-            val diagStat = false
             val diagOutput = StringBuilder()
             if (diagSeq) {
                 diagOutput.append("-- Sequence\n")
@@ -70,9 +71,11 @@ class VM {
             println("\nProgram halted")
         } catch (ex: Throwable) {
             val op = frame.ops[frame.pc]
-            println("\n!! Exception was thrown on ${frame.pc}: ${op.javaClass.name}: ${ex.message}")
+            println("\n!! Fatal error on ${frame.pc}: ${op.javaClass.name}: ${ex.message}")
             stack.printStackTrace()
-            ex.printStackTrace()
+            if (diagInfo) {
+                ex.printStackTrace()
+            }
         }
         println("VM stopped in $elapsed ms")
     }

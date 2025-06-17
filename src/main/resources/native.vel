@@ -1,4 +1,4 @@
-native class Sys(int pid) {
+native class Terminal() {
 
     native func print(str text) str;
 
@@ -10,6 +10,6 @@ native class Sys(int pid) {
 
 };
 
-class[Sys] sys = Sys(4);
-sys.println("Hello, World!");
-sys.print(sys.input());
+class[Terminal] term = Terminal();
+term.println("Hello, World!");
+term.print(term.input());

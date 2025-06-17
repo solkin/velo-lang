@@ -20,13 +20,17 @@ class NativeInvoke(val args: List<Pair<Int, Byte>>) : Operation {
         val instance = frame.subs.pop().get<Any>()
         val method = frame.subs.pop().get<Method>()
 
-        val nativeResult = method.invoke(instance, *args.map { arg ->
-            frame.vars.get(arg.first).toType(vmType = arg.second)
-        }.toTypedArray())
+        try {
+            val nativeResult = method.invoke(instance, *args.map { arg ->
+                frame.vars.get(arg.first).toType(vmType = arg.second)
+            }.toTypedArray())
 
-        nativeResult?.let {
-            val result = LinkRecord.create(nativeResult)
-            frame.subs.push(result)
+            nativeResult?.let {
+                val result = LinkRecord.create(nativeResult)
+                frame.subs.push(result)
+            }
+        } catch (ex: NoSuchMethodException) {
+            throw Exception("Unable to invoke native method ${method.name}: ${ex.message}")
         }
 
         return pc + 1
