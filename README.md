@@ -134,6 +134,24 @@ while (i > 0) {
     i = i - 1;
 };
 ```
+**Native classes.** Velo lang supports native classes binding via reflection: class constructor and methods signature must be the same in native and velo classes 
+```
+native class Terminal() {
+
+    native func print(str text) str;
+
+    native func input() str;
+
+    func println(str text) str {
+        print(text.con("\n"));
+    };
+
+};
+
+class[Terminal] term = Terminal();
+term.println("Hello, World!");
+term.print(term.input());
+```
 
 ### Run program
 
