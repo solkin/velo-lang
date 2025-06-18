@@ -1,3 +1,13 @@
+native class Terminal() {
+    native func print(str text) str;
+    native func input() str;
+    func println(str text) str {
+        print(text.con("\n"));
+    };
+};
+
+auto term = Terminal();
+
 class LZW() {
     func compress(str text) array[int] {
         dict[str:int] dictionary = dictOf[str:int]();
@@ -50,7 +60,7 @@ class LZW() {
                 } else if (k == dictSize) {
                     entry = w + w[0].char;
                 } else {
-                    println("Bad compressed k: ".con(k));
+                    term.println("Bad compressed k: ".con(k));
                 };
 
                 result = result.con(entry);
@@ -69,10 +79,10 @@ class LZW() {
 };
 
 auto lzw = LZW();
-str text = input();
+str text = term.input();
 if (text.len == 0) {
     text = "TOBEORNOTTOBEORTOBEORNOT";
-    println(text);
+    term.println(text);
 };
 auto result = lzw.compress(text);
 int i = 0;
@@ -83,7 +93,7 @@ while(i < result.len) {
     chars = chars.con(result[i].char);
     i = i + 1;
 };
-println(chars.con(" / ").con(bytes));
+term.println(chars.con(" / ").con(bytes));
 
 text = lzw.decompress(result);
-println(text);
+term.println(text);
