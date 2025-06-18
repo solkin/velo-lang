@@ -40,6 +40,9 @@ import vm.operations.More
 import vm.operations.MoreEquals
 import vm.operations.Move
 import vm.operations.Multiply
+import vm.operations.NativeConstructor
+import vm.operations.NativeFunction
+import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
@@ -112,7 +115,10 @@ class BytecodeOutputStream(
             is ArrOf -> out.writeByte(0x06)
             is ArrPlus -> out.writeByte(0x07)
             is ArrSet -> out.writeByte(0x08)
-            is Call -> out.writeByte(0x09).also { out.writeInt(op.args) }
+            is Call -> out.writeByte(0x09).also {
+                out.writeInt(op.args)
+                out.writeBoolean(op.classParent)
+            }
             is Divide -> out.writeByte(0x0b)
             is Drop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
@@ -165,10 +171,33 @@ class BytecodeOutputStream(
                 out.writeInt(op.thenNum)
                 out.writeInt(op.elseNum)
             }
+
             is Instance -> out.writeByte(0x42)
-//            is NativeConstructor -> out.writeByte(0x43)
-//            is NativeFunction -> out.writeByte(0x44)
-//            is NativeInvoke -> out.writeByte(0x45)
+            is NativeConstructor -> out.writeByte(0x43).also {
+                out.writeUTF(op.name)
+                out.writeByte(op.args.size)
+                op.args.forEach { arg ->
+                    out.writeInt(arg.first)
+                    out.writeByte(arg.second.toInt())
+                }
+            }
+
+            is NativeFunction -> out.writeByte(0x44).also {
+                out.writeUTF(op.name)
+                out.writeByte(op.argTypes.size)
+                op.argTypes.forEach { arg ->
+                    out.writeByte(arg.toInt())
+                }
+            }
+
+            is NativeInvoke -> out.writeByte(0x45).also {
+                out.writeByte(op.args.size)
+                op.args.forEach { arg ->
+                    out.writeInt(arg.first)
+                    out.writeByte(arg.second.toInt())
+                }
+            }
+
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -178,23 +207,27 @@ class BytecodeOutputStream(
     }
 
     private fun write(value: Any) {
-        when(value) {
+        when (value) {
             is Byte -> {
                 out.writeByte(BC_TYPE_BYTE)
                 out.writeByte(value.toInt())
             }
+
             is Int -> {
                 out.writeByte(BC_TYPE_INT)
                 out.writeInt(value)
             }
+
             is Float -> {
                 out.writeByte(BC_TYPE_FLOAT)
                 out.writeFloat(value)
             }
+
             is String -> {
                 out.writeByte(BC_TYPE_STRING)
                 out.writeUTF(value)
             }
+
             is Boolean -> {
                 out.writeByte(BC_TYPE_BOOLEAN)
                 out.writeBoolean(value)
@@ -205,7 +238,7 @@ class BytecodeOutputStream(
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x04
+const val VERSION_MAJOR = 0x05
 const val VERSION_MINOR = 0x00
 
 const val BC_TYPE_BYTE = 0x01

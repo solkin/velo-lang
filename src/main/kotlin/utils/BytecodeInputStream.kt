@@ -40,6 +40,9 @@ import vm.operations.More
 import vm.operations.MoreEquals
 import vm.operations.Move
 import vm.operations.Multiply
+import vm.operations.NativeConstructor
+import vm.operations.NativeFunction
+import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
@@ -128,7 +131,7 @@ class BytecodeInputStream(
             0x06 -> ArrOf()
             0x07 -> ArrPlus()
             0x08 -> ArrSet()
-            0x09 -> Call(args = inp.readInt())
+            0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Divide()
             0x0c -> Drop()
             0x0d -> Dup()
@@ -180,9 +183,20 @@ class BytecodeInputStream(
             0x40 -> StrInt()
             0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
             0x42 -> Instance()
-//            0x43 -> NativeConstructor()
-//            0x44 -> NativeFunction()
-//            0x45 -> NativeInvoke()
+            0x43 -> NativeConstructor(
+                name = inp.readUTF(),
+                args = readArray { Pair(inp.readInt(), inp.readByte()) }
+            )
+
+            0x44 -> NativeFunction(
+                name = inp.readUTF(),
+                argTypes = readArray { inp.readByte() }
+            )
+
+            0x45 -> NativeInvoke(
+                args = readArray { Pair(inp.readInt(), inp.readByte()) }
+            )
+
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }
@@ -200,5 +214,14 @@ class BytecodeInputStream(
             BC_TYPE_BOOLEAN -> inp.readBoolean()
             else -> throw IllegalStateException("Unsupported data type: $type")
         }
+    }
+
+    private fun <T> readArray(action: () -> T): List<T> {
+        val size = inp.readByte().toInt()
+        val result = ArrayList<T>()
+        repeat(size) {
+            result.add(action())
+        }
+        return result
     }
 }
