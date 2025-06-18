@@ -1,25 +1,25 @@
 int y = 9;
 class ValueStorage(int h, str b) {
-    println(">> constructor start");
+    # constructor start
     int a = h + 1;
     func p() str {
-        println("method run");
+        # method run
         (100+h).str.con(b);
     };
     func setA(str y) void {
         a = y.int;
     };
-    println(p());
-    println(">> constructor end");
+    # you can run methods, use fields above, for example
+    # constructor end
 };
 
+# create class instance
 auto t = ValueStorage(42, "test");
-println(t.p());
-println(t.a);
+# you can run class method t.p() and read-only access it fields t.a
 t.setA("1000");
-println(t.a);
+# t.a = 1000
 
-#---
+# --- Random class sample
 
 class Random(int seed) {
     int a = 252149039;    # These Values for a and c are the actual values found
@@ -38,30 +38,29 @@ class Random(int seed) {
     }
 };
 
-#---
+#--- Use randomizer class
 
 class[Random] random = Random(12345);
 int i = 5;
 while (i > 0) {
     int r = random.next();
-    println(r);
     i = i - 1;
 };
 
-#---
+#--- Simple pair class
 
 class Pair(auto key, auto value) {};
 
 class[Pair] p = Pair("key", 42);
 
-func printPair(class[Pair] p) void {
-    println(p.key);
-    println(p.value);
+func usePair(class[Pair] p) void {
+    # p.key - "key"
+    # p.value - 42
 };
 
-printPair(p);
+usePair(p);
 
-#---
+#--- Class-in-class usage
 
 class A(int z) {};
 
@@ -69,13 +68,11 @@ class[A] a = A(42);
 
 class B(class[A] d) {
     int f = 9;
-    func i(class[A] c) void {
-        println(c.z);
-        println(a.z);
+    func i(class[A] c) int {
+        c.z + a.z;
     };
-    func s(class[B] b) void {
-        println(b.f);
-        println(d.z+8);
+    func s(class[B] b) int {
+        b.f - d.z;
     };
 };
 
@@ -118,4 +115,4 @@ ll.add("10");
 ll.add("20");
 ll.add("30");
 
-println(ll.get(3));
+ll.get(3); # return 30
