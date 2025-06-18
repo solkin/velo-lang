@@ -5,42 +5,38 @@ dict[int:str] d = dictOf[int:str](
 );
 
 d.set(5, "e");
-println(d.del(2));
-println(d.del(20));
-println(d.len);
-println(d[5]);
-println(d.key(5));
-println(d.key(50));
-println(d.val("c"));
-println(d.val("r"));
-println(d.keys[0]);
-println(d.vals[1]);
+d.del(2);
+d.del(20);
+d.len;
+d[5];
+d.key(5);
+d.key(50);
+d.val("c");
+d.val("r");
+d.keys[0];
+d.vals[1];
 
 d.arr.map(
     func(int index, pair[int,str] value) int {
-        print(value.first.str.con("->".con(value.second.con(if (index < d.len-1) then ", " else ""))));
+        value.first.str.con("->".con(value.second.con(if (index < d.len-1) then ", " else "")));
         index;
     }
 );
 
-println("");
-println("--");
+# --
 
 d.keys.map(
     func(int index, int key) int {
-        print(key.str.con(if (index < d.len-1) then ", " else ""));
+        key.str.con(if (index < d.len-1) then ", " else "");
         index;
     }
 );
 
-println("");
-println("--");
+# --;
 
 d.vals.map(
     func(int index, str value) int {
-        print(value.con(if (index < d.len-1) then ", " else ""));
+        value.con(if (index < d.len-1) then ", " else "");
         index;
     }
 );
-
-println("");
