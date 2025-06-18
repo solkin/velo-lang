@@ -1,3 +1,10 @@
+native class Terminal() {
+    native func print(str text) str;
+    func println(str text) str { print(text.con("\n")) };
+};
+
+auto term = Terminal();
+
 func primes(int n) void {
     int k = 0;
     int i = 2;
@@ -13,10 +20,10 @@ func primes(int n) void {
             };
         };
         if (isPrime) {
-            print(i);
-            print(" ");
+            term.print(i.str);
+            term.print(" ");
             if (k + 1) % 20 == 0 {
-                println("");
+                term.println("");
             };
             k = k + 1;
         };
@@ -25,4 +32,4 @@ func primes(int n) void {
 };
 
 primes(303);
-println("");
+term.println("");
