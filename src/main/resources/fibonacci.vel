@@ -1,3 +1,10 @@
+native class Terminal() {
+    native func print(str text) str;
+    func println(str text) str {
+        print(text.con("\n"));
+    };
+};
+
 auto fib = func (int num) int {
     int a = 0;
     int b = 1;
@@ -12,5 +19,6 @@ auto fib = func (int num) int {
     b;
 };
 
-print("Fib: ");
-println(fib(93));
+auto term = Terminal();
+term.print("Fib: ");
+term.println(fib(93).str);
