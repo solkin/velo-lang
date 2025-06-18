@@ -56,6 +56,8 @@ import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
 import vm.operations.Set
+import vm.operations.Shl
+import vm.operations.Shr
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -119,6 +121,7 @@ class BytecodeOutputStream(
                 out.writeInt(op.args)
                 out.writeBoolean(op.classParent)
             }
+
             is Divide -> out.writeByte(0x0b)
             is Drop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
@@ -198,6 +201,9 @@ class BytecodeOutputStream(
                 }
             }
 
+            is Shl -> out.writeByte(0x46)
+            is Shr -> out.writeByte(0x47)
+
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -239,7 +245,7 @@ class BytecodeOutputStream(
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x05
-const val VERSION_MINOR = 0x00
+const val VERSION_MINOR = 0x01
 
 const val BC_TYPE_BYTE = 0x01
 const val BC_TYPE_INT = 0x02

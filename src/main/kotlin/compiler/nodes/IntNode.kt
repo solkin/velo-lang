@@ -4,6 +4,8 @@ import compiler.Context
 import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Push
+import vm.operations.Shl
+import vm.operations.Shr
 
 data class IntNode(
     val value: Int,
@@ -25,6 +27,8 @@ object IntType : Numeric {
 
     override fun prop(name: String): Prop? {
         return when (name) {
+            "shl" -> IntShlProp
+            "shr" -> IntShrProp
             "str" -> IntStrProp
             "char" -> IntCharProp
             else -> null
@@ -34,6 +38,20 @@ object IntType : Numeric {
     override fun log() = toString()
 
     override fun vmType() = vm.INT
+}
+
+object IntShlProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Shl())
+        return IntType
+    }
+}
+
+object IntShrProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Shr())
+        return IntType
+    }
 }
 
 object IntStrProp : Prop {

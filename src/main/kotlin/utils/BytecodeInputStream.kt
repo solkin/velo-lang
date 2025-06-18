@@ -56,6 +56,8 @@ import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
 import vm.operations.Set
+import vm.operations.Shl
+import vm.operations.Shr
 import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
@@ -196,6 +198,9 @@ class BytecodeInputStream(
             0x45 -> NativeInvoke(
                 args = readArray { Pair(inp.readInt(), inp.readByte()) }
             )
+
+            0x46 -> Shl()
+            0x47 -> Shr()
 
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
