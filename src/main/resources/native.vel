@@ -1,15 +1,22 @@
 native class Terminal() {
-
-    native func print(str text) str;
-
+    native func print(str text) void;
     native func input() str;
-
-    func println(str text) str {
+    func println(str text) void {
         print(text.con("\n"));
     };
+};
 
+native class Time() {
+    native func sleep(int millis) void;
+    native func unix() int;
 };
 
 class[Terminal] term = Terminal();
 term.println("Hello, World!");
-term.print(term.input());
+term.print("input sleeping amound in sec: ");
+int sec = term.input().int;
+
+class[Time] time = Time();
+term.println("sleeping for ".con(sec.str).con(" sec..."));
+time.sleep(sec * 1000);
+term.println("UNIX time is: ".con(time.unix.str));
