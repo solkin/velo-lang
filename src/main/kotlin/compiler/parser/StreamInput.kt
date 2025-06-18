@@ -37,6 +37,14 @@ class StreamInput(val input: InputStream) : Input {
         throw Error("$msg ($line:$col)")
     }
 
+    override fun mark() {
+        input.mark(8)
+    }
+
+    override fun reset() {
+        input.reset()
+    }
+
     private fun nextChar(): Char {
         val r = input.read()
         val c = if (r == -1) {

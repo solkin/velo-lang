@@ -59,7 +59,17 @@ class TokenStream(private val input: Input) {
         var hasDot = false
         val number = readWhile(predicate = fun(ch: Char): Boolean {
             if (ch == '.') {
-                if (hasDot) return false
+                // Check for next after '.' symbol is digit, or it is property start
+                try {
+                    input.mark()
+                    input.next()
+                    if (!isDigit(input.peek())) {
+                        return false
+                    }
+                } finally {
+                    input.reset()
+                }
+                if (hasDot) return false // Dot was already been set - stop accumulating number
                 hasDot = true
                 return true
             }

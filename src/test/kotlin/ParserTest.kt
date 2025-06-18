@@ -451,6 +451,60 @@ class ParserTest {
     }
 
     @Test
+    fun testParsePropOnIntPrimitive() {
+        val input = StringInput("5.str")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = PropNode(
+                name = "str",
+                args = null,
+                parent = IntNode(value = 5)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParsePropOnFloatPrimitive() {
+        val input = StringInput("5.0.str")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = PropNode(
+                name = "str",
+                args = null,
+                parent = FloatNode(value = 5.0f)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParsePropOnStrPrimitive() {
+        val input = StringInput("\"5\".int")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = PropNode(
+                name = "int",
+                args = null,
+                parent = StringNode(value = "5")
+            ).wrapProgram()
+        )
+    }
+
+    @Test
     fun testParseClassDef() {
         val input = StringInput("class[A] a")
         val stream = TokenStream(input)

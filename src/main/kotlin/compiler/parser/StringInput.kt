@@ -7,6 +7,7 @@ class StringInput(private val str: String) : Input {
     private var pos = 0
     private var line = 0
     private var col = 0
+    private var mark = 0
 
     override fun peek(): Char {
         return getChar(pos)
@@ -29,6 +30,14 @@ class StringInput(private val str: String) : Input {
 
     override fun croak(msg: String) {
         throw Error("$msg ($line:$col)")
+    }
+
+    override fun mark() {
+        mark = pos
+    }
+
+    override fun reset() {
+        pos = mark
     }
 
     private fun getChar(p: Int): Char {
