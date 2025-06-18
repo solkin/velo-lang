@@ -34,4 +34,38 @@ func getRLE(str s) str {
     s;
 };
 
+func isNumber(str v) bool {
+    v == "0" || v == "1" || v == "2" || v == "3" || v == "4" || v == "5" || v == "6" || v == "7" || v == "8" || v == "9"
+};
+
+func multiplyStr(str s, int count) str {
+    int i = 0;
+    str out = "";
+    while (i < count) {
+        out = out.con(s);
+        i = i + 1;
+    };
+    out
+};
+
+func unRLE(str s) str {
+    int i = 0;
+    str out = "";
+    str p = "";
+    while (i < s.len) {
+        str c = s.sub(i, i + 1);
+        out = out.con(
+            if (isNumber(c)) {
+                multiplyStr(p, c.int - 1)
+            } else {
+                c
+            }
+        );
+        p = c;
+        i = i + 1;
+    };
+    out;
+};
+
 term.println(getRLE("Hhhhhhhhhhhhhheeeellooooo")); # Hh9h4e4l2o5
+term.println(unRLE("Hh9h4e4l2o5")); # Hhhhhhhhhhhhhheeeellooooo
