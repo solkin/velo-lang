@@ -5,17 +5,22 @@ func[int] test = func(int a) int {
 };
 
 func traverse(array[array[int]] matrix) array[array[int]] {
+    native class Terminal() {
+        native func print(str text) str;
+        func println(str text) str { print(text.con("\n")) };
+    };
     matrix.map(
         func(int index, array[int] row) array[int] {
+            auto term = Terminal();
             row.map(
                 func(int index, int col) int {
                     int v = test(col);
-                    print(v);
-                    print(" ");
+                    term.print(v.str);
+                    term.print(" ");
                     v;
                 }
             );
-            println("");
+            term.println("");
             row;
         }
     );
