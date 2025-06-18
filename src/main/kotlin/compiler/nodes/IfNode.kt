@@ -19,9 +19,7 @@ data class IfNode(
         val elseType = elseNode?.compile(elseCtx)
         elseCtx.add(Ret())
 
-        if (elseType != null && !thenType.sameAs(elseType)) {
-            throw IllegalArgumentException("Then and else return types are differ: ${thenType.log()} / ${elseType.log()}")
-        }
+        val returnType = if (elseType == null || thenType.sameAs(elseType)) thenType else AutoType
 
         condNode.compile(ctx)
 
@@ -29,6 +27,6 @@ data class IfNode(
         ctx.add(Call(args = 0))
         ctx.merge(thenCtx)
         ctx.merge(elseCtx)
-        return thenType
+        return returnType
     }
 }
