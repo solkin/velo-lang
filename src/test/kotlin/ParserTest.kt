@@ -628,6 +628,50 @@ class ParserTest {
         )
     }
 
+    @Test
+    fun testParseNativeClassDeclaration() {
+        val input = StringInput("native class A() {}")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = ClassNode(
+                name = "A",
+                defs = listOf(),
+                body = VoidNode,
+                native = true,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseNativeClassFields() {
+        val input = StringInput("native class A() { native func n() int; }")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = ClassNode(
+                name = "A",
+                defs = listOf(),
+                body = FuncNode(
+                    name = "n",
+                    defs = listOf(),
+                    type = IntType,
+                    body = VoidNode,
+                    native = true,
+                ),
+                native = true,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
     private fun Node.wrapProgram(): Node {
         return ProgramNode(listOf(this))
     }
