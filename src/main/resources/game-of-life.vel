@@ -1,4 +1,12 @@
-class GameOfLife() {
+native class Terminal() {
+    native func print(str text) str;
+    native func input() str;
+    func println(str text) str {
+        print(text.con("\n"));
+    };
+};
+
+class GameOfLife(class[Terminal] term) {
 
     auto w = arrayOf[array[int]](
         arrayOf[int](0, 1, 0, 0, 0, 0),
@@ -42,12 +50,12 @@ class GameOfLife() {
             func(int index, array[int] row) array[int] {
                 row.map(
                     func(int index, int col) int {
-                        print(col);
-                        print(" ");
+                        term.print(col.str);
+                        term.print(" ");
                         col;
                     }
                 );
-                println("");
+                term.println("");
                 row
             }
         )
@@ -67,14 +75,15 @@ class GameOfLife() {
 
 };
 
-auto g = GameOfLife();
-print("Enter generations count: ");
-int count = input().int;
-println("");
+auto term = Terminal();
+auto g = GameOfLife(term);
+term.print("Enter generations count: ");
+int count = term.input().int;
+term.println("");
 int idx = 0;
 while (idx <= count) {
     g.printWorld();
-    println("--");
+    term.println("--");
     g.nextGeneration();
     idx = idx + 1;
 };
