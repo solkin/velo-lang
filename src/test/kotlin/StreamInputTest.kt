@@ -40,6 +40,36 @@ class StreamInputTest {
     }
 
     @Test
+    fun testMarkReset() {
+        val input: Input = StreamInput("123".byteInputStream())
+        val ch1 = input.next()
+        input.mark()
+        val ch2 = input.next()
+        val ch3 = input.next()
+        input.reset()
+        val ch4 = input.next()
+        assertEquals('1', ch1)
+        assertEquals('2', ch2)
+        assertEquals('3', ch3)
+        assertEquals('2', ch4)
+    }
+
+    @Test
+    fun testMarkResetPeek() {
+        val input: Input = StreamInput("123".byteInputStream())
+        val ch1 = input.next()
+        input.mark()
+        val ch2 = input.next()
+        val ch3 = input.next()
+        input.reset()
+        val ch4 = input.peek()
+        assertEquals('1', ch1)
+        assertEquals('2', ch2)
+        assertEquals('3', ch3)
+        assertEquals('2', ch4)
+    }
+
+    @Test
     fun testEof() {
         val input: Input = StreamInput("12".byteInputStream())
         val ch1 = input.next()

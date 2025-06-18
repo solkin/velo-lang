@@ -43,6 +43,7 @@ class StreamInput(val input: InputStream) : Input {
 
     override fun reset() {
         input.reset()
+        next = null
     }
 
     private fun nextChar(): Char {
