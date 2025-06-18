@@ -1,2 +1,7 @@
+native class Terminal() {
+    native func print(str text) str;
+};
+auto term = Terminal();
+
 str hello = "Hello, World!";
-println(hello);
+term.print(hello);
