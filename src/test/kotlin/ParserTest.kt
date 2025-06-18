@@ -42,7 +42,7 @@ class ParserTest {
         assertEquals(
             expected = node,
             actual = FloatNode(
-                value = 123.5
+                value = 123.5f,
             ).wrapProgram()
         )
     }
@@ -109,7 +109,8 @@ class ParserTest {
                 name = null,
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = BoolType,
-                body = BoolNode(value = false)
+                body = BoolNode(value = false),
+                native = false,
             ).wrapProgram()
         )
     }
@@ -128,7 +129,8 @@ class ParserTest {
                 name = "A",
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = VoidType,
-                body = VoidNode
+                body = VoidNode,
+                native = false,
             ).wrapProgram()
         )
     }
@@ -489,7 +491,8 @@ class ParserTest {
                         def = IntNode(value = 5)
                     )
                 ),
-                body = VoidNode
+                body = VoidNode,
+                native = false,
             ).wrapProgram()
         )
     }
@@ -524,10 +527,12 @@ class ParserTest {
                             name = "c",
                             defs = listOf(DefNode("d", IntType, def = null)),
                             type = BoolType,
-                            body = BoolNode(value = true)
+                            body = BoolNode(value = true),
+                            native = false,
                         )
                     )
-                )
+                ),
+                native = false,
             ).wrapProgram()
         )
     }
