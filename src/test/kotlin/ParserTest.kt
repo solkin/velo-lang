@@ -17,6 +17,7 @@ import compiler.nodes.ArrayNode
 import compiler.nodes.ClassNode
 import compiler.nodes.ClassType
 import compiler.nodes.DictNode
+import compiler.nodes.PropNode
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringNode
 import compiler.nodes.StringType
@@ -409,6 +410,42 @@ class ParserTest {
                 name = "a",
                 type = IntType,
                 def = IntNode(value = 5)
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParsePropNoParams() {
+        val input = StringInput("a.str")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = PropNode(
+                name = "str",
+                args = null,
+                parent = VarNode(name = "a")
+            ).wrapProgram()
+        )
+    }
+
+    @Test
+    fun testParsePropWithParams() {
+        val input = StringInput("a.shl(5)")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = node,
+            actual = PropNode(
+                name = "shl",
+                args = listOf(IntNode(value = 5)),
+                parent = VarNode(name = "a")
             ).wrapProgram()
         )
     }
