@@ -1,6 +1,5 @@
 package vm
 
-
 fun Number.plus(b: Number) : Number {
     val a = this
     return when (a) {

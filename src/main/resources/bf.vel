@@ -47,7 +47,11 @@ while(i < tapeLength) {
         term.print(mem[p].char());
     } else if (c == ",") {
         str s = term.input();
-        mem.set(p, s[0]);
+        int v = 0;
+        if (s.len > 0) {
+            v = s[0];
+        };
+        mem.set(p, v);
     } else if (c == "[") {
         if (mem[p] == 0) {
             b = b + 1;
