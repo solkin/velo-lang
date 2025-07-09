@@ -9,7 +9,7 @@ func fib(int n) int {
     if n < 2 then n else fib(n - 1) + fib(n - 2);
 };
 
-auto term = Terminal();
-let(auto res = fib(15)) {
+any term = Terminal();
+let(any res = fib(15)) {
     term.println(res.str);
 };

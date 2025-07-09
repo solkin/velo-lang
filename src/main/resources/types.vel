@@ -10,6 +10,6 @@ dict[int:str] d = dictOf[int:str](
     3:"c"
 );
 func[void] n = func() void {};
-auto a = 3.0;
+any a = 3.0;
 a = 6.5;
 pair[int, str] p = pairOf[int,str](1, "second");

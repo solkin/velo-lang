@@ -3,7 +3,7 @@ native class Terminal() {
     func println(str text) str { print(text.con("\n")) };
 };
 
-auto term = Terminal();
+any term = Terminal();
 
 func primes(int n) void {
     int k = 0;

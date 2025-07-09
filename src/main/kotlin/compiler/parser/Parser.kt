@@ -1,7 +1,7 @@
 package compiler.parser
 
 import compiler.nodes.AssignNode
-import compiler.nodes.AutoType
+import compiler.nodes.AnyType
 import compiler.nodes.BinaryNode
 import compiler.nodes.BoolNode
 import compiler.nodes.CallNode
@@ -119,7 +119,7 @@ class Parser(private val stream: TokenStream) {
 
             FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
             VOID -> VoidType
-            AUTO -> AutoType
+            ANY -> AnyType
             else -> throw IllegalArgumentException("Unknown type ${tok.value}")
         }
     }

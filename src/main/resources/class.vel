@@ -14,7 +14,7 @@ class ValueStorage(int h, str b) {
 };
 
 # create class instance
-auto t = ValueStorage(42, "test");
+any t = ValueStorage(42, "test");
 # you can run class method t.p() and read-only access it fields t.a
 t.setA("1000");
 # t.a = 1000
@@ -49,7 +49,7 @@ while (i > 0) {
 
 #--- Simple pair class
 
-class Pair(auto key, auto value) {};
+class Pair(any key, any value) {};
 
 class[Pair] p = Pair("key", 42);
 
@@ -84,13 +84,13 @@ b.s(b);
 
 class LinkedList() {
 
-    class Item(class[Item] prev, auto value) {};
+    class Item(class[Item] prev, any value) {};
 
     class[Item] start;
     class[Item] end;
     int length = 0;
 
-    func add(auto value) void {
+    func add(any value) void {
         end = Item(end, value);
         if (length == 0) {
             start = end;
@@ -98,9 +98,9 @@ class LinkedList() {
         length = length + 1;
     };
 
-    func get(int index) auto {
+    func get(int index) any {
         int i = length - 1;
-        auto item = end;
+        any item = end;
         while (i > index) {
             item = item.prev;
             i = i - 1;

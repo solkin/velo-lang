@@ -19,7 +19,7 @@ data class IfNode(
         val elseType = elseNode?.compile(elseCtx)
         elseCtx.add(Ret())
 
-        val returnType = if (elseType == null || thenType.sameAs(elseType)) thenType else AutoType
+        val returnType = if (elseType == null || thenType.sameAs(elseType)) thenType else AnyType
 
         condNode.compile(ctx)
 

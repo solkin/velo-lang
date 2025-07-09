@@ -1,7 +1,7 @@
 package vm
 
 const val VOID: Byte = 0x00
-const val AUTO: Byte = 0x01
+const val ANY: Byte = 0x01
 const val BYTE: Byte = 0x02
 const val INT: Byte = 0x03
 const val FLOAT: Byte = 0x04
@@ -17,6 +17,7 @@ fun Byte.toJvmType(): Class<*> {
     val vmType = this
     return when(vmType) {
         VOID -> Void::class.java
+        ANY -> Any::class.java
         BYTE -> Byte::class.java
         INT -> Int::class.java
         FLOAT -> Float::class.java
@@ -32,6 +33,7 @@ fun Byte.toJvmType(): Class<*> {
 fun Record.toType(vmType: Byte): Any {
     return when(vmType) {
         BYTE -> getByte()
+        ANY -> get()
         INT -> getInt()
         FLOAT -> getFloat()
         STR -> getString()

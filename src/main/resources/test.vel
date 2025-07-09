@@ -11,7 +11,7 @@ func traverse(array[array[int]] matrix) array[array[int]] {
     };
     matrix.map(
         func(int index, array[int] row) array[int] {
-            auto term = Terminal();
+            any term = Terminal();
             row.map(
                 func(int index, int col) int {
                     int v = test(col);
@@ -26,7 +26,7 @@ func traverse(array[array[int]] matrix) array[array[int]] {
     );
 };
 
-auto matrix = arrayOf[array[int]](
+any matrix = arrayOf[array[int]](
     arrayOf[int](0, 4, 6, 3, 5),
     arrayOf[int](8, 4, 2, 5, 1)
 );

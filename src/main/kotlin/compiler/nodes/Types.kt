@@ -16,16 +16,16 @@ interface Callable : Type {
 
 interface Numeric : Type
 
-object AutoType : Type {
+object AnyType : Type {
     override fun sameAs(type: Type) = true
 
     override fun default(ctx: Context) {
-        throw Exception("Type auto has no default value")
+        throw Exception("Type 'any' has no default value")
     }
 
     override fun prop(name: String): Prop? = null
 
     override fun log() = toString()
 
-    override fun vmType() = vm.AUTO
+    override fun vmType() = vm.ANY
 }

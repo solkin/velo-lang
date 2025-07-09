@@ -187,7 +187,7 @@ const val DICT = "dict"
 const val CLASS = "class"
 const val FUNC = "func"
 const val VOID = "void"
-const val AUTO = "auto"
+const val ANY = "any"
 
 val stdTypesSet = setOf(
     BYTE,
@@ -201,5 +201,5 @@ val stdTypesSet = setOf(
     CLASS,
     FUNC,
     VOID,
-    AUTO,
+    ANY,
 )

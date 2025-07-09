@@ -5,7 +5,7 @@ native class Terminal() {
     };
 };
 
-auto fib = func (int num) int {
+any fib = func (int num) int {
     int a = 0;
     int b = 1;
     int tmp = 0;
@@ -19,6 +19,6 @@ auto fib = func (int num) int {
     b;
 };
 
-auto term = Terminal();
+any term = Terminal();
 term.print("Fib: ");
 term.println(fib(93).str);

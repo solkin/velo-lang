@@ -13,7 +13,7 @@ data class DefNode(
             type.default(ctx)
             type
         }
-        if (!type.sameAs(defType) && !type.sameAs(AutoType)) {
+        if (!type.sameAs(defType) && !type.sameAs(AnyType)) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
         val v = ctx.def(name, defType)

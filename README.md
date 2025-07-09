@@ -8,7 +8,7 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 ### Intro
 **Hello, World!** This is simple Velo program
 ```
-auto hello = "Hello, World!";
+any hello = "Hello, World!";
 println(hello);
 ```
 **Data types** There are several data types supported for now
@@ -17,9 +17,9 @@ str s = "s";
 bool b = true;
 int i = 1;
 float f = 3.0;
-auto l = arrayOf[array[int]]();
-auto n = func() void {};
-auto p = pairOf[int,str](1, "second");
+any l = arrayOf[array[int]]();
+any n = func() void {};
+any p = pairOf[int,str](1, "second");
 ```
 **Functions and lambdas.** Velo lang supports functions
 ```
@@ -30,7 +30,7 @@ println(functionName(1, 2));
 ```
 ... and lambdas
 ```
-auto lambda = func(int a, int b) int {
+any lambda = func(int a, int b) int {
     a + b;
 };
 println(lambda(1, 2));
@@ -48,7 +48,7 @@ int a = 5;
 
 if a == 2 then "two" else "not two";
 
-auto s = if a == 2 then {
+any s = if a == 2 then {
     "two"
 } else {
     "not two"
@@ -65,11 +65,11 @@ while (i <= 5) {
 ```
 **Arrays**
 ```
-auto s = arrayOf[int](37, 58, 25, 17, 19);
+any s = arrayOf[int](37, 58, 25, 17, 19);
 println(s.len);           # 5
 println(s[3]);            # 17
 println(s.sub(1, 4)[1]);  # 25
-auto ns = s.map(
+any ns = s.map(
     func(int i, int v) int {
         i + v
     }
@@ -103,7 +103,7 @@ println(s.sub(5, 11)); # String
 ```
 **Pairs**
 ```
-auto p = pairOf[int,str](1, "second");
+any p = pairOf[int,str](1, "second");
 println(p.first);  # 1
 println(p.second); # second
 ```
@@ -126,10 +126,10 @@ class Random(int seed) {
     }
 };
 
-auto random = Random(12345);
+any random = Random(12345);
 int i = 5;
 while (i > 0) {
-    auto r = random.next();
+    any r = random.next();
     println(r);
     i = i - 1;
 };
