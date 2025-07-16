@@ -5,6 +5,7 @@ import vm.operations.ArrLen
 import vm.operations.ArrSet
 import vm.operations.DictArr
 import vm.operations.DictDel
+import vm.operations.DictIndex
 import vm.operations.DictKey
 import vm.operations.DictKeys
 import vm.operations.DictLen
@@ -36,7 +37,7 @@ data class DictNode(
     }
 }
 
-data class DictType(val derived: PairType) : Type {
+data class DictType(val derived: PairType) : Indexable {
     override fun sameAs(type: Type): Boolean {
         return type is DictType && type.derived.sameAs(derived)
     }
@@ -62,6 +63,11 @@ data class DictType(val derived: PairType) : Type {
     override fun log() = toString()
 
     override fun vmType() = vm.DICT
+
+    override fun compileIndex(ctx: Context): Type {
+        ctx.add(DictIndex())
+        return derived.second
+    }
 }
 
 object DictLenProp : Prop {

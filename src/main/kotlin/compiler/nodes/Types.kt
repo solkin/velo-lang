@@ -16,6 +16,10 @@ interface Callable : Type {
 
 interface Numeric : Type
 
+interface Indexable: Type {
+    fun compileIndex(ctx: Context): Type
+}
+
 object AnyType : Type {
     override fun sameAs(type: Type) = true
 

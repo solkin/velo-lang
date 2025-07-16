@@ -36,7 +36,7 @@ data class ArrayNode(
     }
 }
 
-data class ArrayType(val derived: Type) : Type {
+data class ArrayType(val derived: Type) : Indexable {
     override fun sameAs(type: Type): Boolean {
         return type is ArrayType && type.derived.sameAs(derived)
     }
@@ -60,6 +60,11 @@ data class ArrayType(val derived: Type) : Type {
     override fun log() = toString()
 
     override fun vmType() = vm.ARRAY
+
+    override fun compileIndex(ctx: Context): Type {
+        ctx.add(ArrIndex())
+        return derived
+    }
 }
 
 object ArrayLenProp : Prop {

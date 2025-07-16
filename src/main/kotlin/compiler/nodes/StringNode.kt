@@ -3,6 +3,7 @@ package compiler.nodes
 import compiler.Context
 import vm.operations.Push
 import vm.operations.StrCon
+import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
 import vm.operations.SubStr
@@ -16,7 +17,7 @@ data class StringNode(
     }
 }
 
-object StringType : Type {
+object StringType : Indexable {
     override fun sameAs(type: Type): Boolean {
         return type is StringType
     }
@@ -38,6 +39,11 @@ object StringType : Type {
     override fun log() = toString()
 
     override fun vmType() = vm.STR
+
+    override fun compileIndex(ctx: Context): Type {
+        ctx.add(StrIndex())
+        return IntType
+    }
 }
 
 object SubStrProp : Prop {
