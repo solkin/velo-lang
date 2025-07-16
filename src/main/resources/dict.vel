@@ -4,7 +4,7 @@ dict[int:str] d = dictOf[int:str](
     3:"c"
 );
 
-d.set(5, "e");
+d[5] = "e";
 d.del(2);
 d.del(20);
 d.len;

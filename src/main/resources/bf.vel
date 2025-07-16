@@ -71,11 +71,11 @@ while(i < tapeLength) {
     } else if (c == "+") {
         int v = mem[p] + 1;
         v = if (v > 255) then 0 else v;
-        mem.set(p, v);
+        mem[p] = v;
     } else if (c == "-") {
         int v = mem[p] - 1;
         v = if (v < 0) then 255 else v;
-        mem.set(p, v);
+        mem[p] = v;
     } else if (c == ".") {
         term.print(mem[p].char());
     } else if (c == ",") {
@@ -84,7 +84,7 @@ while(i < tapeLength) {
         if (s.len > 0) {
             v = s[0];
         };
-        mem.set(p, v);
+        mem[p] = v;
     } else if (c == "[") {
         if (mem[p] == 0) {
             # Fast-forward to the block end
@@ -100,7 +100,7 @@ while(i < tapeLength) {
             };
         } else {
             sp = sp + 1;
-            stack.set(sp, i);
+            stack[sp] = i;
         };
     } else if (c == "]") {
         if (mem[p] != 0) {

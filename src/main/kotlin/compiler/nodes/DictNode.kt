@@ -37,7 +37,7 @@ data class DictNode(
     }
 }
 
-data class DictType(val derived: PairType) : Indexable {
+data class DictType(val derived: PairType) : IndexAssignable {
     override fun sameAs(type: Type): Boolean {
         return type is DictType && type.derived.sameAs(derived)
     }
@@ -48,7 +48,6 @@ data class DictType(val derived: PairType) : Indexable {
 
     override fun prop(name: String): Prop? {
         return when (name) {
-            "set" -> DictSetProp
             "del" -> DictDelProp
             "len" -> DictLenProp
             "keys" -> DictKeysProp
@@ -67,6 +66,10 @@ data class DictType(val derived: PairType) : Indexable {
     override fun compileIndex(ctx: Context): Type {
         ctx.add(DictIndex())
         return derived.second
+    }
+
+    override fun compileAssignment(ctx: Context) {
+        ctx.add(DictSet())
     }
 }
 
@@ -106,14 +109,6 @@ object DictValProp : Prop {
         type as DictType
         ctx.add(DictVal())
         return BoolType
-    }
-}
-
-object DictSetProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        type as DictType
-        ctx.add(DictSet())
-        return VoidType
     }
 }
 

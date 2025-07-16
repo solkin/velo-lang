@@ -13,7 +13,7 @@ class LZW() {
         dict[str:int] dictionary = dictOf[str:int]();
         int dictSize = 0;
         while(dictSize < 256) {
-            dictionary.set(dictSize.char, dictSize);
+            dictionary[dictSize.char] = dictSize;
             dictSize = dictSize + 1;
         };
 
@@ -28,7 +28,7 @@ class LZW() {
             } else {
                 result = result.plus(dictionary[w]);
                 # Add wc to the dictionary.
-                dictionary.set(wc, dictSize);
+                dictionary[wc] = dictSize;
                 dictSize = dictSize + 1;
                 w = c.char;
             };
@@ -46,7 +46,7 @@ class LZW() {
             dict[int:str] dictionary = dictOf[int:str]();
             int dictSize = 0;
             while(dictSize < 256) {
-                dictionary.set(dictSize, dictSize.char);
+                dictionary[dictSize] = dictSize.char;
                 dictSize = dictSize + 1;
             };
             str w = compressed[0].char;
@@ -66,7 +66,7 @@ class LZW() {
                 result = result.con(entry);
 
                 # Add w+entry[0] to the dictionary.
-                dictionary.set(dictSize, w.con(entry[0].char));
+                dictionary[dictSize] = w.con(entry[0].char);
                 dictSize = dictSize + 1;
 
                 w = entry;
