@@ -1,21 +1,19 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Set
 
 data class AssignNode(
     val left: Node,
     val right: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        if (left !is VarNode) throw IllegalArgumentException("Cannot assign to $left")
+        if (left !is AssignableNode) throw IllegalArgumentException("Cannot assign to $left")
         val type = right.compile(ctx)
-        val v = ctx.get(left.name)
-        if (!v.type.sameAs(type)) {
-            throw IllegalArgumentException("Illegal assign type $type != ${v.type}")
-        }
-        ctx.retype(left.name, type) // Clarify variable type from the right side of assignment
-        ctx.add(Set(v.index))
+        left.compileAssignment(type, ctx)
         return VoidType
     }
+}
+
+interface AssignableNode {
+    fun compileAssignment(type: Type, ctx: Context)
 }
