@@ -20,6 +20,10 @@ interface Indexable: Type {
     fun compileIndex(ctx: Context): Type
 }
 
+interface IndexAssignable: Indexable {
+    fun compileAssignment(ctx: Context)
+}
+
 object AnyType : Type {
     override fun sameAs(type: Type) = true
 

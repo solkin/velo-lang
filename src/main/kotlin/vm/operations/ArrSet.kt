@@ -7,8 +7,8 @@ class ArrSet : SimpleOperation {
 
     override fun exec(frame: Frame) {
         val index = frame.subs.pop().getInt()
-        val value = frame.subs.pop()
         val array = frame.subs.pop().getArray()
+        val value = frame.subs.pop()
 
         array[index] = value
     }

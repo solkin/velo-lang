@@ -36,7 +36,7 @@ data class ArrayNode(
     }
 }
 
-data class ArrayType(val derived: Type) : Indexable {
+data class ArrayType(val derived: Type) : IndexAssignable {
     override fun sameAs(type: Type): Boolean {
         return type is ArrayType && type.derived.sameAs(derived)
     }
@@ -47,7 +47,6 @@ data class ArrayType(val derived: Type) : Indexable {
 
     override fun prop(name: String): Prop? {
         return when (name) {
-            "set" -> SetArrayProp
             "sub" -> SubArrayProp
             "len" -> ArrayLenProp
             "con" -> ArrayConProp
@@ -65,20 +64,16 @@ data class ArrayType(val derived: Type) : Indexable {
         ctx.add(ArrIndex())
         return derived
     }
+
+    override fun compileAssignment(ctx: Context) {
+        ctx.add(ArrSet())
+    }
 }
 
 object ArrayLenProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(ArrLen())
         return IntType
-    }
-}
-
-object SetArrayProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        type as ArrayType
-        ctx.add(ArrSet())
-        return VoidType
     }
 }
 
