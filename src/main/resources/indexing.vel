@@ -1,0 +1,22 @@
+native class Terminal() {
+    native func print(str text) void;
+    native func input() str;
+    func println(str text) void {
+        print(text.con("\n"));
+    };
+};
+any term = Terminal();
+
+array[int] arr = arrayOf[int](5, 6, 7, 8, 9);
+term.println(arr[2].str); # before assignment: 7
+arr[2] = 120;
+term.println(arr[2].str); # after assignment: 120
+
+dict[str:int] d = dictOf[str:int]("five":5, "six":6, "seven":7, "eight":8, "nine":9);
+term.println(d["five"].str); # before assignment: 5
+d["five"] = 500;
+term.println(d["five"].str); # after assignment: 500
+
+str s = "string";
+term.println(s[2].str); # char code: 114
+# s[2] = 119; # illegal operation, will cause compilation error: 'Assign on non-assignable index type'
