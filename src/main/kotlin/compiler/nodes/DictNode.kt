@@ -1,8 +1,6 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.ArrLen
-import vm.operations.ArrSet
 import vm.operations.DictArr
 import vm.operations.DictDel
 import vm.operations.DictIndex
@@ -33,11 +31,11 @@ data class DictNode(
         }
         ctx.add(Push(dictOf.size))
         ctx.add(DictOf())
-        return DictType(PairType(keyType, valType))
+        return DictType(TupleType(listOf(keyType, valType)))
     }
 }
 
-data class DictType(val derived: PairType) : IndexAssignable {
+data class DictType(val derived: TupleType) : IndexAssignable {
     override fun sameAs(type: Type): Boolean {
         return type is DictType && type.derived.sameAs(derived)
     }
@@ -65,7 +63,7 @@ data class DictType(val derived: PairType) : IndexAssignable {
 
     override fun compileIndex(ctx: Context): Type {
         ctx.add(DictIndex())
-        return derived.second
+        return derived.types.second()
     }
 
     override fun compileAssignment(ctx: Context) {
@@ -84,7 +82,7 @@ object DictKeysProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as DictType
         ctx.add(DictKeys())
-        return ArrayType(derived = type.derived.first)
+        return ArrayType(derived = type.derived.types.first())
     }
 }
 
@@ -92,7 +90,7 @@ object DictValsProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as DictType
         ctx.add(DictVals())
-        return ArrayType(derived = type.derived.second)
+        return ArrayType(derived = type.derived.types.second())
     }
 }
 
@@ -126,4 +124,8 @@ object DictArrProp : Prop {
         ctx.add(DictArr())
         return ArrayType(type.derived)
     }
+}
+
+private fun List<Type>.second(): Type {
+    return this[1]
 }

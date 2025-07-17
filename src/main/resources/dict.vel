@@ -1,3 +1,12 @@
+native class Terminal() {
+    native func print(str text) str;
+    native func input() str;
+    func println(str text) str {
+        print(text.con("\n"));
+    };
+};
+any term = Terminal();
+
 dict[int:str] d = dictOf[int:str](
     1:"a",
     2:"b",
@@ -17,26 +26,29 @@ d.keys[0];
 d.vals[1];
 
 d.arr.map(
-    func(int index, pair[int,str] value) int {
-        value.first.str.con("->".con(value.second.con(if (index < d.len-1) then ", " else "")));
+    func(int index, tuple[int,str] value) int {
+        str v = value.1.str.con("->".con(value.2.con(if (index < d.len-1) then ", " else "")));
+        term.println(v);
         index;
     }
 );
 
-# --
+term.println("--");
 
 d.keys.map(
     func(int index, int key) int {
-        key.str.con(if (index < d.len-1) then ", " else "");
+        str v = key.str.con(if (index < d.len-1) then ", " else "");
+        term.println(v);
         index;
     }
 );
 
-# --;
+term.println("--");
 
 d.vals.map(
     func(int index, str value) int {
-        value.con(if (index < d.len-1) then ", " else "");
+        str v = value.con(if (index < d.len-1) then ", " else "");
+        term.println(v);
         index;
     }
 );

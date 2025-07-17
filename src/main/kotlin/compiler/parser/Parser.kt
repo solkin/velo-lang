@@ -18,13 +18,13 @@ import compiler.nodes.ProgramNode
 import compiler.nodes.PropNode
 import compiler.nodes.StringNode
 import compiler.nodes.VarNode
-import compiler.nodes.PairNode
+import compiler.nodes.TupleNode
 import compiler.nodes.BoolType
 import compiler.nodes.ByteType
 import compiler.nodes.FloatType
 import compiler.nodes.FuncType
 import compiler.nodes.IntType
-import compiler.nodes.PairType
+import compiler.nodes.TupleType
 import compiler.nodes.ArrayType
 import compiler.nodes.ByteNode
 import compiler.nodes.ClassNode
@@ -96,15 +96,15 @@ class Parser(private val stream: TokenStream) {
             FLOAT -> FloatType
             STR -> StringType
             BOOL -> BoolType
-            PAIR -> {
-                val derived = parseDerivedTypes(count = 2)
-                PairType(first = derived[0], second = derived[1])
+            TUPLE -> {
+                val derived = parseDerivedTypes()
+                TupleType(types = derived)
             }
 
             ARRAY -> ArrayType(parseDerivedTypes(count = 1).first())
             DICT -> {
                 val types = parseDerivedTypes(count = 2, separator = ':')
-                DictType(PairType(types.first(), types.last()))
+                DictType(TupleType(types))
             }
 
             CLASS -> {
@@ -154,11 +154,11 @@ class Parser(private val stream: TokenStream) {
         return DefNode(name = name, type = type, def = def)
     }
 
-    private fun parseDerivedTypes(count: Int, separator: Char = ','): List<Type> {
+    private fun parseDerivedTypes(count: Int = -1, separator: Char = ','): List<Type> {
         val ders = isPunc('[')
             ?.let { delimited('[', ']', separator, ::parseDefType) }
             ?: emptyList()
-        return ders.takeIf { it.size == count } ?: run {
+        return ders.takeIf { it.size == count || count == -1 } ?: run {
             stream.croak("Derived types count is ${ders.size} but must be $count")
             throw IllegalArgumentException()
         }
@@ -266,17 +266,20 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
-    private fun parsePair(): Node {
-        skipKw("pairOf")
-        parseDerivedTypes(count = 2)
-        val elements = delimited('(', ')', ',', ::parseExpression)
-        if (elements.size != 2) {
-            stream.croak("Pair must contain exactly two elements, but contains: ${elements.size}")
+    private fun parseTuple(): Node {
+        skipKw("tupleOf")
+        val types = parseDerivedTypes()
+        if (types.isEmpty()) {
+            stream.croak("Tuple requires derived types definition")
             throw IllegalArgumentException()
         }
-        return PairNode(
-            first = elements[0],
-            second = elements[1],
+        val entries = delimited('(', ')', ',', ::parseExpression)
+        if (entries.isEmpty()) {
+            stream.croak("Tuple must contain one or more entries")
+            throw IllegalArgumentException()
+        }
+        return TupleNode(
+            entries
         )
     }
 
@@ -370,9 +373,17 @@ class Parser(private val stream: TokenStream) {
         skipPunc('.')
 
         val tok = stream.peek()
-        if (tok?.type == TokenType.VARIABLE || tok?.type == TokenType.KEYWORD) {
-            val name = stream.next()?.value as? String
-            if (name.isNullOrEmpty()) {
+        if (tok?.type == TokenType.VARIABLE || tok?.type == TokenType.KEYWORD || tok?.type == TokenType.NUMBER) {
+            val tokVal = stream.next()?.value
+            val name = when(tokVal) {
+                is String -> tokVal
+                is Int -> tokVal.toString()
+                else -> {
+                    stream.croak("Invalid property type $tokVal")
+                    throw IllegalArgumentException()
+                }
+            }
+            if (name.isEmpty()) {
                 stream.croak("Property can not be empty")
                 throw IllegalArgumentException()
             }
@@ -427,7 +438,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("while") != null) return parseWhile()
         if (isKw("arrayOf") != null) return parseArrayOf()
         if (isKw("dictOf") != null) return parseDictOf()
-        if (isKw("pairOf") != null) return parsePair()
+        if (isKw("tupleOf") != null) return parseTuple()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("native") != null) return parseNative()
         val tok = stream.next()
@@ -446,7 +457,7 @@ class Parser(private val stream: TokenStream) {
 
             TokenType.STRING -> StringNode(tok.value as String)
             else -> {
-                stream.croak("Unexpected token: " + stream.peek().toString())
+                stream.croak("Unexpected token: $tok")
                 throw IllegalArgumentException()
             }
         }

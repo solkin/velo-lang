@@ -4,13 +4,13 @@ import vm.Frame
 import vm.SimpleOperation
 import vm.records.LinkRecord
 
-class Pair: SimpleOperation {
+class MakeTuple(val size: Int) : SimpleOperation {
 
     override fun exec(frame: Frame) {
-        val rec1 = frame.subs.pop()
-        val rec2 = frame.subs.pop()
+        val recs = Array(size) { frame.subs.pop() }
+        recs.reverse()
 
-        val result = LinkRecord.create(Pair(rec2, rec1))
+        val result = LinkRecord.create(recs)
 
         frame.subs.push(result)
     }

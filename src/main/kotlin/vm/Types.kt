@@ -7,7 +7,7 @@ const val INT: Byte = 0x03
 const val FLOAT: Byte = 0x04
 const val STR: Byte = 0x05
 const val BOOL: Byte = 0x06
-const val PAIR: Byte = 0x07
+const val TUPLE: Byte = 0x07
 const val ARRAY: Byte = 0x08
 const val DICT: Byte = 0x09
 const val CLASS: Byte = 0x0a
@@ -23,7 +23,7 @@ fun Byte.toJvmType(): Class<*> {
         FLOAT -> Float::class.java
         STR -> String::class.java
         BOOL -> Boolean::class.java
-        PAIR -> Pair::class.java
+        TUPLE -> Array::class.java
         ARRAY -> Array::class.java
         DICT -> Map::class.java
         else -> throw IllegalArgumentException("Inconvertible type $vmType")
@@ -38,7 +38,7 @@ fun Record.toType(vmType: Byte): Any {
         FLOAT -> getFloat()
         STR -> getString()
         BOOL -> getBool()
-        PAIR -> getPair()
+        TUPLE -> getArray()
         ARRAY -> getArray()
         DICT -> getDict()
         else -> throw IllegalArgumentException("Inconvertible type $vmType")

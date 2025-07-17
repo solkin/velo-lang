@@ -9,11 +9,14 @@ class StreamInput(val input: InputStream) : Input {
     private var next: Char? = null
 
     override fun peek(): Char {
-        return next ?: nextChar()
+        val ch = next ?: nextChar()
+        next = ch
+        return ch
     }
 
     override fun next(): Char {
         val ch = next ?: nextChar()
+        next = null
         when (ch) {
             Character.MIN_VALUE -> {}
             '\n', '\r' -> {
@@ -25,7 +28,6 @@ class StreamInput(val input: InputStream) : Input {
                 col++
             }
         }
-        next = null
         return ch
     }
 
@@ -38,7 +40,7 @@ class StreamInput(val input: InputStream) : Input {
     }
 
     override fun mark() {
-        input.mark(8)
+        input.mark(1024)
     }
 
     override fun reset() {
@@ -53,7 +55,6 @@ class StreamInput(val input: InputStream) : Input {
         } else {
             r.toChar()
         }
-        next = c
         return c
     }
 

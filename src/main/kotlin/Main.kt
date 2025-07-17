@@ -34,7 +34,8 @@ fun main(args: Array<String>) {
             println("Unsupported input scheme")
             return
         }
-        stream.use { compile(input = StreamInput(stream)) }
+        val source = stream.readBytes().toString(Charsets.UTF_8)
+        stream.use { compile(input = StringInput(source)) }
     } else if (path.endsWith(".vbc")) {
         var frames: List<SerializedFrame>?
         val file = File(path)

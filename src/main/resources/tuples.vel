@@ -1,0 +1,19 @@
+native class Terminal() {
+    native func print(str text) void;
+    native func input() str;
+    func println(str text) void {
+        print(text.con("\n"));
+    };
+};
+any term = Terminal();
+
+tuple[int,str,float] p = tupleOf[int,str,float](1,"second",2.5);
+
+term.println(p.1.str);
+term.println(p.2);
+
+p.1 = p.1 + 100;
+p.2 = p.2.con("_item");
+
+term.println(p.1.str);
+term.println(p.2);

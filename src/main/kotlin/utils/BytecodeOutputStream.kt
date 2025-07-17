@@ -46,9 +46,9 @@ import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
-import vm.operations.Pair
-import vm.operations.PairFirst
-import vm.operations.PairSecond
+import vm.operations.MakeTuple
+import vm.operations.TupleEntryGet
+import vm.operations.TupleEntrySet
 import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
@@ -143,9 +143,9 @@ class BytecodeOutputStream(
             is Negative -> out.writeByte(0x1f)
             is Not -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
-            is Pair -> out.writeByte(0x22)
-            is PairFirst -> out.writeByte(0x23)
-            is PairSecond -> out.writeByte(0x24)
+            is MakeTuple -> out.writeByte(0x22).also { out.writeInt(op.size) }
+            is TupleEntryGet -> out.writeByte(0x23).also { out.writeInt(op.index) }
+            is TupleEntrySet -> out.writeByte(0x24).also { out.writeInt(op.index) }
             is Pick -> out.writeByte(0x25)
             is Plus -> out.writeByte(0x26)
             is Push -> out.writeByte(0x29).also { write(op.value) }
@@ -244,8 +244,8 @@ class BytecodeOutputStream(
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x05
-const val VERSION_MINOR = 0x01
+const val VERSION_MAJOR = 0x06
+const val VERSION_MINOR = 0x00
 
 const val BC_TYPE_BYTE = 0x01
 const val BC_TYPE_INT = 0x02

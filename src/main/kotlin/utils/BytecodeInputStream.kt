@@ -46,9 +46,9 @@ import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
-import vm.operations.Pair
-import vm.operations.PairFirst
-import vm.operations.PairSecond
+import vm.operations.MakeTuple
+import vm.operations.TupleEntryGet
+import vm.operations.TupleEntrySet
 import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
@@ -155,9 +155,9 @@ class BytecodeInputStream(
             0x1f -> Negative()
             0x20 -> Not()
             0x21 -> Or()
-            0x22 -> Pair()
-            0x23 -> PairFirst()
-            0x24 -> PairSecond()
+            0x22 -> MakeTuple(size = inp.readInt())
+            0x23 -> TupleEntryGet(index = inp.readInt())
+            0x24 -> TupleEntrySet(index = inp.readInt())
             0x25 -> Pick()
             0x26 -> Plus()
             0x29 -> Push(value = readAny())

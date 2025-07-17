@@ -30,10 +30,6 @@ interface Record {
 
     fun getDict(): MutableMap<Record, Record> = get()
 
-    fun getPair(): Pair<Record, Record> = get()
-
-    fun getStruct(): ArrayList<Record> = get()
-
     fun getFrame(): Frame = get()
 
 }

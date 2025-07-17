@@ -10,7 +10,7 @@ class TokenStream(private val input: Input) {
         "while",
         "arrayOf",
         "dictOf",
-        "pairOf",
+        "tupleOf",
         "class",
         "func",
         "native",
@@ -59,17 +59,21 @@ class TokenStream(private val input: Input) {
         var hasDot = false
         val number = readWhile(predicate = fun(ch: Char): Boolean {
             if (ch == '.') {
+                if (hasDot) {
+                    // Dot was already been set - stop accumulating number
+                    return false
+                }
                 // Check for next after '.' symbol is digit, or it is property start
                 try {
                     input.mark()
                     input.next()
                     if (!isDigit(input.peek())) {
+                        // Return to the previous char so that '.' will be available to read
                         return false
                     }
                 } finally {
                     input.reset()
                 }
-                if (hasDot) return false // Dot was already been set - stop accumulating number
                 hasDot = true
                 return true
             }
@@ -181,7 +185,7 @@ const val INT = "int"
 const val FLOAT = "float"
 const val STR = "str"
 const val BOOL = "bool"
-const val PAIR = "pair"
+const val TUPLE = "tuple"
 const val ARRAY = "array"
 const val DICT = "dict"
 const val CLASS = "class"
@@ -195,7 +199,7 @@ val stdTypesSet = setOf(
     FLOAT,
     STR,
     BOOL,
-    PAIR,
+    TUPLE,
     ARRAY,
     DICT,
     CLASS,
