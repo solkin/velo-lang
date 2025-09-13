@@ -38,7 +38,7 @@ object StringType : Indexable {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.STR
+    override fun vmType() = vm.VmStr()
 
     override fun compileIndex(ctx: Context): Type {
         ctx.add(StrIndex())

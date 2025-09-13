@@ -1,13 +1,14 @@
 package compiler.nodes
 
 import compiler.Context
+import vm.VmType
 
 interface Type {
     fun sameAs(type: Type): Boolean
     fun default(ctx: Context)
     fun prop(name: String): Prop?
     fun log(): String
-    fun vmType(): Byte
+    fun vmType(): VmType
 }
 
 interface Callable : Type {
@@ -35,5 +36,5 @@ object AnyType : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.ANY
+    override fun vmType() = vm.VmAny()
 }

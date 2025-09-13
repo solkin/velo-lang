@@ -32,7 +32,7 @@ data class TupleType(val types: List<Type>) : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.TUPLE
+    override fun vmType() = vm.VmTuple()
 }
 
 data class TupleEntryProp(val index: Int) : AssignableProp {

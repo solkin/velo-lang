@@ -4,15 +4,14 @@ import vm.Frame
 import vm.FrameLoader
 import vm.Operation
 import vm.Stack
+import vm.VmType
 import vm.records.NativeRecord
-import vm.toJvmType
-import vm.toType
 import kotlin.Pair
 import kotlin.collections.List
 import kotlin.collections.map
 import kotlin.collections.toTypedArray
 
-class NativeConstructor(val name: String, val args: List<Pair<Int, Byte>>) : Operation {
+class NativeConstructor(val name: String, val args: List<Pair<Int, VmType>>) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.peek()
@@ -23,7 +22,7 @@ class NativeConstructor(val name: String, val args: List<Pair<Int, Byte>>) : Ope
             val constructor = clazz.getConstructor(*argTypes.map { it.second }.toTypedArray())
 
             val instance = constructor.newInstance(*args.map { arg ->
-                frame.vars.get(arg.first).toType(vmType = arg.second)
+                frame.vars.get(arg.first).getAs(vmType = arg.second)
             }.toTypedArray())
 
             val result = NativeRecord.create(instance)

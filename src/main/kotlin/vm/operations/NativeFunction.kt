@@ -4,13 +4,13 @@ import vm.Frame
 import vm.FrameLoader
 import vm.Operation
 import vm.Stack
+import vm.VmType
 import vm.records.NativeRecord
-import vm.toJvmType
 import kotlin.collections.List
 import kotlin.collections.map
 import kotlin.collections.toTypedArray
 
-class NativeFunction(val name: String, val argTypes: List<Byte>) : Operation {
+class NativeFunction(val name: String, val argTypes: List<VmType>) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.peek()

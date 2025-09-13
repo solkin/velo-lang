@@ -7,11 +7,11 @@ data class LinkRecord(
     val id: Int
 ) : Record {
 
-    override fun <T> get(): T = HeapArea.get(this)
+    override fun <T> get(): T = HeapArea.get(id)
 
     companion object {
         fun create(value: Any): LinkRecord {
-            return HeapArea.put(value)
+            return LinkRecord(id = HeapArea.put(value))
         }
     }
 }

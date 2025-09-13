@@ -72,7 +72,7 @@ class Parser(private val stream: TokenStream) {
     private fun isDef(): Token? {
         return stream.peek()?.takeIf { tok ->
             when (tok.type) {
-                TokenType.KEYWORD -> stdTypesSet.contains(tok.value)
+                TokenType.KEYWORD -> stdTypesSet.plus(stream.classTypesMap.keys).contains(tok.value)
                 else -> false
             }
         }
@@ -107,20 +107,22 @@ class Parser(private val stream: TokenStream) {
                 DictType(TupleType(types))
             }
 
-            CLASS -> {
-                (
-                        delimited(start = '[', stop = ']', separator = ',', parser = ::parseExpression)
-                            .takeIf { it.size == 1 }
-                            ?.first() as? VarNode
-                        )?.let { typeName ->
-                        ClassType(name = typeName.name)
-                    } ?: throw IllegalArgumentException("Invalid class type specification")
-            }
+//            CLASS -> {
+//                (
+//                        delimited(start = '[', stop = ']', separator = ',', parser = ::parseExpression)
+//                            .takeIf { it.size == 1 }
+//                            ?.first() as? VarNode
+//                        )?.let { typeName ->
+//                        ClassType(name = typeName.name)
+//                    } ?: throw IllegalArgumentException("Invalid class type specification")
+//            }
 
             FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
             VOID -> VoidType
             ANY -> AnyType
-            else -> throw IllegalArgumentException("Unknown type ${tok.value}")
+            else -> {
+                stream.classTypesMap[tok.value] ?: throw IllegalArgumentException("Unknown type ${tok.value}")
+            }
         }
     }
 
@@ -288,8 +290,16 @@ class Parser(private val stream: TokenStream) {
         return maybeDef(native = true)
     }
 
+    private fun parseNew(): Node {
+        skipKw("new")
+        val tok = stream.next() ?: throw IllegalStateException()
+        // Pass class type as VarNode to parse call in a common way
+        return maybePostfix(VarNode(tok.value as String))
+    }
+
     private fun parseClass(native: Boolean): Node {
         val className = parseVarname()
+        stream.classTypesMap[className] = ClassType(name = className)
         return ClassNode(
             name = className,
             native = native,
@@ -375,7 +385,7 @@ class Parser(private val stream: TokenStream) {
         val tok = stream.peek()
         if (tok?.type == TokenType.VARIABLE || tok?.type == TokenType.KEYWORD || tok?.type == TokenType.NUMBER) {
             val tokVal = stream.next()?.value
-            val name = when(tokVal) {
+            val name = when (tokVal) {
                 is String -> tokVal
                 is Int -> tokVal.toString()
                 else -> {
@@ -441,6 +451,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("tupleOf") != null) return parseTuple()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("native") != null) return parseNative()
+        if (isKw("new") != null) return parseNew()
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)

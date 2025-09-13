@@ -181,7 +181,7 @@ class BytecodeOutputStream(
                 out.writeByte(op.args.size)
                 op.args.forEach { arg ->
                     out.writeInt(arg.first)
-                    out.writeByte(arg.second.toInt())
+                    //TODO: out.writeByte(arg.second.toInt())
                 }
             }
 
@@ -189,7 +189,7 @@ class BytecodeOutputStream(
                 out.writeUTF(op.name)
                 out.writeByte(op.argTypes.size)
                 op.argTypes.forEach { arg ->
-                    out.writeByte(arg.toInt())
+                    //TODO: out.writeByte(arg.toInt())
                 }
             }
 
@@ -197,7 +197,7 @@ class BytecodeOutputStream(
                 out.writeByte(op.args.size)
                 op.args.forEach { arg ->
                     out.writeInt(arg.first)
-                    out.writeByte(arg.second.toInt())
+                    //TODO: out.writeByte(arg.second.toInt())
                 }
             }
 

@@ -4,15 +4,15 @@ import vm.Frame
 import vm.FrameLoader
 import vm.Operation
 import vm.Stack
+import vm.VmType
 import vm.records.LinkRecord
-import vm.toType
 import java.lang.reflect.Method
 import kotlin.Pair
 import kotlin.collections.List
 import kotlin.collections.map
 import kotlin.collections.toTypedArray
 
-class NativeInvoke(val args: List<Pair<Int, Byte>>) : Operation {
+class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.peek()
@@ -22,7 +22,8 @@ class NativeInvoke(val args: List<Pair<Int, Byte>>) : Operation {
 
         try {
             val nativeResult = method.invoke(instance, *args.map { arg ->
-                frame.vars.get(arg.first).toType(vmType = arg.second)
+                val record = frame.vars.get(arg.first)
+                record.getAs(vmType = arg.second)
             }.toTypedArray())
 
             nativeResult?.let {

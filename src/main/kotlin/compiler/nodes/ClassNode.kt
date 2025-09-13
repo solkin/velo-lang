@@ -18,16 +18,7 @@ data class ClassNode(
     override fun compile(ctx: Context): Type {
         // Create class body frame with extended context
         val classOps = ctx.extend()
-
         val argTypes = ArrayList<Type>()
-        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, argTypes)
-
-        // Define class type as a variable
-        val nameVar = ctx.def(name, classType)
-
-        // Insert class frame pointer into stack
-        ctx.add(Frame(num = classOps.frame.num))
-        ctx.add(Set(index = nameVar.index))
 
         // Compile class body
         val args = defs.reversed().map { def ->
@@ -36,14 +27,27 @@ data class ClassNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
-        if (native) {
+        val nativeIndex = if (native) {
             classOps.add(NativeConstructor(name, args = args.map { Pair(it.index, it.type.vmType()) }))
-            val iv = classOps.def(name = NATIVE_INSTANCE, type = classType)
-            classOps.add(Set(index = iv.index))
+            val nativeInstance = classOps.def(name = NATIVE_INSTANCE, type = AnyType)
+            classOps.add(Set(index = nativeInstance.index))
+            nativeInstance.index
+        } else {
+            null
         }
+
         body.compile(ctx = classOps)
-        classOps.add(Instance())
+        classOps.add(Instance(nativeIndex))
         classOps.add(Ret())
+
+        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, args = argTypes)
+
+        // Define class type as a variable
+        val nameVar = ctx.def(name, classType)
+
+        // Insert class frame pointer into stack
+        ctx.add(Frame(num = classOps.frame.num))
+        ctx.add(Set(index = nameVar.index))
 
         // Add class operations to the real context
         ctx.merge(classOps)
@@ -56,7 +60,7 @@ data class ClassType(
     val name: String,
     val num: Int? = null,
     val parent: Context? = null,
-    val args: List<Type>? = null
+    val args: List<Type>? = null,
 ) : Type {
     override fun sameAs(type: Type): Boolean {
         return type is ClassType && type.name == name
@@ -66,13 +70,13 @@ data class ClassType(
         ctx.add(Frame(num = 0))
     }
 
-    override fun prop(name: String): Prop? {
+    override fun prop(name: String): Prop {
         return ClassElementProp(name)
     }
 
     override fun log() = toString()
 
-    override fun vmType() = vm.CLASS
+    override fun vmType() = vm.VmClass(name)
 }
 
 data class ClassElementProp(val name: String) : Prop {

@@ -25,5 +25,5 @@ object BoolType : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.BOOL
+    override fun vmType() = vm.VmBool()
 }

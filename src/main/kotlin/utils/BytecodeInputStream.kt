@@ -184,19 +184,19 @@ class BytecodeInputStream(
             0x3f -> DictVals()
             0x40 -> StrInt()
             0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
-            0x42 -> Instance()
+            0x42 -> Instance(null) //TODO: implement
             0x43 -> NativeConstructor(
                 name = inp.readUTF(),
-                args = readArray { Pair(inp.readInt(), inp.readByte()) }
+                args = emptyList() //TODO: readArray { Pair(inp.readInt(), inp.readByte()) }
             )
 
             0x44 -> NativeFunction(
                 name = inp.readUTF(),
-                argTypes = readArray { inp.readByte() }
+                argTypes = emptyList() //TODO: readArray { inp.readByte() }
             )
 
             0x45 -> NativeInvoke(
-                args = readArray { Pair(inp.readInt(), inp.readByte()) }
+                args = emptyList() //TODO: readArray { Pair(inp.readInt(), inp.readByte()) }
             )
 
             0x46 -> Shl()

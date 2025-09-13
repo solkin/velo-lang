@@ -4,13 +4,13 @@ import vm.Frame
 import vm.Operation
 import vm.FrameLoader
 import vm.Stack
-import vm.records.LinkRecord
+import vm.records.ClassRecord
 
-class Instance() : Operation {
+class Instance(val nativeIndex: Int?) : Operation {
 
     override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
         val frame = stack.peek()
-        val record = LinkRecord.create(frame)
+        val record = ClassRecord.create(frame, nativeIndex)
         frame.subs.push(value = record)
         return pc + 1
     }

@@ -37,7 +37,7 @@ object IntType : Numeric {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.INT
+    override fun vmType() = vm.VmInt()
 }
 
 object IntShlProp : Prop {

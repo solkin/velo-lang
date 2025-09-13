@@ -4,8 +4,8 @@ import vm.records.LinkRecord
 import java.util.concurrent.atomic.AtomicInteger
 
 interface Heap {
-    fun put(value: Any): LinkRecord
-    fun <T> get(link: LinkRecord): T
+    fun put(value: Any): Int
+    fun <T> get(id: Int): T
 }
 
 object HeapArea : Heap {
@@ -13,15 +13,15 @@ object HeapArea : Heap {
     private val enumerator = AtomicInteger()
     private val area = HashMap<Int, Any>()
 
-    override fun put(value: Any) : LinkRecord {
+    override fun put(value: Any) : Int {
         val id = enumerator.getAndIncrement()
         area[id] = value
-        return LinkRecord(id)
+        return id
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T> get(link: LinkRecord): T {
-        return area[link.id] as T ?: throw Exception("Broken heap area link: $link")
+    override fun <T> get(id: Int): T {
+        return area[id] as T ?: throw Exception("Broken heap area link: $id")
     }
 
 }
