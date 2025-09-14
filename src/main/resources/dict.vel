@@ -5,7 +5,7 @@ native class Terminal() {
         print(text.con("\n"));
     };
 };
-any term = Terminal();
+any term = new Terminal();
 
 dict[int:str] d = dictOf[int:str](
     1:"a",
