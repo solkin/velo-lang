@@ -19,6 +19,6 @@ any fib = func (int num) int {
     b;
 };
 
-any term = Terminal();
+any term = new Terminal();
 term.print("Fib: ");
 term.println(fib(93).str);
