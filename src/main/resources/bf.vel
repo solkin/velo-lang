@@ -6,7 +6,7 @@ native class Terminal() {
     };
 };
 
-class[Terminal] term = Terminal();
+Terminal term = new Terminal();
 
 term.println("Brainfuck Interpreter");
 term.println("--");
