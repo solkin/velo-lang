@@ -6,7 +6,7 @@ native class Terminal() {
     };
 };
 
-class GameOfLife(class[Terminal] term) {
+class GameOfLife(Terminal term) {
 
     any w = arrayOf[array[int]](
         arrayOf[int](0, 1, 0, 0, 0, 0),
@@ -75,8 +75,8 @@ class GameOfLife(class[Terminal] term) {
 
 };
 
-any term = Terminal();
-any g = GameOfLife(term);
+Terminal term = new Terminal();
+GameOfLife g = new GameOfLife(term);
 term.print("Enter generations count: ");
 int count = term.input().int;
 term.println("");
