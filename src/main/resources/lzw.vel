@@ -6,7 +6,7 @@ native class Terminal() {
     };
 };
 
-any term = Terminal();
+any term = new Terminal();
 
 class LZW() {
     func compress(str text) array[int] {
@@ -78,7 +78,7 @@ class LZW() {
     };
 };
 
-any lzw = LZW();
+LZW lzw = new LZW();
 str text = term.input();
 if (text.len == 0) {
     text = "TOBEORNOTTOBEORTOBEORNOT";
