@@ -1,7 +1,7 @@
 native class Terminal() {
     native func print(str text) str;
 };
-any term = Terminal();
+Terminal term = new Terminal();
 
 str hello = "Hello, World!";
 term.print(hello);
