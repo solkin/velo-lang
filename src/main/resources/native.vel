@@ -11,12 +11,12 @@ native class Time() {
     native func unix() int;
 };
 
-class[Terminal] term = Terminal();
+Terminal term = new Terminal();
 term.println("Hello, World!");
 term.print("input sleeping amound in sec: ");
 int sec = term.input().int;
 
-class[Time] time = Time();
+Time time = new Time();
 term.println("sleeping for ".con(sec.str).con(" sec..."));
 time.sleep(sec * 1000);
 term.println("UNIX time is: ".con(time.unix.str));
