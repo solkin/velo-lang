@@ -126,7 +126,7 @@ class Random(int seed) {
     }
 };
 
-any random = Random(12345);
+Random random = new Random(12345);
 int i = 5;
 while (i > 0) {
     any r = random.next();
@@ -148,7 +148,7 @@ native class Terminal() {
 
 };
 
-class[Terminal] term = Terminal();
+Terminal term = new Terminal();
 term.println("Hello, World!");
 term.print(term.input());
 ```
