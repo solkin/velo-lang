@@ -14,7 +14,7 @@ class ValueStorage(int h, str b) {
 };
 
 # create class instance
-any t = ValueStorage(42, "test");
+any t = new ValueStorage(42, "test");
 # you can run class method t.p() and read-only access it fields t.a
 t.setA("1000");
 # t.a = 1000
@@ -40,7 +40,7 @@ class Random(int seed) {
 
 #--- Use randomizer class
 
-class[Random] random = Random(12345);
+Random random = new Random(12345);
 int i = 5;
 while (i > 0) {
     int r = random.next();
@@ -51,9 +51,9 @@ while (i > 0) {
 
 class Pair(any key, any value) {};
 
-class[Pair] p = Pair("key", 42);
+Pair p = new Pair("key", 42);
 
-func usePair(class[Pair] p) void {
+func usePair(Pair p) void {
     # p.key - "key"
     # p.value - 42
 };
@@ -64,34 +64,34 @@ usePair(p);
 
 class A(int z) {};
 
-class[A] a = A(42);
+A a = new A(42);
 
-class B(class[A] d) {
+class B(A d) {
     int f = 9;
-    func i(class[A] c) int {
+    func i(A c) int {
         c.z + a.z;
     };
-    func s(class[B] b) int {
-        b.f - d.z;
-    };
+    #func s(B b) int {
+    #    b.f - d.z;
+    #};
 };
 
-class[B] b = B(a);
+B b = new B(a);
 b.i(a);
-b.s(b);
+#b.s(b);
 
 #---
 
 class LinkedList() {
 
-    class Item(class[Item] prev, any value) {};
+    class Item(Item prev, any value) {};
 
-    class[Item] start;
-    class[Item] end;
+    Item start;
+    Item end;
     int length = 0;
 
     func add(any value) void {
-        end = Item(end, value);
+        end = new Item(end, value);
         if (length == 0) {
             start = end;
         };
@@ -110,7 +110,7 @@ class LinkedList() {
 
 };
 
-class[LinkedList] ll = LinkedList();
+LinkedList ll = new LinkedList();
 ll.add("10");
 ll.add("20");
 ll.add("30");
