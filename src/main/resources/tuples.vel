@@ -5,7 +5,7 @@ native class Terminal() {
         print(text.con("\n"));
     };
 };
-any term = Terminal();
+Terminal term = new Terminal();
 
 tuple[int,str,float] p = tupleOf[int,str,float](1,"second",2.5);
 
