@@ -3,7 +3,7 @@ native class Terminal() {
     func println(str text) str { print(text.con("\n")) };
 };
 
-any term = Terminal();
+any term = new Terminal();
 
 func symbolAt(str s, int i) str {
     s.sub(i, i + 1);
