@@ -1,6 +1,19 @@
 package utils
 
 import vm.Operation
+import vm.VmAny
+import vm.VmArray
+import vm.VmBool
+import vm.VmByte
+import vm.VmClass
+import vm.VmDict
+import vm.VmFloat
+import vm.VmFunc
+import vm.VmInt
+import vm.VmStr
+import vm.VmTuple
+import vm.VmType
+import vm.VmVoid
 import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrCon
@@ -35,6 +48,7 @@ import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
+import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -46,9 +60,6 @@ import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
-import vm.operations.MakeTuple
-import vm.operations.TupleEntryGet
-import vm.operations.TupleEntrySet
 import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
@@ -65,7 +76,10 @@ import vm.operations.StrLen
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
+import vm.operations.TupleEntryGet
+import vm.operations.TupleEntrySet
 import java.io.DataOutputStream
+import java.io.IOException
 import java.io.OutputStream
 
 class BytecodeOutputStream(
@@ -175,13 +189,15 @@ class BytecodeOutputStream(
                 out.writeInt(op.elseNum)
             }
 
-            is Instance -> out.writeByte(0x42)
+            is Instance -> out.writeByte(0x42).also {
+                out.writeNullableInt(op.nativeIndex)
+            }
             is NativeConstructor -> out.writeByte(0x43).also {
                 out.writeUTF(op.name)
                 out.writeByte(op.args.size)
                 op.args.forEach { arg ->
                     out.writeInt(arg.first)
-                    //TODO: out.writeByte(arg.second.toInt())
+                    out.writeType(arg.second)
                 }
             }
 
@@ -189,7 +205,7 @@ class BytecodeOutputStream(
                 out.writeUTF(op.name)
                 out.writeByte(op.argTypes.size)
                 op.argTypes.forEach { arg ->
-                    //TODO: out.writeByte(arg.toInt())
+                    out.writeType(arg)
                 }
             }
 
@@ -197,7 +213,7 @@ class BytecodeOutputStream(
                 out.writeByte(op.args.size)
                 op.args.forEach { arg ->
                     out.writeInt(arg.first)
-                    //TODO: out.writeByte(arg.second.toInt())
+                    out.writeType(arg.second)
                 }
             }
 
@@ -208,6 +224,13 @@ class BytecodeOutputStream(
         }
     }
 
+    fun DataOutputStream.writeNullableInt(v: Int?) {
+        out.writeBoolean(v != null)
+        if (v != null) {
+            out.writeInt(v)
+        }
+    }
+
     override fun write(b: Int) {
         out.write(b)
     }
@@ -215,40 +238,64 @@ class BytecodeOutputStream(
     private fun write(value: Any) {
         when (value) {
             is Byte -> {
-                out.writeByte(BC_TYPE_BYTE)
+                out.writeByte(TYPE_BYTE)
                 out.writeByte(value.toInt())
             }
 
             is Int -> {
-                out.writeByte(BC_TYPE_INT)
+                out.writeByte(TYPE_INT)
                 out.writeInt(value)
             }
 
             is Float -> {
-                out.writeByte(BC_TYPE_FLOAT)
+                out.writeByte(TYPE_FLOAT)
                 out.writeFloat(value)
             }
 
             is String -> {
-                out.writeByte(BC_TYPE_STRING)
+                out.writeByte(TYPE_STR)
                 out.writeUTF(value)
             }
 
             is Boolean -> {
-                out.writeByte(BC_TYPE_BOOLEAN)
+                out.writeByte(TYPE_BOOL)
                 out.writeBoolean(value)
             }
+        }
+    }
+
+    fun DataOutputStream.writeType(t: VmType) {
+        when(t) {
+            is VmVoid -> writeByte(TYPE_VOID)
+            is VmAny -> writeByte(TYPE_ANY)
+            is VmByte -> writeByte(TYPE_BYTE)
+            is VmInt -> writeByte(TYPE_INT)
+            is VmFloat -> writeByte(TYPE_FLOAT)
+            is VmStr -> writeByte(TYPE_STR)
+            is VmBool -> writeByte(TYPE_BOOL)
+            is VmTuple -> writeByte(TYPE_TUPLE)
+            is VmArray -> writeByte(TYPE_ARRAY)
+            is VmDict -> writeByte(TYPE_DICT)
+            is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
+            is VmFunc -> writeByte(TYPE_FUNC)
         }
     }
 
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x06
+const val VERSION_MAJOR = 0x07
 const val VERSION_MINOR = 0x00
 
-const val BC_TYPE_BYTE = 0x01
-const val BC_TYPE_INT = 0x02
-const val BC_TYPE_FLOAT = 0x03
-const val BC_TYPE_STRING = 0x04
-const val BC_TYPE_BOOLEAN = 0x05
+const val TYPE_VOID = 0x00
+const val TYPE_ANY = 0x01
+const val TYPE_BYTE = 0x02
+const val TYPE_INT = 0x03
+const val TYPE_FLOAT = 0x04
+const val TYPE_STR = 0x05
+const val TYPE_BOOL = 0x06
+const val TYPE_TUPLE = 0x07
+const val TYPE_ARRAY = 0x08
+const val TYPE_DICT = 0x09
+const val TYPE_CLASS = 0x0a
+const val TYPE_FUNC = 0x0b
