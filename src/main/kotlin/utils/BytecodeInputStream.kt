@@ -1,6 +1,19 @@
 package utils
 
 import vm.Operation
+import vm.VmAny
+import vm.VmArray
+import vm.VmBool
+import vm.VmByte
+import vm.VmClass
+import vm.VmDict
+import vm.VmFloat
+import vm.VmFunc
+import vm.VmInt
+import vm.VmStr
+import vm.VmTuple
+import vm.VmType
+import vm.VmVoid
 import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrCon
@@ -35,6 +48,7 @@ import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Less
 import vm.operations.LessEquals
+import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
@@ -46,9 +60,6 @@ import vm.operations.NativeInvoke
 import vm.operations.Negative
 import vm.operations.Not
 import vm.operations.Or
-import vm.operations.MakeTuple
-import vm.operations.TupleEntryGet
-import vm.operations.TupleEntrySet
 import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
@@ -65,6 +76,8 @@ import vm.operations.StrLen
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
+import vm.operations.TupleEntryGet
+import vm.operations.TupleEntrySet
 import vm.operations.Xor
 import java.io.DataInputStream
 import java.io.InputStream
@@ -184,19 +197,19 @@ class BytecodeInputStream(
             0x3f -> DictVals()
             0x40 -> StrInt()
             0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
-            0x42 -> Instance(null) //TODO: implement
+            0x42 -> Instance(nativeIndex = inp.readNullableInt()) //TODO: implement
             0x43 -> NativeConstructor(
                 name = inp.readUTF(),
-                args = emptyList() //TODO: readArray { Pair(inp.readInt(), inp.readByte()) }
+                args = readArray { Pair(inp.readInt(), inp.readType()) }
             )
 
             0x44 -> NativeFunction(
                 name = inp.readUTF(),
-                argTypes = emptyList() //TODO: readArray { inp.readByte() }
+                argTypes = readArray { inp.readType() }
             )
 
             0x45 -> NativeInvoke(
-                args = emptyList() //TODO: readArray { Pair(inp.readInt(), inp.readByte()) }
+                args = readArray { Pair(inp.readInt(), inp.readType()) }
             )
 
             0x46 -> Shl()
@@ -212,14 +225,15 @@ class BytecodeInputStream(
 
     private fun readAny(): Any {
         return when (val type = inp.readByte().toInt()) {
-            BC_TYPE_BYTE -> inp.readByte()
-            BC_TYPE_INT -> inp.readInt()
-            BC_TYPE_FLOAT -> inp.readFloat()
-            BC_TYPE_STRING -> inp.readUTF()
-            BC_TYPE_BOOLEAN -> inp.readBoolean()
+            TYPE_BYTE -> inp.readByte()
+            TYPE_INT -> inp.readInt()
+            TYPE_FLOAT -> inp.readFloat()
+            TYPE_STR -> inp.readUTF()
+            TYPE_BOOL -> inp.readBoolean()
             else -> throw IllegalStateException("Unsupported data type: $type")
         }
     }
+
 
     private fun <T> readArray(action: () -> T): List<T> {
         val size = inp.readByte().toInt()
@@ -229,4 +243,29 @@ class BytecodeInputStream(
         }
         return result
     }
+}
+
+private fun DataInputStream.readType(): VmType {
+    return when (val t = readByte().toInt()) {
+        TYPE_VOID -> VmVoid()
+        TYPE_ANY -> VmAny()
+        TYPE_BYTE -> VmByte()
+        TYPE_INT -> VmInt()
+        TYPE_FLOAT -> VmFloat()
+        TYPE_STR -> VmStr()
+        TYPE_BOOL -> VmBool()
+        TYPE_TUPLE -> VmTuple()
+        TYPE_ARRAY -> VmArray()
+        TYPE_DICT -> VmDict()
+        TYPE_CLASS -> VmClass(name = readUTF())
+        TYPE_FUNC -> VmFunc()
+        else -> throw Exception("Unsupported bytecode data type $t")
+    }
+}
+
+private fun DataInputStream.readNullableInt(): Int? {
+    if (readBoolean()) {
+        return readInt()
+    }
+    return null
 }
