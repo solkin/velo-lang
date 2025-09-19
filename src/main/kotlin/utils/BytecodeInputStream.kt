@@ -173,7 +173,7 @@ class BytecodeInputStream(
             0x24 -> TupleEntrySet(index = inp.readInt())
             0x25 -> Pick()
             0x26 -> Plus()
-            0x29 -> Push(value = readAny())
+            0x29 -> Push(value = inp.readAny())
             0x2a -> Rem()
             0x2b -> Ret()
             0x2c -> Rot()
@@ -200,16 +200,16 @@ class BytecodeInputStream(
             0x42 -> Instance(nativeIndex = inp.readNullableInt()) //TODO: implement
             0x43 -> NativeConstructor(
                 name = inp.readUTF(),
-                args = readArray { Pair(inp.readInt(), inp.readType()) }
+                args = inp.readArray { Pair(inp.readInt(), inp.readType()) }
             )
 
             0x44 -> NativeFunction(
                 name = inp.readUTF(),
-                argTypes = readArray { inp.readType() }
+                argTypes = inp.readArray { inp.readType() }
             )
 
             0x45 -> NativeInvoke(
-                args = readArray { Pair(inp.readInt(), inp.readType()) }
+                args = inp.readArray { Pair(inp.readInt(), inp.readType()) }
             )
 
             0x46 -> Shl()
@@ -222,27 +222,26 @@ class BytecodeInputStream(
     override fun read(): Int {
         return inp.read()
     }
+}
 
-    private fun readAny(): Any {
-        return when (val type = inp.readByte().toInt()) {
-            TYPE_BYTE -> inp.readByte()
-            TYPE_INT -> inp.readInt()
-            TYPE_FLOAT -> inp.readFloat()
-            TYPE_STR -> inp.readUTF()
-            TYPE_BOOL -> inp.readBoolean()
-            else -> throw IllegalStateException("Unsupported data type: $type")
-        }
+private fun DataInputStream.readAny(): Any {
+    return when (val type = readByte().toInt()) {
+        TYPE_BYTE -> readByte()
+        TYPE_INT -> readInt()
+        TYPE_FLOAT -> readFloat()
+        TYPE_STR -> readUTF()
+        TYPE_BOOL -> readBoolean()
+        else -> throw IllegalStateException("Unsupported data type: $type")
     }
+}
 
-
-    private fun <T> readArray(action: () -> T): List<T> {
-        val size = inp.readByte().toInt()
-        val result = ArrayList<T>()
-        repeat(size) {
-            result.add(action())
-        }
-        return result
+private fun <T> DataInputStream.readArray(action: () -> T): List<T> {
+    val size = readByte().toInt()
+    val result = ArrayList<T>()
+    repeat(size) {
+        result.add(action())
     }
+    return result
 }
 
 private fun DataInputStream.readType(): VmType {
