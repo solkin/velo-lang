@@ -224,63 +224,63 @@ class BytecodeOutputStream(
         }
     }
 
-    fun DataOutputStream.writeNullableInt(v: Int?) {
-        out.writeBoolean(v != null)
-        if (v != null) {
-            out.writeInt(v)
-        }
-    }
-
     override fun write(b: Int) {
         out.write(b)
     }
 
-    private fun write(value: Any) {
-        when (value) {
-            is Byte -> {
-                out.writeByte(TYPE_BYTE)
-                out.writeByte(value.toInt())
-            }
+}
 
-            is Int -> {
-                out.writeByte(TYPE_INT)
-                out.writeInt(value)
-            }
+fun DataOutputStream.writeNullableInt(v: Int?) {
+    writeBoolean(v != null)
+    if (v != null) {
+        writeInt(v)
+    }
+}
 
-            is Float -> {
-                out.writeByte(TYPE_FLOAT)
-                out.writeFloat(value)
-            }
+private fun DataOutputStream.write(value: Any) {
+    when (value) {
+        is Byte -> {
+            writeByte(TYPE_BYTE)
+            writeByte(value.toInt())
+        }
 
-            is String -> {
-                out.writeByte(TYPE_STR)
-                out.writeUTF(value)
-            }
+        is Int -> {
+            writeByte(TYPE_INT)
+            writeInt(value)
+        }
 
-            is Boolean -> {
-                out.writeByte(TYPE_BOOL)
-                out.writeBoolean(value)
-            }
+        is Float -> {
+            writeByte(TYPE_FLOAT)
+            writeFloat(value)
+        }
+
+        is String -> {
+            writeByte(TYPE_STR)
+            writeUTF(value)
+        }
+
+        is Boolean -> {
+            writeByte(TYPE_BOOL)
+            writeBoolean(value)
         }
     }
+}
 
-    fun DataOutputStream.writeType(t: VmType) {
-        when(t) {
-            is VmVoid -> writeByte(TYPE_VOID)
-            is VmAny -> writeByte(TYPE_ANY)
-            is VmByte -> writeByte(TYPE_BYTE)
-            is VmInt -> writeByte(TYPE_INT)
-            is VmFloat -> writeByte(TYPE_FLOAT)
-            is VmStr -> writeByte(TYPE_STR)
-            is VmBool -> writeByte(TYPE_BOOL)
-            is VmTuple -> writeByte(TYPE_TUPLE)
-            is VmArray -> writeByte(TYPE_ARRAY)
-            is VmDict -> writeByte(TYPE_DICT)
-            is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
-            is VmFunc -> writeByte(TYPE_FUNC)
-        }
+private fun DataOutputStream.writeType(t: VmType) {
+    when(t) {
+        is VmVoid -> writeByte(TYPE_VOID)
+        is VmAny -> writeByte(TYPE_ANY)
+        is VmByte -> writeByte(TYPE_BYTE)
+        is VmInt -> writeByte(TYPE_INT)
+        is VmFloat -> writeByte(TYPE_FLOAT)
+        is VmStr -> writeByte(TYPE_STR)
+        is VmBool -> writeByte(TYPE_BOOL)
+        is VmTuple -> writeByte(TYPE_TUPLE)
+        is VmArray -> writeByte(TYPE_ARRAY)
+        is VmDict -> writeByte(TYPE_DICT)
+        is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
+        is VmFunc -> writeByte(TYPE_FUNC)
     }
-
 }
 
 const val MAGIC = 0x5e10
