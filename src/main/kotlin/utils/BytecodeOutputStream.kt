@@ -79,7 +79,6 @@ import vm.operations.Swap
 import vm.operations.TupleEntryGet
 import vm.operations.TupleEntrySet
 import java.io.DataOutputStream
-import java.io.IOException
 import java.io.OutputStream
 
 class BytecodeOutputStream(
@@ -162,7 +161,7 @@ class BytecodeOutputStream(
             is TupleEntrySet -> out.writeByte(0x24).also { out.writeInt(op.index) }
             is Pick -> out.writeByte(0x25)
             is Plus -> out.writeByte(0x26)
-            is Push -> out.writeByte(0x29).also { write(op.value) }
+            is Push -> out.writeByte(0x29).also { out.write(op.value) }
             is Rem -> out.writeByte(0x2a)
             is Ret -> out.writeByte(0x2b)
             is Rot -> out.writeByte(0x2c)
