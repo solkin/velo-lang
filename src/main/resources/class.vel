@@ -71,14 +71,14 @@ class B(A d) {
     func i(A c) int {
         c.z + a.z;
     };
-    #func s(B b) int {
-    #    b.f - d.z;
-    #};
+    func s(B b) int {
+        b.f - d.z;
+    };
 };
 
 B b = new B(a);
 b.i(a);
-#b.s(b);
+b.s(b);
 
 #---
 

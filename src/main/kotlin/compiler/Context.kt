@@ -98,11 +98,11 @@ data class Context(
     fun get(name: String): Var {
         val context = lookup(name)
         return context?.frame?.vars?.get(name) ?:
-            throw IllegalArgumentException("Undefined variable $name")
+            throw IllegalArgumentException("Undefined variable $name on get")
     }
 
     fun retype(name: String, type: Type) {
-        lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name")
+        lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name on retype")
     }
 
     fun def(name: String, type: Type): Var {

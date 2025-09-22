@@ -20,6 +20,15 @@ data class ClassNode(
         val classOps = ctx.extend()
         val argTypes = ArrayList<Type>()
 
+        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, args = argTypes)
+
+        // Define class type as a variable
+        val nameVar = ctx.def(name, classType)
+
+        // Insert class frame pointer into stack
+        ctx.add(Frame(num = classOps.frame.num))
+        ctx.add(Set(index = nameVar.index))
+
         // Compile class body
         val args = defs.reversed().map { def ->
             val v = classOps.def(def.name, def.type)
@@ -39,15 +48,6 @@ data class ClassNode(
         body.compile(ctx = classOps)
         classOps.add(Instance(nativeIndex))
         classOps.add(Ret())
-
-        val classType: Type = ClassType(name, num = classOps.frame.num, parent = classOps, args = argTypes)
-
-        // Define class type as a variable
-        val nameVar = ctx.def(name, classType)
-
-        // Insert class frame pointer into stack
-        ctx.add(Frame(num = classOps.frame.num))
-        ctx.add(Set(index = nameVar.index))
 
         // Add class operations to the real context
         ctx.merge(classOps)

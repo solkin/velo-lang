@@ -19,11 +19,11 @@ data class Vars(
 
     fun get(index: Int): Record {
         val scope = lookup(index)
-        return scope?.vars?.get(index) ?: throw IllegalArgumentException("Undefined variable $index")
+        return scope?.vars?.get(index) ?: throw IllegalArgumentException("Undefined variable $index on var get")
     }
 
     fun set(index: Int, value: Record): Record {
-        val scope = lookup(index) ?: throw IllegalArgumentException("Undefined variable $index")
+        val scope = lookup(index) ?: throw IllegalArgumentException("Undefined variable $index on var set")
         scope.vars[index] = value
         return value
     }
