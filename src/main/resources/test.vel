@@ -1,16 +1,35 @@
-native class Terminal() {
-    native func print(str text) void;
-    native func input() str;
-    func println(str text) void {
-        print(text.con("\n"));
-    };
-};
-native class Time() {
-    native func sleep(int millis) void;
-    native func print(Terminal term) void;
+func[int] test = func(int a) int {
+    func(int a, int b) int {
+        a + b
+    }(a, 1);
 };
 
-Terminal term = new Terminal();
-Time time = new Time();
-time.sleep(1000);
-time.print(term);
+func traverse(array[array[int]] matrix) array[array[int]] {
+    native class Terminal() {
+        native func print(str text) str;
+        func println(str text) str { print(text.con("\n")) };
+    };
+    matrix.map(
+        func(int index, array[int] row) array[int] {
+            any term = new Terminal();
+            row.map(
+                func(int index, int col) int {
+                    int v = test(col);
+                    term.print(v.str);
+                    term.print(" ");
+                    v;
+                }
+            );
+            term.println("");
+            row;
+        }
+    );
+};
+
+any matrix = arrayOf[array[int]](
+    arrayOf[int](0, 4, 6, 3, 5),
+    arrayOf[int](8, 4, 2, 5, 1)
+);
+matrix = matrix.con(arrayOf[array[int]](arrayOf[int](2, 1, 3, 7).plus(8)));
+
+traverse(matrix);
