@@ -16,6 +16,7 @@ println(hello);
 str s = "s";
 bool b = true;
 int i = 1;
+int i1 = 0xCAFE; # hex
 float f = 3.0;
 any l = arrayOf[array[int]]();
 any n = func() void {};

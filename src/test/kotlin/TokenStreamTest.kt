@@ -1,11 +1,10 @@
-import compiler.parser.StreamInput
 import compiler.parser.StringInput
 import compiler.parser.Token
 import compiler.parser.TokenStream
 import compiler.parser.TokenType
-import java.io.ByteArrayInputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class TokenStreamTest {
@@ -102,6 +101,66 @@ class TokenStreamTest {
                 type = TokenType.VARIABLE,
                 value = "test"
             ), token3
+        )
+    }
+
+    @Test
+    fun testHexNumber() {
+        val input = StringInput("0xCafe")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 51966
+            ), token
+        )
+    }
+
+    @Test
+    fun testHexNumberInvalidPrefix() {
+        val input = StringInput("0xxcafe")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 0
+            ), token
+        )
+    }
+
+    @Test
+    fun testHexNumberInvalidFormat() {
+        val input = StringInput("0x0axe")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 10
+            ), token
+        )
+    }
+
+    @Test
+    fun testHexNumberInvalidSymbols() {
+        val input = StringInput("0x0n7")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 0
+            ), token
         )
     }
 

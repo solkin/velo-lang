@@ -31,6 +31,10 @@ class TokenStream(private val input: Input) {
         return "0123456789".indexOf(ch) >= 0
     }
 
+    private fun isHexDigit(ch: Char): Boolean {
+        return "0123456789ABCDEFabcdef".indexOf(ch) >= 0
+    }
+
     private fun isIdStart(ch: Char): Boolean {
         return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".indexOf(ch) >= 0
     }
@@ -61,29 +65,52 @@ class TokenStream(private val input: Input) {
 
     private fun readNumber(): Token {
         var hasDot = false
+        var isHex = false
+        var rawNumber = ""
         val number = readWhile(predicate = fun(ch: Char): Boolean {
-            if (ch == '.') {
-                if (hasDot) {
-                    // Dot was already been set - stop accumulating number
-                    return false
-                }
-                // Check for next after '.' symbol is digit, or it is property start
-                try {
-                    input.mark()
-                    input.next()
-                    if (!isDigit(input.peek())) {
-                        // Return to the previous char so that '.' will be available to read
+            rawNumber += ch
+            when (ch) {
+                '.' -> {
+                    if (hasDot) {
+                        // Dot was already been set - stop accumulating number
                         return false
                     }
-                } finally {
-                    input.reset()
+                    // Check for next after '.' symbol is digit, or it is property start
+                    try {
+                        input.mark()
+                        input.next()
+                        if (!isDigit(input.peek())) {
+                            // Return to the previous char so that '.' will be available to read
+                            return false
+                        }
+                    } finally {
+                        input.reset()
+                    }
+                    hasDot = true
+                    return true
                 }
-                hasDot = true
-                return true
+
+                'x' -> {
+                    val prefix = rawNumber.take(rawNumber.length - 1)
+                    if (isHex) {
+                        // It is already hex? Stop parsing number.
+                        return false
+                    }
+                    isHex = !hasDot && Integer.parseInt(prefix) == 0
+                    return isHex
+                }
             }
-            return isDigit(ch)
+            return if (isHex) isHexDigit(ch) else isDigit(ch)
         })
-        val value = if (hasDot) number.toDouble() else number.toInt()
+        val value = if (isHex) {
+            number.substringAfter('x')
+                .takeIf { !it.isEmpty() }
+                ?.toInt(radix = 16) ?: 0
+        } else if (hasDot) {
+            number.toDouble()
+        } else {
+            number.toInt()
+        }
         return Token(
             type = TokenType.NUMBER,
             value = value
@@ -105,7 +132,7 @@ class TokenStream(private val input: Input) {
         while (!input.eof()) {
             val ch = input.next()
             if (escaped) {
-                str += when(ch) {
+                str += when (ch) {
                     'n' -> '\n'
                     't' -> '\r'
                     else -> ch
