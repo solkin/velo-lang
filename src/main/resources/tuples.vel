@@ -5,15 +5,20 @@ native class Terminal() {
         print(text.con("\n"));
     };
 };
-Terminal term = new Terminal();
+class TupleWorker(Terminal term) {
+    func mutate(tuple[int,str,float] t) void {
+        t.1 = t.1 + 100;
+        t.2 = t.2.con("_item");
+    };
+    func dump(tuple[int,str,float] t) void {
+        term.println(t.1.str);
+        term.println(t.2);
+    };
+};
 
 tuple[int,str,float] p = tupleOf[int,str,float](1,"second",2.5);
 
-term.println(p.1.str);
-term.println(p.2);
-
-p.1 = p.1 + 100;
-p.2 = p.2.con("_item");
-
-term.println(p.1.str);
-term.println(p.2);
+TupleWorker tw = new TupleWorker(new Terminal());
+tw.dump(p);
+tw.mutate(p);
+tw.dump(p);
