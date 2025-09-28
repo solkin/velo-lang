@@ -1,8 +1,7 @@
 package vm
 
 fun Number.plus(b: Number) : Number {
-    val a = this
-    return when (a) {
+    return when (val a = this) {
         is Byte -> a + b.toByte()
         is Int -> a + b.toInt()
         is Float -> a + b.toFloat()
@@ -13,8 +12,7 @@ fun Number.plus(b: Number) : Number {
 }
 
 fun Number.minus(b: Number) : Number {
-    val a = this
-    return when (a) {
+    return when (val a = this) {
         is Byte -> a - b.toByte()
         is Int -> a - b.toInt()
         is Float -> a - b.toFloat()
@@ -25,8 +23,7 @@ fun Number.minus(b: Number) : Number {
 }
 
 fun Number.divide(b: Number) : Number {
-    val a = this
-    return when (a) {
+    return when (val a = this) {
         is Byte -> a / b.toByte()
         is Int -> a / b.toInt()
         is Float -> a / b.toFloat()
@@ -37,8 +34,7 @@ fun Number.divide(b: Number) : Number {
 }
 
 fun Number.multiply(b: Number) : Number {
-    val a = this
-    return when (a) {
+    return when (val a = this) {
         is Byte -> a * b.toByte()
         is Int -> a * b.toInt()
         is Float -> a * b.toFloat()
