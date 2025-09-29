@@ -17,6 +17,7 @@ class TokenStream(private val input: Input) {
         "class",
         "func",
         "native",
+        "ext",
         "let",
         "true",
         "false",

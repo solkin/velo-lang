@@ -25,7 +25,7 @@ data class TupleType(val types: List<Type>) : Type {
         TODO("not implemented")
     }
 
-    override fun prop(name: String): Prop? {
+    override fun prop(name: String): Prop {
         val index = name.toIntOrNull() ?: throw IllegalArgumentException("Unsupported tuple prop '$name'")
         return TupleEntryProp(index = index - 1) // Minus 1 due to props has human-agreeable format 1+ instead of 0+
     }
@@ -33,6 +33,8 @@ data class TupleType(val types: List<Type>) : Type {
     override fun log() = toString()
 
     override fun vmType() = vm.VmTuple()
+
+    override fun name() = "tuple"
 }
 
 data class TupleEntryProp(val index: Int) : AssignableProp {

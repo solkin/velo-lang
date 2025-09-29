@@ -69,6 +69,8 @@ data class DictType(val derived: TupleType) : IndexAssignable {
     override fun compileAssignment(ctx: Context) {
         ctx.add(DictSet())
     }
+
+    override fun name() = "dict"
 }
 
 object DictLenProp : Prop {

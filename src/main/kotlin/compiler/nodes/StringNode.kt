@@ -44,6 +44,8 @@ object StringType : Indexable {
         ctx.add(StrIndex())
         return IntType
     }
+
+    override fun name() = "str"
 }
 
 object SubStrProp : Prop {

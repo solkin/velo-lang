@@ -100,6 +100,8 @@ data class FuncType(val derived: Type, override val args: List<Type>? = null) : 
     override fun log() = toString()
 
     override fun vmType() = vm.VmFunc()
+
+    override fun name() = "func"
 }
 
 const val NATIVE_FUNCTION_PREFIX = "native@function_"

@@ -137,6 +137,26 @@ class ParserTest {
     }
 
     @Test
+    fun testParseExtensionFunc() {
+        val input = StringInput("ext(int i) A(int a) void { }")
+        val stream = TokenStream(input)
+        val parser = Parser(stream)
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = FuncNode(
+                name = "int@A",
+                defs = listOf(DefNode("i", IntType, def = null), DefNode("a", IntType, def = null)),
+                type = VoidType,
+                body = VoidNode,
+                native = false,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
     fun testParseCall() {
         val input = StringInput("println(\"Hello, World!\")")
         val stream = TokenStream(input)

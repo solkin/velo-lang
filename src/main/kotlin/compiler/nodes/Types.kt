@@ -9,6 +9,7 @@ interface Type {
     fun prop(name: String): Prop?
     fun log(): String
     fun vmType(): VmType
+    fun name(): String
 }
 
 interface Callable : Type {
@@ -37,4 +38,6 @@ object AnyType : Type {
     override fun log() = toString()
 
     override fun vmType() = vm.VmAny()
+
+    override fun name() = "any"
 }

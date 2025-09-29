@@ -77,6 +77,8 @@ data class ClassType(
     override fun log() = toString()
 
     override fun vmType() = vm.VmClass(name)
+
+    override fun name() = "class"
 }
 
 data class ClassElementProp(val name: String) : Prop {

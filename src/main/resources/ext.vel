@@ -1,0 +1,15 @@
+ext(float a) mul() int {
+    a*100
+};
+
+ext(int a) cnt(int b, float c, str s) str {
+    a.str().con("-").con(b.str).con("-").con(c.mul.str).con(s)
+};
+
+native class Terminal() {
+    native func print(str text) str;
+    func println(str text) str { print(text.con("\n")) };
+};
+
+str d = 100.cnt(2, 3.0, "-str");
+(new Terminal()).println(d);

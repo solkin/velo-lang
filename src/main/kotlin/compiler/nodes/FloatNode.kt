@@ -26,4 +26,6 @@ object FloatType : Numeric {
     override fun log() = toString()
 
     override fun vmType() = vm.VmFloat()
+
+    override fun name() = "float"
 }

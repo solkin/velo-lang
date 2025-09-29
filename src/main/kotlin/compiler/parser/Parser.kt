@@ -107,16 +107,6 @@ class Parser(private val stream: TokenStream) {
                 DictType(TupleType(types))
             }
 
-//            CLASS -> {
-//                (
-//                        delimited(start = '[', stop = ']', separator = ',', parser = ::parseExpression)
-//                            .takeIf { it.size == 1 }
-//                            ?.first() as? VarNode
-//                        )?.let { typeName ->
-//                        ClassType(name = typeName.name)
-//                    } ?: throw IllegalArgumentException("Invalid class type specification")
-//            }
-
             FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
             VOID -> VoidType
             ANY -> AnyType
@@ -345,6 +335,24 @@ class Parser(private val stream: TokenStream) {
         )
     }
 
+    private fun parseExt(): Node {
+        skipKw("ext")
+        val self = delimited(start = '(', stop = ')', separator = ',', parser = ::parseDef)
+        if (self.size != 1) {
+            stream.croak("Self type and variable must be defined for extension function")
+        }
+        val name = stream.peek()?.takeIf { tok ->
+            tok.type == TokenType.VARIABLE
+        }?.let { stream.next()?.value as? String }
+        return FuncNode(
+            name = self.first().type.name() + "@" + name,
+            native = false,
+            defs = self + delimited('(', ')', ',', ::parseDef),
+            type = parseDefType(),
+            body = parseProg(),
+        )
+    }
+
     private fun parseBool(): Node {
         return BoolNode(
             value = stream.next()?.value == "true"
@@ -444,6 +452,7 @@ class Parser(private val stream: TokenStream) {
         if (isPunc('{') != null) return parseProg()
         if (isDef() != null) return maybeDef(native = false)
         if (isKw("let") != null) return parseLet()
+        if (isKw("ext") != null) return parseExt()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("arrayOf") != null) return parseArrayOf()

@@ -68,6 +68,8 @@ data class ArrayType(val derived: Type) : IndexAssignable {
     override fun compileAssignment(ctx: Context) {
         ctx.add(ArrSet())
     }
+
+    override fun name() = "array"
 }
 
 object ArrayLenProp : Prop {
