@@ -11,5 +11,11 @@ native class Terminal() {
     func println(str text) str { print(text.con("\n")) };
 };
 
+ext(Terminal t) printInt(int a) str {
+    t.println(a.str);
+};
+
 str d = 100.cnt(2, 3.0, "-str");
-(new Terminal()).println(d);
+Terminal term = new Terminal();
+term.println(d);
+term.printInt(123);
