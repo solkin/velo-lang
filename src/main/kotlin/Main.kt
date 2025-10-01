@@ -1,8 +1,7 @@
-import compiler.Context
 import compiler.CompilerFrame
+import compiler.Context
 import compiler.parser.Input
 import compiler.parser.Parser
-import compiler.parser.StreamInput
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import utils.BytecodeInputStream

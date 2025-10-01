@@ -1,9 +1,47 @@
 ext(float a) mul() int {
-    a*100
+    a * 100
+};
+
+ext(int a) max(int b) int {
+    if (a > b) then a else b;
 };
 
 ext(int a) cnt(int b, float c, str s) str {
     a.str().con("-").con(b.str).con("-").con(c.mul.str).con(s)
+};
+
+ext(str a) insert(int index, str s) str {
+    a.sub(0, index).con(s).con(a.sub(index, a.len))
+};
+
+ext(int num) hex() str {
+    str hexString = "";
+    if (num == 0) {
+        hexString = "0";
+    } else {
+        array[str] hexDigits = arrayOf[str]("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f");
+
+        bool minus = false;
+        int unsignedNum = if (num < 0) {
+            minus = true;
+            0 - num
+        } else {
+            num
+        };
+
+        while (unsignedNum > 0) {
+            int remainder = unsignedNum % 16;
+            hexString = hexDigits[remainder].con(hexString); # Insert at the beginning
+            unsignedNum = unsignedNum / 16;
+        };
+
+        if (minus) {
+            hexString = "-".con(hexString)
+        } else {
+            hexString
+        };
+    };
+    hexString;
 };
 
 native class Terminal() {
@@ -15,7 +53,8 @@ ext(Terminal t) printInt(int a) str {
     t.println(a.str);
 };
 
-str d = 100.cnt(2, 3.0, "-str");
 Terminal term = new Terminal();
+str d = 100.cnt(2, 3.0, "-str");
 term.println(d);
-term.printInt(123);
+term.printInt(123.max(124));
+term.println(51966.hex);
