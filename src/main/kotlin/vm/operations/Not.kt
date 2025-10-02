@@ -7,9 +7,9 @@ import vm.records.ValueRecord
 class Not: SimpleOperation {
 
     override fun exec(frame: Frame) {
-        val rec = frame.subs.pop()
+        val v = frame.subs.pop().getInt()
 
-        val result = ValueRecord(rec.getBool().not())
+        val result = ValueRecord(v.inv())
 
         frame.subs.push(result)
     }

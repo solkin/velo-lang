@@ -42,8 +42,9 @@ class Parser(private val stream: TokenStream) {
 
     private val precedence = mapOf(
         "=" to 1,
-        "||" to 2,
-        "&&" to 3,
+        "|" to 2,
+        "&" to 3,
+        "^" to 4,
         "<" to 7, ">" to 7, "<=" to 7, ">=" to 7, "==" to 7, "!=" to 7,
         "+" to 10, "-" to 10,
         "*" to 20, "/" to 20, "%" to 20,

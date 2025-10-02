@@ -14,6 +14,7 @@ import vm.operations.Not
 import vm.operations.Or
 import vm.operations.Plus
 import vm.operations.Rem
+import vm.operations.Xor
 
 data class BinaryNode(
     val operator: String,
@@ -83,13 +84,18 @@ data class BinaryNode(
                 BoolType
             }
 
-            "&&" -> {
+            "&" -> {
                 ctx.add(And())
                 BoolType
             }
 
-            "||" -> {
+            "|" -> {
                 ctx.add(Or())
+                BoolType
+            }
+
+            "^" -> {
+                ctx.add(Xor())
                 BoolType
             }
 

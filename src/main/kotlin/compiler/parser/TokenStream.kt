@@ -45,7 +45,7 @@ class TokenStream(private val input: Input) {
     }
 
     private fun isOpChar(ch: Char): Boolean {
-        return "+-*/%=&|<>!".indexOf(ch) >= 0
+        return "+-*/%=&|^<>!".indexOf(ch) >= 0
     }
 
     private fun isPunctuation(ch: Char): Boolean {
