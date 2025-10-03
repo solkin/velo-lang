@@ -58,7 +58,7 @@ import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Negative
-import vm.operations.Not
+import vm.operations.Inv
 import vm.operations.Or
 import vm.operations.Pick
 import vm.operations.Plus
@@ -154,7 +154,7 @@ class BytecodeOutputStream(
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
             is Multiply -> out.writeByte(0x1e)
             is Negative -> out.writeByte(0x1f)
-            is Not -> out.writeByte(0x20)
+            is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
             is MakeTuple -> out.writeByte(0x22).also { out.writeInt(op.size) }
             is TupleEntryGet -> out.writeByte(0x23).also { out.writeInt(op.index) }

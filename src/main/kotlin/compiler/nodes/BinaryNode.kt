@@ -4,15 +4,17 @@ import compiler.Context
 import vm.operations.And
 import vm.operations.Divide
 import vm.operations.Equals
+import vm.operations.If
 import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.MoreEquals
+import vm.operations.Move
 import vm.operations.Multiply
-import vm.operations.Not
 import vm.operations.Or
 import vm.operations.Plus
+import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Xor
 
@@ -80,23 +82,56 @@ data class BinaryNode(
 
             "!=" -> {
                 ctx.add(Equals())
-                ctx.add(Not())
+                ctx.add(If(elseSkip = 2))
+                ctx.add(Push(value = false))
+                ctx.add(Move(count = 1))
+                ctx.add(Push(value = true))
                 BoolType
             }
 
             "&" -> {
-                ctx.add(And())
-                BoolType
+                if (leftType is BoolType) {
+                    ctx.add(If(elseSkip = 3)) // Else skip and push 'false'
+                    // Here can be compiled right argument for && implementation
+                    ctx.add(If(elseSkip = 2)) // Else skip and push 'false'
+                    ctx.add(Push(value = true))
+                    ctx.add(Move(count = 1))
+                    ctx.add(Push(value = false))
+                    BoolType
+                } else {
+                    ctx.add(And())
+                    leftType
+                }
             }
 
             "|" -> {
-                ctx.add(Or())
-                BoolType
+                if (leftType is BoolType) {
+                    ctx.add(If(elseSkip = 1)) // On false skip to second check
+                    ctx.add(Move(count = 1)) // Skip second check and push 'true'
+                    // Here can be compiled right argument for || implementation
+                    ctx.add(If(elseSkip = 2)) // Else skip and push 'false'
+                    ctx.add(Push(value = true))
+                    ctx.add(Move(count = 1))
+                    ctx.add(Push(value = false))
+                    BoolType
+                } else {
+                    ctx.add(Or())
+                    leftType
+                }
             }
 
             "^" -> {
-                ctx.add(Xor())
-                BoolType
+                if (leftType is BoolType) {
+                    ctx.add(Equals())
+                    ctx.add(If(elseSkip = 2))
+                    ctx.add(Push(value = false))
+                    ctx.add(Move(count = 1))
+                    ctx.add(Push(value = true))
+                    BoolType
+                } else {
+                    ctx.add(Xor())
+                    leftType
+                }
             }
 
             else -> throw IllegalArgumentException("Can't apply operator $operator")
