@@ -288,13 +288,14 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return maybePostfix(VarNode(tok.value as String))
     }
 
-    private fun parseInclude() {
+    private fun parseInclude(): Node {
         skipKw("include")
         val path = stream.next()?.takeIf { tok ->
             tok.type == TokenType.STRING
         } ?: throw IllegalStateException("Include keyword must end with a relative file path")
         skipPunc(';')
         depLoader.load(name = path.value as String)
+        return parseAtom()
     }
 
     private fun parseClass(native: Boolean): Node {
@@ -457,7 +458,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
     }
 
     private fun parseAtom(): Node {
-        if (isKw("include") != null) parseInclude()
+        if (isKw("include") != null) return parseInclude()
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
