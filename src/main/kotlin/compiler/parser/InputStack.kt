@@ -2,29 +2,32 @@ package compiler.parser
 
 class InputStack() : Input {
 
-    private val stack = ArrayDeque<Input>()
+    private val stack = ArrayDeque<Pair<String, Input>>()
 
-    fun push(input: Input) {
-        stack.addLast(input)
+    fun push(name: String, input: Input) {
+        stack.addLast(element = name to input)
     }
 
-    override fun peek(): Char = stack.last().peek()
+    override fun peek(): Char = stack.last().second.peek()
 
-    override fun next(): Char = stack.last().next()
+    override fun next(): Char = stack.last().second.next()
 
     override fun eof(): Boolean {
         while (stack.size > 1) {
-            if (!stack.last().eof()) {
+            if (!stack.last().second.eof()) {
                 return false
             }
             stack.removeLast()
         }
-        return stack.last().eof()
+        return stack.last().second.eof()
     }
 
-    override fun croak(msg: String) = stack.last().croak(msg)
+    override fun croak(msg: String) {
+        val input = stack.last()
+        input.second.croak(input.first + ": " + msg)
+    }
 
-    override fun mark() = stack.last().mark()
+    override fun mark() = stack.last().second.mark()
 
-    override fun reset() = stack.last().reset()
+    override fun reset() = stack.last().second.reset()
 }

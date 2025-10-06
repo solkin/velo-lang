@@ -26,7 +26,7 @@ fun main(args: Array<String>) {
     val frames = if (path.endsWith(".vel")) {
         val file = File(path)
         compile(input = FileInput(dir = file.parent).apply {
-            load(path = file.name)
+            load(name = file.name)
         })
     } else if (path.endsWith(".vbc")) {
         var frames: List<SerializedFrame>?

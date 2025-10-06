@@ -294,7 +294,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
             tok.type == TokenType.STRING
         } ?: throw IllegalStateException("Include keyword must end with a relative file path")
         skipPunc(';')
-        depLoader.load(path.value as String)
+        depLoader.load(name = path.value as String)
     }
 
     private fun parseClass(native: Boolean): Node {
