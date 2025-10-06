@@ -1,9 +1,4 @@
-native class Terminal() {
-    native func print(str text) str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
+include "lang/terminal.vel";
 
 func toString(array[str] arr) str {
     int i = 0;

@@ -1,10 +1,5 @@
-native class Terminal() {
-    native func print(str text) str;
-    native func input() str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
+include "lang/terminal.vel";
+
 any term = new Terminal();
 
 dict[int:str] d = dictOf[int:str](
