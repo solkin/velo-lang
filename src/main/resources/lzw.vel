@@ -1,12 +1,6 @@
-native class Terminal() {
-    native func print(str text) str;
-    native func input() str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
+include "lang/terminal.vel";
 
-any term = new Terminal();
+Terminal term = new Terminal();
 
 class LZW() {
     func compress(str text) array[int] {

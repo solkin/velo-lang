@@ -1,9 +1,6 @@
-native class Terminal() {
-    native func print(str text) str;
-    func println(str text) str { print(text.con("\n")) };
-};
+include "lang/terminal.vel";
 
-any term = new Terminal();
+Terminal term = new Terminal();
 
 func symbolAt(str s, int i) str {
     s.sub(i, i + 1);
@@ -17,7 +14,7 @@ func getRLE(str s) str {
         int i = 1;
         while (i <= s.len) {
             str c = if i < s.len then s.sub(i, i + 1) else "0";
-            if (i == s.len || currentCharCount == 9 || c != currentChar) {
+            if (i == s.len | currentCharCount == 9 | c != currentChar) {
                 sb = sb.con(currentChar);
                 if (currentCharCount > 1) {
                     sb = sb.con(currentCharCount.str);
@@ -35,7 +32,7 @@ func getRLE(str s) str {
 };
 
 func isNumber(str v) bool {
-    v == "0" || v == "1" || v == "2" || v == "3" || v == "4" || v == "5" || v == "6" || v == "7" || v == "8" || v == "9"
+    v == "0" | v == "1" | v == "2" | v == "3" | v == "4" | v == "5" | v == "6" | v == "7" | v == "8" | v == "9"
 };
 
 func multiplyStr(str s, int count) str {
