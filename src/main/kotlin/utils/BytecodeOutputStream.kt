@@ -57,7 +57,6 @@ import vm.operations.Multiply
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
-import vm.operations.Negative
 import vm.operations.Inv
 import vm.operations.Or
 import vm.operations.Pick
@@ -153,7 +152,6 @@ class BytecodeOutputStream(
             is MoreEquals -> out.writeByte(0x1c)
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
             is Multiply -> out.writeByte(0x1e)
-            is Negative -> out.writeByte(0x1f)
             is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
             is MakeTuple -> out.writeByte(0x22).also { out.writeInt(op.size) }
@@ -283,7 +281,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x07
+const val VERSION_MAJOR = 0x08
 const val VERSION_MINOR = 0x00
 
 const val TYPE_VOID = 0x00

@@ -37,7 +37,7 @@ func intToString(int num, int radix) str {
         'o' , 'p' , 'q' , 'r' , 's' , 't' ,
         'u' , 'v' , 'w' , 'x' , 'y' , 'z'
     );
-    if (radix < MIN_RADIX || radix > MAX_RADIX) then radix = 10;
+    if (radix < MIN_RADIX | radix > MAX_RADIX) then radix = 10;
 
     # For negative numbers, print out the absolute value w/ a leading '-'.
     # Use an array large enough for a binary number.
@@ -46,12 +46,12 @@ func intToString(int num, int radix) str {
     bool isNeg = false;
     if (num < 0) {
         isNeg = true;
-        num = -num;
+        num = 0 - num;
 
         # When the value is MIN_VALUE, it overflows when made positive
         if (num < 0) {
             i = i - 1;
-            buffer[i] = digits[(int) (0 - (num + radix) % radix)];
+            buffer[i] = digits[0 - (num + radix) % radix];
             num = 0 - (num / radix);
         };
     };
@@ -59,16 +59,17 @@ func intToString(int num, int radix) str {
     while (num > 0) {
         i = i - 1;
         buffer[i] = digits[num % radix];
-        num /= radix;
+        num = num / radix;
     };
 
     if (isNeg) {
         i = i - 1;
         buffer[i] = '-';
-    }
+    };
 
     # Package constructor avoids an array copy.
-    new String(buffer, i, 33 - i, true);
+    #new String(buffer, i, 33 - i, true);
+    ""
 };
 
 any matrix = arrayOf[array[int]](

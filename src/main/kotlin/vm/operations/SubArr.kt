@@ -3,7 +3,6 @@ package vm.operations
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.ValueRecord
-import java.util.Arrays
 
 class SubArr : SimpleOperation {
 
@@ -12,7 +11,7 @@ class SubArr : SimpleOperation {
         val end = frame.subs.pop().getInt()
         val array = frame.subs.pop().getArray()
 
-        val rec = ValueRecord(Arrays.copyOfRange(array, start, end))
+        val rec = ValueRecord(array.copyOfRange(start, end))
 
         frame.subs.push(rec)
     }
