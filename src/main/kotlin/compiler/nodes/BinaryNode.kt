@@ -8,7 +8,6 @@ import vm.operations.If
 import vm.operations.LessEquals
 import vm.operations.Minus
 import vm.operations.More
-import vm.operations.MoreEquals
 import vm.operations.Move
 import vm.operations.Multiply
 import vm.operations.Or
@@ -77,7 +76,12 @@ data class BinaryNode(
             }
 
             ">=" -> {
-                ctx.add(MoreEquals())
+                ctx.add(Swap())
+                ctx.add(More())
+                ctx.add(If(elseSkip = 2))
+                ctx.add(Push(value = false))
+                ctx.add(Move(count = 1))
+                ctx.add(Push(value = true))
                 BoolType
             }
 

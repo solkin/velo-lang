@@ -50,7 +50,6 @@ import vm.operations.LessEquals
 import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
-import vm.operations.MoreEquals
 import vm.operations.Move
 import vm.operations.Multiply
 import vm.operations.NativeConstructor
@@ -159,7 +158,6 @@ class BytecodeInputStream(
             0x18 -> Frame(num = inp.readInt())
             0x1a -> Minus()
             0x1b -> More()
-            0x1c -> MoreEquals()
             0x1d -> Move(count = inp.readInt())
             0x1e -> Multiply()
             0x20 -> Inv()

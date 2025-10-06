@@ -50,7 +50,6 @@ import vm.operations.LessEquals
 import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
-import vm.operations.MoreEquals
 import vm.operations.Move
 import vm.operations.Multiply
 import vm.operations.NativeConstructor
@@ -147,7 +146,6 @@ class BytecodeOutputStream(
             is Frame -> out.writeByte(0x18).also { out.writeInt(op.num) }
             is Minus -> out.writeByte(0x1a)
             is More -> out.writeByte(0x1b)
-            is MoreEquals -> out.writeByte(0x1c)
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
             is Multiply -> out.writeByte(0x1e)
             is Inv -> out.writeByte(0x20)
@@ -279,8 +277,8 @@ private fun DataOutputStream.writeType(t: VmType) {
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x09
-const val VERSION_MINOR = 0x00
+const val VERSION_MAJOR = 0x07
+const val VERSION_MINOR = 0x03
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01
