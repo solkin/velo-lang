@@ -1,0 +1,4 @@
+native class Time() {
+    native func sleep(int millis) void;
+    native func unix() int;
+};
