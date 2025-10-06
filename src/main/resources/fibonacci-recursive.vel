@@ -1,9 +1,4 @@
-native class Terminal() {
-    native func print(str text) str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
+include "lang/terminal.vel";
 
 func fib(int n) int {
     if n < 2 then n else fib(n - 1) + fib(n - 2);
