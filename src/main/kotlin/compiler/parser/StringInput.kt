@@ -5,7 +5,7 @@ import java.lang.Character.MIN_VALUE
 class StringInput(private val str: String) : Input {
 
     private var pos = 0
-    private var line = 0
+    private var line = 1
     private var col = 0
     private var mark = 0
 
