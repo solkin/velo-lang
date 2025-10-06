@@ -13,7 +13,7 @@ import vm.operations.Dup
 import vm.operations.Get
 import vm.operations.If
 import vm.operations.ArrIndex
-import vm.operations.Less
+import vm.operations.More
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
@@ -130,9 +130,9 @@ object MapArrayProp : Prop {
 
         val condCtx: MutableList<Operation> = ArrayList()
         with(condCtx) {
-            add(Get(i.index))
             add(Get(size.index))
-            add(Less())
+            add(Get(i.index))
+            add(More())
         }
 
         val exprCtx: MutableList<Operation> = ArrayList()

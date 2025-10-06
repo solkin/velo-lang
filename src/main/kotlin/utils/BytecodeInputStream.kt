@@ -46,7 +46,6 @@ import vm.operations.IfElse
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.MakeTuple
 import vm.operations.Minus
@@ -156,7 +155,6 @@ class BytecodeInputStream(
             0x12 -> If(elseSkip = inp.readInt())
             0x14 -> IntChar()
             0x15 -> IntStr()
-            0x16 -> Less()
             0x17 -> LessEquals()
             0x18 -> Frame(num = inp.readInt())
             0x1a -> Minus()

@@ -5,7 +5,6 @@ import vm.operations.And
 import vm.operations.Divide
 import vm.operations.Equals
 import vm.operations.If
-import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.Minus
 import vm.operations.More
@@ -16,6 +15,7 @@ import vm.operations.Or
 import vm.operations.Plus
 import vm.operations.Push
 import vm.operations.Rem
+import vm.operations.Swap
 import vm.operations.Xor
 
 data class BinaryNode(
@@ -56,7 +56,8 @@ data class BinaryNode(
             }
 
             "<" -> {
-                ctx.add(Less())
+                ctx.add(Swap())
+                ctx.add(More())
                 BoolType
             }
 

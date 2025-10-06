@@ -46,7 +46,6 @@ import vm.operations.IfElse
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.Less
 import vm.operations.LessEquals
 import vm.operations.MakeTuple
 import vm.operations.Minus
@@ -144,7 +143,6 @@ class BytecodeOutputStream(
             is If -> out.writeByte(0x12).also { out.writeInt(op.elseSkip) }
             is IntChar -> out.writeByte(0x14)
             is IntStr -> out.writeByte(0x15)
-            is Less -> out.writeByte(0x16)
             is LessEquals -> out.writeByte(0x17)
             is Frame -> out.writeByte(0x18).also { out.writeInt(op.num) }
             is Minus -> out.writeByte(0x1a)
@@ -281,7 +279,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x08
+const val VERSION_MAJOR = 0x09
 const val VERSION_MINOR = 0x00
 
 const val TYPE_VOID = 0x00
