@@ -38,7 +38,7 @@ import compiler.nodes.VoidType
 import compiler.nodes.VoidNode
 import compiler.nodes.WhileNode
 
-class Parser(private val stream: TokenStream) {
+class Parser(private val stream: TokenStream, private val depLoader: DependencyLoader) {
 
     private val precedence = mapOf(
         "=" to 1,
@@ -288,6 +288,16 @@ class Parser(private val stream: TokenStream) {
         return maybePostfix(VarNode(tok.value as String))
     }
 
+    private fun parseInclude(): Node {
+        skipKw("include")
+        val path = stream.next()?.takeIf { tok ->
+            tok.type == TokenType.STRING
+        } ?: throw IllegalStateException("Include keyword must end with a relative file path")
+        skipPunc(';')
+        depLoader.load(path.value as String)
+        return parse()
+    }
+
     private fun parseClass(native: Boolean): Node {
         val className = parseVarname()
         stream.classTypesMap[className] = ClassType(name = className)
@@ -462,6 +472,7 @@ class Parser(private val stream: TokenStream) {
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("native") != null) return parseNative()
         if (isKw("new") != null) return parseNew()
+        if (isKw("include") != null) return parseInclude()
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)

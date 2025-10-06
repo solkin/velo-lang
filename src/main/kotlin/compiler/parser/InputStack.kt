@@ -1,10 +1,10 @@
 package compiler.parser
 
-class MetaInput(startInput: Input) : Input {
+class InputStack() : Input {
 
-    private val stack = ArrayDeque<Input>().apply { add(startInput) }
+    private val stack = ArrayDeque<Input>()
 
-    public fun push(input: Input) {
+    fun push(input: Input) {
         stack.addLast(input)
     }
 

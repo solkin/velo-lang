@@ -21,6 +21,7 @@ class TokenStream(private val input: Input) {
         "let",
         "true",
         "false",
+        "include",
     ).plus(stdTypesSet)
     val classTypesMap = HashMap<String, Type>()
 

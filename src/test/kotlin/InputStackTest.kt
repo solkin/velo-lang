@@ -1,15 +1,15 @@
 import compiler.parser.Input
-import compiler.parser.MetaInput
+import compiler.parser.InputStack
 import compiler.parser.StringInput
 import java.lang.Character.MIN_VALUE
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MetaInputTest {
+class InputStackTest {
 
     @Test
     fun testPeek() {
-        val input: Input = MetaInput(startInput = StringInput("12"))
+        val input: Input = InputStack(start = StringInput("12"))
         val ch1 = input.peek()
         val ch2 = input.peek()
         assertEquals(ch1, '1')
@@ -18,7 +18,7 @@ class MetaInputTest {
 
     @Test
     fun testRead() {
-        val input: Input = MetaInput(startInput = StringInput("12"))
+        val input: Input = InputStack(start = StringInput("12"))
         val ch1 = input.next()
         val ch2 = input.next()
         val ch3 = input.next()
@@ -29,7 +29,7 @@ class MetaInputTest {
 
     @Test
     fun testReadPeek() {
-        val input: Input = MetaInput(startInput = StringInput("12"))
+        val input: Input = InputStack(start = StringInput("12"))
         val ch1 = input.next()
         val ch2 = input.peek()
         val ch3 = input.peek()
@@ -42,7 +42,7 @@ class MetaInputTest {
 
     @Test
     fun testMarkReset() {
-        val input: Input = MetaInput(startInput = StringInput("123"))
+        val input: Input = InputStack(start = StringInput("123"))
         val ch1 = input.next()
         input.mark()
         val ch2 = input.next()
@@ -57,7 +57,7 @@ class MetaInputTest {
 
     @Test
     fun testMarkResetPeek() {
-        val input: Input = MetaInput(startInput = StringInput("123"))
+        val input: Input = InputStack(start = StringInput("123"))
         val ch1 = input.next()
         input.mark()
         val ch2 = input.next()
@@ -72,7 +72,7 @@ class MetaInputTest {
 
     @Test
     fun testEof() {
-        val input: Input = MetaInput(startInput = StringInput("12"))
+        val input: Input = InputStack(start = StringInput("12"))
         val ch1 = input.next()
         val eof1 = input.eof()
         val ch2 = input.next()
@@ -85,7 +85,7 @@ class MetaInputTest {
 
     @Test
     fun testPush() {
-        val input = MetaInput(startInput = StringInput("1"))
+        val input = InputStack(start = StringInput("1"))
         input.push(input = StringInput("2"))
         val ch1 = input.next()
         val eof1 = input.eof()
@@ -99,7 +99,7 @@ class MetaInputTest {
 
     @Test
     fun testPushEof() {
-        val input = MetaInput(startInput = StringInput("1"))
+        val input = InputStack(start = StringInput("1"))
         val ch1 = input.next()
         input.push(input = StringInput("2"))
         val eof1 = input.eof()
