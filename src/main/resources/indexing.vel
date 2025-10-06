@@ -1,11 +1,6 @@
-native class Terminal() {
-    native func print(str text) void;
-    native func input() str;
-    func println(str text) void {
-        print(text.con("\n"));
-    };
-};
-any term = new Terminal();
+include "lang/terminal.vel";
+
+Terminal term = new Terminal();
 
 array[int] arr = arrayOf[int](5, 6, 7, 8, 9);
 term.println(arr[2].str); # before assignment: 7
