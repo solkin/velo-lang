@@ -127,7 +127,7 @@ class TokenStream(private val input: Input) {
         )
     }
 
-    private fun readEscaped(): String {
+    private fun readEscaped(delimiter: Char): String {
         var escaped = false
         var str = ""
         input.next()
@@ -142,7 +142,7 @@ class TokenStream(private val input: Input) {
                 escaped = false
             } else if (ch == '\\') {
                 escaped = true
-            } else if (ch == '"') {
+            } else if (ch == delimiter) {
                 break
             } else {
                 str += ch
@@ -154,7 +154,19 @@ class TokenStream(private val input: Input) {
     private fun readString(): Token {
         return Token(
             type = TokenType.STRING,
-            value = readEscaped()
+            value = readEscaped(delimiter = '"')
+        )
+    }
+
+    private fun readChar(): Token {
+        val escStr = readEscaped(delimiter = '\'')
+        val charArr = escStr.toCharArray()
+        if (charArr.size != 1) {
+            croak("Invalid char syntax")
+        }
+        return Token(
+            type = TokenType.NUMBER,
+            value = charArr.single().code
         )
     }
 
@@ -184,6 +196,7 @@ class TokenStream(private val input: Input) {
         when {
             ch == '#' -> return skipComment().run { readNext() }
             ch == '"' -> return readString()
+            ch == '\'' -> return readChar()
             isDigit(ch) -> return readNumber()
             isIdStart(ch) -> return readIdent()
             isPunctuation(ch) -> return readPunctuation()
