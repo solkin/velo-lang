@@ -5,7 +5,6 @@ import vm.Operation
 import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.Set
@@ -103,7 +102,9 @@ object ArrayPlusProp : Prop {
         if (args.find { !it.sameAs(type.derived) } != null) {
             throw Exception("Property 'plus' arguments must be array-typed")
         }
-        ctx.add(ArrPlus())
+        ctx.add(Push(value = 1)) // array length
+        ctx.add(ArrOf()) // create new one-item array
+        ctx.add(ArrCon()) // concat arrays
         return ArrayType(type.derived)
     }
 }

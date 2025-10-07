@@ -20,7 +20,6 @@ import vm.operations.ArrCon
 import vm.operations.ArrIndex
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.DictArr
@@ -121,7 +120,6 @@ class BytecodeOutputStream(
             is ArrIndex -> out.writeByte(0x04)
             is ArrLen -> out.writeByte(0x05)
             is ArrOf -> out.writeByte(0x06)
-            is ArrPlus -> out.writeByte(0x07)
             is ArrSet -> out.writeByte(0x08)
             is Call -> out.writeByte(0x09).also {
                 out.writeInt(op.args)
@@ -270,7 +268,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x05
+const val VERSION_MINOR = 0x06
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

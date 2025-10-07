@@ -20,7 +20,6 @@ import vm.operations.ArrCon
 import vm.operations.ArrIndex
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrPlus
 import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.DictArr
@@ -137,7 +136,6 @@ class BytecodeInputStream(
             0x04 -> ArrIndex()
             0x05 -> ArrLen()
             0x06 -> ArrOf()
-            0x07 -> ArrPlus()
             0x08 -> ArrSet()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Divide()
