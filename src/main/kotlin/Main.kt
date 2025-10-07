@@ -83,7 +83,10 @@ fun compile(input: FileInput): List<SerializedFrame>? {
         time = System.currentTimeMillis()
         node.compile(ctx)
         elapsed = System.currentTimeMillis() - time
-        println("Compiled in $elapsed ms [${ctx.frames().size} frames]")
+        val opsCount = ctx.frames().map { it.ops.size }.reduce { acc, element ->
+            acc + element
+        }
+        println("Compiled in $elapsed ms [${ctx.frames().size} frames, $opsCount ops]")
         return ctx.frames().map {
             SerializedFrame(
                 num = it.num,

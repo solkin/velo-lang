@@ -21,6 +21,7 @@ import vm.operations.ArrIndex
 import vm.operations.ArrLen
 import vm.operations.ArrOf
 import vm.operations.ArrSet
+import vm.operations.ArrSub
 import vm.operations.Call
 import vm.operations.DictArr
 import vm.operations.DictDel
@@ -41,10 +42,10 @@ import vm.operations.Get
 import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
-import vm.operations.IfElse
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
+import vm.operations.Inv
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.Move
@@ -52,7 +53,6 @@ import vm.operations.Multiply
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
-import vm.operations.Inv
 import vm.operations.Or
 import vm.operations.Pick
 import vm.operations.Plus
@@ -67,7 +67,6 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.ArrSub
 import vm.operations.SubStr
 import vm.operations.Swap
 import vm.operations.Xor
@@ -180,8 +179,7 @@ class BytecodeInputStream(
             0x3e -> DictVal()
             0x3f -> DictVals()
             0x40 -> StrInt()
-            0x41 -> IfElse(thenNum = inp.readInt(), elseNum = inp.readInt())
-            0x42 -> Instance(nativeIndex = inp.readNullableInt()) //TODO: implement
+            0x42 -> Instance(nativeIndex = inp.readNullableInt())
             0x43 -> NativeConstructor(
                 name = inp.readUTF(),
                 args = inp.readArray { Pair(inp.readInt(), inp.readType()) }

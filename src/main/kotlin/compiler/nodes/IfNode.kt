@@ -2,7 +2,9 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Call
-import vm.operations.IfElse
+import vm.operations.Frame
+import vm.operations.If
+import vm.operations.Move
 import vm.operations.Ret
 
 data class IfNode(
@@ -23,7 +25,10 @@ data class IfNode(
 
         condNode.compile(ctx)
 
-        ctx.add(IfElse(thenNum = thenCtx.frame.num, elseNum = elseCtx.frame.num))
+        ctx.add(If(elseSkip = 2))
+        ctx.add(Frame(thenCtx.frame.num))
+        ctx.add(Move(count = 1))
+        ctx.add(Frame(elseCtx.frame.num))
         ctx.add(Call(args = 0))
         ctx.merge(thenCtx)
         ctx.merge(elseCtx)
