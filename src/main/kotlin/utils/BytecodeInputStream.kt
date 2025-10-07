@@ -54,7 +54,6 @@ import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
-import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
 import vm.operations.Rem
@@ -154,7 +153,6 @@ class BytecodeInputStream(
             0x1e -> Multiply()
             0x20 -> Inv()
             0x21 -> Or()
-            0x25 -> Pick()
             0x26 -> Plus()
             0x29 -> Push(value = inp.readAny())
             0x2a -> Rem()

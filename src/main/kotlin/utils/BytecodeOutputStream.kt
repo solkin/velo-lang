@@ -54,7 +54,6 @@ import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
-import vm.operations.Pick
 import vm.operations.Plus
 import vm.operations.Push
 import vm.operations.Rem
@@ -142,7 +141,6 @@ class BytecodeOutputStream(
             is Multiply -> out.writeByte(0x1e)
             is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
-            is Pick -> out.writeByte(0x25)
             is Plus -> out.writeByte(0x26)
             is Push -> out.writeByte(0x29).also { out.write(op.value) }
             is Rem -> out.writeByte(0x2a)
