@@ -1,9 +1,10 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.MakeTuple
-import vm.operations.TupleEntryGet
-import vm.operations.TupleEntrySet
+import vm.operations.ArrIndex
+import vm.operations.ArrOf
+import vm.operations.ArrSet
+import vm.operations.Push
 
 data class TupleNode(
     val entries: List<Node>,
@@ -11,7 +12,8 @@ data class TupleNode(
     override fun compile(ctx: Context): Type {
         if (entries.isEmpty()) throw IllegalArgumentException("Tuple can't be empty")
         val types = entries.map { it.compile(ctx) }
-        ctx.add(MakeTuple(size = entries.size))
+        ctx.add(Push(value = entries.size))
+        ctx.add(ArrOf())
         return TupleType(types)
     }
 }
@@ -40,7 +42,8 @@ data class TupleType(val types: List<Type>) : Type {
 data class TupleEntryProp(val index: Int) : AssignableProp {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as? TupleType ?: throw IllegalArgumentException("Tuple operation on non-tuple type $type")
-        ctx.add(TupleEntryGet(index))
+        ctx.add(Push(value = index))
+        ctx.add(ArrIndex())
         return type.types[index]
     }
 
@@ -54,6 +57,7 @@ data class TupleEntryProp(val index: Int) : AssignableProp {
         if (!parentType.types[index].sameAs(assignType)) {
             throw IllegalArgumentException("Cannot assign type $assignType to tuple $index of type ${parentType.types[index]}")
         }
-        ctx.add(TupleEntrySet(index))
+        ctx.add(Push(value = index))
+        ctx.add(ArrSet())
     }
 }

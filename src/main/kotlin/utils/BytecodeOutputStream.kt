@@ -46,7 +46,6 @@ import vm.operations.IfElse
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.Move
@@ -72,8 +71,6 @@ import vm.operations.StrLen
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
-import vm.operations.TupleEntryGet
-import vm.operations.TupleEntrySet
 import java.io.DataOutputStream
 import java.io.OutputStream
 
@@ -148,9 +145,6 @@ class BytecodeOutputStream(
             is Multiply -> out.writeByte(0x1e)
             is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
-            is MakeTuple -> out.writeByte(0x22).also { out.writeInt(op.size) }
-            is TupleEntryGet -> out.writeByte(0x23).also { out.writeInt(op.index) }
-            is TupleEntrySet -> out.writeByte(0x24).also { out.writeInt(op.index) }
             is Pick -> out.writeByte(0x25)
             is Plus -> out.writeByte(0x26)
             is Push -> out.writeByte(0x29).also { out.write(op.value) }
@@ -276,7 +270,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x04
+const val VERSION_MINOR = 0x05
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

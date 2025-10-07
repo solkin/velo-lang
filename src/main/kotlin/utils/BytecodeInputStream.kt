@@ -46,7 +46,6 @@ import vm.operations.IfElse
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.MakeTuple
 import vm.operations.Minus
 import vm.operations.More
 import vm.operations.Move
@@ -72,8 +71,6 @@ import vm.operations.StrLen
 import vm.operations.SubArr
 import vm.operations.SubStr
 import vm.operations.Swap
-import vm.operations.TupleEntryGet
-import vm.operations.TupleEntrySet
 import vm.operations.Xor
 import java.io.DataInputStream
 import java.io.InputStream
@@ -160,9 +157,6 @@ class BytecodeInputStream(
             0x1e -> Multiply()
             0x20 -> Inv()
             0x21 -> Or()
-            0x22 -> MakeTuple(size = inp.readInt())
-            0x23 -> TupleEntryGet(index = inp.readInt())
-            0x24 -> TupleEntrySet(index = inp.readInt())
             0x25 -> Pick()
             0x26 -> Plus()
             0x29 -> Push(value = inp.readAny())
