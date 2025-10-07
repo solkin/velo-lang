@@ -4,7 +4,7 @@ import vm.Frame
 import vm.SimpleOperation
 import vm.records.ValueRecord
 
-class SubArr : SimpleOperation {
+class ArrSub : SimpleOperation {
 
     override fun exec(frame: Frame) {
         val start = frame.subs.pop().getInt()

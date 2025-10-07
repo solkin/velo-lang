@@ -16,7 +16,7 @@ import vm.operations.More
 import vm.operations.Move
 import vm.operations.Plus
 import vm.operations.Push
-import vm.operations.SubArr
+import vm.operations.ArrSub
 
 data class ArrayNode(
     val listOf: List<Node>,
@@ -81,7 +81,7 @@ object ArrayLenProp : Prop {
 object SubArrayProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as ArrayType
-        ctx.add(SubArr())
+        ctx.add(ArrSub())
         return ArrayType(type.derived)
     }
 }

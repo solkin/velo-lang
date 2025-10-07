@@ -67,7 +67,7 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.SubArr
+import vm.operations.ArrSub
 import vm.operations.SubStr
 import vm.operations.Swap
 import vm.operations.Xor
@@ -165,7 +165,7 @@ class BytecodeInputStream(
             0x2e -> StrCon()
             0x2f -> StrIndex()
             0x30 -> StrLen()
-            0x32 -> SubArr()
+            0x32 -> ArrSub()
             0x33 -> SubStr()
             0x34 -> Swap()
             0x35 -> Xor()
