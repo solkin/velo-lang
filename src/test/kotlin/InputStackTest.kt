@@ -9,7 +9,7 @@ class InputStackTest {
 
     @Test
     fun testPeek() {
-        val input: Input = InputStack(start = StringInput("12"))
+        val input: Input = InputStack().apply { push("test", StringInput("12")) }
         val ch1 = input.peek()
         val ch2 = input.peek()
         assertEquals(ch1, '1')
@@ -18,7 +18,7 @@ class InputStackTest {
 
     @Test
     fun testRead() {
-        val input: Input = InputStack(start = StringInput("12"))
+        val input: Input = InputStack().apply { push("test", StringInput("12")) }
         val ch1 = input.next()
         val ch2 = input.next()
         val ch3 = input.next()
@@ -29,7 +29,7 @@ class InputStackTest {
 
     @Test
     fun testReadPeek() {
-        val input: Input = InputStack(start = StringInput("12"))
+        val input: Input = InputStack().apply { push("test", StringInput("12")) }
         val ch1 = input.next()
         val ch2 = input.peek()
         val ch3 = input.peek()
@@ -42,7 +42,7 @@ class InputStackTest {
 
     @Test
     fun testMarkReset() {
-        val input: Input = InputStack(start = StringInput("123"))
+        val input: Input = InputStack().apply { push("test", StringInput("123")) }
         val ch1 = input.next()
         input.mark()
         val ch2 = input.next()
@@ -57,7 +57,7 @@ class InputStackTest {
 
     @Test
     fun testMarkResetPeek() {
-        val input: Input = InputStack(start = StringInput("123"))
+        val input: Input = InputStack().apply { push("test", StringInput("123")) }
         val ch1 = input.next()
         input.mark()
         val ch2 = input.next()
@@ -72,7 +72,7 @@ class InputStackTest {
 
     @Test
     fun testEof() {
-        val input: Input = InputStack(start = StringInput("12"))
+        val input: Input = InputStack().apply { push("test", StringInput("12")) }
         val ch1 = input.next()
         val eof1 = input.eof()
         val ch2 = input.next()
@@ -85,8 +85,8 @@ class InputStackTest {
 
     @Test
     fun testPush() {
-        val input = InputStack(start = StringInput("1"))
-        input.push(input = StringInput("2"))
+        val input = InputStack().apply { push("test1", StringInput("1")) }
+        input.push("test2", StringInput("2"))
         val ch1 = input.next()
         val eof1 = input.eof()
         val ch2 = input.next()
@@ -99,9 +99,9 @@ class InputStackTest {
 
     @Test
     fun testPushEof() {
-        val input = InputStack(start = StringInput("1"))
+        val input = InputStack().apply { push("test1", StringInput("1")) }
         val ch1 = input.next()
-        input.push(input = StringInput("2"))
+        input.push("test2", StringInput("2"))
         val eof1 = input.eof()
         val ch2 = input.next()
         val eof2 = input.eof()
