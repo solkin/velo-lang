@@ -4,8 +4,9 @@ class InputStack() : Input {
 
     private val stack = ArrayDeque<Pair<String, Input>>()
 
-    fun push(name: String, input: Input) {
+    fun push(name: String, input: Input): InputStack {
         stack.addLast(element = name to input)
+        return this
     }
 
     override fun peek(): Char = stack.last().second.peek()

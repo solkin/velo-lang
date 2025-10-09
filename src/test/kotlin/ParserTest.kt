@@ -24,7 +24,9 @@ import compiler.nodes.StringType
 import compiler.nodes.VarNode
 import compiler.nodes.VoidNode
 import compiler.nodes.VoidType
+import compiler.parser.InputStack
 import compiler.parser.Parser
+import compiler.parser.SimpleInput
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import kotlin.test.Test
@@ -34,9 +36,7 @@ class ParserTest {
 
     @Test
     fun testParseNum() {
-        val input = StringInput("123.5")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("123.5")
 
         val node = parser.parse()
 
@@ -50,9 +50,7 @@ class ParserTest {
 
     @Test
     fun testParseString() {
-        val input = StringInput("\"Hello World\"")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("\"Hello World\"")
 
         val node = parser.parse()
 
@@ -66,9 +64,7 @@ class ParserTest {
 
     @Test
     fun testParseBoolean() {
-        val input = StringInput("true")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("true")
 
         val node = parser.parse()
 
@@ -82,9 +78,7 @@ class ParserTest {
 
     @Test
     fun testParseVar() {
-        val input = StringInput("foo")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("foo")
 
         val node = parser.parse()
 
@@ -98,9 +92,7 @@ class ParserTest {
 
     @Test
     fun testParseAnonymousFunc() {
-        val input = StringInput("func(int a) bool { false }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("func(int a) bool { false }")
 
         val node = parser.parse()
 
@@ -118,9 +110,7 @@ class ParserTest {
 
     @Test
     fun testParseNamedFunc() {
-        val input = StringInput("func A(int a) void { }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("func A(int a) void { }")
 
         val node = parser.parse()
 
@@ -138,9 +128,7 @@ class ParserTest {
 
     @Test
     fun testParseExtensionFunc() {
-        val input = StringInput("ext(int i) A(int a) void { }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("ext(int i) A(int a) void { }")
 
         val node = parser.parse()
 
@@ -158,9 +146,7 @@ class ParserTest {
 
     @Test
     fun testParseCall() {
-        val input = StringInput("println(\"Hello, World!\")")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("println(\"Hello, World!\")")
 
         val node = parser.parse()
 
@@ -175,9 +161,7 @@ class ParserTest {
 
     @Test
     fun testParseIfThen() {
-        val input = StringInput("if (true) then false")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("if (true) then false")
 
         val node = parser.parse()
 
@@ -193,9 +177,7 @@ class ParserTest {
 
     @Test
     fun testParseIfThenElse() {
-        val input = StringInput("if (true) then false else true")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("if (true) then false else true")
 
         val node = parser.parse()
 
@@ -211,9 +193,7 @@ class ParserTest {
 
     @Test
     fun testParseIf() {
-        val input = StringInput("if (true) { false }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("if (true) { false }")
 
         val node = parser.parse()
 
@@ -229,9 +209,7 @@ class ParserTest {
 
     @Test
     fun testParseElse() {
-        val input = StringInput("if (true) { false } else { true }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("if (true) { false } else { true }")
 
         val node = parser.parse()
 
@@ -247,9 +225,7 @@ class ParserTest {
 
     @Test
     fun testParseAssign() {
-        val input = StringInput("a = 4")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a = 4")
 
         val node = parser.parse()
 
@@ -264,9 +240,7 @@ class ParserTest {
 
     @Test
     fun testParseArrayOf() {
-        val input = StringInput("a = arrayOf[int]()")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a = arrayOf[int]()")
 
         val node = parser.parse()
 
@@ -281,9 +255,7 @@ class ParserTest {
 
     @Test
     fun testParseArrayOfOf() {
-        val input = StringInput("a = arrayOf[int](1, 2, 5)")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a = arrayOf[int](1, 2, 5)")
 
         val node = parser.parse()
 
@@ -298,9 +270,7 @@ class ParserTest {
 
     @Test
     fun testParseArrayOfAccess() {
-        val input = StringInput("arrayOf[int](1, 2, 5)[1]")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("arrayOf[int](1, 2, 5)[1]")
 
         val node = parser.parse()
 
@@ -315,9 +285,7 @@ class ParserTest {
 
     @Test
     fun testParseDictOf() {
-        val input = StringInput("a = dictOf[int:str]()")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a = dictOf[int:str]()")
 
         val node = parser.parse()
 
@@ -332,9 +300,7 @@ class ParserTest {
 
     @Test
     fun testParseDictOfOf() {
-        val input = StringInput("a = dictOf[int:str](1:\"a\", 2:\"b\", 5:\"c\")")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a = dictOf[int:str](1:\"a\", 2:\"b\", 5:\"c\")")
 
         val node = parser.parse()
 
@@ -357,9 +323,7 @@ class ParserTest {
 
     @Test
     fun testParseDictOfAccess() {
-        val input = StringInput("dictOf[int:bool](1:false, 2:true, 5:false)[2]")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("dictOf[int:bool](1:false, 2:true, 5:false)[2]")
 
         val node = parser.parse()
 
@@ -382,9 +346,7 @@ class ParserTest {
 
     @Test
     fun testParseBinary() {
-        val input = StringInput("a + 4")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a + 4")
 
         val node = parser.parse()
 
@@ -400,9 +362,7 @@ class ParserTest {
 
     @Test
     fun testParseDef() {
-        val input = StringInput("int a")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("int a")
 
         val node = parser.parse()
 
@@ -418,9 +378,7 @@ class ParserTest {
 
     @Test
     fun testParseDefAssign() {
-        val input = StringInput("int a = 5")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("int a = 5")
 
         val node = parser.parse()
 
@@ -436,9 +394,7 @@ class ParserTest {
 
     @Test
     fun testParsePropNoParams() {
-        val input = StringInput("a.str")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a.str")
 
         val node = parser.parse()
 
@@ -454,9 +410,7 @@ class ParserTest {
 
     @Test
     fun testParsePropWithParams() {
-        val input = StringInput("a.shl(5)")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("a.shl(5)")
 
         val node = parser.parse()
 
@@ -472,9 +426,7 @@ class ParserTest {
 
     @Test
     fun testParsePropOnIntPrimitive() {
-        val input = StringInput("5.str")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("5.str")
 
         val node = parser.parse()
 
@@ -490,9 +442,7 @@ class ParserTest {
 
     @Test
     fun testParsePropOnFloatPrimitive() {
-        val input = StringInput("5.0.str")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("5.0.str")
 
         val node = parser.parse()
 
@@ -508,9 +458,7 @@ class ParserTest {
 
     @Test
     fun testParsePropOnStrPrimitive() {
-        val input = StringInput("\"5\".int")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("\"5\".int")
 
         val node = parser.parse()
 
@@ -526,27 +474,33 @@ class ParserTest {
 
     @Test
     fun testParseClassDef() {
-        val input = StringInput("class[A] a")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("class A() {}; A a;")
 
         val node = parser.parse()
 
         assertEquals(
-            expected = DefNode(
-                name = "a",
-                type = ClassType("A"),
-                def = null
-            ).wrapProgram(),
+            expected = ProgramNode(
+                prog = listOf(
+                    ClassNode(
+                        name = "A",
+                        native = false,
+                        defs = emptyList(),
+                        body = VoidNode
+                    ),
+                    DefNode(
+                        name = "a",
+                        type = ClassType("A"),
+                        def = null
+                    )
+                )
+            ),
             actual = node,
         )
     }
 
     @Test
     fun testParseProgram() {
-        val input = StringInput("{true;\"String\"}")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("{true;\"String\"}")
 
         val node = parser.parse()
 
@@ -560,9 +514,7 @@ class ParserTest {
 
     @Test
     fun testParseLet() {
-        val input = StringInput("let(int a = 5) { false }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("let(int a = 5) { false }")
 
         val node = parser.parse()
 
@@ -585,9 +537,7 @@ class ParserTest {
 
     @Test
     fun testParseEmptyClass() {
-        val input = StringInput("class A(int a = 5) {}")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("class A(int a = 5) {}")
 
         val node = parser.parse()
 
@@ -610,9 +560,7 @@ class ParserTest {
 
     @Test
     fun testParseClassFields() {
-        val input = StringInput("class A(int a = 5) { int b = 6; func c(int d) bool { true } }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("class A(int a = 5) { int b = 6; func c(int d) bool { true } }")
 
         val node = parser.parse()
 
@@ -650,9 +598,7 @@ class ParserTest {
 
     @Test
     fun testParseNativeClassDeclaration() {
-        val input = StringInput("native class A() {}")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("native class A() {}")
 
         val node = parser.parse()
 
@@ -669,9 +615,7 @@ class ParserTest {
 
     @Test
     fun testParseNativeClassFields() {
-        val input = StringInput("native class A() { native func n() int; }")
-        val stream = TokenStream(input)
-        val parser = Parser(stream)
+        val parser = makeSimpleParser("native class A() { native func n() int; }")
 
         val node = parser.parse()
 
@@ -694,6 +638,12 @@ class ParserTest {
 
     private fun Node.wrapProgram(): Node {
         return ProgramNode(listOf(this))
+    }
+
+    private fun makeSimpleParser(str: String): Parser {
+        val input = InputStack().push(name = "test", StringInput(str))
+        val stream = TokenStream(input)
+        return Parser(stream, SimpleInput(emptyMap(), input))
     }
 
 }

@@ -15,3 +15,15 @@ class FileInput(val dir: String, val input: InputStack = InputStack()) : Depende
     }
 
 }
+
+class SimpleInput(
+    val deps: Map<String, String>,
+    val input: InputStack = InputStack()
+) : DependencyLoader, Input by input {
+
+    override fun load(name: String) {
+        val depSrc = deps[name] ?: throw Exception("Dependency $name not found")
+        input.push(name, input = StringInput(depSrc))
+    }
+
+}
