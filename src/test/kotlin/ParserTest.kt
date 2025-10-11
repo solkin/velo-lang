@@ -21,6 +21,8 @@ import compiler.nodes.PropNode
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringNode
 import compiler.nodes.StringType
+import compiler.nodes.TupleNode
+import compiler.nodes.TupleType
 import compiler.nodes.VarNode
 import compiler.nodes.VoidNode
 import compiler.nodes.VoidType
@@ -631,6 +633,44 @@ class ParserTest {
                     native = true,
                 ),
                 native = true,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseTupleType() {
+        val parser = makeSimpleParser("tuple[int,str,bool] t")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = DefNode(
+                name = "t",
+                type = TupleType(
+                    types = listOf(
+                        IntType, StringType, BoolType
+                    )
+                ),
+                def = null
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseTupleInit() {
+        val parser = makeSimpleParser("tupleOf[int,str,bool](1,\"a\",true)")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = TupleNode(
+                entries = listOf(
+                    IntNode(value = 1),
+                    StringNode(value = "a"),
+                    BoolNode(value = true),
+                )
             ).wrapProgram(),
             actual = node,
         )
