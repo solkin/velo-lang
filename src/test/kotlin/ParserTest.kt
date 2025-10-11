@@ -734,14 +734,54 @@ class ParserTest {
         )
     }
 
+    @Test
+    fun testSingleInclude() {
+        val parser = makeSimpleParser(
+            str = "include \"test/abc.vel\";",
+            deps = mapOf(
+                "test/abc.vel" to "int a;"
+            )
+        )
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = (DefNode(name = "a", type = IntType, def = null)).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testMultipleInclude() {
+        val parser = makeSimpleParser(
+            str = "include \"test/abc.vel\"; include \"test/xyz.vel\";",
+            deps = mapOf(
+                "test/abc.vel" to "int a;",
+                "test/xyz.vel" to "a = 1;",
+            )
+        )
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = ProgramNode(
+                prog = listOf(
+                    DefNode(name = "a", type = IntType, def = null),
+                    AssignNode(left = VarNode(name = "a"), right = IntNode(value = 1))
+                )
+            ),
+            actual = node,
+        )
+    }
+
     private fun Node.wrapProgram(): Node {
         return ProgramNode(listOf(this))
     }
 
-    private fun makeSimpleParser(str: String): Parser {
+    private fun makeSimpleParser(str: String, deps: Map<String, String> = emptyMap()): Parser {
         val input = InputStack().push(name = "test", StringInput(str))
         val stream = TokenStream(input)
-        return Parser(stream, SimpleInput(emptyMap(), input))
+        return Parser(stream, SimpleInput(deps, input))
     }
 
 }
