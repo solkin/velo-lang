@@ -501,6 +501,39 @@ class ParserTest {
     }
 
     @Test
+    fun testParseClassInstance() {
+        val parser = makeSimpleParser("class A(int i) {}; new A(1);")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = ProgramNode(
+                prog = listOf(
+                    ClassNode(
+                        name = "A",
+                        native = false,
+                        defs = listOf(
+                            DefNode(
+                                name = "i",
+                                type = IntType,
+                                def = null
+                            )
+                        ),
+                        body = VoidNode
+                    ),
+                    CallNode(
+                        func = VarNode(name = "A"),
+                        args = listOf(
+                            IntNode(value = 1)
+                        )
+                    )
+                )
+            ),
+            actual = node,
+        )
+    }
+
+    @Test
     fun testParseProgram() {
         val parser = makeSimpleParser("{true;\"String\"}")
 
