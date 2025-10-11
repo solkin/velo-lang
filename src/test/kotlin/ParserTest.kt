@@ -286,6 +286,31 @@ class ParserTest {
     }
 
     @Test
+    fun testParseArrayIndexAssign() {
+        val parser = makeSimpleParser("arrayOf[int](1, 2, 5)[1] = 4")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = AssignNode(
+                left = IndexNode(
+                    list = ArrayNode(
+                        listOf = arrayListOf(
+                            IntNode(value = 1),
+                            IntNode(value = 2),
+                            IntNode(value = 5)
+                        ),
+                        IntType
+                    ),
+                    index = IntNode(value = 1)
+                ),
+                right = IntNode(value = 4)
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
     fun testParseDictOf() {
         val parser = makeSimpleParser("a = dictOf[int:str]()")
 
