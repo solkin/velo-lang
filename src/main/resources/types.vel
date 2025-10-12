@@ -2,6 +2,7 @@ str s = "s";
 bool b = true;
 int i = 1;
 int i1 = 0xCAFE; # hex
+int i2 = 0b101010; # binary
 byte c = 2;
 float f = 3.0;
 array[array[int]] l = arrayOf[array[int]]();

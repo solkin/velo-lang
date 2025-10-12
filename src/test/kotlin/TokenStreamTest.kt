@@ -165,6 +165,81 @@ class TokenStreamTest {
     }
 
     @Test
+    fun testBinNumber() {
+        val input = StringInput("0b101010")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 42
+            ), token
+        )
+    }
+
+    @Test
+    fun testBinNumberInvalidPrefixMid() {
+        val input = StringInput("0bb101010")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 0
+            ), token
+        )
+    }
+
+    @Test
+    fun testBinNumberInvalidPrefixStart() {
+        val input = StringInput("1b101010")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 1
+            ), token
+        )
+    }
+
+    @Test
+    fun testBinNumberInvalidFormat() {
+        val input = StringInput("0b10b010")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 2
+            ), token
+        )
+    }
+
+    @Test
+    fun testBinNumberInvalidSymbols() {
+        val input = StringInput("0b102010")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 2
+            ), token
+        )
+    }
+
+    @Test
     fun testString() {
         val input = StringInput("\"Hello World\"")
         val tokenStream = TokenStream(input)

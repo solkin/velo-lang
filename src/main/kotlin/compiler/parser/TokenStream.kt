@@ -37,6 +37,10 @@ class TokenStream(private val input: Input) {
         return "0123456789ABCDEFabcdef".indexOf(ch) >= 0
     }
 
+    private fun isBinDigit(ch: Char): Boolean {
+        return "01".indexOf(ch) >= 0
+    }
+
     private fun isIdStart(ch: Char): Boolean {
         return "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_".indexOf(ch) >= 0
     }
@@ -65,16 +69,19 @@ class TokenStream(private val input: Input) {
         return str
     }
 
+    private enum class NumberFormat{
+        STD, FLP, HEX, BIN
+    }
+
     private fun readNumber(): Token {
-        var hasDot = false
-        var isHex = false
+        var format = NumberFormat.STD
         var rawNumber = ""
         val number = readWhile(predicate = fun(ch: Char): Boolean {
             rawNumber += ch
             when (ch) {
                 '.' -> {
-                    if (hasDot) {
-                        // Dot was already been set - stop accumulating number
+                    if (format != NumberFormat.STD) {
+                        // Number format is already non-standard - stop accumulating number
                         return false
                     }
                     // Check for next after '.' symbol is digit, or it is property start
@@ -88,30 +95,56 @@ class TokenStream(private val input: Input) {
                     } finally {
                         input.reset()
                     }
-                    hasDot = true
+                    format = NumberFormat.FLP
                     return true
                 }
 
                 'x' -> {
                     val prefix = rawNumber.take(rawNumber.length - 1)
-                    if (isHex) {
-                        // It is already hex? Stop parsing number.
+                    if (format != NumberFormat.STD) {
+                        // Number format is already non-standard - stop accumulating number
                         return false
                     }
-                    isHex = !hasDot && Integer.parseInt(prefix) == 0
-                    return isHex
+                    if (Integer.parseInt(prefix) == 0) {
+                        format = NumberFormat.HEX
+                        return true
+                    } else {
+                        // Invalid prefix - stop accumulating number
+                        return false
+                    }
+                }
+
+                'b' -> {
+                    val prefix = rawNumber.take(rawNumber.length - 1)
+                    if (format != NumberFormat.STD) {
+                        // Number format is already non-standard - stop accumulating number
+                        return false
+                    }
+                    if (Integer.parseInt(prefix) == 0) {
+                        format = NumberFormat.BIN
+                        return true
+                    } else {
+                        // Invalid prefix - stop accumulating number
+                        return false
+                    }
                 }
             }
-            return if (isHex) isHexDigit(ch) else isDigit(ch)
+            return when (format) {
+                NumberFormat.STD -> isDigit(ch)
+                NumberFormat.FLP -> isDigit(ch)
+                NumberFormat.HEX -> isHexDigit(ch)
+                NumberFormat.BIN -> isBinDigit(ch)
+            }
         })
-        val value = if (isHex) {
-            number.substringAfter('x')
+        val value =  when (format) {
+            NumberFormat.STD -> number.toInt()
+            NumberFormat.FLP -> number.toDouble()
+            NumberFormat.HEX -> number.substringAfter('x')
                 .takeIf { !it.isEmpty() }
                 ?.toInt(radix = 16) ?: 0
-        } else if (hasDot) {
-            number.toDouble()
-        } else {
-            number.toInt()
+            NumberFormat.BIN -> number.substringAfter('b')
+                .takeIf { !it.isEmpty() }
+                ?.toInt(radix = 2) ?: 0
         }
         return Token(
             type = TokenType.NUMBER,
