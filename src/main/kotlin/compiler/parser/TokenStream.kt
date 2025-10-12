@@ -133,12 +133,14 @@ class TokenStream(private val input: Input) {
 
                 'y' -> {
                     format = NumberFormat.BYTE
+                    input.next()
                     return false
                 }
 
                 'f' -> {
                     if (format == NumberFormat.STD) {
                         format = NumberFormat.FLOAT
+                        input.next()
                         return false
                     }
                 }

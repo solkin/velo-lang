@@ -5,6 +5,8 @@ int i1 = 0xCAFE; # hex
 int i2 = 0b101010; # binary
 byte c = 2;
 float f = 3.0;
+byte c1 = 2y;
+float f1 = 3f;
 array[array[int]] l = arrayOf[array[int]]();
 dict[int:str] d = dictOf[int:str](
     1:"a",
