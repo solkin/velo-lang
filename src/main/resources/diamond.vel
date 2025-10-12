@@ -24,7 +24,6 @@ func reversed(array[any] arr) array[any] {
         }
     )
 };
-Terminal term = new Terminal();
 any row = arrayOf[int](1, 2, 3, 4, 5, 6, 7, 8);
 any y = 1;
 while (y <= 9) {

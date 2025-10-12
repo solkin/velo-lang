@@ -14,7 +14,7 @@ class TupleWorker(Terminal term) {
 
 tuple[int,str,float] p = tupleOf[int,str,float](1,"second",2.5);
 
-TupleWorker tw = new TupleWorker(new Terminal());
+TupleWorker tw = new TupleWorker(term);
 tw.dump(p);
 tw.mutate(p);
 tw.dump(p);

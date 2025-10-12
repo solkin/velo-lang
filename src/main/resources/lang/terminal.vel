@@ -5,3 +5,5 @@ native class Terminal() {
         print(text.con("\n"));
     };
 };
+
+Terminal term = new Terminal();

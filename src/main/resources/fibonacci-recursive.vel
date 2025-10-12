@@ -4,7 +4,6 @@ func fib(int n) int {
     if n < 2 then n else fib(n - 1) + fib(n - 2);
 };
 
-any term = new Terminal();
 let(any res = fib(15)) {
     term.println(res.str);
 };

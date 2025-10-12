@@ -53,7 +53,6 @@ ext(Terminal t) printInt(int a) str {
     t.println(a.str);
 };
 
-Terminal term = new Terminal();
 str d = 100.cnt(2, 3.0, "-str");
 term.println(d);
 term.printInt(123.max(124));

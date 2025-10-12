@@ -1,6 +1,4 @@
 include "lang/terminal.vel";
 
-Terminal term = new Terminal();
-
 str hello = "Hello, World!";
 term.print(hello);

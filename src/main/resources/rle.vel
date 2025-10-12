@@ -1,7 +1,5 @@
 include "lang/terminal.vel";
 
-Terminal term = new Terminal();
-
 func symbolAt(str s, int i) str {
     s.sub(i, i + 1);
 };

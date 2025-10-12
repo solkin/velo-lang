@@ -70,7 +70,6 @@ class GameOfLife(Terminal term) {
 
 };
 
-Terminal term = new Terminal();
 GameOfLife g = new GameOfLife(term);
 term.print("Enter generations count: ");
 int count = term.input().int;

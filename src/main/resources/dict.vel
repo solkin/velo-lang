@@ -1,7 +1,5 @@
 include "lang/terminal.vel";
 
-any term = new Terminal();
-
 dict[int:str] d = dictOf[int:str](
     1:"a",
     2:"b",

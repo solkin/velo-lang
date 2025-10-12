@@ -1,7 +1,5 @@
 include "lang/terminal.vel";
 
-Terminal term = new Terminal();
-
 class LZW() {
     func compress(str text) array[int] {
         dict[str:int] dictionary = dictOf[str:int]();
