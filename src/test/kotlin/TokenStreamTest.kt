@@ -19,7 +19,7 @@ class TokenStreamTest {
         assertEquals(
             Token(
                 type = TokenType.NUMBER,
-                value = 123.5
+                value = 123.5f
             ), token
         )
     }
@@ -280,6 +280,36 @@ class TokenStreamTest {
             Token(
                 type = TokenType.NUMBER,
                 value = 42
+            ), token
+        )
+    }
+
+    @Test
+    fun testBytePostfix() {
+        val input = StringInput("123y")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 123.toByte()
+            ), token
+        )
+    }
+
+    @Test
+    fun testFloatPostfix() {
+        val input = StringInput("123f")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 123f
             ), token
         )
     }
