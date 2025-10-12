@@ -122,6 +122,18 @@ class ParserTest {
     }
 
     @Test
+    fun testParseVoid() {
+        val parser = makeSimpleParser("void")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = VoidNode.wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
     fun testParseVar() {
         val parser = makeSimpleParser("foo")
 

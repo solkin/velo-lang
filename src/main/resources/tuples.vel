@@ -5,9 +5,10 @@ class TupleWorker(Terminal term) {
         t.1 = t.1 + 100;
         t.2 = t.2.con("_item");
     };
-    func dump(tuple[int,str,float] t) str {
+    func dump(tuple[int,str,float] t) void {
         term.println(t.1.str);
         term.println(t.2);
+        void
     };
 };
 

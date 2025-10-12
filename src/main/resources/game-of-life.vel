@@ -39,7 +39,7 @@ class GameOfLife(Terminal term) {
         }
     };
 
-    func printWorld() array[array[int]] {
+    func printWorld() void {
         w.map(
             func(int index, array[int] row) array[int] {
                 row.map(
@@ -52,7 +52,8 @@ class GameOfLife(Terminal term) {
                 term.println("");
                 row
             }
-        )
+        );
+        void
     };
 
     func nextGeneration() void {

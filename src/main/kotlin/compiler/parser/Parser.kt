@@ -281,6 +281,11 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return maybeDef(native = true)
     }
 
+    private fun parseVoid(): Node {
+        skipKw("void")
+        return VoidNode
+    }
+
     private fun parseNew(): Node {
         skipKw("new")
         val tok = stream.next() ?: throw IllegalStateException()
@@ -462,6 +467,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isPunc('(') != null) return inner('(', ')', ::parseExpression)
             ?: throw IllegalStateException()
         if (isPunc('{') != null) return parseProg()
+        if (isKw("void") != null) return parseVoid()
         if (isDef() != null) return maybeDef(native = false)
         if (isKw("let") != null) return parseLet()
         if (isKw("ext") != null) return parseExt()

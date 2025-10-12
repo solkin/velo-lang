@@ -330,6 +330,21 @@ class TokenStreamTest {
     }
 
     @Test
+    fun testVoid() {
+        val input = StringInput("void")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.KEYWORD,
+                value = "void"
+            ), token
+        )
+    }
+
+    @Test
     fun testString() {
         val input = StringInput("\"Hello World\"")
         val tokenStream = TokenStream(input)

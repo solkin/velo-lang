@@ -14,8 +14,6 @@ class TokenStream(private val input: Input) {
         "dictOf",
         "tupleOf",
         "new",
-        "class",
-        "func",
         "native",
         "ext",
         "let",
