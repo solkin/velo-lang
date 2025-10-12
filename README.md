@@ -102,11 +102,11 @@ str s = "Test String";
 println(s.len);        # 11
 println(s.sub(5, 11)); # String
 ```
-**Pairs**
+**Tuples**
 ```
-any p = pairOf[int,str](1, "second");
-println(p.first);  # 1
-println(p.second); # second
+tuple[int,str] p = tupleOf(1, "second");
+println(p.1.str);  # 1
+println(p.2);      # second
 ```
 **Classes**
 ```

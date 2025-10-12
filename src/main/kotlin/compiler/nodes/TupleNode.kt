@@ -20,7 +20,9 @@ data class TupleNode(
 
 data class TupleType(val types: List<Type>) : Type {
     override fun sameAs(type: Type): Boolean {
-        return type is TupleType && type.types.filterIndexed { i, type -> !type.sameAs(types[i]) }.isEmpty()
+        return type is TupleType &&
+                type.types.size == types.size &&
+                type.types.filterIndexed { i, type -> !type.sameAs(types[i]) }.isEmpty()
     }
 
     override fun default(ctx: Context) {

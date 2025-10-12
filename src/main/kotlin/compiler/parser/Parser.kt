@@ -261,11 +261,6 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
 
     private fun parseTuple(): Node {
         skipKw("tupleOf")
-        val types = parseDerivedTypes()
-        if (types.isEmpty()) {
-            stream.croak("Tuple requires derived types definition")
-            throw IllegalArgumentException()
-        }
         val entries = delimited('(', ')', ',', ::parseExpression)
         if (entries.isEmpty()) {
             stream.croak("Tuple must contain one or more entries")
