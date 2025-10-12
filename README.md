@@ -20,7 +20,7 @@ int i1 = 0xCAFE; # hex
 float f = 3.0;
 any l = arrayOf[array[int]]();
 any n = func() void {};
-any p = pairOf[int,str](1, "second");
+any p = tupleOf(1, "second");
 ```
 **Functions and lambdas.** Velo lang supports functions
 ```
