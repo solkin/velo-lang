@@ -105,6 +105,21 @@ class TokenStreamTest {
     }
 
     @Test
+    fun testNumDelimiter() {
+        val input = StringInput("10_7374_1824")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 1073741824
+            ), token
+        )
+    }
+
+    @Test
     fun testHexNumber() {
         val input = StringInput("0xCafe")
         val tokenStream = TokenStream(input)
@@ -160,6 +175,21 @@ class TokenStreamTest {
             Token(
                 type = TokenType.NUMBER,
                 value = 0
+            ), token
+        )
+    }
+
+    @Test
+    fun testHexDelimiter() {
+        val input = StringInput("0xca_fe")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 51966
             ), token
         )
     }
@@ -235,6 +265,21 @@ class TokenStreamTest {
             Token(
                 type = TokenType.NUMBER,
                 value = 2
+            ), token
+        )
+    }
+
+    @Test
+    fun testBinDelimiter() {
+        val input = StringInput("0b10_10_10")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 42
             ), token
         )
     }

@@ -79,6 +79,8 @@ class TokenStream(private val input: Input) {
         val number = readWhile(predicate = fun(ch: Char): Boolean {
             rawNumber += ch
             when (ch) {
+                '_' -> return true // Skip delimiter
+
                 '.' -> {
                     if (format != NumberFormat.STD) {
                         // Number format is already non-standard - stop accumulating number
@@ -135,7 +137,7 @@ class TokenStream(private val input: Input) {
                 NumberFormat.HEX -> isHexDigit(ch)
                 NumberFormat.BIN -> isBinDigit(ch)
             }
-        })
+        }).replace("_", "")
         val value =  when (format) {
             NumberFormat.STD -> number.toInt()
             NumberFormat.FLP -> number.toDouble()
