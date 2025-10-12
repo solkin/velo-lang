@@ -138,7 +138,7 @@ class TokenStream(private val input: Input) {
                 }
 
                 'f' -> {
-                    if (format == NumberFormat.STD) {
+                    if (format == NumberFormat.STD || format == NumberFormat.FLOAT) {
                         format = NumberFormat.FLOAT
                         input.next()
                         return false

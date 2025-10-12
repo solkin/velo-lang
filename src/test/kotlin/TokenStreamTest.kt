@@ -315,6 +315,21 @@ class TokenStreamTest {
     }
 
     @Test
+    fun testFloatPostfixWithDot() {
+        val input = StringInput("123.5f")
+        val tokenStream = TokenStream(input)
+
+        val token = tokenStream.next()
+
+        assertEquals(
+            Token(
+                type = TokenType.NUMBER,
+                value = 123.5f
+            ), token
+        )
+    }
+
+    @Test
     fun testString() {
         val input = StringInput("\"Hello World\"")
         val tokenStream = TokenStream(input)
