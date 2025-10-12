@@ -14,6 +14,7 @@ import compiler.nodes.LetNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.ArrayNode
+import compiler.nodes.ByteNode
 import compiler.nodes.ClassNode
 import compiler.nodes.ClassType
 import compiler.nodes.DictNode
@@ -37,7 +38,7 @@ import kotlin.test.assertEquals
 class ParserTest {
 
     @Test
-    fun testParseNum() {
+    fun testParseFloatNum() {
         val parser = makeSimpleParser("123.5")
 
         val node = parser.parse()
@@ -45,6 +46,48 @@ class ParserTest {
         assertEquals(
             expected = FloatNode(
                 value = 123.5f,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseFloatPostfixNum() {
+        val parser = makeSimpleParser("123f")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = FloatNode(
+                value = 123f,
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseByteNum() {
+        val parser = makeSimpleParser("123y")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = ByteNode(
+                value = 123.toByte(),
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseIntNum() {
+        val parser = makeSimpleParser("123")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = IntNode(
+                value = 123,
             ).wrapProgram(),
             actual = node,
         )

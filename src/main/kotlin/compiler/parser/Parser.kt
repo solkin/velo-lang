@@ -480,7 +480,6 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
                 is Byte -> ByteNode(tok.value)
                 is Int -> IntNode(tok.value)
                 is Float -> FloatNode(tok.value)
-                is Double -> FloatNode(tok.value.toFloat())
                 else -> {
                     stream.croak("Unexpected number format: " + tok.value::class.java)
                     throw IllegalArgumentException()
