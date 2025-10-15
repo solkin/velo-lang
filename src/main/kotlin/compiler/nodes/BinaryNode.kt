@@ -5,12 +5,12 @@ import vm.operations.And
 import vm.operations.Divide
 import vm.operations.Equals
 import vm.operations.If
-import vm.operations.Minus
+import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Multiply
 import vm.operations.Or
-import vm.operations.Plus
+import vm.operations.Add
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Swap
@@ -29,12 +29,12 @@ data class BinaryNode(
         }
         return when (operator) {
             "+" -> {
-                ctx.add(Plus())
+                ctx.add(Add())
                 leftType
             }
 
             "-" -> {
-                ctx.add(Minus())
+                ctx.add(Sub())
                 leftType
             }
 

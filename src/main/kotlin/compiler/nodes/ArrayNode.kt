@@ -14,7 +14,7 @@ import vm.operations.If
 import vm.operations.ArrIndex
 import vm.operations.More
 import vm.operations.Move
-import vm.operations.Plus
+import vm.operations.Add
 import vm.operations.Push
 import vm.operations.ArrSub
 
@@ -151,7 +151,7 @@ object MapArrayProp : Prop {
             // increment i
             add(Get(i.index))
             add(Push(1))
-            add(Plus())
+            add(Add())
             add(Set(i.index))
         }
         exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included

@@ -46,7 +46,7 @@ import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Inv
-import vm.operations.Minus
+import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Multiply
@@ -54,7 +54,7 @@ import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
-import vm.operations.Plus
+import vm.operations.Add
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
@@ -135,13 +135,13 @@ class BytecodeOutputStream(
             is IntChar -> out.writeByte(0x14)
             is IntStr -> out.writeByte(0x15)
             is Frame -> out.writeByte(0x18).also { out.writeInt(op.num) }
-            is Minus -> out.writeByte(0x1a)
+            is Sub -> out.writeByte(0x1a)
             is More -> out.writeByte(0x1b)
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
             is Multiply -> out.writeByte(0x1e)
             is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
-            is Plus -> out.writeByte(0x26)
+            is Add -> out.writeByte(0x26)
             is Push -> out.writeByte(0x29).also { out.write(op.value) }
             is Rem -> out.writeByte(0x2a)
             is Ret -> out.writeByte(0x2b)

@@ -46,7 +46,7 @@ import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
 import vm.operations.Inv
-import vm.operations.Minus
+import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Multiply
@@ -54,7 +54,7 @@ import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
-import vm.operations.Plus
+import vm.operations.Add
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
@@ -147,13 +147,13 @@ class BytecodeInputStream(
             0x14 -> IntChar()
             0x15 -> IntStr()
             0x18 -> Frame(num = inp.readInt())
-            0x1a -> Minus()
+            0x1a -> Sub()
             0x1b -> More()
             0x1d -> Move(count = inp.readInt())
             0x1e -> Multiply()
             0x20 -> Inv()
             0x21 -> Or()
-            0x26 -> Plus()
+            0x26 -> Add()
             0x29 -> Push(value = inp.readAny())
             0x2a -> Rem()
             0x2b -> Ret()
