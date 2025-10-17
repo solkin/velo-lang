@@ -8,7 +8,7 @@ import vm.operations.If
 import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
-import vm.operations.Multiply
+import vm.operations.Mul
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.Push
@@ -39,7 +39,7 @@ data class BinaryNode(
             }
 
             "*" -> {
-                ctx.add(Multiply())
+                ctx.add(Mul())
                 leftType
             }
 

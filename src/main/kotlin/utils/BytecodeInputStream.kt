@@ -49,7 +49,7 @@ import vm.operations.Inv
 import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
-import vm.operations.Multiply
+import vm.operations.Mul
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
@@ -150,7 +150,7 @@ class BytecodeInputStream(
             0x1a -> Sub()
             0x1b -> More()
             0x1d -> Move(count = inp.readInt())
-            0x1e -> Multiply()
+            0x1e -> Mul()
             0x20 -> Inv()
             0x21 -> Or()
             0x26 -> Add()

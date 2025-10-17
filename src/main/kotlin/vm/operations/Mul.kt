@@ -5,7 +5,7 @@ import vm.SimpleOperation
 import vm.multiply
 import vm.records.ValueRecord
 
-class Multiply: SimpleOperation {
+class Mul: SimpleOperation {
 
     override fun exec(frame: Frame) {
         val rec1 = frame.subs.pop().getNumber()

@@ -49,7 +49,7 @@ import vm.operations.Inv
 import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
-import vm.operations.Multiply
+import vm.operations.Mul
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
@@ -138,7 +138,7 @@ class BytecodeOutputStream(
             is Sub -> out.writeByte(0x1a)
             is More -> out.writeByte(0x1b)
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
-            is Multiply -> out.writeByte(0x1e)
+            is Mul -> out.writeByte(0x1e)
             is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
             is Add -> out.writeByte(0x26)
