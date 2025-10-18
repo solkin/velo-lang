@@ -7,9 +7,9 @@ import vm.operations.ArrLen
 import vm.operations.ArrOf
 import vm.operations.ArrSet
 import vm.operations.Call
-import vm.operations.Set
+import vm.operations.Store
 import vm.operations.Dup
-import vm.operations.Get
+import vm.operations.Load
 import vm.operations.If
 import vm.operations.ArrIndex
 import vm.operations.More
@@ -115,44 +115,44 @@ object MapArrayProp : Prop {
         val arg = args.first() as FuncType
 
         val func = ctx.def(name = "@func", type = arg)
-        ctx.add(Set(func.index))
+        ctx.add(Store(func.index))
 
         ctx.add(Dup())
         ctx.add(ArrLen())
         val size = ctx.def(name = "@size", type = IntType)
-        ctx.add(Set(size.index))
+        ctx.add(Store(size.index))
 
         ctx.add(Push(0))
         val i = ctx.def(name = "@i", type = IntType)
-        ctx.add(Set(i.index))
+        ctx.add(Store(i.index))
 
         val array = ctx.def(name = "@array", type = ArrayType(arg.derived))
-        ctx.add(Set(array.index))
+        ctx.add(Store(array.index))
 
         val condCtx: MutableList<Operation> = ArrayList()
         with(condCtx) {
-            add(Get(size.index))
-            add(Get(i.index))
+            add(Load(size.index))
+            add(Load(i.index))
             add(More())
         }
 
         val exprCtx: MutableList<Operation> = ArrayList()
         with(exprCtx) {
             // index
-            add(Get(i.index))
+            add(Load(i.index))
             // item
-            add(Get(array.index))
-            add(Get(i.index))
+            add(Load(array.index))
+            add(Load(i.index))
             add(ArrIndex())
             // func
-            add(Get(func.index))
+            add(Load(func.index))
             // call func
             add(Call(args = 2))
             // increment i
-            add(Get(i.index))
+            add(Load(i.index))
             add(Push(1))
             add(Add())
-            add(Set(i.index))
+            add(Store(i.index))
         }
         exprCtx.add(Move(-(exprCtx.size + condCtx.size + 2))) // +2 because to move and if is not included
 
@@ -160,7 +160,7 @@ object MapArrayProp : Prop {
         ctx.add(If(exprCtx.size))
         ctx.addAll(exprCtx)
 
-        ctx.add(Get(size.index))
+        ctx.add(Load(size.index))
         ctx.add(ArrOf())
 
         return ArrayType(arg.derived)

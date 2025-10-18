@@ -38,7 +38,7 @@ import vm.operations.Drop
 import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
-import vm.operations.Get
+import vm.operations.Load
 import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
@@ -59,7 +59,7 @@ import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
-import vm.operations.Set
+import vm.operations.Store
 import vm.operations.Shl
 import vm.operations.Shr
 import vm.operations.StrCon
@@ -128,7 +128,7 @@ class BytecodeOutputStream(
             is Drop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
             is Equals -> out.writeByte(0x0e)
-            is Get -> out.writeByte(0x0f).also { out.writeInt(op.index) }
+            is Load -> out.writeByte(0x0f).also { out.writeInt(op.index) }
             is Goto -> out.writeByte(0x10).also { out.writeInt(op.addr) }
             is Halt -> out.writeByte(0x11)
             is If -> out.writeByte(0x12).also { out.writeInt(op.elseSkip) }
@@ -146,7 +146,7 @@ class BytecodeOutputStream(
             is Rem -> out.writeByte(0x2a)
             is Ret -> out.writeByte(0x2b)
             is Rot -> out.writeByte(0x2c)
-            is Set -> out.writeByte(0x2d).also { out.writeInt(op.index) }
+            is Store -> out.writeByte(0x2d).also { out.writeInt(op.index) }
             is StrCon -> out.writeByte(0x2e)
             is StrIndex -> out.writeByte(0x2f)
             is StrLen -> out.writeByte(0x30)

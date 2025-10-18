@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Call
-import vm.operations.Get
+import vm.operations.Load
 
 data class PropNode(
     val name: String,
@@ -15,7 +15,7 @@ data class PropNode(
             val ext = scopeCtx.opt(parentType.name() + "@" + name)
             if (ext != null) {
                 val argTypes = listOf(parentType) + args.orEmpty().map { it.compile(scopeCtx) }
-                scopeCtx.add(Get(ext.index))
+                scopeCtx.add(Load(ext.index))
                 val returnType = ext.type
                 if (returnType !is Callable) throw IllegalArgumentException("Call on non-function type")
                 val funcArgTypes = returnType.args ?: throw Exception("Extension arguments is not defined")

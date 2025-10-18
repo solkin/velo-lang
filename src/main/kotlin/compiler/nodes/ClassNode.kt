@@ -3,11 +3,11 @@ package compiler.nodes
 import compiler.Context
 import vm.operations.Call
 import vm.operations.Frame
-import vm.operations.Get
+import vm.operations.Load
 import vm.operations.Instance
 import vm.operations.NativeConstructor
 import vm.operations.Ret
-import vm.operations.Set
+import vm.operations.Store
 
 data class ClassNode(
     val name: String,
@@ -27,19 +27,19 @@ data class ClassNode(
 
         // Insert class frame pointer into stack
         ctx.add(Frame(num = classOps.frame.num))
-        ctx.add(Set(index = nameVar.index))
+        ctx.add(Store(index = nameVar.index))
 
         // Compile class body
         val args = defs.reversed().map { def ->
             val v = classOps.def(def.name, def.type)
-            classOps.add(Set(v.index))
+            classOps.add(Store(v.index))
             v
         }.reversed()
         argTypes += args.map { it.type }
         val nativeIndex = if (native) {
             classOps.add(NativeConstructor(name, args = args.map { Pair(it.index, it.type.vmType()) }))
             val nativeInstance = classOps.def(name = NATIVE_INSTANCE, type = AnyType)
-            classOps.add(Set(index = nativeInstance.index))
+            classOps.add(Store(index = nativeInstance.index))
             nativeInstance.index
         } else {
             null
@@ -89,7 +89,7 @@ data class ClassElementProp(val name: String) : Prop {
         type.parent ?: throw IllegalStateException("Class prop parent context is not defined")
         val v = type.parent.frame.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
         val propCtx = ctx.discrete(parent = type.parent)
-        propCtx.add(Get(v.index))
+        propCtx.add(Load(v.index))
         var resultType = v.type
         if (v.type is FuncType) {
             propCtx.add(Call(args = -args.size))

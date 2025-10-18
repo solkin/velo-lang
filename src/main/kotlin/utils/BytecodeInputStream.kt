@@ -38,7 +38,7 @@ import vm.operations.Drop
 import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
-import vm.operations.Get
+import vm.operations.Load
 import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
@@ -59,7 +59,7 @@ import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
-import vm.operations.Set
+import vm.operations.Store
 import vm.operations.Shl
 import vm.operations.Shr
 import vm.operations.StrCon
@@ -140,7 +140,7 @@ class BytecodeInputStream(
             0x0c -> Drop()
             0x0d -> Dup()
             0x0e -> Equals()
-            0x0f -> Get(index = inp.readInt())
+            0x0f -> Load(index = inp.readInt())
             0x10 -> Goto(addr = inp.readInt())
             0x11 -> Halt()
             0x12 -> If(elseSkip = inp.readInt())
@@ -158,7 +158,7 @@ class BytecodeInputStream(
             0x2a -> Rem()
             0x2b -> Ret()
             0x2c -> Rot()
-            0x2d -> Set(index = inp.readInt())
+            0x2d -> Store(index = inp.readInt())
             0x2e -> StrCon()
             0x2f -> StrIndex()
             0x30 -> StrLen()

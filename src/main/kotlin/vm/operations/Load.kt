@@ -3,13 +3,13 @@ package vm.operations
 import vm.Frame
 import vm.SimpleOperation
 
-class Set(
+class Load(
     val index: Int,
 ): SimpleOperation {
 
     override fun exec(frame: Frame) {
-        val value = frame.subs.pop()
-        frame.vars.set(index, value)
+        val rec = frame.vars.get(index)
+        frame.subs.push(rec)
     }
 
 }

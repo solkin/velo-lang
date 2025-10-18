@@ -2,11 +2,11 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.Frame
-import vm.operations.Get
+import vm.operations.Load
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Ret
-import vm.operations.Set
+import vm.operations.Store
 
 data class FuncNode(
     val name: String?,
@@ -28,12 +28,12 @@ data class FuncNode(
             // Get native instance variable
             val iv = ctx.get(name = NATIVE_INSTANCE)
             // Put native instance to the stack
-            ctx.add(Get(index = iv.index))
+            ctx.add(Load(index = iv.index))
             // Add operation to find native method and put it on the stack
             ctx.add(NativeFunction(name, argTypes = defs.map { it.type.vmType() }))
             val fv = ctx.def(name = NATIVE_FUNCTION_PREFIX + name, type = type)
             // Save native method instance to the class frame vars
-            ctx.add(Set(index = fv.index))
+            ctx.add(Store(index = fv.index))
         }
 
         // Create body frame and fork var counter
@@ -43,14 +43,14 @@ data class FuncNode(
         ctx.add(Frame(num = funcOps.frame.num))
         // Define var if named variable defined
         nameVar?.let {
-            ctx.add(Set(index = nameVar.index))
+            ctx.add(Store(index = nameVar.index))
             resultType = VoidType
         }
 
         // Compile body
         val args = defs.reversed().map { def ->
             val v = funcOps.def(def.name, def.type)
-            funcOps.add(Set(v.index))
+            funcOps.add(Store(v.index))
             v
         }.reversed()
         argTypes += args.map { it.type }
@@ -60,12 +60,12 @@ data class FuncNode(
             // Get native method variable
             val fv = ctx.get(name = NATIVE_FUNCTION_PREFIX + name)
             // Put native method to the stack
-            funcOps.add(Get(index = fv.index))
+            funcOps.add(Load(index = fv.index))
 
             // Get native instance variable
             val iv = ctx.get(name = NATIVE_INSTANCE)
             // Put native instance to the stack
-            funcOps.add(Get(index = iv.index))
+            funcOps.add(Load(index = iv.index))
 
             // Invoke native method from the stack with specific arguments
             funcOps.add(NativeInvoke(args = args.map { Pair(it.index, it.type.vmType()) }))

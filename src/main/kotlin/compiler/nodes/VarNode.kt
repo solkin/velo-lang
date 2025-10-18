@@ -1,15 +1,15 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.Get
-import vm.operations.Set
+import vm.operations.Load
+import vm.operations.Store
 
 data class VarNode(
     val name: String,
 ) : Node(), AssignableNode {
     override fun compile(ctx: Context): Type {
         val v = ctx.get(name)
-        ctx.add(Get(v.index))
+        ctx.add(Load(v.index))
         return v.type
     }
 
@@ -19,6 +19,6 @@ data class VarNode(
             throw IllegalArgumentException("Illegal var assign type $type != ${v.type}")
         }
         ctx.retype(name, type) // Clarify variable type from the right side of assignment
-        ctx.add(Set(v.index))
+        ctx.add(Store(v.index))
     }
 }
