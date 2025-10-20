@@ -39,7 +39,6 @@ import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
 import vm.operations.Load
-import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
 import vm.operations.Instance
@@ -129,7 +128,6 @@ class BytecodeOutputStream(
             is Dup -> out.writeByte(0x0d)
             is Equals -> out.writeByte(0x0e)
             is Load -> out.writeByte(0x0f).also { out.writeInt(op.index) }
-            is Goto -> out.writeByte(0x10).also { out.writeInt(op.addr) }
             is Halt -> out.writeByte(0x11)
             is If -> out.writeByte(0x12).also { out.writeInt(op.elseSkip) }
             is IntChar -> out.writeByte(0x14)
@@ -261,7 +259,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x06
+const val VERSION_MINOR = 0x07
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

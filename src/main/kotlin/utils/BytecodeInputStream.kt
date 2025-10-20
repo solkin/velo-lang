@@ -39,7 +39,6 @@ import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
 import vm.operations.Load
-import vm.operations.Goto
 import vm.operations.Halt
 import vm.operations.If
 import vm.operations.Instance
@@ -141,7 +140,6 @@ class BytecodeInputStream(
             0x0d -> Dup()
             0x0e -> Equals()
             0x0f -> Load(index = inp.readInt())
-            0x10 -> Goto(addr = inp.readInt())
             0x11 -> Halt()
             0x12 -> If(elseSkip = inp.readInt())
             0x14 -> IntChar()
