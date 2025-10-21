@@ -34,7 +34,7 @@ import vm.operations.DictSet
 import vm.operations.DictVal
 import vm.operations.DictVals
 import vm.operations.Divide
-import vm.operations.Drop
+import vm.operations.Pop
 import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
@@ -124,7 +124,7 @@ class BytecodeOutputStream(
             }
 
             is Divide -> out.writeByte(0x0b)
-            is Drop -> out.writeByte(0x0c)
+            is Pop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
             is Equals -> out.writeByte(0x0e)
             is Load -> out.writeByte(0x0f).also { out.writeInt(op.index) }

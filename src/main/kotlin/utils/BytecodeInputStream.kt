@@ -34,7 +34,7 @@ import vm.operations.DictSet
 import vm.operations.DictVal
 import vm.operations.DictVals
 import vm.operations.Divide
-import vm.operations.Drop
+import vm.operations.Pop
 import vm.operations.Dup
 import vm.operations.Equals
 import vm.operations.Frame
@@ -136,7 +136,7 @@ class BytecodeInputStream(
             0x08 -> ArrSet()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Divide()
-            0x0c -> Drop()
+            0x0c -> Pop()
             0x0d -> Dup()
             0x0e -> Equals()
             0x0f -> Load(index = inp.readInt())
