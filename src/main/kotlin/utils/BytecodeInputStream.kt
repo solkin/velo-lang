@@ -33,7 +33,7 @@ import vm.operations.DictOf
 import vm.operations.DictSet
 import vm.operations.DictVal
 import vm.operations.DictVals
-import vm.operations.Divide
+import vm.operations.Div
 import vm.operations.Pop
 import vm.operations.Dup
 import vm.operations.Equals
@@ -135,7 +135,7 @@ class BytecodeInputStream(
             0x06 -> ArrOf()
             0x08 -> ArrSet()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
-            0x0b -> Divide()
+            0x0b -> Div()
             0x0c -> Pop()
             0x0d -> Dup()
             0x0e -> Equals()

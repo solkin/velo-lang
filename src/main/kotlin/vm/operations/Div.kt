@@ -5,7 +5,7 @@ import vm.SimpleOperation
 import vm.divide
 import vm.records.ValueRecord
 
-class Divide: SimpleOperation {
+class Div: SimpleOperation {
 
     override fun exec(frame: Frame) {
         val rec1 = frame.subs.pop().getNumber()

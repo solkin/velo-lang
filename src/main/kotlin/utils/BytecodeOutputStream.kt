@@ -33,7 +33,7 @@ import vm.operations.DictOf
 import vm.operations.DictSet
 import vm.operations.DictVal
 import vm.operations.DictVals
-import vm.operations.Divide
+import vm.operations.Div
 import vm.operations.Pop
 import vm.operations.Dup
 import vm.operations.Equals
@@ -123,7 +123,7 @@ class BytecodeOutputStream(
                 out.writeBoolean(op.classParent)
             }
 
-            is Divide -> out.writeByte(0x0b)
+            is Div -> out.writeByte(0x0b)
             is Pop -> out.writeByte(0x0c)
             is Dup -> out.writeByte(0x0d)
             is Equals -> out.writeByte(0x0e)

@@ -2,7 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.And
-import vm.operations.Divide
+import vm.operations.Div
 import vm.operations.Equals
 import vm.operations.If
 import vm.operations.Sub
@@ -44,7 +44,7 @@ data class BinaryNode(
             }
 
             "/" -> {
-                ctx.add(Divide())
+                ctx.add(Div())
                 leftType
             }
 
