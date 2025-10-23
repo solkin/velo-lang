@@ -65,7 +65,7 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.SubStr
+import vm.operations.StrSub
 import vm.operations.Swap
 import java.io.DataOutputStream
 import java.io.OutputStream
@@ -149,7 +149,7 @@ class BytecodeOutputStream(
             is StrIndex -> out.writeByte(0x2f)
             is StrLen -> out.writeByte(0x30)
             is ArrSub -> out.writeByte(0x32)
-            is SubStr -> out.writeByte(0x33)
+            is StrSub -> out.writeByte(0x33)
             is Swap -> out.writeByte(0x34)
             is DictArr -> out.writeByte(0x36)
             is DictDel -> out.writeByte(0x37)

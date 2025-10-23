@@ -6,7 +6,7 @@ import vm.operations.StrCon
 import vm.operations.StrIndex
 import vm.operations.StrInt
 import vm.operations.StrLen
-import vm.operations.SubStr
+import vm.operations.StrSub
 
 data class StringNode(
     val value: String,
@@ -50,7 +50,7 @@ object StringType : Indexable {
 
 object SubStrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(SubStr())
+        ctx.add(StrSub())
         return StringType
     }
 }
