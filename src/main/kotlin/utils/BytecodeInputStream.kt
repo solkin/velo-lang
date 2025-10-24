@@ -17,10 +17,8 @@ import vm.VmVoid
 import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrCon
-import vm.operations.ArrIndex
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrSet
 import vm.operations.ArrSub
 import vm.operations.Call
 import vm.operations.DictArr
@@ -54,6 +52,8 @@ import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
 import vm.operations.Add
+import vm.operations.ArrLoad
+import vm.operations.ArrStore
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
@@ -130,10 +130,10 @@ class BytecodeInputStream(
             0x01 -> Abs()
             0x02 -> And()
             0x03 -> ArrCon()
-            0x04 -> ArrIndex()
+            0x04 -> ArrLoad()
             0x05 -> ArrLen()
             0x06 -> ArrOf()
-            0x08 -> ArrSet()
+            0x08 -> ArrStore()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Div()
             0x0c -> Pop()

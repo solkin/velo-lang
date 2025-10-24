@@ -3,14 +3,16 @@ package vm.operations
 import vm.Frame
 import vm.SimpleOperation
 
-class ArrSet : SimpleOperation {
+class ArrStore : SimpleOperation {
 
     override fun exec(frame: Frame) {
+        val count = frame.subs.pop().getInt()
         val index = frame.subs.pop().getInt()
         val array = frame.subs.pop().getArray()
-        val value = frame.subs.pop()
 
-        array[index] = value
+        for (i in 0 until count) {
+            array[index + i] = frame.subs.pop()
+        }
     }
 
 }

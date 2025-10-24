@@ -5,16 +5,16 @@ import vm.Operation
 import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrSet
 import vm.operations.Call
 import vm.operations.Store
 import vm.operations.Dup
 import vm.operations.Load
 import vm.operations.If
-import vm.operations.ArrIndex
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Add
+import vm.operations.ArrLoad
+import vm.operations.ArrStore
 import vm.operations.Push
 import vm.operations.ArrSub
 
@@ -60,12 +60,14 @@ data class ArrayType(val derived: Type) : IndexAssignable {
     override fun vmType() = vm.VmArray()
 
     override fun compileIndex(ctx: Context): Type {
-        ctx.add(ArrIndex())
+        ctx.add(Push(value = 1)) // ArrLoad count
+        ctx.add(ArrLoad())
         return derived
     }
 
     override fun compileAssignment(ctx: Context) {
-        ctx.add(ArrSet())
+        ctx.add(Push(value = 1)) // ArrStore count
+        ctx.add(ArrStore())
     }
 
     override fun name() = "array"
@@ -143,7 +145,8 @@ object MapArrayProp : Prop {
             // item
             add(Load(array.index))
             add(Load(i.index))
-            add(ArrIndex())
+            add(Push(value = 1)) // ArrLoad count
+            add(ArrLoad())
             // func
             add(Load(func.index))
             // call func

@@ -17,10 +17,8 @@ import vm.VmVoid
 import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrCon
-import vm.operations.ArrIndex
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrSet
 import vm.operations.ArrSub
 import vm.operations.Call
 import vm.operations.DictArr
@@ -54,6 +52,8 @@ import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
 import vm.operations.Add
+import vm.operations.ArrLoad
+import vm.operations.ArrStore
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
@@ -114,10 +114,10 @@ class BytecodeOutputStream(
             is Abs -> out.writeByte(0x01)
             is And -> out.writeByte(0x02)
             is ArrCon -> out.writeByte(0x03)
-            is ArrIndex -> out.writeByte(0x04)
+            is ArrLoad -> out.writeByte(0x04)
             is ArrLen -> out.writeByte(0x05)
             is ArrOf -> out.writeByte(0x06)
-            is ArrSet -> out.writeByte(0x08)
+            is ArrStore -> out.writeByte(0x08)
             is Call -> out.writeByte(0x09).also {
                 out.writeInt(op.args)
                 out.writeBoolean(op.classParent)
@@ -259,7 +259,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x07
+const val VERSION_MINOR = 0x08
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

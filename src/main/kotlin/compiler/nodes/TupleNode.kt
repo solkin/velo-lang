@@ -1,9 +1,9 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.ArrIndex
+import vm.operations.ArrLoad
 import vm.operations.ArrOf
-import vm.operations.ArrSet
+import vm.operations.ArrStore
 import vm.operations.Push
 
 data class TupleNode(
@@ -45,7 +45,8 @@ data class TupleEntryProp(val index: Int) : AssignableProp {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as? TupleType ?: throw IllegalArgumentException("Tuple operation on non-tuple type $type")
         ctx.add(Push(value = index))
-        ctx.add(ArrIndex())
+        ctx.add(Push(value = 1)) // ArrLoad count
+        ctx.add(ArrLoad())
         return type.types[index]
     }
 
@@ -60,6 +61,7 @@ data class TupleEntryProp(val index: Int) : AssignableProp {
             throw IllegalArgumentException("Cannot assign type $assignType to tuple $index of type ${parentType.types[index]}")
         }
         ctx.add(Push(value = index))
-        ctx.add(ArrSet())
+        ctx.add(Push(value = 1)) // ArrStore count
+        ctx.add(ArrStore())
     }
 }
