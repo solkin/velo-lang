@@ -34,7 +34,7 @@ data class Vars(
 
 fun createVars(vars: List<Int>, parent: Vars? = null) = Vars(
     vars = HashMap<Int, Record>().apply {
-        putAll(vars.map { it to EmptyRecord() })
+        putAll(vars.map { it to EmptyRecord })
     },
     parent = parent
 )

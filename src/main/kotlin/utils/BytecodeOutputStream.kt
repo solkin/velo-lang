@@ -19,7 +19,6 @@ import vm.operations.And
 import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrSub
 import vm.operations.Call
 import vm.operations.DictArr
 import vm.operations.DictDel
@@ -52,6 +51,7 @@ import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
 import vm.operations.Add
+import vm.operations.ArrCopy
 import vm.operations.ArrLoad
 import vm.operations.ArrStore
 import vm.operations.Push
@@ -148,7 +148,7 @@ class BytecodeOutputStream(
             is StrCon -> out.writeByte(0x2e)
             is StrIndex -> out.writeByte(0x2f)
             is StrLen -> out.writeByte(0x30)
-            is ArrSub -> out.writeByte(0x32)
+            is ArrCopy -> out.writeByte(0x32)
             is StrSub -> out.writeByte(0x33)
             is Swap -> out.writeByte(0x34)
             is DictArr -> out.writeByte(0x36)
@@ -259,7 +259,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x08
+const val VERSION_MINOR = 0x09
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

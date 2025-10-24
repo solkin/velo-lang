@@ -19,7 +19,6 @@ import vm.operations.And
 import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.ArrOf
-import vm.operations.ArrSub
 import vm.operations.Call
 import vm.operations.DictArr
 import vm.operations.DictDel
@@ -52,6 +51,7 @@ import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
 import vm.operations.Or
 import vm.operations.Add
+import vm.operations.ArrCopy
 import vm.operations.ArrLoad
 import vm.operations.ArrStore
 import vm.operations.Push
@@ -160,7 +160,7 @@ class BytecodeInputStream(
             0x2e -> StrCon()
             0x2f -> StrIndex()
             0x30 -> StrLen()
-            0x32 -> ArrSub()
+            0x32 -> ArrCopy()
             0x33 -> StrSub()
             0x34 -> Swap()
             0x35 -> Xor()

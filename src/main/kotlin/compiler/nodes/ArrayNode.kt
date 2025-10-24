@@ -13,10 +13,12 @@ import vm.operations.If
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Add
+import vm.operations.ArrCopy
 import vm.operations.ArrLoad
+import vm.operations.ArrNew
 import vm.operations.ArrStore
 import vm.operations.Push
-import vm.operations.ArrSub
+import vm.operations.Sub
 
 data class ArrayNode(
     val listOf: List<Node>,
@@ -46,7 +48,7 @@ data class ArrayType(val derived: Type) : IndexAssignable {
 
     override fun prop(name: String): Prop? {
         return when (name) {
-            "sub" -> SubArrayProp
+            "sub" -> ArraySubProp
             "len" -> ArrayLenProp
             "con" -> ArrayConProp
             "plus" -> ArrayPlusProp
@@ -80,10 +82,48 @@ object ArrayLenProp : Prop {
     }
 }
 
-object SubArrayProp : Prop {
+object ArraySubProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as ArrayType
-        ctx.add(ArrSub())
+
+        if (args.size != 2) throw Exception("Property 'sub' requires two int arguments: from and till")
+
+        val fromVal = ctx.def(name = "@from", type = IntType)
+        ctx.add(Store(fromVal.index))
+
+        val tillVal = ctx.def(name = "@till", type = IntType)
+        ctx.add(Store(tillVal.index))
+
+        val srcVal = ctx.def(name = "@src", type = type)
+        ctx.add(Store(srcVal.index))
+
+        // Calculate length
+        ctx.add(Load(tillVal.index))
+        ctx.add(Load(fromVal.index))
+        ctx.add(Sub())
+        ctx.add(Dup()) // Duplicate value on stack
+        // Store length
+        val lengthVal = ctx.def(name = "@length", type = IntType)
+        ctx.add(Store(lengthVal.index))
+
+        // Create new array
+        ctx.add(ArrNew())
+        val dstVal = ctx.def(name = "@dst", type = type)
+        ctx.add(Store(dstVal.index))
+
+        // Load params for copy
+        ctx.add(Load(dstVal.index)) // Destination array
+        ctx.add(Load(srcVal.index)) // Source array
+        ctx.add(Load(lengthVal.index)) // Length to copy
+        ctx.add(Push(value = 0)) // Destination position
+        ctx.add(Load(fromVal.index)) // Source position
+
+        // Copy array
+        ctx.add(ArrCopy())
+
+        // Put new array on stack
+        ctx.add(Load(dstVal.index))
+
         return ArrayType(type.derived)
     }
 }
@@ -168,4 +208,8 @@ object MapArrayProp : Prop {
 
         return ArrayType(arg.derived)
     }
+}
+
+private fun List<Type>.second(): Type {
+    return this[1]
 }
