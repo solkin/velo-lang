@@ -24,7 +24,7 @@ func reversed(array[any] arr) array[any] {
         }
     )
 };
-any row = arrayOf[int](1, 2, 3, 4, 5, 6, 7, 8);
+any row = new array[int]{1, 2, 3, 4, 5, 6, 7, 8};
 any y = 1;
 while (y <= 9) {
     array[str] s = shift(row, 9 - y);

@@ -18,7 +18,7 @@ bool b = true;
 int i = 1;
 int i1 = 0xCAFE; # hex
 float f = 3.0;
-any l = arrayOf[array[int]]();
+any l = new array[array[int]]{};
 any n = func() void {};
 any p = tupleOf(1, "second");
 ```
@@ -66,7 +66,7 @@ while (i <= 5) {
 ```
 **Arrays**
 ```
-any s = arrayOf[int](37, 58, 25, 17, 19);
+any s = new array[int]{37, 58, 25, 17, 19};
 println(s.len);           # 5
 println(s[3]);            # 17
 println(s.sub(1, 4)[1]);  # 25

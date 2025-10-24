@@ -20,24 +20,40 @@ import vm.operations.Push
 import vm.operations.Sub
 
 data class ArrayNode(
-    val listOf: List<Node>,
+    val listOf: List<Node>?,
+    val length: Node?,
     val type: Type,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        listOf.forEach {
-            val itemType = it.compile(ctx)
-            if (!itemType.sameAs(type)) {
-                throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
+        return when {
+            listOf != null -> {
+                listOf.forEach {
+                    val itemType = it.compile(ctx)
+                    if (!itemType.sameAs(type)) {
+                        throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
+                    }
+                }
+                // Create new array
+                ctx.add(Push(value = listOf.size))
+                ctx.add(ArrNew())
+                // Store items to the new array
+                ctx.add(Push(value = 0))
+                ctx.add(Push(value = listOf.size))
+                ctx.add(ArrStore())
+                ArrayType(derived = type)
             }
+
+            length != null -> {
+                val lengthType = length.compile(ctx)
+                if (!lengthType.sameAs(IntType)) {
+                    throw Exception("Array length must be int, but \"$lengthType\" type is provided")
+                }
+                ctx.add(ArrNew())
+                ArrayType(derived = type)
+            }
+
+            else -> throw IllegalStateException("Length or initialization items must be provided to allocate array")
         }
-        // Create new array
-        ctx.add(Push(value = listOf.size))
-        ctx.add(ArrNew())
-        // Store items to the new array
-        ctx.add(Push(value = 0))
-        ctx.add(Push(value = listOf.size))
-        ctx.add(ArrStore())
-        return ArrayType(type)
     }
 }
 

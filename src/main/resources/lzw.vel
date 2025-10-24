@@ -10,7 +10,7 @@ class LZW() {
         };
 
         str w = "";
-        array[int] result = arrayOf[int]();
+        array[int] result = new array[int](0);
         int i = 0;
         while(i < text.len) {
             int c = text[i];

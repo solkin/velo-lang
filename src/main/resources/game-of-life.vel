@@ -2,14 +2,14 @@ include "lang/terminal.vel";
 
 class GameOfLife(Terminal term) {
 
-    any w = arrayOf[array[int]](
-        arrayOf[int](0, 1, 0, 0, 0, 0),
-        arrayOf[int](0, 0, 1, 0, 0, 0),
-        arrayOf[int](1, 1, 1, 0, 0, 0),
-        arrayOf[int](0, 0, 0, 0, 0, 0),
-        arrayOf[int](0, 0, 0, 0, 0, 0),
-        arrayOf[int](0, 0, 0, 0, 0, 0)
-    );
+    any w = new array[array[int]]{
+        new array[int]{0, 1, 0, 0, 0, 0},
+        new array[int]{0, 0, 1, 0, 0, 0},
+        new array[int]{1, 1, 1, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0}
+    };
 
     func calc(array[array[int]] matrix, int x, int y) int {
          func window(int a) int {

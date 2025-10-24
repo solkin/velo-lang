@@ -7,7 +7,7 @@ byte c = 2;
 float f = 3.0;
 byte c1 = 2y;
 float f1 = 3f;
-array[array[int]] l = arrayOf[array[int]]();
+array[array[int]] l = new array[array[int]](0);
 dict[int:str] d = dictOf[int:str](
     1:"a",
     2:"b",

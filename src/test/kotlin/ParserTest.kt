@@ -296,44 +296,67 @@ class ParserTest {
     }
 
     @Test
-    fun testParseArrayOf() {
-        val parser = makeSimpleParser("a = arrayOf[int]()")
+    fun testParseNewArrayWithItems() {
+        val parser = makeSimpleParser("a = new array[int]{}")
 
         val node = parser.parse()
 
         assertEquals(
             expected = AssignNode(
                 left = VarNode(name = "a"),
-                right = ArrayNode(listOf = emptyList(), IntType)
+                right = ArrayNode(listOf = emptyList(), length = null, type = IntType)
             ).wrapProgram(),
             actual = node,
         )
     }
 
     @Test
-    fun testParseArrayOfOf() {
-        val parser = makeSimpleParser("a = arrayOf[int](1, 2, 5)")
+    fun testParseNewArrayWithLength() {
+        val parser = makeSimpleParser("a = new array[int](7)")
 
         val node = parser.parse()
 
         assertEquals(
             expected = AssignNode(
                 left = VarNode(name = "a"),
-                right = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), type = IntType)
+                right = ArrayNode(listOf = null, length = IntNode(value = 7), type = IntType)
             ).wrapProgram(),
             actual = node,
         )
     }
 
     @Test
-    fun testParseArrayOfAccess() {
-        val parser = makeSimpleParser("arrayOf[int](1, 2, 5)[1]")
+    fun testParseNewArray() {
+        val parser = makeSimpleParser("a = new array[int]{1, 2, 5}")
+
+        val node = parser.parse()
+
+        assertEquals(
+            expected = AssignNode(
+                left = VarNode(name = "a"),
+                right = ArrayNode(
+                    listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)),
+                    length = null,
+                    type = IntType
+                )
+            ).wrapProgram(),
+            actual = node,
+        )
+    }
+
+    @Test
+    fun testParseNewArrayAccess() {
+        val parser = makeSimpleParser("new array[int]{1, 2, 5}[1]")
 
         val node = parser.parse()
 
         assertEquals(
             expected = IndexNode(
-                list = ArrayNode(listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)), IntType),
+                list = ArrayNode(
+                    listOf = arrayListOf(IntNode(1), IntNode(2), IntNode(5)),
+                    length = null,
+                    type = IntType
+                ),
                 index = IntNode(1)
             ).wrapProgram(),
             actual = node,
@@ -342,7 +365,7 @@ class ParserTest {
 
     @Test
     fun testParseArrayIndexAssign() {
-        val parser = makeSimpleParser("arrayOf[int](1, 2, 5)[1] = 4")
+        val parser = makeSimpleParser("new array[int]{1, 2, 5}[1] = 4")
 
         val node = parser.parse()
 
@@ -355,6 +378,7 @@ class ParserTest {
                             IntNode(value = 2),
                             IntNode(value = 5)
                         ),
+                        length = null,
                         IntType
                     ),
                     index = IntNode(value = 1)

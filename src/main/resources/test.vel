@@ -29,19 +29,19 @@ func traverse(array[array[int]] matrix) array[array[int]] {
 func intToString(int num, int radix) str {
     int MIN_RADIX = 2;
     int MAX_RADIX = 36;
-    array[byte] digits = arrayOf[byte] (
+    array[byte] digits = new array[byte]{
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
         'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
         'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
         'o' , 'p' , 'q' , 'r' , 's' , 't' ,
         'u' , 'v' , 'w' , 'x' , 'y' , 'z'
-    );
+    };
     if (radix < MIN_RADIX | radix > MAX_RADIX) then radix = 10;
 
     # For negative numbers, print out the absolute value w/ a leading '-'.
     # Use an array large enough for a binary number.
-    array[byte] buffer = arrayOf[byte](33);
+    array[byte] buffer = new array[byte](33);
     int i = 33;
     bool isNeg = false;
     if (num < 0) {
@@ -72,10 +72,10 @@ func intToString(int num, int radix) str {
     ""
 };
 
-any matrix = arrayOf[array[int]](
-    arrayOf[int](0, 4, 6, 3, 5),
-    arrayOf[int](8, 4, 2, 5, 1)
-);
-matrix = matrix.con(arrayOf[array[int]](arrayOf[int](2, 1, 3, 7).plus(8)));
+any matrix = new array[array[int]]{
+    new array[int]{0, 4, 6, 3, 5},
+    new array[int]{8, 4, 2, 5, 1}
+};
+matrix = matrix.con(new array[array[int]]{new array[int]{2, 1, 3, 7}.plus(8)});
 
 traverse(matrix);

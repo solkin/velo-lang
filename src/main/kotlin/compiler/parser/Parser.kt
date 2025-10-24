@@ -226,14 +226,35 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         )
     }
 
-    private fun parseArrayOf(): Node {
-        skipKw("arrayOf")
+    private fun parseArrayConstructor(): Node {
         val type = parseDerivedTypes(count = 1).first()
-        val elements = delimited('(', ')', ',', ::parseExpression)
-        return ArrayNode(
-            listOf = elements,
-            type = type,
-        )
+        val constructTok = stream.peek()
+        if (constructTok?.type != TokenType.PUNCTUATION) {
+            throw Exception("Invalid array initialization")
+        }
+        return when (constructTok.value) {
+            '(' -> {
+                // Array with length initialization
+                val length = inner('(', ')', ::parseExpression)
+                ArrayNode(
+                    listOf = null,
+                    length = length,
+                    type = type,
+                )
+            }
+            '{' -> {
+                // Array with items initialization
+                val elements = delimited('{', '}', ',', ::parseExpression)
+                ArrayNode(
+                    listOf = elements,
+                    length = null,
+                    type = type,
+                )
+            }
+            else -> {
+                throw Exception("Array must be initialized with size or values")
+            }
+        }
     }
 
     private fun parseDictOf(): Node {
@@ -284,8 +305,15 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
     private fun parseNew(): Node {
         skipKw("new")
         val tok = stream.next() ?: throw IllegalStateException()
-        // Pass class type as VarNode to parse call in a common way
-        return maybePostfix(VarNode(tok.value as String))
+        return when (tok.value) {
+            "array" -> {
+                parseArrayConstructor()
+            }
+            else -> {
+                // Pass class type as VarNode to parse call in a common way
+                maybePostfix(VarNode(tok.value as String))
+            }
+        }
     }
 
     private fun parseInclude(): Node {
@@ -468,7 +496,6 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isKw("ext") != null) return parseExt()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
-        if (isKw("arrayOf") != null) return parseArrayOf()
         if (isKw("dictOf") != null) return parseDictOf()
         if (isKw("tupleOf") != null) return parseTuple()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
