@@ -16,7 +16,6 @@ import vm.VmType
 import vm.VmVoid
 import vm.operations.Abs
 import vm.operations.And
-import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.Call
 import vm.operations.DictArr
@@ -129,10 +128,9 @@ class BytecodeInputStream(
         return when (val opcode = inp.readByte().toInt()) {
             0x01 -> Abs()
             0x02 -> And()
-            0x03 -> ArrCon()
+            0x03 -> ArrNew()
             0x04 -> ArrLoad()
             0x05 -> ArrLen()
-            0x06 -> ArrNew()
             0x08 -> ArrStore()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Div()

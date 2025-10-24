@@ -2,7 +2,6 @@ package compiler.nodes
 
 import compiler.Context
 import vm.Operation
-import vm.operations.ArrCon
 import vm.operations.ArrLen
 import vm.operations.Call
 import vm.operations.Store
@@ -138,7 +137,43 @@ object ArrayConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         type as ArrayType
         if (args.size != 1 && type != args.first()) throw Exception("Property 'con' requires same type array as argument")
-        ctx.add(ArrCon())
+
+        val bVal = ctx.def(name = "@b", type = type)
+        ctx.add(Store(bVal.index))
+        val aVal = ctx.def(name = "@a", type = type)
+        ctx.add(Store(aVal.index))
+        // Calculate target length
+        ctx.add(Load(aVal.index))
+        ctx.add(ArrLen())
+        ctx.add(Dup())
+        val alenVal = ctx.def(name = "@alen", type = IntType)
+        ctx.add(Store(alenVal.index))
+        ctx.add(Load(bVal.index))
+        ctx.add(ArrLen())
+        ctx.add(Add())
+        // Create destination array
+        ctx.add(ArrNew())
+        val dstVal = ctx.def(name = "@dst", type = type)
+        ctx.add(Store(dstVal.index))
+        // Copy first array to dst
+        ctx.add(Load(dstVal.index)) // Destination array
+        ctx.add(Load(aVal.index)) // Source array
+        ctx.add(Load(alenVal.index)) // Length to copy
+        ctx.add(Push(value = 0)) // Destination position
+        ctx.add(Push(value = 0)) // Source position
+        ctx.add(ArrCopy()) // Copy first
+        // Copy second array to dst
+        ctx.add(Load(dstVal.index)) // Destination array
+        ctx.add(Load(bVal.index)) // Source array
+        ctx.add(Load(bVal.index)) // Second array for length (next operation)
+        ctx.add(ArrLen()) // Length to copy
+        ctx.add(Load(alenVal.index)) // Destination position
+        ctx.add(Push(value = 0)) // Source position
+        ctx.add(ArrCopy()) // Copy second
+
+        // Finally load newly created array
+        ctx.add(Load(dstVal.index))
+
         return ArrayType(type.derived)
     }
 }
