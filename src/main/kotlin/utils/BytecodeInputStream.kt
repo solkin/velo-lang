@@ -18,7 +18,6 @@ import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrCon
 import vm.operations.ArrLen
-import vm.operations.ArrOf
 import vm.operations.Call
 import vm.operations.DictArr
 import vm.operations.DictDel
@@ -53,6 +52,7 @@ import vm.operations.Or
 import vm.operations.Add
 import vm.operations.ArrCopy
 import vm.operations.ArrLoad
+import vm.operations.ArrNew
 import vm.operations.ArrStore
 import vm.operations.Push
 import vm.operations.Rem
@@ -132,7 +132,7 @@ class BytecodeInputStream(
             0x03 -> ArrCon()
             0x04 -> ArrLoad()
             0x05 -> ArrLen()
-            0x06 -> ArrOf()
+            0x06 -> ArrNew()
             0x08 -> ArrStore()
             0x09 -> Call(args = inp.readInt(), classParent = inp.readBoolean())
             0x0b -> Div()

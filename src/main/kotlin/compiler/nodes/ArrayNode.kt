@@ -4,7 +4,6 @@ import compiler.Context
 import vm.Operation
 import vm.operations.ArrCon
 import vm.operations.ArrLen
-import vm.operations.ArrOf
 import vm.operations.Call
 import vm.operations.Store
 import vm.operations.Dup
@@ -17,6 +16,7 @@ import vm.operations.ArrCopy
 import vm.operations.ArrLoad
 import vm.operations.ArrNew
 import vm.operations.ArrStore
+import vm.operations.Pop
 import vm.operations.Push
 import vm.operations.Sub
 
@@ -31,8 +31,13 @@ data class ArrayNode(
                 throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
             }
         }
-        ctx.add(Push(listOf.size))
-        ctx.add(ArrOf())
+        // Create new array
+        ctx.add(Push(value = listOf.size))
+        ctx.add(ArrNew())
+        // Store items to the new array
+        ctx.add(Push(value = 0))
+        ctx.add(Push(value = listOf.size))
+        ctx.add(ArrStore())
         return ArrayType(type)
     }
 }
@@ -70,6 +75,7 @@ data class ArrayType(val derived: Type) : IndexAssignable {
     override fun compileAssignment(ctx: Context) {
         ctx.add(Push(value = 1)) // ArrStore count
         ctx.add(ArrStore())
+        ctx.add(Pop()) // Pop array from stack
     }
 
     override fun name() = "array"
@@ -144,9 +150,44 @@ object ArrayPlusProp : Prop {
         if (args.find { !it.sameAs(type.derived) } != null) {
             throw Exception("Property 'plus' arguments must be array-typed")
         }
-        ctx.add(Push(value = 1)) // array length
-        ctx.add(ArrOf()) // create new one-item array
-        ctx.add(ArrCon()) // concat arrays
+
+        val addVal = ctx.def(name = "@add", type = args.first())
+        ctx.add(Store(addVal.index))
+
+        val srcVal = ctx.def(name = "@src", type = type)
+        ctx.add(Store(srcVal.index))
+
+        // Calculate new array len
+        ctx.add(Load(srcVal.index))
+        ctx.add(ArrLen())
+        // ... and store old length
+        ctx.add(Dup())
+        val lengthVal = ctx.def(name = "@length", type = IntType)
+        ctx.add(Store(lengthVal.index))
+        // ... continue
+        ctx.add(Push(value = 1))
+        ctx.add(Add())
+
+        // Create new array with calculated length
+        ctx.add(ArrNew())
+        val dstVal = ctx.def(name = "@dst", type = type)
+        ctx.add(Store(dstVal.index))
+
+        // Copy src array to dst
+        ctx.add(Load(dstVal.index)) // Destination array
+        ctx.add(Load(srcVal.index)) // Source array
+        ctx.add(Load(lengthVal.index)) // Length to copy
+        ctx.add(Push(value = 0)) // Destination position
+        ctx.add(Push(value = 0)) // Source position
+        ctx.add(ArrCopy()) // Copy
+
+        // Add the last item
+        ctx.add(Load(addVal.index)) // Element to put
+        ctx.add(Load(dstVal.index)) // Where to put
+        ctx.add(Load(lengthVal.index)) // Index to put
+        ctx.add(Push(value = 1)) // Elements count
+        ctx.add(ArrStore())
+
         return ArrayType(type.derived)
     }
 }
@@ -203,13 +244,15 @@ object MapArrayProp : Prop {
         ctx.add(If(exprCtx.size))
         ctx.addAll(exprCtx)
 
+        // Create new resulting array
         ctx.add(Load(size.index))
-        ctx.add(ArrOf())
+        ctx.add(ArrNew())
+
+        // Store items into newly created array
+        ctx.add(Push(value = 0)) // ArrStore index to store items
+        ctx.add(Load(size.index)) // ArrStore index to store items
+        ctx.add(ArrStore())
 
         return ArrayType(arg.derived)
     }
-}
-
-private fun List<Type>.second(): Type {
-    return this[1]
 }

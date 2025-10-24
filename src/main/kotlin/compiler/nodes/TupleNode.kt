@@ -2,8 +2,9 @@ package compiler.nodes
 
 import compiler.Context
 import vm.operations.ArrLoad
-import vm.operations.ArrOf
+import vm.operations.ArrNew
 import vm.operations.ArrStore
+import vm.operations.Pop
 import vm.operations.Push
 
 data class TupleNode(
@@ -12,9 +13,15 @@ data class TupleNode(
     override fun compile(ctx: Context): Type {
         if (entries.isEmpty()) throw IllegalArgumentException("Tuple can't be empty")
         val types = entries.map { it.compile(ctx) }
+        val type = TupleType(types)
+        // Create new array
         ctx.add(Push(value = entries.size))
-        ctx.add(ArrOf())
-        return TupleType(types)
+        ctx.add(ArrNew())
+        // Store items to the new array
+        ctx.add(Push(value = 0))
+        ctx.add(Push(value = entries.size))
+        ctx.add(ArrStore())
+        return type
     }
 }
 
@@ -63,5 +70,6 @@ data class TupleEntryProp(val index: Int) : AssignableProp {
         ctx.add(Push(value = index))
         ctx.add(Push(value = 1)) // ArrStore count
         ctx.add(ArrStore())
+        ctx.add(Pop()) // Pop array from stack
     }
 }

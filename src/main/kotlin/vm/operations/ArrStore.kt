@@ -2,6 +2,7 @@ package vm.operations
 
 import vm.Frame
 import vm.SimpleOperation
+import vm.records.LinkRecord
 
 class ArrStore : SimpleOperation {
 
@@ -10,9 +11,12 @@ class ArrStore : SimpleOperation {
         val index = frame.subs.pop().getInt()
         val array = frame.subs.pop().getArray()
 
-        for (i in 0 until count) {
-            array[index + i] = frame.subs.pop()
+        var i = index + count - 1
+        repeat(count) {
+            array[i--] = frame.subs.pop()
         }
+
+        frame.subs.push(value = LinkRecord.create(array))
     }
 
 }
