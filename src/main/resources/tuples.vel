@@ -12,7 +12,7 @@ class TupleWorker(Terminal term) {
     };
 };
 
-tuple[int,str,float] p = tupleOf(1,"second",2.5);
+tuple[int,str,float] p = new tuple(1, "second", 2.5);
 
 TupleWorker tw = new TupleWorker(term);
 tw.dump(p);

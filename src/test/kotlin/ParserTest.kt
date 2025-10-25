@@ -797,7 +797,7 @@ class ParserTest {
 
     @Test
     fun testParseTupleInit() {
-        val parser = makeSimpleParser("tupleOf(1,\"a\",true)")
+        val parser = makeSimpleParser("new tuple(1,\"a\",true)")
 
         val node = parser.parse()
 

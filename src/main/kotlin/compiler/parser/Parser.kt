@@ -226,7 +226,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         )
     }
 
-    private fun parseArrayConstructor(): Node {
+    private fun parseArrayInit(): Node {
         val type = parseDerivedTypes(count = 1).first()
         val constructTok = stream.peek()
         if (constructTok?.type != TokenType.PUNCTUATION) {
@@ -242,6 +242,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
                     type = type,
                 )
             }
+
             '{' -> {
                 // Array with items initialization
                 val elements = delimited('{', '}', ',', ::parseExpression)
@@ -251,6 +252,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
                     type = type,
                 )
             }
+
             else -> {
                 throw Exception("Array must be initialized with size or values")
             }
@@ -280,8 +282,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         )
     }
 
-    private fun parseTuple(): Node {
-        skipKw("tupleOf")
+    private fun parseTupleInit(): Node {
         val entries = delimited('(', ')', ',', ::parseExpression)
         if (entries.isEmpty()) {
             stream.croak("Tuple must contain one or more entries")
@@ -306,9 +307,8 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         skipKw("new")
         val tok = stream.next() ?: throw IllegalStateException()
         return when (tok.value) {
-            "array" -> {
-                parseArrayConstructor()
-            }
+            "array" -> parseArrayInit()
+            "tuple" -> parseTupleInit()
             else -> {
                 // Pass class type as VarNode to parse call in a common way
                 maybePostfix(VarNode(tok.value as String))
@@ -497,7 +497,6 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("dictOf") != null) return parseDictOf()
-        if (isKw("tupleOf") != null) return parseTuple()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("native") != null) return parseNative()
         if (isKw("new") != null) return parseNew()

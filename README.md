@@ -20,7 +20,7 @@ int i1 = 0xCAFE; # hex
 float f = 3.0;
 any l = new array[array[int]]{};
 any n = func() void {};
-any p = tupleOf(1, "second");
+any p = new tuple(1, "second");
 ```
 **Functions and lambdas.** Velo lang supports functions
 ```
@@ -104,7 +104,7 @@ println(s.sub(5, 11)); # String
 ```
 **Tuples**
 ```
-tuple[int,str] p = tupleOf(1, "second");
+tuple[int,str] p = new tuple(1, "second");
 println(p.1.str);  # 1
 println(p.2);      # second
 ```

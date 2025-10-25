@@ -16,4 +16,4 @@ dict[int:str] d = dictOf[int:str](
 func[void] n = func() void {};
 any a = 3.0;
 a = 6.5;
-tuple[int,str] p = tupleOf(1, "second");
+tuple[int,str] p = new tuple(1, "second");
