@@ -79,11 +79,11 @@ println(ns[3]);           # 20
 ```
 **Dictionary**
 ```
-dict[int:str] d = dictOf[int:str](
+dict[int:str] d = new dict[int:str]{
     1:"a",
     2:"b",
     3:"c"
-);
+};
 d.set(5, "e");
 println(d.del(2));        # true
 println(d.del(20));       # false

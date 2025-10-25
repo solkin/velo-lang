@@ -8,11 +8,11 @@ float f = 3.0;
 byte c1 = 2y;
 float f1 = 3f;
 array[array[int]] l = new array[array[int]](0);
-dict[int:str] d = dictOf[int:str](
+dict[int:str] d = new dict[int:str]{
     1:"a",
     2:"b",
     3:"c"
-);
+};
 func[void] n = func() void {};
 any a = 3.0;
 a = 6.5;

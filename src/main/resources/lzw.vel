@@ -2,7 +2,7 @@ include "lang/terminal.vel";
 
 class LZW() {
     func compress(str text) array[int] {
-        dict[str:int] dictionary = dictOf[str:int]();
+        dict[str:int] dictionary = new dict[str:int]{};
         int dictSize = 0;
         while(dictSize < 256) {
             dictionary[dictSize.char] = dictSize;
@@ -35,7 +35,7 @@ class LZW() {
     func decompress(array[int] compressed) str {
         str result = "";
         if (compressed.len > 0) {
-            dict[int:str] dictionary = dictOf[int:str]();
+            dict[int:str] dictionary = new dict[int:str]{};
             int dictSize = 0;
             while(dictSize < 256) {
                 dictionary[dictSize] = dictSize.char;

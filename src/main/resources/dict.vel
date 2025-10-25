@@ -1,10 +1,10 @@
 include "lang/terminal.vel";
 
-dict[int:str] d = dictOf[int:str](
+dict[int:str] d = new dict[int:str]{
     1:"a",
     2:"b",
     3:"c"
-);
+};
 
 d[5] = "e";
 d.del(2);

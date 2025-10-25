@@ -259,10 +259,9 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         }
     }
 
-    private fun parseDictOf(): Node {
-        skipKw("dictOf")
+    private fun parseDictInit(): Node {
         val types = parseDerivedTypes(count = 2, separator = ':')
-        val elements = delimited('(', ')', ',', ::parseDictPair)
+        val elements = delimited('{', '}', ',', ::parseDictPair)
         return DictNode(
             dictOf = elements.toMap(),
             keyType = types.first(),
@@ -309,6 +308,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return when (tok.value) {
             "array" -> parseArrayInit()
             "tuple" -> parseTupleInit()
+            "dict" -> parseDictInit()
             else -> {
                 // Pass class type as VarNode to parse call in a common way
                 maybePostfix(VarNode(tok.value as String))
@@ -496,7 +496,6 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isKw("ext") != null) return parseExt()
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
-        if (isKw("dictOf") != null) return parseDictOf()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
         if (isKw("native") != null) return parseNative()
         if (isKw("new") != null) return parseNew()

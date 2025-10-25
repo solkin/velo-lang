@@ -10,7 +10,6 @@ class TokenStream(private val input: Input) {
         "then",
         "else",
         "while",
-        "dictOf",
         "new",
         "native",
         "ext",

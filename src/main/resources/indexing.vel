@@ -5,7 +5,7 @@ term.println(arr[2].str); # before assignment: 7
 arr[2] = 120;
 term.println(arr[2].str); # after assignment: 120
 
-dict[str:int] d = dictOf[str:int]("five":5, "six":6, "seven":7, "eight":8, "nine":9);
+dict[str:int] d = new dict[str:int]{"five":5, "six":6, "seven":7, "eight":8, "nine":9};
 term.println(d["five"].str); # before assignment: 5
 d["five"] = 500;
 term.println(d["five"].str); # after assignment: 500

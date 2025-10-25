@@ -390,8 +390,8 @@ class ParserTest {
     }
 
     @Test
-    fun testParseDictOf() {
-        val parser = makeSimpleParser("a = dictOf[int:str]()")
+    fun testParseDictInit() {
+        val parser = makeSimpleParser("a = new dict[int:str]{}")
 
         val node = parser.parse()
 
@@ -405,8 +405,8 @@ class ParserTest {
     }
 
     @Test
-    fun testParseDictOfOf() {
-        val parser = makeSimpleParser("a = dictOf[int:str](1:\"a\", 2:\"b\", 5:\"c\")")
+    fun testParseDictInitWithItems() {
+        val parser = makeSimpleParser("a = new dict[int:str]{1:\"a\", 2:\"b\", 5:\"c\"}")
 
         val node = parser.parse()
 
@@ -428,8 +428,8 @@ class ParserTest {
     }
 
     @Test
-    fun testParseDictOfAccess() {
-        val parser = makeSimpleParser("dictOf[int:bool](1:false, 2:true, 5:false)[2]")
+    fun testParseNewDictAccess() {
+        val parser = makeSimpleParser("new dict[int:bool]{1:false, 2:true, 5:false}[2]")
 
         val node = parser.parse()
 
