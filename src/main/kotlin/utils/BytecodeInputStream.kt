@@ -53,6 +53,7 @@ import vm.operations.ArrCopy
 import vm.operations.ArrLoad
 import vm.operations.ArrNew
 import vm.operations.ArrStore
+import vm.operations.Hash
 import vm.operations.Push
 import vm.operations.Rem
 import vm.operations.Ret
@@ -190,6 +191,7 @@ class BytecodeInputStream(
 
             0x46 -> Shl()
             0x47 -> Shr()
+            0x48 -> Hash()
 
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }

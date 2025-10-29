@@ -36,7 +36,8 @@ data class PropNode(
                 type
             } else {
                 val argTypes = args.orEmpty().reversed().map { it.compile(scopeCtx) }
-                val prop = parentType.prop(name)
+                // Try type property, else common any-type property, else throw exception
+                val prop = parentType.prop(name) ?: AnyType.prop(name)
                     ?: throw IllegalArgumentException("Property '$name' of ${parentType.log()} is not supported")
                 prop.compile(parentType, args = argTypes, scopeCtx)
             }
@@ -52,6 +53,5 @@ data class PropNode(
             throw IllegalArgumentException("Cannot assign to non-assignable prop '$name' of type $prop")
         }
         prop.compileAssignment(parentType, type, argsType, ctx)
-        VoidType
     }
 }

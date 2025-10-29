@@ -2,6 +2,7 @@ package compiler.nodes
 
 import compiler.Context
 import vm.VmType
+import vm.operations.Hash
 
 interface Type {
     fun sameAs(type: Type): Boolean
@@ -33,11 +34,23 @@ object AnyType : Type {
         throw Exception("Type 'any' has no default value")
     }
 
-    override fun prop(name: String): Prop? = null
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "hash" -> AnyHashProp
+            else -> null
+        }
+    }
 
     override fun log() = toString()
 
     override fun vmType() = vm.VmAny()
 
     override fun name() = "any"
+}
+
+object AnyHashProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Hash())
+        return IntType
+    }
 }
