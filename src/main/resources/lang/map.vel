@@ -1,3 +1,5 @@
+include "lang/int.vel";
+
 class Map() {
     class Entry(any key, any val) {
         bool empty = false;
@@ -28,10 +30,6 @@ class Map() {
     while (i < buckets.len) {
         buckets[i] = stub;
         i = i + 1;
-    };
-
-    ext(int a) abs() int {
-        if (a > 0) then a else 0 - a
     };
 
     # Calculates the index in the buckets array for a given key
