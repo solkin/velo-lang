@@ -1,3 +1,6 @@
+include "lang/terminal.vel";
+include "lang/map.vel";
+
 func[int] test = func(int a) int {
     func(int a, int b) int {
         a + b
@@ -5,13 +8,8 @@ func[int] test = func(int a) int {
 };
 
 func traverse(array[array[int]] matrix) array[array[int]] {
-    native class Terminal() {
-        native func print(str text) str;
-        func println(str text) str { print(text.con("\n")) };
-    };
     matrix.map(
         func(int index, array[int] row) array[int] {
-            any term = new Terminal();
             row.map(
                 func(int index, int col) int {
                     int v = test(col);
@@ -69,7 +67,13 @@ func intToString(int num, int radix) str {
 
     # Package constructor avoids an array copy.
     #new String(buffer, i, 33 - i, true);
-    ""
+    int n = i;
+    str result = "";
+    while (n < 33) {
+        result = result.con(buffer[n].char);
+        n = n + 1;
+    };
+    result;
 };
 
 any matrix = new array[array[int]]{
@@ -79,3 +83,21 @@ any matrix = new array[array[int]]{
 matrix = matrix.con(new array[array[int]]{new array[int]{2, 1, 3, 7}.plus(8)});
 
 traverse(matrix);
+
+term.println(intToString(51966, 16));
+
+Map map = new Map();
+
+map.put("One", "1");
+map.put("Two", "2");
+map.put("Three", "3");
+map.put("Four", "4");
+map.put("Two", "20"); # Update existing key
+map.put("Five", "5");
+map.put("Six", "6");
+map.put("Seven", "7");
+map.put("Eight", "8");
+map.put("Nine", "9");
+map.put("Nine", "90"); # Update existing key
+
+term.println(map.get("Nine"));

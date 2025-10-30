@@ -1,0 +1,105 @@
+class Map() {
+    class Entry(any key, any val) {
+        bool empty = false;
+        func setEmpty() void {
+            empty = true;
+        };
+
+        func setValue(any v) void {
+            val = v
+        };
+
+        bool hasNext = false;
+        Entry next;
+
+        func setNext(Entry n) void {
+            next = n;
+            hasNext = true;
+        };
+    };
+
+    int DEFAULT_CAPACITY = 16; # Initial size of the array
+    array[Entry] buckets = new array[Entry](DEFAULT_CAPACITY); # The array of buckets
+    int size = 0; # Number of key-value pairs in the map
+
+    Entry stub = new Entry("", ""); # Special stub entry for empty buckets
+    stub.setEmpty();
+    int i = 0;
+    while (i < buckets.len) {
+        buckets[i] = stub;
+        i = i + 1;
+    };
+
+    ext(int a) abs() int {
+        if (a > 0) then a else 0 - a
+    };
+
+    # Calculates the index in the buckets array for a given key
+    func bucketIndex(any key) int {
+        (key.hash % buckets.len).abs;
+    };
+
+    # Checks if the map is empty
+    func empty() bool {
+        size == 0;
+    };
+
+    # Inserts a key-value pair into the hash map
+    func put(any key, any value) void {
+        int bucketIndex = bucketIndex(key);
+        Entry newEntry = new Entry(key, value);
+
+        if (buckets[bucketIndex].empty) {
+            # No collision, directly place the entry
+            buckets[bucketIndex] = newEntry;
+            size = size + 1;
+        } else {
+            # Collision detected, traverse the linked list
+            Entry current = buckets[bucketIndex];
+            bool found = false;
+            while (current.hasNext & found == false) {
+                if (current.key == key) {
+                    # Key already exists, update its value
+                    current.setValue(value);
+                    found = true;
+                } else {
+                    current = current.next;
+                };
+            };
+            if (found == false) {
+                # Add to the end of the linked list
+                if (current.key == key) {
+                    current.setValue(value);
+                } else {
+                    current.setNext(newEntry);
+                    size = size + 1;
+                };
+            };
+        };
+    };
+
+    # Retrieves the value associated with a given key
+    func get(any key) any {
+        int bucketIndex = bucketIndex(key);
+        Entry current = buckets[bucketIndex];
+
+        if (current.empty == false) {
+            bool found = false;
+            while (current.empty == false & found == false) {
+                if (current.key == key) {
+                    found = true;
+                } else {
+                    current = current.next;
+                };
+            };
+            if (found) {
+                current.val;
+            } else {
+                void;
+            };
+        } else {
+            void; # Key not found
+        };
+    };
+
+};
