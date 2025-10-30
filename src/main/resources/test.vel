@@ -48,4 +48,7 @@ map.put("Eight", "8");
 map.put("Nine", "9");
 map.put("Nine", "90"); # Update existing key
 
-term.println(map.get("Nine"));
+term.println("Map size is: ".con(map.size.str));
+str key = "Nine";
+any val = map.get(key);
+term.println("Value for key '".con(key).con("' is: ").con(map.get(key)));
