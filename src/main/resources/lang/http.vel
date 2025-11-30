@@ -1,0 +1,20 @@
+# Нативный класс для выполнения HTTP запросов
+native class Http() {
+    # Выполняет HTTP GET запрос
+    # @param url URL для запроса
+    # @return Тело ответа как строка
+    native func get(str url) str;
+
+    # Выполняет HTTP POST запрос
+    # @param url URL для запроса
+    # @param body Тело запроса
+    # @param contentType Content-Type заголовок (например, "application/json", "text/plain")
+    #                    Если пустая строка, используется "application/json" по умолчанию
+    # @return Тело ответа как строка
+    native func post(str url, str body, str contentType) str;
+
+    # Получает код статуса последнего запроса
+    # @return Код статуса HTTP (200, 404, 500 и т.д.)
+    native func statusCode() int;
+};
+

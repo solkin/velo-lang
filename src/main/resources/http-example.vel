@@ -1,0 +1,34 @@
+include "lang/terminal.vel";
+include "lang/http.vel";
+
+# Создаем экземпляр HTTP клиента
+Http http = new Http();
+
+term.println("=== Пример использования HTTP клиента ===");
+term.println("");
+
+# Пример 1: GET запрос
+term.println("1. Выполняем GET запрос к httpbin.org/get");
+str getResponse = http.get("https://httpbin.org/get");
+term.println("Код статуса: ".con(http.statusCode().str));
+term.println("Ответ:");
+term.println(getResponse);
+term.println("");
+
+# Пример 2: POST запрос с JSON (используем пустую строку для contentType, будет использован дефолтный "application/json")
+term.println("2. Выполняем POST запрос с JSON телом");
+str jsonBody = "{\"name\": \"Velo Lang\", \"type\": \"programming language\"}";
+str postResponse = http.post("https://httpbin.org/post", jsonBody, "");
+term.println("Код статуса: ".con(http.statusCode().str));
+term.println("Ответ:");
+term.println(postResponse);
+term.println("");
+
+# Пример 3: POST запрос с другим Content-Type
+term.println("3. Выполняем POST запрос с text/plain");
+str textBody = "Hello from Velo Lang!";
+str textResponse = http.post("https://httpbin.org/post", textBody, "text/plain");
+term.println("Код статуса: ".con(http.statusCode().str));
+term.println("Ответ:");
+term.println(textResponse);
+
