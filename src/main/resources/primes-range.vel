@@ -1,0 +1,71 @@
+include "lang/terminal.vel";
+
+# Функция для проверки, является ли число простым
+func isPrime(int n) bool {
+    # 0 и 1 не являются простыми числами
+    if (n < 2) {
+        false;
+    } else if (n == 2) {
+        # 2 - единственное четное простое число
+        true;
+    } else if (n % 2 == 0) {
+        # Все остальные четные числа не являются простыми
+        false;
+    } else {
+        # Проверяем делители от 3 до sqrt(n) с шагом 2
+        bool prime = true;
+        int divisor = 3;
+        # Используем приближение: проверяем до n/2 для простоты
+        while (divisor * divisor <= n) {
+            if (n % divisor == 0) {
+                prime = false;
+                divisor = n; # Выходим из цикла
+            } else {
+                divisor = divisor + 2;
+            };
+        };
+        prime;
+    };
+};
+
+# Функция для вывода всех простых чисел от 0 до n
+func printPrimes(int n) str {
+    term.println("Простые числа от 0 до ".con(n.str).con(":"));
+    
+    int count = 0;
+    int i = 0;
+    while (i <= n) {
+        if (isPrime(i)) {
+            term.print(i.str);
+            term.print(" ");
+            count = count + 1;
+            # Выводим по 10 чисел в строку для читаемости
+            if (count % 10 == 0) {
+                term.println("");
+            };
+        };
+        i = i + 1;
+    };
+    
+    # Если последняя строка не была завершена, добавляем перевод строки
+    if (count % 10 != 0) {
+        term.println("");
+    };
+    
+    term.println("Всего найдено простых чисел: ".con(count.str));
+};
+
+# Основная программа
+term.println("Введите число (от 0 до которого искать простые числа):");
+str input = term.input();
+
+# Преобразуем введенную строку в число
+int maxNumber = input.int;
+
+# Проверяем корректность ввода
+if (maxNumber < 0) {
+    term.println("Ошибка: число должно быть неотрицательным!");
+} else {
+    printPrimes(maxNumber);
+};
+
