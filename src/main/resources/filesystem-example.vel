@@ -1,0 +1,109 @@
+include "lang/terminal.vel";
+include "lang/filesystem.vel";
+
+# Создаем экземпляр FileSystem
+FileSystem fs = new FileSystem();
+
+term.println("=== Пример использования FileSystem ===");
+term.println("");
+
+# Пример 1: Запись и чтение файла
+term.println("1. Запись и чтение файла");
+str testFile = "test_file.txt";
+str content = "Привет из Velo Lang!\nЭто тестовый файл.";
+fs.write(testFile, content);
+term.println("Файл записан: ".con(testFile));
+str readContent = fs.read(testFile);
+term.println("Содержимое файла:");
+term.println(readContent);
+term.println("");
+
+# Пример 2: Проверка существования и размера
+term.println("2. Проверка существования и размера файла");
+if (fs.exists(testFile)) {
+    term.println("Файл существует: ".con(testFile));
+    term.println("Размер файла: ".con(fs.size(testFile).str).con(" байт"));
+    if (fs.isFile(testFile)) {
+        term.println("Это файл");
+    };
+    if (fs.isDir(testFile) == false) {
+        term.println("Это не директория");
+    };
+} else {
+    term.println("Файл не существует");
+};
+term.println("");
+
+# Пример 3: Добавление в файл
+term.println("3. Добавление текста в файл");
+fs.append(testFile, "\nДобавленная строка.");
+str updatedContent = fs.read(testFile);
+term.println("Обновленное содержимое:");
+term.println(updatedContent);
+term.println("");
+
+# Пример 4: Работа с директориями
+term.println("4. Работа с директориями");
+str testDir = "test_directory";
+if (fs.exists(testDir) == false) {
+    fs.mkdir(testDir);
+    term.println("Директория создана: ".con(testDir));
+};
+if (fs.isDir(testDir)) {
+    term.println("Это директория");
+};
+term.println("");
+
+# Пример 5: Список файлов в директории
+term.println("5. Список файлов в текущей директории");
+str currentDir = ".";
+if (fs.exists(currentDir) & fs.isDir(currentDir)) {
+    array[str] files = fs.list(currentDir);
+    term.println("Найдено файлов/директорий: ".con(files.len.str));
+    int i = 0;
+    while (i < files.len) {
+        term.println("  - ".con(files[i]));
+        i = i + 1;
+    };
+};
+term.println("");
+
+# Пример 6: Копирование файла
+term.println("6. Копирование файла");
+str copiedFile = "test_file_copy.txt";
+fs.copy(testFile, copiedFile);
+if (fs.exists(copiedFile)) {
+    term.println("Файл скопирован: ".con(copiedFile));
+    str copiedContent = fs.read(copiedFile);
+    term.println("Содержимое копии:");
+    term.println(copiedContent);
+};
+term.println("");
+
+# Пример 7: Переименование файла
+term.println("7. Переименование файла");
+str renamedFile = "test_file_renamed.txt";
+fs.move(copiedFile, renamedFile);
+if (fs.exists(renamedFile)) {
+    term.println("Файл переименован: ".con(renamedFile));
+};
+term.println("");
+
+# Пример 8: Удаление файлов
+term.println("8. Удаление файлов");
+fs.delete(testFile);
+fs.delete(renamedFile);
+if (fs.exists(testFile) == false & fs.exists(renamedFile) == false) {
+    term.println("Файлы удалены");
+};
+term.println("");
+
+# Очистка: удаление тестовой директории
+if (fs.exists(testDir)) {
+    fs.delete(testDir);
+    term.println("Тестовая директория удалена");
+};
+
+term.println("=== Пример завершен ===");
+
+
