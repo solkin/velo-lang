@@ -1,0 +1,58 @@
+include "lang/terminal.vel";
+include "lang/base64.vel";
+
+term.println("=== BASE64 Кодирование и Декодирование (чистый Velo Lang) ===");
+term.println("");
+
+# Получаем строку от пользователя
+term.print("Введите строку для кодирования: ");
+str input = term.input();
+
+if (input.len == 0) {
+    term.println("Используется строка по умолчанию: 'Hello, Velo Lang!'");
+    input = "Hello, Velo Lang!";
+} else {
+    term.println("Введенная строка: ".con(input));
+};
+
+term.println("");
+
+# Кодируем строку в BASE64
+term.println("--- Кодирование в BASE64 ---");
+str encoded = base64.encode(input);
+term.println("Закодированная строка: ".con(encoded));
+term.println("");
+
+# Декодируем обратно
+term.println("--- Декодирование из BASE64 ---");
+str decoded = base64.decode(encoded);
+term.println("Декодированная строка: ".con(decoded));
+term.println("");
+
+# Проверяем корректность
+if (input == decoded) {
+    term.println("✓ Кодирование и декодирование выполнены успешно!");
+} else {
+    term.println("✗ Ошибка: исходная и декодированная строки не совпадают!");
+    term.println("Исходная длина: ".con(input.len.str));
+    term.println("Декодированная длина: ".con(decoded.len.str));
+};
+
+term.println("");
+
+# Дополнительный пример: работа с уже закодированной строкой
+term.println("--- Дополнительный пример ---");
+term.print("Введите BASE64 строку для декодирования (или нажмите Enter для пропуска): ");
+str base64Input = term.input();
+
+if (base64Input.len > 0) {
+    term.println("Попытка декодирования: ".con(base64Input));
+    str decodedCustom = base64.decode(base64Input);
+    term.println("Декодированная строка: ".con(decodedCustom));
+} else {
+    term.println("Пропущено");
+};
+
+term.println("");
+term.println("=== Программа завершена ===");
+

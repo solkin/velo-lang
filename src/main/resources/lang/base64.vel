@@ -1,0 +1,159 @@
+# Класс для кодирования и декодирования BASE64
+class Base64Encoder() {
+    # Таблица символов BASE64
+    array[str] base64Chars = new array[str]{
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"
+    };
+    
+    # Создаем словарь для обратного декодирования
+    dict[str:int] decodeMap = new dict[str:int]{};
+    
+    # Конструктор: инициализируем словарь декодирования
+    func initDecodeMap() void {
+        int i = 0;
+        while (i < base64Chars.len) {
+            decodeMap[base64Chars[i]] = i;
+            i = i + 1;
+        };
+        # Добавляем padding символ
+        decodeMap["="] = 0;
+    };
+    
+    # Инициализация словаря при создании экземпляра
+    initDecodeMap();
+    
+    # Кодирует строку в BASE64
+    # @param text Исходная строка для кодирования
+    # @return Закодированная строка в формате BASE64
+    func encode(str text) str {
+        if (text.len == 0) {
+            "";
+        } else {
+            str result = "";
+            int i = 0;
+            while (i < text.len) {
+                # Берем 3 байта (символа)
+                int byte0 = text[i];
+                int byte1 = 0;
+                int byte2 = 0;
+                int padding = 0;
+                
+                if (i + 1 < text.len) {
+                    byte1 = text[i + 1];
+                } else {
+                    padding = 2; # Нужно 2 символа padding
+                };
+                
+                if (i + 2 < text.len) {
+                    byte2 = text[i + 2];
+                } else if (padding == 0) {
+                    padding = 1; # Нужно 1 символ padding
+                };
+                
+                # Объединяем 3 байта в 24-битное число
+                # byte0 << 16 | byte1 << 8 | byte2
+                int combined = byte0 * 65536 + byte1 * 256 + byte2;
+                
+                # Извлекаем 4 группы по 6 бит
+                # Первая группа: биты 18-23 (combined >> 18) & 0x3F
+                int group0 = (combined / 262144) % 64;
+                # Вторая группа: биты 12-17 (combined >> 12) & 0x3F
+                int group1 = (combined / 4096) % 64;
+                # Третья группа: биты 6-11 (combined >> 6) & 0x3F
+                int group2 = (combined / 64) % 64;
+                # Четвертая группа: биты 0-5 combined & 0x3F
+                int group3 = combined % 64;
+                
+                # Кодируем группы в символы
+                result = result.con(base64Chars[group0]);
+                result = result.con(base64Chars[group1]);
+                
+                if (padding == 2) {
+                    result = result.con("==");
+                } else if (padding == 1) {
+                    result = result.con(base64Chars[group2]);
+                    result = result.con("=");
+                } else {
+                    result = result.con(base64Chars[group2]);
+                    result = result.con(base64Chars[group3]);
+                };
+                
+                i = i + 3;
+            };
+            result;
+        };
+    };
+    
+    # Декодирует строку из BASE64
+    # @param encoded Закодированная строка в формате BASE64
+    # @return Декодированная исходная строка
+    func decode(str encoded) str {
+        if (encoded.len == 0) {
+            "";
+        } else {
+            str result = "";
+            int i = 0;
+            while (i < encoded.len) {
+                # Берем 4 символа
+                if (i + 3 >= encoded.len) {
+                    # Недостаточно символов
+                    i = encoded.len;
+                } else {
+                    str char0 = encoded[i].char;
+                    str char1 = encoded[i + 1].char;
+                    str char2 = encoded[i + 2].char;
+                    str char3 = encoded[i + 3].char;
+                    
+                    # Декодируем символы в значения
+                    int val0 = decodeMap[char0];
+                    int val1 = decodeMap[char1];
+                    int val2 = 0;
+                    int val3 = 0;
+                    int bytesToWrite = 3;
+                    
+                    if (char2 != "=") {
+                        val2 = decodeMap[char2];
+                    } else {
+                        bytesToWrite = 1;
+                    };
+                    
+                    if (char3 != "=") {
+                        val3 = decodeMap[char3];
+                    } else if (bytesToWrite == 3) {
+                        bytesToWrite = 2;
+                    };
+                    
+                    # Объединяем 4 значения по 6 бит в 24-битное число
+                    # (val0 << 18) | (val1 << 12) | (val2 << 6) | val3
+                    int combined = val0 * 262144 + val1 * 4096 + val2 * 64 + val3;
+                    
+                    # Извлекаем 3 байта
+                    int byte0 = (combined / 65536) % 256;
+                    int byte1 = (combined / 256) % 256;
+                    int byte2 = combined % 256;
+                    
+                    # Добавляем байты в результат
+                    result = result.con(byte0.char);
+                    if (bytesToWrite >= 2) {
+                        result = result.con(byte1.char);
+                    };
+                    if (bytesToWrite >= 3) {
+                        result = result.con(byte2.char);
+                    };
+                    
+                    i = i + 4;
+                };
+            };
+            result;
+        };
+    };
+};
+
+# Глобальный экземпляр для удобства использования
+Base64Encoder base64 = new Base64Encoder();
+
+
