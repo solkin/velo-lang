@@ -1,0 +1,541 @@
+include "lang/terminal.vel";
+
+# Class for storing test results
+class TestResults() {
+    int gryffindor = 0;
+    int hufflepuff = 0;
+    int ravenclaw = 0;
+    int slytherin = 0;
+    
+    # Methods for adding points to houses
+    func addGryffindor(int points) void {
+        gryffindor = gryffindor + points;
+    };
+    
+    func addHufflepuff(int points) void {
+        hufflepuff = hufflepuff + points;
+    };
+    
+    func addRavenclaw(int points) void {
+        ravenclaw = ravenclaw + points;
+    };
+    
+    func addSlytherin(int points) void {
+        slytherin = slytherin + points;
+    };
+    
+    # Determines the house with maximum points
+    func getHouse(int lang) str {
+        int max = gryffindor;
+        str house = "";
+        
+        if (lang == 0) {
+            # English
+            house = "Gryffindor";
+            if (hufflepuff > max) {
+                max = hufflepuff;
+                house = "Hufflepuff";
+            };
+            if (ravenclaw > max) {
+                max = ravenclaw;
+                house = "Ravenclaw";
+            };
+            if (slytherin > max) {
+                max = slytherin;
+                house = "Slytherin";
+            };
+        } else {
+            # Russian
+            house = "Гриффиндор";
+            if (hufflepuff > max) {
+                max = hufflepuff;
+                house = "Пуффендуй";
+            };
+            if (ravenclaw > max) {
+                max = ravenclaw;
+                house = "Когтевран";
+            };
+            if (slytherin > max) {
+                max = slytherin;
+                house = "Слизерин";
+            };
+        };
+        house;
+    };
+    
+    # Determines patronus based on house
+    func getPatronus(str house, int lang) str {
+        if (lang == 0) {
+            # English
+            if (house == "Gryffindor") {
+                "Lion";
+            } else if (house == "Hufflepuff") {
+                "Badger";
+            } else if (house == "Ravenclaw") {
+                "Eagle";
+            } else {
+                "Snake";
+            };
+        } else {
+            # Russian
+            if (house == "Гриффиндор") {
+                "Лев";
+            } else if (house == "Пуффендуй") {
+                "Барсук";
+            } else if (house == "Когтевран") {
+                "Орел";
+            } else {
+                "Змея";
+            };
+        };
+    };
+    
+    # Determines magic wand based on house
+    func getWand(str house, int lang) str {
+        if (lang == 0) {
+            # English
+            if (house == "Gryffindor") {
+                "Oak, 11 inches, phoenix feather core";
+            } else if (house == "Hufflepuff") {
+                "Hazel, 10 inches, unicorn hair core";
+            } else if (house == "Ravenclaw") {
+                "Cypress, 12 inches, veela hair core";
+            } else {
+                "Yew, 13 inches, dragon heartstring core";
+            };
+        } else {
+            # Russian
+            if (house == "Гриффиндор") {
+                "Дуб, 11 дюймов, сердцевина из перья феникса";
+            } else if (house == "Пуффендуй") {
+                "Орешник, 10 дюймов, сердцевина из волос единорога";
+            } else if (house == "Когтевран") {
+                "Кипарис, 12 дюймов, сердцевина из волос вейлы";
+            } else {
+                "Тис, 13 дюймов, сердцевина из сердца дракона";
+            };
+        };
+    };
+};
+
+# Function for displaying question and getting answer
+func askQuestion(str question, array[str] options, int lang) int {
+    term.println("");
+    term.println(question);
+    int i = 0;
+    while (i < options.len) {
+        term.println((i + 1).str.con(") ").con(options[i]));
+        i = i + 1;
+    };
+    str prompt = "";
+    if (lang == 0) {
+        prompt = "Your choice (1-".con(options.len.str).con("): ");
+    } else {
+        prompt = "Ваш выбор (1-".con(options.len.str).con("): ");
+    };
+    term.print(prompt);
+    str input = term.input();
+    int choice = input.int;
+    
+    # Input validation
+    if (choice < 1 | choice > options.len) {
+        if (lang == 0) {
+            term.println("Invalid choice, using option 1");
+        } else {
+            term.println("Неверный выбор, используется вариант 1");
+        };
+        choice = 1;
+    };
+    choice - 1; # Return index (0-based)
+};
+
+# Language selection
+term.println("╔═══════════════════════════════════════════════════════╗");
+term.println("║   Language / Язык                                     ║");
+term.println("╚═══════════════════════════════════════════════════════╝");
+term.println("");
+term.println("1) English");
+term.println("2) Русский");
+term.print("Choose language / Выберите язык (1-2): ");
+str langInput = term.input();
+int lang = langInput.int - 1;
+if (lang < 0 | lang > 1) {
+    lang = 0; # Default to English
+};
+term.println("");
+
+# Texts in Russian and English
+array[str] title = new array[str]{
+    "Quiz: Who are you in the Harry Potter world?",
+    "Тест: Кто вы в мире Гарри Поттера?"
+};
+
+array[str] instruction = new array[str]{
+    "Answer the questions by selecting the number of your answer option.",
+    "Ответьте на вопросы, выбрав номер варианта ответа."
+};
+
+array[str] resultsTitle = new array[str]{
+    "                    QUIZ RESULTS",
+    "                    РЕЗУЛЬТАТЫ ТЕСТА"
+};
+
+array[str] yourHouse = new array[str]{
+    "  Your House: ",
+    "  Ваш факультет: "
+};
+
+array[str] pointsByHouse = new array[str]{
+    "📊 Points by House:",
+    "📊 Баллы по факультетам:"
+};
+
+array[str] yourPatronus = new array[str]{
+    "🦌 Your Patronus: ",
+    "🦌 Ваш патронус: "
+};
+
+array[str] yourWand = new array[str]{
+    "🪄 Your Magic Wand:",
+    "🪄 Ваша волшебная палочка:"
+};
+
+array[str] congratulations = new array[str]{
+    "Congratulations! Welcome to ",
+    "Поздравляем! Добро пожаловать в "
+};
+
+
+# Questions and answer options
+array[array[str]] question1 = new array[array[str]]{
+    new array[str]{
+        "1. What matters most to you?",
+        "Courage and bravery",
+        "Loyalty and fairness",
+        "Wisdom and knowledge",
+        "Ambition and cunning"
+    },
+    new array[str]{
+        "1. Что для вас важнее всего?",
+        "Храбрость и отвага",
+        "Верность и справедливость",
+        "Мудрость и знания",
+        "Амбиции и хитрость"
+    }
+};
+
+array[array[str]] question2 = new array[array[str]]{
+    new array[str]{
+        "2. Which subject do you like most?",
+        "Defense Against the Dark Arts",
+        "Herbology",
+        "Charms",
+        "Potions"
+    },
+    new array[str]{
+        "2. Какой предмет вам больше нравится?",
+        "Защита от темных искусств",
+        "Травология",
+        "Заклинания",
+        "Зельеварение"
+    }
+};
+
+array[array[str]] question3 = new array[array[str]]{
+    new array[str]{
+        "3. Which magical artifact would you choose?",
+        "Sword of Gryffindor",
+        "Cup of Hufflepuff",
+        "Diadem of Ravenclaw",
+        "Locket of Slytherin"
+    },
+    new array[str]{
+        "3. Какой магический артефакт вы бы выбрали?",
+        "Меч Гриффиндора",
+        "Чаша Пуффендуя",
+        "Диademа Когтеврана",
+        "Медальон Слизерина"
+    }
+};
+
+array[array[str]] question4 = new array[array[str]]{
+    new array[str]{
+        "4. How do you solve problems?",
+        "Act immediately without thinking",
+        "Seek a fair solution for everyone",
+        "Analyze all options",
+        "Use any means to achieve the goal"
+    },
+    new array[str]{
+        "4. Как вы решаете проблемы?",
+        "Действую сразу, не раздумывая",
+        "Ищу справедливое решение для всех",
+        "Анализирую все варианты",
+        "Использую любые средства для достижения цели"
+    }
+};
+
+array[array[str]] question5 = new array[array[str]]{
+    new array[str]{
+        "5. Which color do you like most?",
+        "Red",
+        "Yellow",
+        "Blue",
+        "Green"
+    },
+    new array[str]{
+        "5. Какой цвет вам больше нравится?",
+        "Красный",
+        "Желтый",
+        "Синий",
+        "Зеленый"
+    }
+};
+
+array[array[str]] question6 = new array[array[str]]{
+    new array[str]{
+        "6. Which magical pet would you have?",
+        "Owl",
+        "Cat",
+        "Raven",
+        "Snake"
+    },
+    new array[str]{
+        "6. Какой магический питомец у вас был бы?",
+        "Сова",
+        "Кот",
+        "Ворон",
+        "Змея"
+    }
+};
+
+array[array[str]] question7 = new array[array[str]]{
+    new array[str]{
+        "7. What do you value in friends?",
+        "Courage and willingness to help",
+        "Loyalty and honesty",
+        "Intelligence and erudition",
+        "Ambition and determination"
+    },
+    new array[str]{
+        "7. Что вы цените в друзьях?",
+        "Храбрость и готовность помочь",
+        "Верность и честность",
+        "Ум и эрудицию",
+        "Амбициозность и целеустремленность"
+    }
+};
+
+array[array[str]] question8 = new array[array[str]]{
+    new array[str]{
+        "8. What kind of spell battle do you prefer?",
+        "Direct and honest",
+        "Defensive, protective",
+        "Tactical, using knowledge",
+        "Fast and effective, at any cost"
+    },
+    new array[str]{
+        "8. Какой заклинательный бой вы предпочитаете?",
+        "Прямой и честный",
+        "Защитный, оборонительный",
+        "Тактический, с использованием знаний",
+        "Быстрый и эффективный, любой ценой"
+    }
+};
+
+# Main program
+term.println("╔═══════════════════════════════════════════════════════╗");
+term.println("║   ".con(title[lang]).con("                    ║"));
+term.println("╚═══════════════════════════════════════════════════════╝");
+term.println("");
+term.println(instruction[lang]);
+term.println("");
+
+TestResults results = new TestResults();
+
+# Question 1
+term.println("═══════════════════════════════════════════════════════");
+array[str] q1Options = new array[str]{
+    question1[lang][1],
+    question1[lang][2],
+    question1[lang][3],
+    question1[lang][4]
+};
+int answer1 = askQuestion(question1[lang][0], q1Options, lang);
+if (answer1 == 0) {
+    results.addGryffindor(3);
+} else if (answer1 == 1) {
+    results.addHufflepuff(3);
+} else if (answer1 == 2) {
+    results.addRavenclaw(3);
+} else {
+    results.addSlytherin(3);
+};
+
+# Question 2
+array[str] q2Options = new array[str]{
+    question2[lang][1],
+    question2[lang][2],
+    question2[lang][3],
+    question2[lang][4]
+};
+int answer2 = askQuestion(question2[lang][0], q2Options, lang);
+if (answer2 == 0) {
+    results.addGryffindor(2);
+} else if (answer2 == 1) {
+    results.addHufflepuff(2);
+} else if (answer2 == 2) {
+    results.addRavenclaw(2);
+} else {
+    results.addSlytherin(2);
+};
+
+# Question 3
+array[str] q3Options = new array[str]{
+    question3[lang][1],
+    question3[lang][2],
+    question3[lang][3],
+    question3[lang][4]
+};
+int answer3 = askQuestion(question3[lang][0], q3Options, lang);
+if (answer3 == 0) {
+    results.addGryffindor(3);
+} else if (answer3 == 1) {
+    results.addHufflepuff(3);
+} else if (answer3 == 2) {
+    results.addRavenclaw(3);
+} else {
+    results.addSlytherin(3);
+};
+
+# Question 4
+array[str] q4Options = new array[str]{
+    question4[lang][1],
+    question4[lang][2],
+    question4[lang][3],
+    question4[lang][4]
+};
+int answer4 = askQuestion(question4[lang][0], q4Options, lang);
+if (answer4 == 0) {
+    results.addGryffindor(2);
+} else if (answer4 == 1) {
+    results.addHufflepuff(2);
+} else if (answer4 == 2) {
+    results.addRavenclaw(2);
+} else {
+    results.addSlytherin(2);
+};
+
+# Question 5
+array[str] q5Options = new array[str]{
+    question5[lang][1],
+    question5[lang][2],
+    question5[lang][3],
+    question5[lang][4]
+};
+int answer5 = askQuestion(question5[lang][0], q5Options, lang);
+if (answer5 == 0) {
+    results.addGryffindor(1);
+} else if (answer5 == 1) {
+    results.addHufflepuff(1);
+} else if (answer5 == 2) {
+    results.addRavenclaw(1);
+} else {
+    results.addSlytherin(1);
+};
+
+# Question 6
+array[str] q6Options = new array[str]{
+    question6[lang][1],
+    question6[lang][2],
+    question6[lang][3],
+    question6[lang][4]
+};
+int answer6 = askQuestion(question6[lang][0], q6Options, lang);
+if (answer6 == 0) {
+    results.addGryffindor(1);
+    results.addRavenclaw(1);
+} else if (answer6 == 1) {
+    results.addHufflepuff(1);
+} else if (answer6 == 2) {
+    results.addRavenclaw(2);
+} else {
+    results.addSlytherin(2);
+};
+
+# Question 7
+array[str] q7Options = new array[str]{
+    question7[lang][1],
+    question7[lang][2],
+    question7[lang][3],
+    question7[lang][4]
+};
+int answer7 = askQuestion(question7[lang][0], q7Options, lang);
+if (answer7 == 0) {
+    results.addGryffindor(2);
+} else if (answer7 == 1) {
+    results.addHufflepuff(2);
+} else if (answer7 == 2) {
+    results.addRavenclaw(2);
+} else {
+    results.addSlytherin(2);
+};
+
+# Question 8
+array[str] q8Options = new array[str]{
+    question8[lang][1],
+    question8[lang][2],
+    question8[lang][3],
+    question8[lang][4]
+};
+int answer8 = askQuestion(question8[lang][0], q8Options, lang);
+if (answer8 == 0) {
+    results.addGryffindor(2);
+} else if (answer8 == 1) {
+    results.addHufflepuff(2);
+} else if (answer8 == 2) {
+    results.addRavenclaw(2);
+} else {
+    results.addSlytherin(2);
+};
+
+# Calculate results
+term.println("");
+term.println("═══════════════════════════════════════════════════════");
+term.println(resultsTitle[lang]);
+term.println("═══════════════════════════════════════════════════════");
+term.println("");
+
+str house = results.getHouse(lang);
+str patronus = results.getPatronus(house, lang);
+str wand = results.getWand(house, lang);
+
+term.println("╔═══════════════════════════════════════════════════════╗");
+term.println("║".con(yourHouse[lang]).con(house).con("                    ║"));
+term.println("╚═══════════════════════════════════════════════════════╝");
+term.println("");
+
+term.println(pointsByHouse[lang]);
+if (lang == 0) {
+    term.println("   Gryffindor: ".con(results.gryffindor.str));
+    term.println("   Hufflepuff:  ".con(results.hufflepuff.str));
+    term.println("   Ravenclaw:  ".con(results.ravenclaw.str));
+    term.println("   Slytherin:   ".con(results.slytherin.str));
+} else {
+    term.println("   Гриффиндор: ".con(results.gryffindor.str));
+    term.println("   Пуффендуй:  ".con(results.hufflepuff.str));
+    term.println("   Когтевран:  ".con(results.ravenclaw.str));
+    term.println("   Слизерин:   ".con(results.slytherin.str));
+};
+term.println("");
+
+term.println(yourPatronus[lang].con(patronus));
+term.println("");
+
+term.println(yourWand[lang]);
+term.println("   ".con(wand));
+term.println("");
+
+term.println("═══════════════════════════════════════════════════════");
+term.println(congratulations[lang].con(house).con("!"));
+term.println("═══════════════════════════════════════════════════════");
