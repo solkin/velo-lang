@@ -1,0 +1,63 @@
+# Нативный класс для работы с файловой системой и файлами
+native class FileSystem() {
+    # Читает содержимое файла как строку
+    # @param path Путь к файлу
+    # @return Содержимое файла как строка
+    native func read(str path) str;
+
+    # Записывает строку в файл (перезаписывает существующий файл)
+    # @param path Путь к файлу
+    # @param content Содержимое для записи
+    native func write(str path, str content) void;
+
+    # Добавляет строку в конец файла
+    # @param path Путь к файлу
+    # @param content Содержимое для добавления
+    native func append(str path, str content) void;
+
+    # Проверяет, существует ли файл или директория
+    # @param path Путь к файлу или директории
+    # @return true если существует, false иначе
+    native func exists(str path) bool;
+
+    # Проверяет, является ли путь файлом
+    # @param path Путь для проверки
+    # @return true если это файл, false иначе
+    native func isFile(str path) bool;
+
+    # Проверяет, является ли путь директорией
+    # @param path Путь для проверки
+    # @return true если это директория, false иначе
+    native func isDir(str path) bool;
+
+    # Создает директорию (и все необходимые родительские директории)
+    # @param path Путь к директории
+    native func mkdir(str path) void;
+
+    # Удаляет файл или директорию
+    # @param path Путь к файлу или директории
+    native func delete(str path) void;
+
+    # Получает размер файла в байтах
+    # @param path Путь к файлу
+    # @return Размер файла в байтах
+    native func size(str path) int;
+
+    # Получает список файлов и директорий в указанной директории
+    # @param path Путь к директории
+    # @return Массив строк с именами файлов и директорий
+    native func list(str path) array[str];
+
+    # Переименовывает или перемещает файл/директорию
+    # @param source Исходный путь
+    # @param target Целевой путь
+    native func move(str source, str target) void;
+
+    # Копирует файл
+    # @param source Исходный путь
+    # @param target Целевой путь
+    native func copy(str source, str target) void;
+};
+
+
+
