@@ -84,6 +84,28 @@ func[int] add = func(int a, int b) int {
 };
 ```
 
+### Pointers (`ptr[T]`)
+
+Pointers allow pass-by-reference semantics:
+
+```velo
+# Pointer with initial value
+ptr[int] p = new ptr[int](42);
+
+# Null pointer
+ptr[int] nullPtr = new ptr[int];
+
+# Pointer to existing variable
+int x = 10;
+ptr[int] px = &x;
+
+# Dereference
+int value = p.val;    # or p.* or *p
+p.val = 100;          # modify through pointer
+```
+
+See [Pointers](21-pointers.md) for detailed documentation.
+
 ---
 
 [Previous: Language Basics ←](02-language-basics.md) | [Next: Variables and Assignment →](04-variables-and-assignment.md)

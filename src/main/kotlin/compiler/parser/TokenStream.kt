@@ -16,6 +16,7 @@ class TokenStream(private val input: Input) {
         "let",
         "true",
         "false",
+        "null",
         "include",
     ).plus(stdTypesSet)
     val classTypesMap = HashMap<String, Type>()
@@ -284,6 +285,7 @@ const val CLASS = "class"
 const val FUNC = "func"
 const val VOID = "void"
 const val ANY = "any"
+const val PTR = "ptr"
 
 val stdTypesSet = setOf(
     BYTE,
@@ -298,4 +300,5 @@ val stdTypesSet = setOf(
     FUNC,
     VOID,
     ANY,
+    PTR,
 )

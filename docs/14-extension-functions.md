@@ -18,6 +18,29 @@ int maxValue = 5.max(10);  # 10
 str result = "Hello".insert(5, " World");  # "Hello World"
 ```
 
+## Extensions Without Parameters
+
+For extension functions without parameters, parentheses are optional:
+
+```velo
+ext(bool b) str() str {
+    if b then "true" else "false"
+};
+
+ext(int n) double() int {
+    n * 2
+};
+
+# Usage - both forms are valid:
+bool flag = true;
+str s1 = flag.str();   # with parentheses
+str s2 = flag.str;     # without parentheses (preferred)
+
+int x = 5;
+int d1 = x.double();   # 10
+int d2 = x.double;     # 10
+```
+
 ## Extension for Classes
 
 ```velo

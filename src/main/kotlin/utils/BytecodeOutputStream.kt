@@ -10,6 +10,7 @@ import vm.VmDict
 import vm.VmFloat
 import vm.VmFunc
 import vm.VmInt
+import vm.VmPtr
 import vm.VmStr
 import vm.VmTuple
 import vm.VmType
@@ -59,6 +60,11 @@ import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
 import vm.operations.Store
+import vm.operations.PtrLoad
+import vm.operations.PtrNew
+import vm.operations.PtrRef
+import vm.operations.PtrRefIndex
+import vm.operations.PtrStore
 import vm.operations.Shl
 import vm.operations.Shr
 import vm.operations.StrCon
@@ -194,6 +200,13 @@ class BytecodeOutputStream(
             is Shr -> out.writeByte(0x47)
             is Hash -> out.writeByte(0x48)
 
+            // Pointer operations
+            is PtrNew -> out.writeByte(0x50)
+            is PtrLoad -> out.writeByte(0x51)
+            is PtrStore -> out.writeByte(0x52)
+            is PtrRef -> out.writeByte(0x53).also { out.writeInt(op.varIndex) }
+            is PtrRefIndex -> out.writeByte(0x54)
+
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -237,6 +250,10 @@ private fun DataOutputStream.write(value: Any) {
             writeByte(TYPE_BOOL)
             writeBoolean(value)
         }
+
+        is vm.records.NullPtrRecord -> {
+            writeByte(TYPE_NULL_PTR)
+        }
     }
 }
 
@@ -254,12 +271,13 @@ private fun DataOutputStream.writeType(t: VmType) {
         is VmDict -> writeByte(TYPE_DICT)
         is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
         is VmFunc -> writeByte(TYPE_FUNC)
+        is VmPtr -> writeByte(TYPE_PTR).also { writeType(t.derived) }
     }
 }
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x0c
+const val VERSION_MINOR = 0x0d
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01
@@ -273,3 +291,5 @@ const val TYPE_ARRAY = 0x08
 const val TYPE_DICT = 0x09
 const val TYPE_CLASS = 0x0a
 const val TYPE_FUNC = 0x0b
+const val TYPE_PTR = 0x0c
+const val TYPE_NULL_PTR = 0x0d

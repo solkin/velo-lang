@@ -1,11 +1,13 @@
 package compiler.parser
 
+import compiler.nodes.AddressOfNode
 import compiler.nodes.AssignNode
 import compiler.nodes.AnyType
 import compiler.nodes.BinaryNode
 import compiler.nodes.BoolNode
 import compiler.nodes.CallNode
 import compiler.nodes.DefNode
+import compiler.nodes.DerefNode
 import compiler.nodes.FloatNode
 import compiler.nodes.FuncNode
 import compiler.nodes.IfNode
@@ -16,6 +18,9 @@ import compiler.nodes.ArrayNode
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
 import compiler.nodes.PropNode
+import compiler.nodes.NullNode
+import compiler.nodes.PtrNode
+import compiler.nodes.PtrType
 import compiler.nodes.StringNode
 import compiler.nodes.VarNode
 import compiler.nodes.TupleNode
@@ -109,6 +114,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
             }
 
             FUNC -> FuncType(derived = parseDerivedTypes(count = 1).first())
+            PTR -> PtrType(derived = parseDerivedTypes(count = 1).first())
             VOID -> VoidType
             ANY -> AnyType
             else -> {
@@ -309,11 +315,50 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
             "array" -> parseArrayInit()
             "tuple" -> parseTupleInit()
             "dict" -> parseDictInit()
+            "ptr" -> parsePtrInit()
             else -> {
                 // Pass class type as VarNode to parse call in a common way
                 maybePostfix(VarNode(tok.value as String))
             }
         }
+    }
+
+    private fun parsePtrInit(): Node {
+        val derivedType = parseDerivedTypes(count = 1).first()
+        val constructTok = stream.peek()
+        return when {
+            constructTok?.type == TokenType.PUNCTUATION && constructTok.value == '(' -> {
+                // Pointer with initial value: new ptr[T](value)
+                val value = inner('(', ')', ::parseExpression)
+                PtrNode(
+                    initialValue = value,
+                    derivedType = derivedType,
+                )
+            }
+            else -> {
+                // Null pointer: new ptr[T]
+                PtrNode(
+                    initialValue = null,
+                    derivedType = derivedType,
+                )
+            }
+        }
+    }
+
+    private fun parseAddressOf(): Node {
+        skipOp("&")
+        val target = parseAtom()
+        // Apply postfix operators to get full expression (e.g., &array[0])
+        val fullTarget = maybePostfix(target)
+        return AddressOfNode(fullTarget)
+    }
+
+    private fun parseDeref(): Node {
+        skipOp("*")
+        val target = parseAtom()
+        // Apply postfix operators to get full expression
+        val fullTarget = maybePostfix(target)
+        return DerefNode(fullTarget)
     }
 
     private fun parseInclude(): Node {
@@ -380,8 +425,9 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (self.size != 1) {
             stream.croak("Self type and variable must be defined for extension function")
         }
+        // Allow both variable names and keywords as extension function names
         val name = stream.peek()?.takeIf { tok ->
-            tok.type == TokenType.VARIABLE
+            tok.type == TokenType.VARIABLE || tok.type == TokenType.KEYWORD
         }?.let { stream.next()?.value as? String }
         return FuncNode(
             name = self.first().type.name() + "@" + name,
@@ -396,6 +442,11 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return BoolNode(
             value = stream.next()?.value == "true"
         )
+    }
+
+    private fun parseNull(): Node {
+        skipKw("null")
+        return NullNode
     }
 
     private fun parseVarname(): String {
@@ -497,8 +548,13 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isKw("if") != null) return parseIf()
         if (isKw("while") != null) return parseWhile()
         if (isKw("true") != null || isKw("false") != null) return parseBool()
+        if (isKw("null") != null) return parseNull()
         if (isKw("native") != null) return parseNative()
         if (isKw("new") != null) return parseNew()
+        // Address-of operator: &variable or &array[index]
+        if (isOp("&") != null) return parseAddressOf()
+        // Dereference operator: *ptr
+        if (isOp("*") != null) return parseDeref()
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)

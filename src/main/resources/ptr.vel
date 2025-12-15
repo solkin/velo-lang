@@ -1,0 +1,155 @@
+include "lang/terminal.vel";
+include "lang/bool.vel";
+
+# ============================================
+# Pointer Examples in Velo Lang
+# ============================================
+
+# --- Basic Pointer Creation ---
+
+# Create a pointer with initial value
+ptr[int] p1 = new ptr[int](42);
+term.println("p1.val = ".con(p1.val.str));
+
+# Modify value through pointer
+p1.val = 100;
+term.println("After p1.val = 100: ".con(p1.val.str));
+
+# Create null pointer
+ptr[int] nullPtr = new ptr[int];
+term.println("nullPtr == null: ".con((nullPtr == null).str));
+
+# Assign null to existing pointer
+ptr[int] pNullTest = new ptr[int](999);
+term.println("pNullTest before null: ".con(pNullTest.val.str));
+pNullTest = null;
+term.println("pNullTest == null: ".con((pNullTest == null).str));
+term.println("pNullTest != null: ".con((pNullTest != null).str));
+
+# --- Address-of Operator ---
+
+int x = 10;
+ptr[int] px = &x;
+term.println("x = ".con(x.str));
+term.println("px.val = ".con(px.val.str));
+
+# Modify x through pointer
+px.val = 20;
+term.println("After px.val = 20, x = ".con(x.str));
+
+# --- Swap Function Example ---
+
+func swap(ptr[int] a, ptr[int] b) void {
+    int tmp = a.val;
+    a.val = b.val;
+    b.val = tmp;
+};
+
+int num1 = 100;
+int num2 = 200;
+term.println("Before swap: num1 = ".con(num1.str).con(", num2 = ").con(num2.str));
+swap(&num1, &num2);
+term.println("After swap:  num1 = ".con(num1.str).con(", num2 = ").con(num2.str));
+
+# --- Increment Function Example ---
+
+func increment(ptr[int] p) void {
+    p.val = p.val + 1;
+};
+
+int counter = 0;
+term.println("counter = ".con(counter.str));
+increment(&counter);
+term.println("After increment: counter = ".con(counter.str));
+increment(&counter);
+term.println("After increment: counter = ".con(counter.str));
+increment(&counter);
+term.println("After increment: counter = ".con(counter.str));
+
+# --- Pointer to Array Element ---
+
+array[int] numbers = new array[int]{10, 20, 30, 40, 50};
+term.print("Original array: ");
+int i = 0;
+while (i < numbers.len) {
+    term.print(numbers[i].str.con(" "));
+    i = i + 1;
+};
+term.println("");
+
+# Get pointer to array element
+ptr[int] pelem = &numbers[2];
+term.println("numbers[2] = ".con(pelem.val.str));
+
+# Modify array element through pointer
+pelem.val = 999;
+term.print("After pelem.val = 999: ");
+i = 0;
+while (i < numbers.len) {
+    term.print(numbers[i].str.con(" "));
+    i = i + 1;
+};
+term.println("");
+
+# --- Pointer to String ---
+
+str greeting = "Hello";
+ptr[str] pstr = &greeting;
+term.println("greeting = ".con(pstr.val));
+
+pstr.val = "World";
+term.println("After pstr.val = \"World\": greeting = ".con(greeting));
+
+# --- Pointer in Class ---
+
+class Counter() {
+    ptr[int] valuePtr = new ptr[int](0);
+    
+    func increment() void {
+        valuePtr.val = valuePtr.val + 1;
+    };
+    
+    func getValue() int {
+        valuePtr.val;
+    };
+    
+    func setValue(int v) void {
+        valuePtr.val = v;
+    };
+};
+
+Counter c = new Counter();
+term.println("Counter value: ".con(c.getValue().str));
+c.increment();
+c.increment();
+c.increment();
+term.println("After 3 increments: ".con(c.getValue().str));
+
+# --- Modify Multiple Variables ---
+
+func addToAll(ptr[int] a, ptr[int] b, ptr[int] c, int delta) void {
+    a.val = a.val + delta;
+    b.val = b.val + delta;
+    c.val = c.val + delta;
+};
+
+int v1 = 1;
+int v2 = 2;
+int v3 = 3;
+term.println("Before: v1=".con(v1.str).con(" v2=").con(v2.str).con(" v3=").con(v3.str));
+addToAll(&v1, &v2, &v3, 10);
+term.println("After addToAll +10: v1=".con(v1.str).con(" v2=").con(v2.str).con(" v3=").con(v3.str));
+
+# --- Alternative Dereference Syntax ---
+
+ptr[int] p2 = new ptr[int](500);
+term.println("Using p2.val: ".con(p2.val.str));
+term.println("Using *p2: ".con((*p2).str));
+
+# Modify using * operator
+*p2 = 600;
+term.println("After *p2 = 600: ".con(p2.val.str));
+
+term.println("");
+term.println("All pointer tests completed!");
+

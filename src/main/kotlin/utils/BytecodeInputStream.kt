@@ -10,6 +10,7 @@ import vm.VmDict
 import vm.VmFloat
 import vm.VmFunc
 import vm.VmInt
+import vm.VmPtr
 import vm.VmStr
 import vm.VmTuple
 import vm.VmType
@@ -55,6 +56,11 @@ import vm.operations.ArrNew
 import vm.operations.ArrStore
 import vm.operations.Hash
 import vm.operations.Push
+import vm.operations.PtrLoad
+import vm.operations.PtrNew
+import vm.operations.PtrRef
+import vm.operations.PtrRefIndex
+import vm.operations.PtrStore
 import vm.operations.Rem
 import vm.operations.Ret
 import vm.operations.Rot
@@ -68,6 +74,7 @@ import vm.operations.StrLen
 import vm.operations.StrSub
 import vm.operations.Swap
 import vm.operations.Xor
+import vm.records.NullPtrRecord
 import java.io.DataInputStream
 import java.io.InputStream
 
@@ -193,6 +200,13 @@ class BytecodeInputStream(
             0x47 -> Shr()
             0x48 -> Hash()
 
+            // Pointer operations
+            0x50 -> PtrNew()
+            0x51 -> PtrLoad()
+            0x52 -> PtrStore()
+            0x53 -> PtrRef(varIndex = inp.readInt())
+            0x54 -> PtrRefIndex()
+
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }
     }
@@ -209,6 +223,7 @@ private fun DataInputStream.readAny(): Any {
         TYPE_FLOAT -> readFloat()
         TYPE_STR -> readUTF()
         TYPE_BOOL -> readBoolean()
+        TYPE_NULL_PTR -> NullPtrRecord
         else -> throw IllegalStateException("Unsupported data type: $type")
     }
 }
@@ -236,6 +251,7 @@ private fun DataInputStream.readType(): VmType {
         TYPE_DICT -> VmDict()
         TYPE_CLASS -> VmClass(name = readUTF())
         TYPE_FUNC -> VmFunc()
+        TYPE_PTR -> VmPtr(derived = readType())
         else -> throw Exception("Unsupported bytecode data type $t")
     }
 }

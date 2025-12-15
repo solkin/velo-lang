@@ -1,5 +1,32 @@
 # Standard Library
 
+## Boolean Extensions
+
+Extension functions for boolean type:
+
+```velo
+include "lang/bool.vel";
+
+bool flag = true;
+str s = flag.str;        # "true" or "false" (parentheses optional)
+int i = flag.int;        # 1 or 0
+bool neg = flag.not;     # Logical NOT
+```
+
+## Integer Extensions
+
+Extension functions for integer type:
+
+```velo
+include "lang/int.vel";
+
+int x = -42;
+int absVal = x.abs();           # 42
+int negVal = x.neg();           # -42 (always negative)
+str hex = (255).format(16);     # "ff"
+str bin = (10).format(2);       # "1010"
+```
+
 ## Terminal
 
 Class for terminal operations:

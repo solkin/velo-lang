@@ -51,3 +51,7 @@ class VmClass(val name: String) : VmType {
 class VmFunc : VmType {
     override fun toJvmType() = throw IllegalArgumentException("Inconvertible type VmFunc")
 }
+
+class VmPtr(val derived: VmType) : VmType {
+    override fun toJvmType() = throw IllegalArgumentException("Inconvertible type VmPtr")
+}

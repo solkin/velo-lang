@@ -18,7 +18,10 @@ data class VarNode(
         if (!v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal var assign type $type != ${v.type}")
         }
-        ctx.retype(name, type) // Clarify variable type from the right side of assignment
+        // Don't retype to NullType - keep the original pointer type
+        if (type !is NullType) {
+            ctx.retype(name, type) // Clarify variable type from the right side of assignment
+        }
         ctx.add(Store(v.index))
     }
 }
