@@ -42,6 +42,7 @@ import compiler.nodes.Type
 import compiler.nodes.VoidType
 import compiler.nodes.VoidNode
 import compiler.nodes.WhileNode
+import compiler.nodes.UnaryNode
 
 class Parser(private val stream: TokenStream, private val depLoader: DependencyLoader) {
 
@@ -361,6 +362,14 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return DerefNode(fullTarget)
     }
 
+    private fun parseUnaryMinus(): Node {
+        skipOp("-")
+        val operand = parseAtom()
+        // Apply postfix operators to get full expression (e.g., -array[0])
+        val fullOperand = maybePostfix(operand)
+        return UnaryNode("-", fullOperand)
+    }
+
     private fun parseInclude(): Node {
         skipKw("include")
         val path = stream.next()?.takeIf { tok ->
@@ -555,6 +564,8 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         if (isOp("&") != null) return parseAddressOf()
         // Dereference operator: *ptr
         if (isOp("*") != null) return parseDeref()
+        // Unary minus operator: -value
+        if (isOp("-") != null) return parseUnaryMinus()
         val tok = stream.next()
         return when (tok?.type) {
             TokenType.VARIABLE -> VarNode(tok.value as String)
