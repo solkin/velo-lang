@@ -1,0 +1,23 @@
+include "lang/terminal.vel";
+
+class Point(int x, int y) {
+    func getX() int { x; };
+    func getY() int { y; };
+    func move(int dx, int dy) void {
+        x += dx;
+        y += dy;
+    };
+    func toString() str {
+        "(".con(x.str).con(", ").con(y.str).con(")");
+    };
+};
+
+Point p = new Point(10, 20);
+term.println(p.toString());
+
+p.move(5, -3);
+term.println(p.toString());
+
+term.println(p.getX().str);
+term.println(p.getY().str);
+

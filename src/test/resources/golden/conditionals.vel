@@ -1,0 +1,20 @@
+include "lang/terminal.vel";
+
+int x = 10;
+
+if (x > 5) {
+    term.println("greater");
+};
+
+if (x < 5) {
+    term.println("less");
+} else {
+    term.println("not less");
+};
+
+if (x == 10) {
+    term.println("equal");
+};
+
+str result = if (x > 0) then "positive" else "non-positive";
+term.println(result);

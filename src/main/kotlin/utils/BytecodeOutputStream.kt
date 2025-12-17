@@ -15,7 +15,6 @@ import vm.VmStr
 import vm.VmTuple
 import vm.VmType
 import vm.VmVoid
-import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrLen
 import vm.operations.Call
@@ -40,7 +39,6 @@ import vm.operations.If
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.Inv
 import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
@@ -118,7 +116,6 @@ class BytecodeOutputStream(
 
     private fun write(op: Operation) {
         when (op) {
-            is Abs -> out.writeByte(0x01)
             is And -> out.writeByte(0x02)
             is ArrNew -> out.writeByte(0x03)
             is ArrLoad -> out.writeByte(0x04)
@@ -143,7 +140,6 @@ class BytecodeOutputStream(
             is More -> out.writeByte(0x1b)
             is Move -> out.writeByte(0x1d).also { out.writeInt(op.count) }
             is Mul -> out.writeByte(0x1e)
-            is Inv -> out.writeByte(0x20)
             is Or -> out.writeByte(0x21)
             is Add -> out.writeByte(0x26)
             is Push -> out.writeByte(0x29).also { out.write(op.value) }

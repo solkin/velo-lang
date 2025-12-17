@@ -1,0 +1,21 @@
+include "lang/terminal.vel";
+
+func fib(int n) int {
+    int a = 0;
+    int b = 1;
+    int i = 0;
+    while (i < n) {
+        int tmp = a + b;
+        a = b;
+        b = tmp;
+        i += 1;
+    };
+    a;
+};
+
+term.println(fib(0).str);
+term.println(fib(1).str);
+term.println(fib(5).str);
+term.println(fib(10).str);
+term.println(fib(20).str);
+

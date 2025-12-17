@@ -1,0 +1,20 @@
+include "lang/terminal.vel";
+
+array[int] nums = new array[int]{1, 2, 3, 4, 5};
+term.println(nums.len.str);
+
+term.println(nums[0].str);
+term.println(nums[2].str);
+term.println(nums[4].str);
+
+int sum = 0;
+int i = 0;
+while (i < nums.len) {
+    sum += nums[i];
+    i += 1;
+};
+term.println(sum.str);
+
+nums[0] = 100;
+term.println(nums[0].str);
+

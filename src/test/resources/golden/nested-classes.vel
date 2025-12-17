@@ -1,0 +1,81 @@
+include "lang/terminal.vel";
+
+# Вложенный класс (как в примере LinkedList)
+class Stack() {
+    class Node(int value, Node next) {};
+    
+    Node top;
+    int size = 0;
+    
+    func push(int value) void {
+        top = new Node(value, top);
+        size = size + 1;
+    };
+    
+    func pop() int {
+        int value = top.value;
+        top = top.next;
+        size = size - 1;
+        value;
+    };
+    
+    func peek() int {
+        top.value;
+    };
+    
+    func getSize() int {
+        size;
+    };
+};
+
+Stack s = new Stack();
+s.push(10);
+s.push(20);
+s.push(30);
+term.println(s.getSize().str);
+term.println(s.peek().str);
+term.println(s.pop().str);
+term.println(s.pop().str);
+term.println(s.getSize().str);
+
+# Класс принимающий другой класс как параметр
+class Inner(int x) {
+    func getX() int { x; };
+};
+
+class Outer(Inner inner) {
+    int multiplier = 3;
+    
+    func compute() int {
+        inner.getX() * multiplier;
+    };
+    
+    func setMultiplier(int m) void {
+        multiplier = m;
+    };
+};
+
+Inner i = new Inner(7);
+Outer o = new Outer(i);
+term.println(o.compute().str);
+o.setMultiplier(5);
+term.println(o.compute().str);
+
+# Классы с взаимными ссылками
+class A(int z) {};
+
+A a = new A(42);
+
+class B(A d) {
+    int f = 9;
+    func sumWithA(A c) int {
+        c.z + a.z;
+    };
+    func diff(B b) int {
+        b.f - d.z;
+    };
+};
+
+B b = new B(a);
+term.println(b.sumWithA(a).str);
+term.println(b.diff(b).str);

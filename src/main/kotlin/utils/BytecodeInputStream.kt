@@ -15,7 +15,6 @@ import vm.VmStr
 import vm.VmTuple
 import vm.VmType
 import vm.VmVoid
-import vm.operations.Abs
 import vm.operations.And
 import vm.operations.ArrLen
 import vm.operations.Call
@@ -40,7 +39,6 @@ import vm.operations.If
 import vm.operations.Instance
 import vm.operations.IntChar
 import vm.operations.IntStr
-import vm.operations.Inv
 import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
@@ -135,7 +133,6 @@ class BytecodeInputStream(
 
     private fun readOperation(): Operation {
         return when (val opcode = inp.readByte().toInt()) {
-            0x01 -> Abs()
             0x02 -> And()
             0x03 -> ArrNew()
             0x04 -> ArrLoad()
@@ -156,7 +153,6 @@ class BytecodeInputStream(
             0x1b -> More()
             0x1d -> Move(count = inp.readInt())
             0x1e -> Mul()
-            0x20 -> Inv()
             0x21 -> Or()
             0x26 -> Add()
             0x29 -> Push(value = inp.readAny())

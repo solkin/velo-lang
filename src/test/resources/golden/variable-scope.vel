@@ -1,0 +1,110 @@
+include "lang/terminal.vel";
+include "lang/bool.vel";
+
+# Глобальная переменная
+int global = 100;
+
+term.println(global.str);
+
+# Локальная переменная скрывает глобальную
+func testShadowing() void {
+    int global = 50;
+    term.println(global.str);
+    void;
+};
+
+testShadowing();
+term.println(global.str);
+
+# Область видимости в блоках
+func testBlockScope() void {
+    int x = 1;
+    term.println(x.str);
+    if (true) {
+        int x = 2;
+        term.println(x.str);
+    };
+    term.println(x.str);
+    void;
+};
+
+testBlockScope();
+
+# Область видимости в циклах
+func testLoopScope() void {
+    int sum = 0;
+    int i = 0;
+    while (i < 3) {
+        int temp = i * 10;
+        sum = sum + temp;
+        i = i + 1;
+    };
+    term.println(sum.str);
+    void;
+};
+
+testLoopScope();
+
+# Модификация переменной из внешней области
+int counter = 0;
+
+func increment() void {
+    counter = counter + 1;
+    void;
+};
+
+increment();
+increment();
+increment();
+term.println(counter.str);
+
+# Замыкание захватывает переменную
+func[int] makeCounter = func() int {
+    int count = 0;
+    func() int {
+        count = count + 1;
+        count;
+    }();
+};
+
+term.println(makeCounter().str);
+term.println(makeCounter().str);
+
+# Область видимости в классах
+class ScopeTest(int value) {
+    int localValue = value * 2;
+    
+    func getValue() int {
+        value;
+    };
+    
+    func getLocalValue() int {
+        localValue;
+    };
+    
+    func compute(int value) int {
+        # параметр value скрывает поле
+        value + localValue;
+    };
+};
+
+ScopeTest st = new ScopeTest(10);
+term.println(st.getValue().str);
+term.println(st.getLocalValue().str);
+term.println(st.compute(5).str);
+
+# Вложенные области в функции
+func nestedScopes() int {
+    int a = 1;
+    int result = 0;
+    if (true) {
+        int b = 2;
+        if (true) {
+            int c = 3;
+            result = a + b + c;
+        };
+    };
+    result;
+};
+
+term.println(nestedScopes().str);

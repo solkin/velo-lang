@@ -1,0 +1,11 @@
+include "lang/terminal.vel";
+
+int a = 10;
+int b = 5;
+
+term.println((a + b).str);
+term.println((a - b).str);
+term.println((a * b).str);
+term.println((a / b).str);
+term.println((a % 3).str);
+

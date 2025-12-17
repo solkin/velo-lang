@@ -1,0 +1,25 @@
+include "lang/terminal.vel";
+
+func add(int a, int b) int {
+    a + b;
+};
+
+func multiply(int a, int b) int {
+    a * b;
+};
+
+func factorial(int n) int {
+    int result = 1;
+    int i = 1;
+    while (i <= n) {
+        result *= i;
+        i += 1;
+    };
+    result;
+};
+
+term.println(add(10, 20).str);
+term.println(multiply(6, 7).str);
+term.println(factorial(5).str);
+term.println(factorial(10).str);
+

@@ -1,0 +1,18 @@
+include "lang/terminal.vel";
+include "lang/bool.vel";
+
+int x = 42;
+term.println(x.str);
+
+x = 100;
+term.println(x.str);
+
+str name = "Velo";
+term.println(name);
+
+float pi = 3.14159;
+int piInt = 3;
+term.println(piInt.str);
+
+bool flag = true;
+term.println(flag.str);

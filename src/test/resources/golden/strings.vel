@@ -1,0 +1,20 @@
+include "lang/terminal.vel";
+include "lang/bool.vel";
+
+str s1 = "Hello";
+str s2 = "World";
+
+term.println(s1.con(", ").con(s2).con("!"));
+
+term.println(s1.len.str);
+
+str num = 42.str;
+term.println(num);
+
+int parsed = "123".int;
+term.println((parsed + 1).str);
+
+bool eq1 = "HELLO" == "HELLO";
+bool eq2 = "hello" == "hello";
+term.println(eq1.str);
+term.println(eq2.str);
