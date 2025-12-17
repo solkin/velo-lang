@@ -232,5 +232,5 @@ ptr[Point] pp = &point;
 
 ---
 
-[Previous: Best Practices ←](20-best-practices.md)
+[Previous: Best Practices ←](20-best-practices.md) | [Next: Apply Blocks →](22-apply-blocks.md)
 

@@ -1,0 +1,134 @@
+# Apply Block Examples
+# Demonstrates the use of {} apply-blocks for contextual operations
+
+native class Terminal() {
+    native func print(str text) str;
+    func println(str text) str { print(text.con("\n")) };
+};
+
+Terminal term = new Terminal();
+
+# --- Example 1: Basic apply block with a class ---
+
+class Person(str name, int age) {
+    func setName(str n) void { name = n; };
+    func setAge(int a) void { age = a; };
+    func describe() str {
+        name.con(" is ").con(age.str).con(" years old");
+    };
+};
+
+# Using apply block to configure after creation
+Person p1 = new Person("", 0) {
+    it.setName("John");
+    it.setAge(25);
+};
+term.println(p1.describe());  # Output: John is 25 years old
+
+# --- Example 2: Apply block with string ---
+
+str greeting = "Hello" {
+    it = it.con(", ");
+    it = it.con("World");
+    it = it.con("!");
+};
+term.println(greeting);  # Output: Hello, World!
+
+# --- Example 3: Apply block with array ---
+
+array[int] numbers = new array[int](5) {
+    it[0] = 10;
+    it[1] = 20;
+    it[2] = 30;
+    it[3] = 40;
+    it[4] = 50;
+};
+term.println(numbers[2].str);  # Output: 30
+
+# --- Example 4: Chained apply blocks ---
+
+Person p2 = new Person("", 0) {
+    it.setName("Alice");
+} {
+    it.setAge(30);
+};
+term.println(p2.describe());  # Output: Alice is 30 years old
+
+# --- Example 5: Apply block with primitives ---
+
+int doubled = 5 {
+    it = it * 2;
+};
+term.println(doubled.str);  # Output: 10
+
+# --- Example 6: Empty apply block (no-op) ---
+
+Person p3 = new Person("Bob", 42) {};
+term.println(p3.describe());  # Output: Bob is 42 years old
+
+# --- Example 7: Apply block with conditional ---
+
+bool isAdmin = true;
+Person p4 = new Person("User", 0) {
+    if (isAdmin) {
+        it.setName("Admin");
+        it.setAge(99);
+    } else {
+        it.setName("Guest");
+        it.setAge(0);
+    };
+};
+term.println(p4.describe());  # Output: Admin is 99 years old
+
+# --- Example 8: Nested apply blocks ---
+
+class Point(int x, int y) {
+    func setX(int val) void { x = val; };
+    func setY(int val) void { y = val; };
+    func describe() str {
+        "(".con(x.str).con(", ").con(y.str).con(")");
+    };
+};
+
+class Line(Point start, Point finish) {
+    func describe() str {
+        start.describe().con(" -> ").con(finish.describe());
+    };
+};
+
+Line line = new Line(new Point(0, 0), new Point(0, 0)) {
+    it.start {
+        it.setX(10);
+        it.setY(20);
+    };
+    it.finish {
+        it.setX(100);
+        it.setY(200);
+    };
+};
+term.println(line.describe());  # Output: (10, 20) -> (100, 200)
+
+# --- Example 9: Apply block in function return ---
+
+func createPerson(str name, int age) Person {
+    new Person("", 0) {
+        it.setName(name);
+        it.setAge(age);
+    };
+};
+
+Person p5 = createPerson("Charlie", 35);
+term.println(p5.describe());  # Output: Charlie is 35 years old
+
+# --- Example 10: Apply block with dict ---
+
+dict[str:int] scores = new dict[str:int]{} {
+    it["Alice"] = 100;
+    it["Bob"] = 95;
+    it["Charlie"] = 87;
+};
+term.println(scores["Alice"].str);  # Output: 100
+term.println(scores["Bob"].str);    # Output: 95
+
+term.println("All apply-block tests passed!");
+

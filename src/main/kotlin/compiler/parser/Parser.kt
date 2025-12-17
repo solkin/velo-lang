@@ -36,6 +36,7 @@ import compiler.nodes.ClassNode
 import compiler.nodes.ClassType
 import compiler.nodes.DictNode
 import compiler.nodes.DictType
+import compiler.nodes.ApplyNode
 import compiler.nodes.ScopeNode
 import compiler.nodes.StringType
 import compiler.nodes.Type
@@ -217,9 +218,18 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         return if (isPunc('.') != null) parseProp(expr) else expr
     }
 
+    private fun maybeApply(expr: Node, allowApply: Boolean): Node {
+        return if (allowApply && isPunc('{') != null) parseApply(expr) else expr
+    }
+
+    private fun parseApply(target: Node): Node {
+        val body = parseProg()  // parseProg handles { ... }
+        return ApplyNode(target = target, body = body)
+    }
+
     private fun parseIf(): Node {
         skipKw("if")
-        val condNode = parseExpression()
+        val condNode = parseExpression(allowApply = false)
         if (isPunc('{') == null) skipKw("then")
         val thenNode = parseExpression()
         val elseNode = isKw("else")?.let {
@@ -231,7 +241,7 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
 
     private fun parseWhile(): Node {
         skipKw("while")
-        val cond = parseExpression()
+        val cond = parseExpression(allowApply = false)
         val expr = parseProg()
         return WhileNode(
             cond = cond,
@@ -533,21 +543,22 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
         }
     }
 
-    private fun parseExpression(): Node {
+    private fun parseExpression(allowApply: Boolean = true): Node {
         val atom = parseAtom()
-        val postfix = maybePostfix(atom)
+        val postfix = maybePostfix(atom, allowApply)
         val binary = maybeBinary(postfix, 0)
-        return maybePostfix(binary)
+        return maybePostfix(binary, allowApply)
     }
 
-    private fun maybePostfix(expr: Node): Node {
+    private fun maybePostfix(expr: Node, allowApply: Boolean = true): Node {
         val call = maybeCall(expr)
         val index = maybeIndex(call)
         val prop = maybeProp(index)
-        return if (prop != expr) {
-            maybePostfix(prop)
+        val apply = maybeApply(prop, allowApply)
+        return if (apply != expr) {
+            maybePostfix(apply, allowApply)
         } else {
-            prop
+            apply
         }
     }
 

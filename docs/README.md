@@ -23,6 +23,7 @@
 19. [Language Features](19-language-features.md)
 20. [Best Practices](20-best-practices.md)
 21. [Pointers](21-pointers.md)
+22. [Apply Blocks](22-apply-blocks.md)
 
 ---
 

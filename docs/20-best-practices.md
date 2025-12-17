@@ -23,5 +23,5 @@
 
 ---
 
-[Previous: Language Features ←](19-language-features.md)
+[Previous: Language Features ←](19-language-features.md) | [Next: Pointers →](21-pointers.md)
 
