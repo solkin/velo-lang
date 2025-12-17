@@ -2,39 +2,69 @@ package vm
 
 import vm.records.ClassRecord
 
+/**
+ * Record is the base interface for all values stored in the VM.
+ * 
+ * Records represent different types of data in the Velo VM:
+ * - ValueRecord: primitive values (int, float, string, bool, etc.)
+ * - LinkRecord: references to objects stored in the Heap
+ * - NativeRecord: references to JVM objects in the Native area
+ * - ClassRecord: Velo class instances with their frame and optional native backing
+ * - FrameRecord: references to function/class frames
+ * - PtrRecord and variants: pointer types for memory manipulation
+ */
 interface Record {
 
+    /**
+     * Get the underlying value of this record.
+     * The actual type depends on the record implementation.
+     */
     fun <T> get(): T
 
+    /**
+     * Cast the underlying value to a specific JVM class type.
+     * 
+     * @param targetClass The target class to cast to
+     * @return The value cast to the target type
+     * @throws ClassCastException if the value cannot be cast
+     */
     fun <T> cast(targetClass: Class<T>): T {
         return targetClass.cast(get())
     }
 
+    // Type-specific getters for convenience
     fun getBool(): Boolean = get()
-
     fun getNumber(): Number = get()
-
     fun getByte(): Byte = get()
-
     fun getInt(): Int = get()
-
     fun getLong(): Long = get()
-
     fun getFloat(): Float = get()
-
     fun getDouble(): Double = get()
-
     fun getChar(): Char = get()
-
     fun getString(): String = get()
 
+    /** Get value as an array of Records (for Velo arrays and tuples) */
     fun getArray(): Array<Record> = get()
 
+    /** Get value as a mutable map (for Velo dictionaries) */
     fun getDict(): MutableMap<Record, Record> = get()
 
+    /** Get value as a Frame (for class instances) */
     fun getFrame(): Frame = get()
 
-    fun getAs(vmType: VmType): Any {
+    /**
+     * Convert this record's value to a JVM type suitable for native method calls.
+     * 
+     * This method is used when passing Velo values to native (JVM) methods.
+     * It handles the conversion from Velo's internal representation to JVM types.
+     * 
+     * @param vmType The Velo VM type describing the expected conversion
+     * @param ctx Optional VM context, required for VmClass conversions to access heap/native areas
+     * @return The converted JVM value ready for use in native method invocation
+     * @throws IllegalStateException if conversion requires context but none provided
+     * @throws IllegalArgumentException if the type cannot be converted
+     */
+    fun getAs(vmType: VmType, ctx: VMContext? = null): Any {
         return when (vmType) {
             is VmByte -> getByte()
             is VmAny -> get()
@@ -46,9 +76,12 @@ interface Record {
             is VmArray -> getArray()
             is VmDict -> getDict()
             is VmClass -> {
+                // For native classes, extract the underlying JVM object from the class frame
                 if (this !is ClassRecord) throw IllegalStateException("Non-native class record")
                 val index = nativeIndex ?: throw IllegalStateException("Native index is not defined")
-                val frame = getFrame()
+                // Get the class frame (either from context or directly)
+                val frame = if (ctx != null) get(ctx) else getFrame()
+                // Extract and cast the native instance from the frame's variables
                 frame.vars.get(index).cast(vmType.toJvmType())
             }
             else -> throw IllegalArgumentException("Inconvertible type $vmType")

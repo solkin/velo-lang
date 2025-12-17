@@ -1,18 +1,16 @@
 package vm.operations
 
-import vm.Frame
 import vm.Operation
-import vm.FrameLoader
-import vm.Stack
+import vm.VMContext
 import vm.records.FrameRecord
 
 class Frame(
     val num: Int
 ) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
+    override fun exec(pc: Int, ctx: VMContext): Int {
         val rec = FrameRecord(num)
-        stack.peek().subs.push(rec)
+        ctx.currentFrame().subs.push(rec)
         return pc + 1
     }
 

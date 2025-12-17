@@ -1,19 +1,14 @@
 package vm.operations
 
-import vm.Frame
-import vm.FrameLoader
 import vm.Operation
-import vm.Stack
+import vm.VMContext
 import vm.VmType
 import vm.records.NativeRecord
-import kotlin.collections.List
-import kotlin.collections.map
-import kotlin.collections.toTypedArray
 
 class NativeFunction(val name: String, val argTypes: List<VmType>) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
-        val frame = stack.peek()
+    override fun exec(pc: Int, ctx: VMContext): Int {
+        val frame = ctx.currentFrame()
 
         val instance = frame.subs.pop().get<Any>()
 
@@ -22,7 +17,7 @@ class NativeFunction(val name: String, val argTypes: List<VmType>) : Operation {
         try {
             val method = clazz.getMethod(name, *argTypes.map { it.toJvmType() }.toTypedArray())
 
-            val result = NativeRecord.create(method)
+            val result = NativeRecord.create(method, ctx)
             frame.subs.push(result)
         } catch (ex: NoSuchMethodException) {
             throw Exception("Unable to find native method $name: ${ex.message}")

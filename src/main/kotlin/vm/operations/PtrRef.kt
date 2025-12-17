@@ -1,5 +1,7 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.VarPtrRecord
@@ -9,7 +11,7 @@ import vm.records.VarPtrRecord
  * Stack: [] -> [ptr]
  */
 class PtrRef(val varIndex: Int) : SimpleOperation {
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val ptr = VarPtrRecord(frame.vars, varIndex)
         frame.subs.push(ptr)
     }

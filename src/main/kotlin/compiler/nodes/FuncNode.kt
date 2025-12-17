@@ -5,6 +5,7 @@ import vm.operations.Frame
 import vm.operations.Load
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
+import vm.operations.NativeWrap
 import vm.operations.Ret
 import vm.operations.Store
 
@@ -69,6 +70,20 @@ data class FuncNode(
 
             // Invoke native method from the stack with specific arguments
             funcOps.add(NativeInvoke(args = args.map { Pair(it.index, it.type.vmType()) }))
+            
+            // If return type is a native class, wrap the JVM object into Velo class
+            if (type is ClassType) {
+                // Get full class type from context (it has num and parent filled in)
+                val fullClassType = ctx.opt(type.name)?.type as? ClassType
+                if (fullClassType?.num != null && fullClassType.parent != null) {
+                    // Get the native instance index from the class context
+                    val nativeInstanceIndex = fullClassType.parent.frame.vars[NATIVE_INSTANCE]?.index
+                    if (nativeInstanceIndex != null) {
+                        funcOps.add(NativeWrap(classFrameNum = fullClassType.num, nativeInstanceIndex = nativeInstanceIndex))
+                    }
+                }
+            }
+            
             // Native method must return declared function type
             type
         } else {

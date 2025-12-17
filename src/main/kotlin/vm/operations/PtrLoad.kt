@@ -1,5 +1,7 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.PtrRecord
@@ -9,7 +11,7 @@ import vm.records.PtrRecord
  * Stack: [ptr] -> [value]
  */
 class PtrLoad : SimpleOperation {
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val ptr = frame.subs.pop()
         if (ptr !is PtrRecord) {
             throw IllegalStateException("PtrLoad requires a pointer on stack, got: ${ptr.javaClass.simpleName}")

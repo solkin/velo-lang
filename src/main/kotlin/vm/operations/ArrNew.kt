@@ -1,5 +1,7 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.Record
 import vm.SimpleOperation
@@ -8,7 +10,7 @@ import vm.records.ValueRecord
 
 class ArrNew : SimpleOperation {
 
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val size = frame.subs.pop().getInt()
 
         val rec = ValueRecord(value = Array<Record>(size) { EmptyRecord })

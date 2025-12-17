@@ -1,6 +1,5 @@
 package vm
 
-import vm.records.LinkRecord
 import java.util.concurrent.atomic.AtomicInteger
 
 interface Heap {
@@ -8,12 +7,16 @@ interface Heap {
     fun <T> get(id: Int): T
 }
 
-object HeapArea : Heap {
+/**
+ * Default implementation of Heap.
+ * Each VM instance should have its own HeapImpl.
+ */
+class HeapImpl : Heap {
 
     private val enumerator = AtomicInteger()
     private val area = HashMap<Int, Any>()
 
-    override fun put(value: Any) : Int {
+    override fun put(value: Any): Int {
         val id = enumerator.getAndIncrement()
         area[id] = value
         return id

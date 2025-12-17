@@ -1,5 +1,7 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.BoxPtrRecord
@@ -9,7 +11,7 @@ import vm.records.BoxPtrRecord
  * Stack: [value] -> [ptr]
  */
 class PtrNew : SimpleOperation {
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val value = frame.subs.pop()
         val ptr = BoxPtrRecord(value)
         frame.subs.push(ptr)

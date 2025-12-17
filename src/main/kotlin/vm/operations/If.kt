@@ -1,16 +1,14 @@
 package vm.operations
 
-import vm.Frame
 import vm.Operation
-import vm.FrameLoader
-import vm.Stack
+import vm.VMContext
 
 class If(
     val elseSkip: Int
 ) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
-        val flag = stack.peek().subs.pop().getBool()
+    override fun exec(pc: Int, ctx: VMContext): Int {
+        val flag = ctx.currentFrame().subs.pop().getBool()
         return pc + 1 + if (flag) 0 else elseSkip
     }
 

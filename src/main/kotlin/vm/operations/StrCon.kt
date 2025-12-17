@@ -1,12 +1,14 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.SimpleOperation
 import vm.records.ValueRecord
 
 class StrCon : SimpleOperation {
 
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val str1 = frame.subs.pop().getString()
         val str2 = frame.subs.pop().getString()
 

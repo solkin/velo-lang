@@ -1,21 +1,15 @@
 package vm.operations
 
-import vm.Frame
-import vm.FrameLoader
 import vm.Operation
-import vm.Stack
+import vm.VMContext
 import vm.VmType
 import vm.records.LinkRecord
 import java.lang.reflect.Method
-import kotlin.Pair
-import kotlin.collections.List
-import kotlin.collections.map
-import kotlin.collections.toTypedArray
 
 class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
-        val frame = stack.peek()
+    override fun exec(pc: Int, ctx: VMContext): Int {
+        val frame = ctx.currentFrame()
 
         val instance = frame.subs.pop().get<Any>()
         val method = frame.subs.pop().get<Method>()
@@ -23,11 +17,11 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
         try {
             val nativeResult = method.invoke(instance, *args.map { arg ->
                 val record = frame.vars.get(arg.first)
-                record.getAs(vmType = arg.second)
+                record.getAs(vmType = arg.second, ctx = ctx)
             }.toTypedArray())
 
             nativeResult?.let {
-                val result = LinkRecord.create(nativeResult)
+                val result = LinkRecord.create(nativeResult, ctx)
                 frame.subs.push(result)
             }
         } catch (ex: NoSuchMethodException) {

@@ -1,13 +1,11 @@
 package vm.operations
 
-import vm.Frame
 import vm.Operation
-import vm.FrameLoader
-import vm.Stack
+import vm.VMContext
 
-class Noop() : Operation {
+class Noop : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
+    override fun exec(pc: Int, ctx: VMContext): Int {
         return pc + 1
     }
 

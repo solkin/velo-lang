@@ -3,7 +3,9 @@ package vm
 import utils.SerializedFrame
 import java.io.PrintStream
 
-class VM {
+class VM(
+    private val nativeRegistry: NativeRegistry = NativeRegistry()
+) {
 
     private var frameLoader: FrameLoader? = null
 
@@ -18,9 +20,19 @@ class VM {
 
     fun run() {
         val stack: Stack<Frame> = LifoStack()
-        var elapsed = 0L
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
-        var frame = frameLoader.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
+        
+        // Create VMContext with all subsystems
+        val ctx = VMContext(
+            stack = stack,
+            frameLoader = frameLoader,
+            heap = HeapImpl(),
+            nativeArea = NativeImpl(),
+            nativeRegistry = nativeRegistry
+        )
+        
+        var elapsed = 0L
+        var frame = ctx.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
         val diagSeq = false
         val diagStat = false
         val diagInfo = false
@@ -33,7 +45,7 @@ class VM {
             val cmdMs = HashMap<String, Long>()
             val cmdCnt = HashMap<String, Long>()
             val time = System.currentTimeMillis()
-            stack.push(frame)
+            ctx.pushFrame(frame)
             while (frame.pc < frame.ops.size) {
                 val cmd = frame.ops[frame.pc]
                 if (diagSeq) {
@@ -42,7 +54,7 @@ class VM {
                 if (diagStat) {
                     diagMs = System.currentTimeMillis()
                 }
-                frame.pc = cmd.exec(pc = frame.pc, stack, frameLoader)
+                frame.pc = cmd.exec(pc = frame.pc, ctx)
                 if (diagStat) {
                     val e = System.currentTimeMillis() - diagMs
                     val name = cmd.javaClass.name
@@ -51,7 +63,7 @@ class VM {
                     val pi = cmdCnt[name] ?: 0
                     cmdCnt[name] = pi + 1
                 }
-                frame = stack.peek()
+                frame = ctx.currentFrame()
             }
             if (diagStat) {
                 diagOutput.append("-- Statistics\n")

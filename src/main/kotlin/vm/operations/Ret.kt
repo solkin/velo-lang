@@ -1,17 +1,15 @@
 package vm.operations
 
-import vm.Frame
 import vm.Operation
-import vm.FrameLoader
-import vm.Stack
+import vm.VMContext
 
 class Ret : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
-        val frame = stack.pop()
+    override fun exec(pc: Int, ctx: VMContext): Int {
+        val frame = ctx.popFrame()
         if (!frame.subs.empty()) {
             val value = frame.subs.pop()
-            stack.peek().subs.push(value)
+            ctx.currentFrame().subs.push(value)
         }
         return pc // This is program counter value for the dropped frame, the VM will not use it
     }

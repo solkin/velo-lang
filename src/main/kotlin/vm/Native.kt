@@ -8,12 +8,16 @@ interface Native {
     fun <T> get(link: NativeRecord): T
 }
 
-object NativeArea : Native {
+/**
+ * Default implementation of Native area.
+ * Each VM instance should have its own NativeImpl.
+ */
+class NativeImpl : Native {
 
     private val enumerator = AtomicInteger()
     private val area = HashMap<Int, Any>()
 
-    override fun put(value: Any) : NativeRecord {
+    override fun put(value: Any): NativeRecord {
         val id = enumerator.getAndIncrement()
         area[id] = value
         return NativeRecord(id)

@@ -2,11 +2,11 @@ package vm
 
 interface SimpleOperation : Operation {
 
-    override fun exec(pc: Int, stack: Stack<Frame>, frameLoader: FrameLoader): Int {
-        exec(stack.peek())
+    override fun exec(pc: Int, ctx: VMContext): Int {
+        exec(ctx.currentFrame(), ctx)
         return pc + 1
     }
 
-    fun exec(frame: Frame)
+    fun exec(frame: Frame, ctx: VMContext)
 
 }

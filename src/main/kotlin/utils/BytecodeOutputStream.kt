@@ -48,6 +48,7 @@ import vm.operations.Mul
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
+import vm.operations.NativeWrap
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.ArrCopy
@@ -196,6 +197,11 @@ class BytecodeOutputStream(
                 }
             }
 
+            is NativeWrap -> out.writeByte(0x49).also {
+                out.writeInt(op.classFrameNum)
+                out.writeInt(op.nativeInstanceIndex)
+            }
+
             is Shl -> out.writeByte(0x46)
             is Shr -> out.writeByte(0x47)
             is Hash -> out.writeByte(0x48)
@@ -277,7 +283,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x0d
+const val VERSION_MINOR = 0x0e
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

@@ -48,6 +48,7 @@ import vm.operations.Mul
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
+import vm.operations.NativeWrap
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.ArrCopy
@@ -194,6 +195,11 @@ class BytecodeInputStream(
 
             0x45 -> NativeInvoke(
                 args = inp.readArray { Pair(inp.readInt(), inp.readType()) }
+            )
+
+            0x49 -> NativeWrap(
+                classFrameNum = inp.readInt(),
+                nativeInstanceIndex = inp.readInt()
             )
 
             0x46 -> Shl()

@@ -1,5 +1,7 @@
 package vm.operations
 
+import vm.VMContext
+
 import vm.Frame
 import vm.Record
 import vm.SimpleOperation
@@ -7,7 +9,7 @@ import vm.records.LinkRecord
 
 class DictOf : SimpleOperation {
 
-    override fun exec(frame: Frame) {
+    override fun exec(frame: Frame, ctx: VMContext) {
         val size = frame.subs.pop().getInt()
         val dict = HashMap<Record, Record>(size)
         for(i in 0 until size) {
@@ -15,7 +17,7 @@ class DictOf : SimpleOperation {
             val key = frame.subs.pop()
             dict[key] = value
         }
-        val rec = LinkRecord.create(dict)
+        val rec = LinkRecord.create(dict, ctx)
         frame.subs.push(rec)
     }
 
