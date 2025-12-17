@@ -4,7 +4,8 @@ import utils.SerializedFrame
 import java.io.PrintStream
 
 class VM(
-    private val nativeRegistry: NativeRegistry = NativeRegistry()
+    private val nativeRegistry: NativeRegistry = NativeRegistry(),
+    private val profiler: VMProfiler = VMProfiler()
 ) {
 
     private var frameLoader: FrameLoader? = null
@@ -21,63 +22,29 @@ class VM(
     fun run() {
         val stack: Stack<Frame> = LifoStack()
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
+        val heap = HeapImpl()
         
         // Create VMContext with all subsystems
         val ctx = VMContext(
             stack = stack,
             frameLoader = frameLoader,
-            heap = HeapImpl(),
+            heap = heap,
             nativeArea = NativeImpl(),
             nativeRegistry = nativeRegistry
         )
         
-        var elapsed = 0L
         var frame = ctx.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
-        val diagSeq = false
-        val diagStat = false
-        val diagInfo = false
+        
+        profiler.start()
         try {
-            val diagOutput = StringBuilder()
-            if (diagSeq) {
-                diagOutput.append("-- Sequence\n")
-            }
-            var diagMs: Long = 0
-            val cmdMs = HashMap<String, Long>()
-            val cmdCnt = HashMap<String, Long>()
-            val time = System.currentTimeMillis()
             ctx.pushFrame(frame)
             while (frame.pc < frame.ops.size) {
                 val cmd = frame.ops[frame.pc]
-                if (diagSeq) {
-                    diagOutput.append("[${frame.pc}] ${cmd.javaClass.name}\n")
-                }
-                if (diagStat) {
-                    diagMs = System.currentTimeMillis()
-                }
+                profiler.beforeOp(cmd)
                 frame.pc = cmd.exec(pc = frame.pc, ctx)
-                if (diagStat) {
-                    val e = System.currentTimeMillis() - diagMs
-                    val name = cmd.javaClass.name
-                    val pe = cmdMs[name] ?: 0
-                    cmdMs[name] = pe + e
-                    val pi = cmdCnt[name] ?: 0
-                    cmdCnt[name] = pi + 1
-                }
+                profiler.afterOp()
                 frame = ctx.currentFrame()
             }
-            if (diagStat) {
-                diagOutput.append("-- Statistics\n")
-                val sortedMs = cmdMs.toList().sortedByDescending { it.second }
-                for (entry in sortedMs) {
-                    val times = cmdCnt[entry.first] ?: 0
-                    val mil: Double = entry.second.toDouble() * 1000000000 / times.toDouble()
-                    diagOutput.append(entry.first.padEnd(30, '.') + "$times times".padEnd(15, ' ') + "/ ${entry.second} ms".padEnd(8, ' ') + "-> ${mil.toInt()} ms/bil\n")
-                }
-            }
-            if (diagOutput.isNotBlank()) {
-                println(diagOutput.toString())
-            }
-            elapsed = System.currentTimeMillis() - time
             println("\nProgram ended")
         } catch (_: HaltException) {
             println("\nProgram halted")
@@ -85,11 +52,10 @@ class VM(
             val op = frame.ops[frame.pc]
             println("\n!! Fatal error on ${frame.pc}: ${op.javaClass.name}: ${ex.message}")
             stack.printStackTrace()
-            if (diagInfo) {
-                ex.printStackTrace()
-            }
         }
-        println("VM stopped in $elapsed ms")
+        profiler.stop()
+        profiler.heapStats = heap.getStats()
+        profiler.printReport()
     }
 
 }
