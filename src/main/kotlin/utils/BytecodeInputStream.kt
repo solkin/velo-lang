@@ -252,9 +252,13 @@ private fun DataInputStream.readType(): VmType {
         TYPE_FLOAT -> VmFloat()
         TYPE_STR -> VmStr()
         TYPE_BOOL -> VmBool()
-        TYPE_TUPLE -> VmTuple()
-        TYPE_ARRAY -> VmArray()
-        TYPE_DICT -> VmDict()
+        TYPE_TUPLE -> {
+            val count = readByte().toInt()
+            val elementTypes = (0 until count).map { readType() }
+            VmTuple(elementTypes)
+        }
+        TYPE_ARRAY -> VmArray(elementType = readType())
+        TYPE_DICT -> VmDict(keyType = readType(), valueType = readType())
         TYPE_CLASS -> VmClass(name = readUTF())
         TYPE_FUNC -> VmFunc()
         TYPE_PTR -> VmPtr(derived = readType())

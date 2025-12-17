@@ -79,7 +79,7 @@ data class ArrayType(val derived: Type) : IndexAssignable {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmArray()
+    override fun vmType() = vm.VmArray(derived.vmType())
 
     override fun compileIndex(ctx: Context): Type {
         ctx.add(Push(value = 1)) // ArrLoad count

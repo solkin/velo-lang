@@ -1,6 +1,7 @@
 package vm
 
 import vm.records.ClassRecord
+import java.lang.reflect.Array as JArray
 
 /**
  * Record is the base interface for all values stored in the VM.
@@ -72,9 +73,9 @@ interface Record {
             is VmFloat -> getFloat()
             is VmStr -> getString()
             is VmBool -> getBool()
-            is VmTuple -> getArray()
-            is VmArray -> getArray()
-            is VmDict -> getDict()
+            is VmTuple -> convertTuple(vmType, ctx)
+            is VmArray -> convertArray(vmType, ctx)
+            is VmDict -> convertDict(vmType, ctx)
             is VmClass -> {
                 // For native classes, extract the underlying JVM object from the class frame
                 if (this !is ClassRecord) throw IllegalStateException("Non-native class record")
@@ -86,6 +87,64 @@ interface Record {
             }
             else -> throw IllegalArgumentException("Inconvertible type $vmType")
         }
+    }
+
+    /**
+     * Convert a Velo array (Array<Record>) to a typed JVM array.
+     */
+    private fun convertArray(vmType: VmArray, ctx: VMContext?): Any {
+        val veloArray = getArray()
+        val elementType = vmType.elementType
+        // Use boxed types for array elements (e.g., Integer instead of int)
+        val elementClass = elementType.toBoxedJvmType()
+        
+        // Create typed JVM array
+        @Suppress("UNCHECKED_CAST")
+        val jvmArray = JArray.newInstance(elementClass, veloArray.size)
+        
+        for (i in veloArray.indices) {
+            val element = veloArray[i].getAs(elementType, ctx)
+            JArray.set(jvmArray, i, element)
+        }
+        
+        return jvmArray
+    }
+
+    /**
+     * Convert a Velo tuple (Array<Record>) to a JVM array.
+     */
+    private fun convertTuple(vmType: VmTuple, ctx: VMContext?): Any {
+        val veloArray = getArray()
+        
+        // If no element types specified, return as Object[]
+        if (vmType.elementTypes.isEmpty()) {
+            return veloArray.map { it.get<Any>() }.toTypedArray()
+        }
+        
+        // Convert each element according to its type
+        return veloArray.mapIndexed { i, record ->
+            val elemType = vmType.elementTypes.getOrElse(i) { VmAny() }
+            record.getAs(elemType, ctx)
+        }.toTypedArray()
+    }
+
+    /**
+     * Convert a Velo dict (MutableMap<Record, Record>) to a typed JVM Map.
+     */
+    private fun convertDict(vmType: VmDict, ctx: VMContext?): Any {
+        val veloDict = getDict()
+        val keyType = vmType.keyType
+        val valueType = vmType.valueType
+        
+        val jvmMap = LinkedHashMap<Any, Any>()
+        
+        for ((k, v) in veloDict) {
+            val jvmKey = k.getAs(keyType, ctx)
+            val jvmValue = v.getAs(valueType, ctx)
+            jvmMap[jvmKey] = jvmValue
+        }
+        
+        return jvmMap
     }
 
 }

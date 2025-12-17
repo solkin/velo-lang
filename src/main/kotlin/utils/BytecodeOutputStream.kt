@@ -272,9 +272,20 @@ private fun DataOutputStream.writeType(t: VmType) {
         is VmFloat -> writeByte(TYPE_FLOAT)
         is VmStr -> writeByte(TYPE_STR)
         is VmBool -> writeByte(TYPE_BOOL)
-        is VmTuple -> writeByte(TYPE_TUPLE)
-        is VmArray -> writeByte(TYPE_ARRAY)
-        is VmDict -> writeByte(TYPE_DICT)
+        is VmTuple -> {
+            writeByte(TYPE_TUPLE)
+            writeByte(t.elementTypes.size)
+            t.elementTypes.forEach { writeType(it) }
+        }
+        is VmArray -> {
+            writeByte(TYPE_ARRAY)
+            writeType(t.elementType)
+        }
+        is VmDict -> {
+            writeByte(TYPE_DICT)
+            writeType(t.keyType)
+            writeType(t.valueType)
+        }
         is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
         is VmFunc -> writeByte(TYPE_FUNC)
         is VmPtr -> writeByte(TYPE_PTR).also { writeType(t.derived) }
@@ -283,7 +294,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x0e
+const val VERSION_MINOR = 0x0f
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

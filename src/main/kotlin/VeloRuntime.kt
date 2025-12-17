@@ -171,4 +171,3 @@ class VeloRuntime {
      */
     fun getNativeRegistry(): NativeRegistry = nativeRegistry
 }
-
