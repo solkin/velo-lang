@@ -6,7 +6,8 @@
 
 ```velo
 int decimal = 42;
-int hex = 0xCAFE;        # Hexadecimal notation
+int negative = -10;       # Negative numbers
+int hex = 0xCAFE;         # Hexadecimal notation
 int binary = 0b101010;    # Binary notation
 ```
 
@@ -15,6 +16,7 @@ int binary = 0b101010;    # Binary notation
 ```velo
 float pi = 3.14;
 float e = 2.71828;
+float negative = -1.5f;   # Negative float
 float withSuffix = 3.0f;  # Explicit type specification
 ```
 
@@ -22,6 +24,7 @@ float withSuffix = 3.0f;  # Explicit type specification
 
 ```velo
 byte b = 65;
+byte negative = -5y;      # Negative byte
 byte withSuffix = 2y;     # Explicit type specification
 ```
 

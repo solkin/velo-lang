@@ -13,6 +13,39 @@ int quot = a / b;     # 3
 int rem = a % b;      # 1
 ```
 
+## Unary Operators
+
+```velo
+int x = -10;          # Unary minus
+int y = -x;           # y = 10
+int z = 5 + -3;       # z = 2
+int w = -(-2);        # w = 2 (double negation)
+```
+
+## Compound Assignment Operators
+
+```velo
+int a = 10;
+
+a += 5;               # a = a + 5, result: 15
+a -= 3;               # a = a - 3, result: 12
+a *= 2;               # a = a * 2, result: 24
+a /= 4;               # a = a / 4, result: 6
+a %= 4;               # a = a % 4, result: 2
+```
+
+Works with array elements and in loops:
+
+```velo
+array[int] arr = new array[int] { 1, 2, 3 };
+arr[0] += 10;         # arr[0] = 11
+
+int i = 0;
+while i < 10 {
+    i += 1            # Increment
+}
+```
+
 ## Comparison Operators
 
 ```velo

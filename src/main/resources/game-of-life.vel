@@ -79,5 +79,5 @@ while (idx <= count) {
     g.printWorld();
     term.println("--");
     g.nextGeneration();
-    idx = idx + 1;
+    idx += 1;
 };

@@ -20,9 +20,9 @@ func getRLE(str s) str {
                 currentCharCount = 1;
                 currentChar = c;
             } else {
-                currentCharCount = currentCharCount + 1;
+                currentCharCount += 1;
             };
-            i = i + 1;
+            i += 1;
         };
         s = sb;
     };
@@ -38,7 +38,7 @@ func multiplyStr(str s, int count) str {
     str out = "";
     while (i < count) {
         out = out.con(s);
-        i = i + 1;
+        i += 1;
     };
     out
 };
@@ -57,7 +57,7 @@ func unRLE(str s) str {
             }
         );
         p = c;
-        i = i + 1;
+        i += 1;
     };
     out;
 };

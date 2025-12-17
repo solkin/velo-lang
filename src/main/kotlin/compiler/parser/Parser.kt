@@ -47,7 +47,7 @@ import compiler.nodes.UnaryNode
 class Parser(private val stream: TokenStream, private val depLoader: DependencyLoader) {
 
     private val precedence = mapOf(
-        "=" to 1,
+        "=" to 1, "+=" to 1, "-=" to 1, "*=" to 1, "/=" to 1, "%=" to 1,
         "|" to 2,
         "&" to 3,
         "^" to 4,
@@ -188,6 +188,12 @@ class Parser(private val stream: TokenStream, private val depLoader: DependencyL
                 val nextRight = maybeBinary(maybePostfix(parseAtom()), hisPrec)
                 val nextLeft = when (tok.value) {
                     "=" -> AssignNode(left = left, right = nextRight)
+                    // Compound assignment operators: x += y -> x = x + y
+                    "+=" -> AssignNode(left = left, right = BinaryNode(operator = "+", left = left, right = nextRight))
+                    "-=" -> AssignNode(left = left, right = BinaryNode(operator = "-", left = left, right = nextRight))
+                    "*=" -> AssignNode(left = left, right = BinaryNode(operator = "*", left = left, right = nextRight))
+                    "/=" -> AssignNode(left = left, right = BinaryNode(operator = "/", left = left, right = nextRight))
+                    "%=" -> AssignNode(left = left, right = BinaryNode(operator = "%", left = left, right = nextRight))
                     else -> BinaryNode(operator = tok.value as String, left = left, right = nextRight)
                 }
                 return maybeBinary(

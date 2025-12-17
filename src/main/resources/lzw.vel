@@ -6,7 +6,7 @@ class LZW() {
         int dictSize = 0;
         while(dictSize < 256) {
             dictionary[dictSize.char] = dictSize;
-            dictSize = dictSize + 1;
+            dictSize += 1;
         };
 
         str w = "";
@@ -21,10 +21,10 @@ class LZW() {
                 result = result.plus(dictionary[w]);
                 # Add wc to the dictionary.
                 dictionary[wc] = dictSize;
-                dictSize = dictSize + 1;
+                dictSize += 1;
                 w = c.char;
             };
-            i = i + 1;
+            i += 1;
         };
 
         if (w != "") then result = result.plus(dictionary[w]);
@@ -39,7 +39,7 @@ class LZW() {
             int dictSize = 0;
             while(dictSize < 256) {
                 dictionary[dictSize] = dictSize.char;
-                dictSize = dictSize + 1;
+                dictSize += 1;
             };
             str w = compressed[0].char;
             result = w;
@@ -59,11 +59,11 @@ class LZW() {
 
                 # Add w+entry[0] to the dictionary.
                 dictionary[dictSize] = w.con(entry[0].char);
-                dictSize = dictSize + 1;
+                dictSize += 1;
 
                 w = entry;
 
-                i = i + 1;
+                i += 1;
             };
         };
         result;
@@ -83,7 +83,7 @@ str chars = "";
 while(i < result.len) {
     bytes = bytes.con(result[i].str.con(" "));
     chars = chars.con(result[i].char);
-    i = i + 1;
+    i += 1;
 };
 term.println(chars.con(" / ").con(bytes));
 

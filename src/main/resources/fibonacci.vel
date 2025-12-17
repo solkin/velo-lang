@@ -9,7 +9,7 @@ any fib = func (int num) int {
         tmp = a + b;
         a = b;
         b = tmp;
-        i = i + 1;
+        i += 1;
     };
     b;
 };

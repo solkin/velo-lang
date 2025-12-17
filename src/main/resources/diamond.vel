@@ -5,7 +5,7 @@ func toString(array[str] arr) str {
     str acc = "";
     while(i < arr.len) {
         acc = acc.con(arr[i]);
-        i = i + 1;
+        i += 1;
     };
     acc;
 };
@@ -29,11 +29,11 @@ any y = 1;
 while (y <= 9) {
     array[str] s = shift(row, 9 - y);
     term.println(toString(s.plus(y.str).con(reversed(s))));
-    y = y + 1;
+    y += 1;
 };
 y = 8;
 while (y > 0) {
     any s = shift(row, 9 - y);
     term.println(toString(s.plus(y.str).con(reversed(s))));
-    y = y - 1;
+    y -= 1;
 };

@@ -11,7 +11,7 @@ func primes(int n) void {
                 isPrime = false;
                 divisor = i;
             } else {
-                divisor = divisor + 1;
+                divisor += 1;
             };
         };
         if (isPrime) {
@@ -20,9 +20,9 @@ func primes(int n) void {
             if (k + 1) % 20 == 0 {
                 term.println("");
             };
-            k = k + 1;
+            k += 1;
         };
-        i = i + 1;
+        i += 1;
     };
 };
 
