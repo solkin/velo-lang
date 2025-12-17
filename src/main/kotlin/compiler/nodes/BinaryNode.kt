@@ -12,6 +12,7 @@ import vm.operations.Mul
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.Push
+import vm.operations.StrCon
 import vm.operations.Rem
 import vm.operations.Swap
 import vm.operations.Xor
@@ -29,7 +30,11 @@ data class BinaryNode(
         }
         return when (operator) {
             "+" -> {
-                ctx.add(Add())
+                if (leftType is StringType) {
+                    ctx.add(StrCon())
+                } else {
+                    ctx.add(Add())
+                }
                 leftType
             }
 

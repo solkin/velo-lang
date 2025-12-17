@@ -24,11 +24,19 @@ str s = "Hello, World!";
 str sub = s.sub(7, 12);  # "World"
 ```
 
-### `con(other)` — Concatenation
+### Concatenation
+
+Use the `+` operator to concatenate strings:
 
 ```velo
 str a = "Hello";
 str b = "World";
+str combined = a + ", " + b;  # "Hello, World"
+```
+
+Alternatively, use the `con(other)` method:
+
+```velo
 str combined = a.con(", ").con(b);  # "Hello, World"
 ```
 

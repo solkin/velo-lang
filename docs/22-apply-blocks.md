@@ -39,8 +39,8 @@ Person p = new Person("", 0) {
 
 ```velo
 str result = "hello" {
-    it = it.con(" world");
-    it = it.con("!");
+    it = it + " world";
+    it = it + "!";
 };
 # result = "hello world!"
 ```

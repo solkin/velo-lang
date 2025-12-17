@@ -28,9 +28,9 @@ term.println(p1.describe());  # Output: John is 25 years old
 # --- Example 2: Apply block with string ---
 
 str greeting = "Hello" {
-    it = it.con(", ");
-    it = it.con("World");
-    it = it.con("!");
+    it = it + ", ";
+    it = it + "World";
+    it = it + "!";
 };
 term.println(greeting);  # Output: Hello, World!
 
