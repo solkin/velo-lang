@@ -17,7 +17,7 @@ func primes(int n) void {
         if (isPrime) {
             term.print(i.str);
             term.print(" ");
-            if (k + 1) % 20 == 0 {
+            if ((k + 1) % 20 == 0) {
                 term.println("");
             };
             k += 1;

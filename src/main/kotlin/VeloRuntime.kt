@@ -7,6 +7,7 @@ import utils.SerializedFrame
 import vm.NativeRegistry
 import vm.SimpleParser
 import vm.VM
+import vm.VMProfiler
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
@@ -22,10 +23,14 @@ import kotlin.reflect.KClass
  * 
  * runtime.runFile("path/to/script.vel")
  * ```
+ * 
+ * Enable profiling via system property: -Dvelo.profile=true
+ * Or programmatically: runtime.enableProfiling()
  */
 class VeloRuntime {
     
     private val nativeRegistry = NativeRegistry()
+    private var profilingEnabled = System.getProperty("velo.profile")?.toBoolean() ?: false
     
     init {
         // Register standard native classes by default
@@ -93,6 +98,22 @@ class VeloRuntime {
     fun getRegisteredClasses(): Set<String> = nativeRegistry.getAllNames()
     
     /**
+     * Enable VM profiling programmatically.
+     */
+    fun enableProfiling(): VeloRuntime {
+        profilingEnabled = true
+        return this
+    }
+    
+    /**
+     * Disable VM profiling.
+     */
+    fun disableProfiling(): VeloRuntime {
+        profilingEnabled = false
+        return this
+    }
+    
+    /**
      * Compile a Velo source file.
      * 
      * @param path Path to the .vel file
@@ -111,11 +132,7 @@ class VeloRuntime {
     fun compile(input: FileInput): List<SerializedFrame>? {
         val stream = TokenStream(input)
         val parser = Parser(stream, depLoader = input)
-
-        var time = System.currentTimeMillis()
         val node = parser.parse()
-        var elapsed = System.currentTimeMillis() - time
-        println("Parsed in $elapsed ms")
 
         val ctx = Context(
             parent = null,
@@ -123,13 +140,7 @@ class VeloRuntime {
             frameCounter = AtomicInteger(),
         )
         try {
-            time = System.currentTimeMillis()
             node.compile(ctx)
-            elapsed = System.currentTimeMillis() - time
-            val opsCount = ctx.frames().map { it.ops.size }.reduce { acc, element ->
-                acc + element
-            }
-            println("Compiled in $elapsed ms [${ctx.frames().size} frames, $opsCount ops]")
             return ctx.frames().map {
                 SerializedFrame(
                     num = it.num,
@@ -140,7 +151,6 @@ class VeloRuntime {
         } catch (ex: Throwable) {
             println("!! Compilation failed: ${ex.message}")
         }
-        println()
         return null
     }
     
@@ -148,7 +158,8 @@ class VeloRuntime {
      * Run compiled frames.
      */
     fun run(frames: List<SerializedFrame>) {
-        val vm = VM(nativeRegistry)
+        val profiler = VMProfiler(enabled = profilingEnabled)
+        val vm = VM(nativeRegistry, profiler)
         vm.load(SimpleParser(frames))
         vm.run()
     }
@@ -159,11 +170,8 @@ class VeloRuntime {
      * @param path Path to the .vel file
      */
     fun runFile(path: String) {
-        val frames = compile(path)
-        if (frames != null) {
-            println()
-            run(frames)
-        }
+        val frames = compile(path) ?: return
+        run(frames)
     }
     
     /**

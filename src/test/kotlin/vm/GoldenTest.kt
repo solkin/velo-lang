@@ -101,7 +101,7 @@ class GoldenTest {
     }
 
     /**
-     * Extract only program output, removing VM messages like "Program ended" or "VM stopped"
+     * Extract only program output, removing VM messages
      */
     private fun extractProgramOutput(fullOutput: String): String {
         val lines = fullOutput.lines()
@@ -113,7 +113,9 @@ class GoldenTest {
                 line.startsWith("Program halted") ||
                 line.startsWith("VM stopped") ||
                 line.startsWith("Parsed in") ||
-                line.startsWith("Compiled in")) {
+                line.startsWith("Compiled in") ||
+                line.startsWith("✓ Program") ||
+                line.startsWith("⏹ Program")) {
                 continue
             }
             result.appendLine(line)
