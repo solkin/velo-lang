@@ -59,7 +59,7 @@ data class DictType(val derived: TupleType) : IndexAssignable {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmDict(
+    override fun vmType() = vm.VmType.Dict(
         keyType = derived.types.first().vmType(),
         valueType = derived.types.second().vmType()
     )

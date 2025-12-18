@@ -19,7 +19,7 @@ object VoidType : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmVoid()
+    override fun vmType() = vm.VmType.Void
 
     override fun name() = "void"
 }

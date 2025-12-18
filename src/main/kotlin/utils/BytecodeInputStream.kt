@@ -1,20 +1,7 @@
 package utils
 
 import vm.Operation
-import vm.VmAny
-import vm.VmArray
-import vm.VmBool
-import vm.VmByte
-import vm.VmClass
-import vm.VmDict
-import vm.VmFloat
-import vm.VmFunc
-import vm.VmInt
-import vm.VmPtr
-import vm.VmStr
-import vm.VmTuple
 import vm.VmType
-import vm.VmVoid
 import vm.operations.And
 import vm.operations.ArrLen
 import vm.operations.Call
@@ -73,7 +60,7 @@ import vm.operations.StrLen
 import vm.operations.StrSub
 import vm.operations.Swap
 import vm.operations.Xor
-import vm.records.NullPtrRecord
+import vm.records.PtrRecord
 import java.io.DataInputStream
 import java.io.InputStream
 
@@ -225,7 +212,7 @@ private fun DataInputStream.readAny(): Any {
         TYPE_FLOAT -> readFloat()
         TYPE_STR -> readUTF()
         TYPE_BOOL -> readBoolean()
-        TYPE_NULL_PTR -> NullPtrRecord
+        TYPE_NULL_PTR -> PtrRecord.Null
         else -> throw IllegalStateException("Unsupported data type: $type")
     }
 }
@@ -241,23 +228,23 @@ private fun <T> DataInputStream.readArray(action: () -> T): List<T> {
 
 private fun DataInputStream.readType(): VmType {
     return when (val t = readByte().toInt()) {
-        TYPE_VOID -> VmVoid()
-        TYPE_ANY -> VmAny()
-        TYPE_BYTE -> VmByte()
-        TYPE_INT -> VmInt()
-        TYPE_FLOAT -> VmFloat()
-        TYPE_STR -> VmStr()
-        TYPE_BOOL -> VmBool()
+        TYPE_VOID -> VmType.Void
+        TYPE_ANY -> VmType.Any
+        TYPE_BYTE -> VmType.Byte
+        TYPE_INT -> VmType.Int
+        TYPE_FLOAT -> VmType.Float
+        TYPE_STR -> VmType.Str
+        TYPE_BOOL -> VmType.Bool
         TYPE_TUPLE -> {
             val count = readByte().toInt()
             val elementTypes = (0 until count).map { readType() }
-            VmTuple(elementTypes)
+            VmType.Tuple(elementTypes)
         }
-        TYPE_ARRAY -> VmArray(elementType = readType())
-        TYPE_DICT -> VmDict(keyType = readType(), valueType = readType())
-        TYPE_CLASS -> VmClass(name = readUTF())
-        TYPE_FUNC -> VmFunc()
-        TYPE_PTR -> VmPtr(derived = readType())
+        TYPE_ARRAY -> VmType.Array(elementType = readType())
+        TYPE_DICT -> VmType.Dict(keyType = readType(), valueType = readType())
+        TYPE_CLASS -> VmType.Class(name = readUTF())
+        TYPE_FUNC -> VmType.Func
+        TYPE_PTR -> VmType.Ptr(derived = readType())
         else -> throw Exception("Unsupported bytecode data type $t")
     }
 }

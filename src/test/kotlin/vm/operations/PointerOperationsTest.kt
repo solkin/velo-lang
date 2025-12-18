@@ -10,12 +10,8 @@ import vm.LifoStack
 import vm.TestUtils
 import vm.VMContext
 import vm.Vars
-import vm.records.ArrayPtrRecord
-import vm.records.BoxPtrRecord
-import vm.records.NullPtrRecord
 import vm.records.PtrRecord
 import vm.records.ValueRecord
-import vm.records.VarPtrRecord
 
 class PointerOperationsTest {
 
@@ -43,7 +39,7 @@ class PointerOperationsTest {
         PtrNew().exec(frame, ctx)
         
         val ptr = frame.subs.pop()
-        assertTrue(ptr is BoxPtrRecord)
+        assertTrue(ptr is PtrRecord.Box)
         assertFalse(ptr.isNull())
         assertEquals(42, ptr.deref().getInt())
     }
@@ -57,7 +53,7 @@ class PointerOperationsTest {
         PtrNew().exec(frame, ctx)
         
         val ptr = frame.subs.pop()
-        assertTrue(ptr is BoxPtrRecord)
+        assertTrue(ptr is PtrRecord.Box)
         assertEquals("hello", ptr.deref().getString())
     }
 
@@ -70,7 +66,7 @@ class PointerOperationsTest {
         PtrNew().exec(frame, ctx)
         
         val ptr = frame.subs.pop()
-        assertTrue(ptr is BoxPtrRecord)
+        assertTrue(ptr is PtrRecord.Box)
         assertEquals(3.14f, ptr.deref().getFloat())
     }
 
@@ -96,7 +92,7 @@ class PointerOperationsTest {
         val frame = createTestFrame()
         val ctx = createTestContext()
         
-        frame.subs.push(NullPtrRecord)
+        frame.subs.push(PtrRecord.Null)
         
         assertFailsWith<NullPointerException> {
             PtrLoad().exec(frame, ctx)
@@ -166,7 +162,7 @@ class PointerOperationsTest {
         // Create pointer with initial value
         frame.subs.push(ValueRecord(100))
         PtrNew().exec(frame, ctx)
-        val ptr = frame.subs.pop() as BoxPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Box
         
         // Store new value
         frame.subs.push(ValueRecord(200))
@@ -183,7 +179,7 @@ class PointerOperationsTest {
         val ctx = createTestContext()
         
         frame.subs.push(ValueRecord(200))
-        frame.subs.push(NullPtrRecord)
+        frame.subs.push(PtrRecord.Null)
         
         assertFailsWith<NullPointerException> {
             PtrStore().exec(frame, ctx)
@@ -200,7 +196,7 @@ class PointerOperationsTest {
         
         // Create pointer to variable
         PtrRef(0).exec(frame, ctx)
-        val ptr = frame.subs.pop() as VarPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Var
         
         // Store new value through pointer
         frame.subs.push(ValueRecord(300))
@@ -227,7 +223,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(array))
         frame.subs.push(ValueRecord(1))
         PtrRefIndex().exec(frame, ctx)
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         // Store new value through pointer
         frame.subs.push(ValueRecord(999))
@@ -263,7 +259,7 @@ class PointerOperationsTest {
         PtrRef(0).exec(frame, ctx)
         
         val ptr = frame.subs.pop()
-        assertTrue(ptr is VarPtrRecord)
+        assertTrue(ptr is PtrRecord.Var)
         assertFalse(ptr.isNull())
         assertEquals(42, ptr.deref().getInt())
     }
@@ -275,7 +271,7 @@ class PointerOperationsTest {
         
         frame.vars.vars[0] = ValueRecord(100)
         PtrRef(0).exec(frame, ctx)
-        val ptr = frame.subs.pop() as VarPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Var
         
         // Change variable directly
         frame.vars.set(0, ValueRecord(200))
@@ -292,10 +288,10 @@ class PointerOperationsTest {
         frame.vars.vars[0] = ValueRecord(50)
         
         PtrRef(0).exec(frame, ctx)
-        val ptr1 = frame.subs.pop() as VarPtrRecord
+        val ptr1 = frame.subs.pop() as PtrRecord.Var
         
         PtrRef(0).exec(frame, ctx)
-        val ptr2 = frame.subs.pop() as VarPtrRecord
+        val ptr2 = frame.subs.pop() as PtrRecord.Var
         
         // Both pointers should point to same variable
         assertEquals(50, ptr1.deref().getInt())
@@ -330,7 +326,7 @@ class PointerOperationsTest {
         
         // Create pointer to variable in parent scope
         PtrRef(0).exec(frame, ctx)
-        val ptr = frame.subs.pop() as VarPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Var
         
         assertEquals(500, ptr.deref().getInt())
         
@@ -358,7 +354,7 @@ class PointerOperationsTest {
         PtrRefIndex().exec(frame, ctx)
         
         val ptr = frame.subs.pop()
-        assertTrue(ptr is ArrayPtrRecord)
+        assertTrue(ptr is PtrRecord.Array)
         assertFalse(ptr.isNull())
         assertEquals(1, ptr.deref().getInt())
     }
@@ -379,7 +375,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(2))
         PtrRefIndex().exec(frame, ctx)
         
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         assertEquals(30, ptr.deref().getInt())
     }
 
@@ -396,7 +392,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(array))
         frame.subs.push(ValueRecord(1))
         PtrRefIndex().exec(frame, ctx)
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         // Modify array directly
         array[1] = ValueRecord(300)
@@ -419,7 +415,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(10)) // Out of bounds
         PtrRefIndex().exec(frame, ctx)
         
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         assertFailsWith<IndexOutOfBoundsException> {
             ptr.deref()
@@ -439,7 +435,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(-1))
         PtrRefIndex().exec(frame, ctx)
         
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         assertFailsWith<IndexOutOfBoundsException> {
             ptr.deref()
@@ -459,7 +455,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(5))
         PtrRefIndex().exec(frame, ctx)
         
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         assertFailsWith<IndexOutOfBoundsException> {
             ptr.assign(ValueRecord(999))
@@ -470,20 +466,20 @@ class PointerOperationsTest {
 
     @Test
     fun `NullPtrRecord - isNull returns true`() {
-        assertTrue(NullPtrRecord.isNull())
+        assertTrue(PtrRecord.Null.isNull())
     }
 
     @Test
     fun `NullPtrRecord - deref throws exception`() {
         assertFailsWith<NullPointerException> {
-            NullPtrRecord.deref()
+            PtrRecord.Null.deref()
         }
     }
 
     @Test
     fun `NullPtrRecord - assign throws exception`() {
         assertFailsWith<NullPointerException> {
-            NullPtrRecord.assign(ValueRecord(42))
+            PtrRecord.Null.assign(ValueRecord(42))
         }
     }
 
@@ -497,7 +493,7 @@ class PointerOperationsTest {
         // Create pointer
         frame.subs.push(ValueRecord(10))
         PtrNew().exec(frame, ctx)
-        val ptr = frame.subs.pop() as BoxPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Box
         
         // Load value
         frame.subs.push(ptr)
@@ -525,7 +521,7 @@ class PointerOperationsTest {
         
         // Create pointer
         PtrRef(0).exec(frame, ctx)
-        val ptr = frame.subs.pop() as VarPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Var
         
         // Modify through pointer
         ptr.assign(ValueRecord(200))
@@ -554,7 +550,7 @@ class PointerOperationsTest {
         frame.subs.push(ValueRecord(array))
         frame.subs.push(ValueRecord(1))
         PtrRefIndex().exec(frame, ctx)
-        val ptr = frame.subs.pop() as ArrayPtrRecord
+        val ptr = frame.subs.pop() as PtrRecord.Array
         
         // Modify through pointer
         ptr.assign(ValueRecord(999))
@@ -576,10 +572,10 @@ class PointerOperationsTest {
         // Create box pointer
         frame.subs.push(ValueRecord(50))
         PtrNew().exec(frame, ctx)
-        val ptr1 = frame.subs.pop() as BoxPtrRecord
+        val ptr1 = frame.subs.pop() as PtrRecord.Box
         
         // Create another pointer to same box (by copying the pointer)
-        val ptr2 = BoxPtrRecord(ptr1.deref())
+        val ptr2 = PtrRecord.Box(ptr1.deref())
         
         // Modify through first pointer
         ptr1.assign(ValueRecord(100))
@@ -601,13 +597,13 @@ class PointerOperationsTest {
         
         // Create pointer to variable
         PtrRef(0).exec(frame, ctx)
-        val varPtr = frame.subs.pop() as VarPtrRecord
+        val varPtr = frame.subs.pop() as PtrRecord.Var
         
         // Load value and create new box pointer
         frame.subs.push(varPtr)
         PtrLoad().exec(frame, ctx)
         PtrNew().exec(frame, ctx)
-        val boxPtr = frame.subs.pop() as BoxPtrRecord
+        val boxPtr = frame.subs.pop() as PtrRecord.Box
         
         // Modify box pointer
         boxPtr.assign(ValueRecord(2000))
@@ -622,7 +618,7 @@ class PointerOperationsTest {
         val frame = createTestFrame()
         val ctx = createTestContext()
         
-        val nullPtr = NullPtrRecord
+        val nullPtr = PtrRecord.Null
         
         // Check isNull
         assertTrue(nullPtr.isNull())

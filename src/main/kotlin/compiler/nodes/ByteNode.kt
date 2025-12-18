@@ -33,7 +33,7 @@ object ByteType : Numeric {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmByte()
+    override fun vmType() = vm.VmType.Byte
 
     override fun name() = "byte"
 }

@@ -76,7 +76,7 @@ data class ClassType(
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmClass(name)
+    override fun vmType() = vm.VmType.Class(name)
 
     override fun name() = name
 }

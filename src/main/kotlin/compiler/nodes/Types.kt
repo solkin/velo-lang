@@ -43,7 +43,7 @@ object AnyType : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmAny()
+    override fun vmType() = vm.VmType.Any
 
     override fun name() = "any"
 }

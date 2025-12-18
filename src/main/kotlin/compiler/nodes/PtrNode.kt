@@ -1,12 +1,12 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.VmPtr
+import vm.VmType
 import vm.operations.PtrLoad
 import vm.operations.PtrNew
 import vm.operations.PtrStore
 import vm.operations.Push
-import vm.records.NullPtrRecord
+import vm.records.PtrRecord
 
 /**
  * AST Node for the `null` literal.
@@ -14,7 +14,7 @@ import vm.records.NullPtrRecord
  */
 object NullNode : Node() {
     override fun compile(ctx: Context): Type {
-        ctx.add(Push(NullPtrRecord))
+        ctx.add(Push(PtrRecord.Null))
         return NullType
     }
 }
@@ -29,14 +29,14 @@ object NullType : Type {
     }
 
     override fun default(ctx: Context) {
-        ctx.add(Push(NullPtrRecord))
+        ctx.add(Push(PtrRecord.Null))
     }
 
     override fun prop(name: String): Prop? = null
 
     override fun log() = "null"
 
-    override fun vmType() = vm.VmAny()
+    override fun vmType() = vm.VmType.Any
 
     override fun name() = "null"
 }
@@ -56,7 +56,7 @@ data class PtrNode(
             }
         } else {
             // Push null pointer record for uninitialized pointers
-            ctx.add(Push(NullPtrRecord))
+            ctx.add(Push(PtrRecord.Null))
             return PtrType(derivedType)
         }
         ctx.add(PtrNew())
@@ -75,7 +75,7 @@ data class PtrType(val derived: Type) : Type {
     }
 
     override fun default(ctx: Context) {
-        ctx.add(Push(NullPtrRecord))
+        ctx.add(Push(PtrRecord.Null))
     }
 
     override fun prop(name: String): Prop? {
@@ -86,7 +86,7 @@ data class PtrType(val derived: Type) : Type {
     }
 
     override fun log() = "ptr[${derived.log()}]"
-    override fun vmType() = VmPtr(derived.vmType())
+    override fun vmType() = VmType.Ptr(derived.vmType())
     override fun name() = "ptr"
 }
 

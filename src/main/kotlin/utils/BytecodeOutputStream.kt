@@ -1,20 +1,7 @@
 package utils
 
 import vm.Operation
-import vm.VmAny
-import vm.VmArray
-import vm.VmBool
-import vm.VmByte
-import vm.VmClass
-import vm.VmDict
-import vm.VmFloat
-import vm.VmFunc
-import vm.VmInt
-import vm.VmPtr
-import vm.VmStr
-import vm.VmTuple
 import vm.VmType
-import vm.VmVoid
 import vm.operations.And
 import vm.operations.ArrLen
 import vm.operations.Call
@@ -253,7 +240,7 @@ private fun DataOutputStream.write(value: Any) {
             writeBoolean(value)
         }
 
-        is vm.records.NullPtrRecord -> {
+        is vm.records.PtrRecord.Null -> {
             writeByte(TYPE_NULL_PTR)
         }
     }
@@ -261,30 +248,30 @@ private fun DataOutputStream.write(value: Any) {
 
 private fun DataOutputStream.writeType(t: VmType) {
     when(t) {
-        is VmVoid -> writeByte(TYPE_VOID)
-        is VmAny -> writeByte(TYPE_ANY)
-        is VmByte -> writeByte(TYPE_BYTE)
-        is VmInt -> writeByte(TYPE_INT)
-        is VmFloat -> writeByte(TYPE_FLOAT)
-        is VmStr -> writeByte(TYPE_STR)
-        is VmBool -> writeByte(TYPE_BOOL)
-        is VmTuple -> {
+        is VmType.Void -> writeByte(TYPE_VOID)
+        is VmType.Any -> writeByte(TYPE_ANY)
+        is VmType.Byte -> writeByte(TYPE_BYTE)
+        is VmType.Int -> writeByte(TYPE_INT)
+        is VmType.Float -> writeByte(TYPE_FLOAT)
+        is VmType.Str -> writeByte(TYPE_STR)
+        is VmType.Bool -> writeByte(TYPE_BOOL)
+        is VmType.Tuple -> {
             writeByte(TYPE_TUPLE)
             writeByte(t.elementTypes.size)
             t.elementTypes.forEach { writeType(it) }
         }
-        is VmArray -> {
+        is VmType.Array -> {
             writeByte(TYPE_ARRAY)
             writeType(t.elementType)
         }
-        is VmDict -> {
+        is VmType.Dict -> {
             writeByte(TYPE_DICT)
             writeType(t.keyType)
             writeType(t.valueType)
         }
-        is VmClass -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
-        is VmFunc -> writeByte(TYPE_FUNC)
-        is VmPtr -> writeByte(TYPE_PTR).also { writeType(t.derived) }
+        is VmType.Class -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
+        is VmType.Func -> writeByte(TYPE_FUNC)
+        is VmType.Ptr -> writeByte(TYPE_PTR).also { writeType(t.derived) }
     }
 }
 

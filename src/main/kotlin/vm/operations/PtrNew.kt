@@ -4,7 +4,7 @@ import vm.VMContext
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.BoxPtrRecord
+import vm.records.PtrRecord
 
 /**
  * Creates a new pointer (box) containing the value from the top of the stack.
@@ -13,7 +13,7 @@ import vm.records.BoxPtrRecord
 class PtrNew : SimpleOperation {
     override fun exec(frame: Frame, ctx: VMContext) {
         val value = frame.subs.pop()
-        val ptr = BoxPtrRecord(value)
+        val ptr = PtrRecord.Box(value)
         frame.subs.push(ptr)
     }
 }

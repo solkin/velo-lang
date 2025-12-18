@@ -43,7 +43,7 @@ data class TupleType(val types: List<Type>) : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmTuple(types.map { it.vmType() })
+    override fun vmType() = vm.VmType.Tuple(types.map { it.vmType() })
 
     override fun name() = "tuple"
 }

@@ -4,7 +4,7 @@ import vm.VMContext
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.VarPtrRecord
+import vm.records.PtrRecord
 
 /**
  * Creates a pointer (reference) to a variable by its index.
@@ -12,7 +12,7 @@ import vm.records.VarPtrRecord
  */
 class PtrRef(val varIndex: Int) : SimpleOperation {
     override fun exec(frame: Frame, ctx: VMContext) {
-        val ptr = VarPtrRecord(frame.vars, varIndex)
+        val ptr = PtrRecord.Var(frame.vars, varIndex)
         frame.subs.push(ptr)
     }
 }

@@ -25,7 +25,7 @@ object BoolType : Type {
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmBool()
+    override fun vmType() = vm.VmType.Bool
 
     override fun name() = "bool"
 }

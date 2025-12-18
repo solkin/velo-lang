@@ -4,7 +4,7 @@ import vm.VMContext
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.ArrayPtrRecord
+import vm.records.PtrRecord
 
 /**
  * Creates a pointer to an array element.
@@ -14,7 +14,7 @@ class PtrRefIndex : SimpleOperation {
     override fun exec(frame: Frame, ctx: VMContext) {
         val index = frame.subs.pop().getInt()
         val array = frame.subs.pop().getArray()
-        val ptr = ArrayPtrRecord(array, index)
+        val ptr = PtrRecord.Array(array, index)
         frame.subs.push(ptr)
     }
 }

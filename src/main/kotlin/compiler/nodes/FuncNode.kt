@@ -114,7 +114,7 @@ data class FuncType(val derived: Type, override val args: List<Type>? = null) : 
 
     override fun log() = toString()
 
-    override fun vmType() = vm.VmFunc()
+    override fun vmType() = vm.VmType.Func
 
     override fun name() = "func"
 }
