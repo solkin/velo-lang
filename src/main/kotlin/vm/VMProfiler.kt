@@ -24,8 +24,8 @@ class VMProfiler(
     private var initialJvmMemory: Long = 0
     private var peakJvmMemory: Long = 0
     
-    // Heap tracking (set by VM)
-    var heapStats: HeapStats? = null
+    // Memory area tracking (set by VM)
+    var memoryStats: MemoryStats? = null
     
     /**
      * Start profiling session
@@ -115,17 +115,17 @@ class VMProfiler(
         println("  Final:             ${formatBytes(finalMemory)}")
         println("  Delta:             ${formatBytes(finalMemory - initialJvmMemory)}")
         
-        // Heap summary
-        heapStats?.let { stats ->
+        // Memory area summary
+        memoryStats?.let { stats ->
             println()
-            println("VELO HEAP")
+            println("VELO MEMORY")
             println("───────────────────────────────────────────────────────────────")
             println("  Allocations:       ${stats.allocations}")
             println("  Deallocations:     ${stats.deallocations}")
             println("  Active objects:    ${stats.activeCount}")
             println("  Peak objects:      ${stats.peakCount}")
             if (stats.activeCount > 0) {
-                println("  ⚠ POTENTIAL LEAK:  ${stats.activeCount} objects still in heap")
+                println("  ⚠ POTENTIAL LEAK:  ${stats.activeCount} objects still in memory")
             }
         }
         
@@ -183,14 +183,3 @@ class VMProfiler(
         }
     }
 }
-
-/**
- * Statistics from Heap for profiler
- */
-data class HeapStats(
-    val allocations: Long,
-    val deallocations: Long,
-    val activeCount: Long,
-    val peakCount: Long
-)
-

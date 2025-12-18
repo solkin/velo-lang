@@ -4,7 +4,7 @@ import vm.VMContext
 
 import vm.Frame
 import vm.SimpleOperation
-import vm.records.LinkRecord
+import vm.records.RefRecord
 
 class DictVals : SimpleOperation {
 
@@ -13,7 +13,7 @@ class DictVals : SimpleOperation {
 
         val array = dict.values.toTypedArray()
 
-        val rec = LinkRecord.create(array, ctx)
+        val rec = RefRecord.array(array, ctx)
         frame.subs.push(rec)
     }
 

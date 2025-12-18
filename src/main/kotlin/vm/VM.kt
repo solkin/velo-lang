@@ -22,14 +22,13 @@ class VM(
     fun run() {
         val stack: Stack<Frame> = LifoStack()
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
-        val heap = HeapImpl()
+        val memory = MemoryAreaImpl()
         
         // Create VMContext with all subsystems
         val ctx = VMContext(
             stack = stack,
             frameLoader = frameLoader,
-            heap = heap,
-            nativeArea = NativeImpl(),
+            memory = memory,
             nativeRegistry = nativeRegistry
         )
         
@@ -53,7 +52,7 @@ class VM(
             printError(ex, op, frame, stack)
         }
         profiler.stop()
-        profiler.heapStats = heap.getStats()
+        profiler.memoryStats = memory.getStats()
         profiler.printReport()
     }
 

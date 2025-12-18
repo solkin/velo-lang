@@ -57,8 +57,7 @@ class VMTest {
         val ctx = VMContext(
             stack = stack,
             frameLoader = frameLoader,
-            heap = HeapImpl(),
-            nativeArea = NativeImpl(),
+            memory = MemoryAreaImpl(),
             nativeRegistry = NativeRegistry()
         )
         
@@ -80,8 +79,7 @@ class VMTest {
         val ctx = VMContext(
             stack = stack,
             frameLoader = frameLoader,
-            heap = HeapImpl(),
-            nativeArea = NativeImpl(),
+            memory = MemoryAreaImpl(),
             nativeRegistry = NativeRegistry()
         )
         
@@ -686,4 +684,3 @@ class VMTest {
         assertEquals(42, ctx.currentFrame().subs.pop().getInt())
     }
 }
-

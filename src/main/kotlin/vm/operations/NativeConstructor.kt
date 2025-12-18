@@ -3,7 +3,7 @@ package vm.operations
 import vm.Operation
 import vm.VMContext
 import vm.VmType
-import vm.records.NativeRecord
+import vm.records.RefRecord
 
 class NativeConstructor(val name: String, val args: List<Pair<Int, VmType>>) : Operation {
 
@@ -21,7 +21,7 @@ class NativeConstructor(val name: String, val args: List<Pair<Int, VmType>>) : O
                 frame.vars.get(arg.first).getAs(vmType = arg.second, ctx = ctx)
             }.toTypedArray())
 
-            val result = NativeRecord.create(instance, ctx)
+            val result = RefRecord.native(instance, ctx)
             frame.subs.push(result)
         } catch (ex: NoSuchMethodException) {
             throw Exception("Unable to create native class $name instance: ${ex.message}")

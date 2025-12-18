@@ -31,8 +31,7 @@ object TestUtils {
         return VMContext(
             stack = stack,
             frameLoader = GeneralFrameLoader(frames),
-            heap = HeapImpl(),
-            nativeArea = NativeImpl(),
+            memory = MemoryAreaImpl(),
             nativeRegistry = NativeRegistry()
         )
     }
@@ -85,4 +84,3 @@ object TestUtils {
         )
     }
 }
-

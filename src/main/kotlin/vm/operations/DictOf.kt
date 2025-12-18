@@ -5,7 +5,7 @@ import vm.VMContext
 import vm.Frame
 import vm.Record
 import vm.SimpleOperation
-import vm.records.LinkRecord
+import vm.records.RefRecord
 
 class DictOf : SimpleOperation {
 
@@ -17,7 +17,7 @@ class DictOf : SimpleOperation {
             val key = frame.subs.pop()
             dict[key] = value
         }
-        val rec = LinkRecord.create(dict, ctx)
+        val rec = RefRecord.dict(dict, ctx)
         frame.subs.push(rec)
     }
 

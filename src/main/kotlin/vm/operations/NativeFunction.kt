@@ -3,7 +3,7 @@ package vm.operations
 import vm.Operation
 import vm.VMContext
 import vm.VmType
-import vm.records.NativeRecord
+import vm.records.RefRecord
 
 class NativeFunction(val name: String, val argTypes: List<VmType>) : Operation {
 
@@ -17,7 +17,7 @@ class NativeFunction(val name: String, val argTypes: List<VmType>) : Operation {
         try {
             val method = clazz.getMethod(name, *argTypes.map { it.toJvmType() }.toTypedArray())
 
-            val result = NativeRecord.create(method, ctx)
+            val result = RefRecord.native(method, ctx)
             frame.subs.push(result)
         } catch (ex: NoSuchMethodException) {
             throw Exception("Unable to find native method $name: ${ex.message}")

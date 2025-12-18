@@ -3,18 +3,22 @@ package vm
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
-interface Heap {
+/**
+ * Unified memory area for all reference types in the VM.
+ * Replaces both Heap and Native area with a single storage.
+ */
+interface MemoryArea {
     fun put(value: Any): Int
     fun <T> get(id: Int): T
     fun release(id: Int)
-    fun getStats(): HeapStats
+    fun getStats(): MemoryStats
 }
 
 /**
- * Default implementation of Heap with statistics tracking.
- * Each VM instance should have its own HeapImpl.
+ * Default implementation of MemoryArea with statistics tracking.
+ * Each VM instance should have its own MemoryAreaImpl.
  */
-class HeapImpl : Heap {
+class MemoryAreaImpl : MemoryArea {
 
     private val enumerator = AtomicInteger()
     private val area = HashMap<Int, Any>()
@@ -39,7 +43,7 @@ class HeapImpl : Heap {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(id: Int): T {
-        return area[id] as T ?: throw Exception("Broken heap area link: $id")
+        return area[id] as T ?: throw Exception("Broken memory area link: $id")
     }
     
     override fun release(id: Int) {
@@ -48,8 +52,8 @@ class HeapImpl : Heap {
         }
     }
     
-    override fun getStats(): HeapStats {
-        return HeapStats(
+    override fun getStats(): MemoryStats {
+        return MemoryStats(
             allocations = allocations.get(),
             deallocations = deallocations.get(),
             activeCount = area.size.toLong(),
@@ -57,3 +61,14 @@ class HeapImpl : Heap {
         )
     }
 }
+
+/**
+ * Statistics about memory usage.
+ */
+data class MemoryStats(
+    val allocations: Long,
+    val deallocations: Long,
+    val activeCount: Long,
+    val peakCount: Long
+)
+

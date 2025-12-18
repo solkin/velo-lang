@@ -1,6 +1,7 @@
 package vm
 
-import vm.records.ClassRecord
+import vm.records.RefRecord
+import vm.records.RefKind
 import java.lang.reflect.Array as JArray
 
 /**
@@ -8,11 +9,9 @@ import java.lang.reflect.Array as JArray
  * 
  * Records represent different types of data in the Velo VM:
  * - ValueRecord: primitive values (int, float, string, bool, etc.)
- * - LinkRecord: references to objects stored in the Heap
- * - NativeRecord: references to JVM objects in the Native area
- * - ClassRecord: Velo class instances with their frame and optional native backing
- * - FrameRecord: references to function/class frames
+ * - RefRecord: references to objects stored in the MemoryArea (arrays, dicts, classes, native)
  * - PtrRecord and variants: pointer types for memory manipulation
+ * - EmptyRecord: singleton for uninitialized variables
  */
 interface Record {
 
@@ -60,7 +59,7 @@ interface Record {
      * It handles the conversion from Velo's internal representation to JVM types.
      * 
      * @param vmType The Velo VM type describing the expected conversion
-     * @param ctx Optional VM context, required for VmClass conversions to access heap/native areas
+     * @param ctx Optional VM context, required for VmClass conversions to access memory area
      * @return The converted JVM value ready for use in native method invocation
      * @throws IllegalStateException if conversion requires context but none provided
      * @throws IllegalArgumentException if the type cannot be converted
@@ -78,10 +77,12 @@ interface Record {
             is VmDict -> convertDict(vmType, ctx)
             is VmClass -> {
                 // For native classes, extract the underlying JVM object from the class frame
-                if (this !is ClassRecord) throw IllegalStateException("Non-native class record")
+                if (this !is RefRecord || kind != RefKind.CLASS) {
+                    throw IllegalStateException("Non-class reference record")
+                }
                 val index = nativeIndex ?: throw IllegalStateException("Native index is not defined")
-                // Get the class frame (either from context or directly)
-                val frame = if (ctx != null) get(ctx) else getFrame()
+                // Get the class frame from context
+                val frame = if (ctx != null) get<Frame>(ctx) else getFrame()
                 // Extract and cast the native instance from the frame's variables
                 frame.vars.get(index).cast(vmType.toJvmType())
             }

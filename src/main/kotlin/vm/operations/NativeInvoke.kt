@@ -4,7 +4,7 @@ import vm.Operation
 import vm.Record
 import vm.VMContext
 import vm.VmType
-import vm.records.LinkRecord
+import vm.records.RefRecord
 import vm.records.ValueRecord
 import java.lang.reflect.Method
 
@@ -43,7 +43,7 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
             is Boolean, is Byte, is Int, is Long, is Float, is Double, is Char, is String -> {
                 ValueRecord(value)
             }
-            // Arrays - convert to Array<Record>
+            // Arrays - convert to Array<Record> and store in memory
             is Array<*> -> {
                 val veloArray = Array<Record>(value.size) { i ->
                     val element = value[i]
@@ -53,7 +53,7 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
                         ValueRecord(Unit) // null placeholder
                     }
                 }
-                ValueRecord(veloArray)
+                RefRecord.array(veloArray, ctx)
             }
             // Maps - convert to MutableMap<Record, Record>
             is Map<*, *> -> {
@@ -63,7 +63,7 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
                         veloMap[wrapNativeResult(k, ctx)] = wrapNativeResult(v, ctx)
                     }
                 }
-                LinkRecord.create(veloMap, ctx)
+                RefRecord.dict(veloMap, ctx)
             }
             // Lists - convert to Array<Record>
             is List<*> -> {
@@ -75,12 +75,11 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
                         ValueRecord(Unit)
                     }
                 }
-                ValueRecord(veloArray)
+                RefRecord.array(veloArray, ctx)
             }
-            // Other objects - store in heap via LinkRecord
-            // Note: Native class objects should be wrapped via NativeWrap operation at compile time
+            // Other objects - store in memory as native
             else -> {
-                LinkRecord.create(value, ctx)
+                RefRecord.native(value, ctx)
             }
         }
     }

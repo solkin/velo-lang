@@ -18,4 +18,3 @@ class PtrRefIndex : SimpleOperation {
         frame.subs.push(ptr)
     }
 }
-

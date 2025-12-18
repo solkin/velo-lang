@@ -1,5 +1,7 @@
 package vm
 
+import vm.records.RefRecord
+
 /**
  * Context for VM execution.
  * Provides access to all VM subsystems for operations.
@@ -7,8 +9,7 @@ package vm
 class VMContext(
     val stack: Stack<Frame>,
     val frameLoader: FrameLoader,
-    val heap: Heap,
-    val nativeArea: Native,
+    val memory: MemoryArea,
     val nativeRegistry: NativeRegistry,
 ) {
     /**
@@ -37,23 +38,17 @@ class VMContext(
     fun loadFrame(num: Int, parent: Frame?): Frame? = frameLoader.loadFrame(num, parent)
 
     /**
-     * Store a value in the heap and return its ID
+     * Store a value in the memory area and return its ID
      */
-    fun heapPut(value: Any): Int = heap.put(value)
+    fun memoryPut(value: Any): Int = memory.put(value)
 
     /**
-     * Get a value from the heap by ID
+     * Get a value from the memory area by ID
      */
-    fun <T> heapGet(id: Int): T = heap.get(id)
+    fun <T> memoryGet(id: Int): T = memory.get(id)
 
     /**
-     * Store a native object and return a NativeRecord
+     * Release a value from the memory area
      */
-    fun nativePut(value: Any): vm.records.NativeRecord = nativeArea.put(value)
-
-    /**
-     * Get a native object by NativeRecord
-     */
-    fun <T> nativeGet(record: vm.records.NativeRecord): T = nativeArea.get(record)
+    fun memoryRelease(id: Int) = memory.release(id)
 }
-
