@@ -1,7 +1,5 @@
 package compiler.parser
 
-import compiler.nodes.Type
-
 class TokenStream(private val input: Input) {
 
     private var current: Token? = null
@@ -19,10 +17,9 @@ class TokenStream(private val input: Input) {
         "null",
         "include",
     ).plus(stdTypesSet)
-    val classTypesMap = HashMap<String, Type>()
 
     private fun isKeyword(str: String): Boolean {
-        return keywords.plus(classTypesMap.keys).contains(str)
+        return keywords.contains(str)
     }
 
     private fun isDigit(ch: Char): Boolean {
