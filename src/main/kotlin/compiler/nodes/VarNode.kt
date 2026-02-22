@@ -6,10 +6,14 @@ import vm.operations.Store
 
 data class VarNode(
     val name: String,
+    val typeArgs: List<Type> = emptyList(),
 ) : Node(), AssignableNode {
     override fun compile(ctx: Context): Type {
         val v = ctx.get(name)
         ctx.add(Load(v.index))
+        if (typeArgs.isNotEmpty() && v.type is ClassType) {
+            return (v.type as ClassType).copy(typeArgs = typeArgs)
+        }
         return v.type
     }
 

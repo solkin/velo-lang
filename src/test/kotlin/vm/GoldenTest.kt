@@ -220,6 +220,11 @@ class GoldenTest {
         runGoldenTest("variable-scope")
     }
 
+    @Test
+    fun `golden - generics`() {
+        runGoldenTest("generics")
+    }
+
     // ========== Utility Methods ==========
 
     /**

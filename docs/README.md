@@ -24,6 +24,7 @@
 20. [Best Practices](20-best-practices.md)
 21. [Pointers](21-pointers.md)
 22. [Apply Blocks](22-apply-blocks.md)
+23. [Generics](23-generics.md)
 
 ---
 

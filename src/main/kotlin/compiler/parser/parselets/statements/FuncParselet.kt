@@ -18,6 +18,9 @@ class FuncParselet : PrefixParselet {
         } else {
             null
         }
+        val typeParams = parseTypeParams(parser)
+        val savedGenerics = parser.context.saveGenericTypes()
+        typeParams.forEach { parser.context.registerGenericType(it) }
         val defsNodes = parser.parseDelimited('(', ')', ',') {
             TypeParser.parseDef(parser)
         }
@@ -36,9 +39,11 @@ class FuncParselet : PrefixParselet {
                 else -> ProgramNode(prog = bodyList)
             }
         }
+        parser.context.restoreGenericTypes(savedGenerics)
         return FuncNode(
             name = name,
             native = false,
+            typeParams = typeParams,
             defs = defs,
             type = type,
             body = body

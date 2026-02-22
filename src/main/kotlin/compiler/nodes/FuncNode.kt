@@ -12,13 +12,14 @@ import vm.operations.Store
 data class FuncNode(
     val name: String?,
     val native: Boolean,
+    val typeParams: List<String> = emptyList(),
     val defs: List<DefNode>,
     val type: Type,
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val argTypes = ArrayList<Type>()
-        var resultType: Type = FuncType(derived = type, argTypes)
+        var resultType: Type = FuncType(derived = type, argTypes, typeParams = typeParams)
 
         // Define var before body frame creation (because var counter will be forked) if name is defined
         val named = !name.isNullOrEmpty()
@@ -101,7 +102,11 @@ data class FuncNode(
     }
 }
 
-data class FuncType(val derived: Type, override val args: List<Type>? = null) : Callable {
+data class FuncType(
+    val derived: Type,
+    override val args: List<Type>? = null,
+    val typeParams: List<String> = emptyList(),
+) : Callable {
     override fun sameAs(type: Type): Boolean {
         return type is FuncType && type.derived.sameAs(derived)
     }
@@ -112,7 +117,7 @@ data class FuncType(val derived: Type, override val args: List<Type>? = null) : 
 
     override fun prop(name: String): Prop? = null
 
-    override fun log() = toString()
+    override fun log() = "func[${derived.log()}]"
 
     override fun vmType() = vm.VmType.Func
 

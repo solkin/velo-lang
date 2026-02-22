@@ -57,7 +57,7 @@ data class DictType(val derived: TupleType) : IndexAssignable {
         }
     }
 
-    override fun log() = toString()
+    override fun log() = "dict[${derived.types.joinToString(":") { it.log() }}]"
 
     override fun vmType() = vm.VmType.Dict(
         keyType = derived.types.first().vmType(),

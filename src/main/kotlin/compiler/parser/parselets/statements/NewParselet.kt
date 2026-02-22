@@ -17,8 +17,16 @@ class NewParselet : PrefixParselet {
             "dict" -> parseDictInit(parser)
             "ptr" -> parsePtrInit(parser)
             else -> {
-                // Pass class type as VarNode - postfix operators will be applied automatically by PrattParser
-                VarNode(tok.value as String)
+                val className = tok.value as String
+                val classType = parser.context.getClassType(className)
+                val typeArgs = if (classType != null && classType.typeParams.isNotEmpty()
+                    && parser.match(TokenType.PUNCTUATION, '[')
+                ) {
+                    TypeParser.parseDerivedTypes(parser, count = classType.typeParams.size)
+                } else {
+                    emptyList()
+                }
+                VarNode(className, typeArgs = typeArgs)
             }
         }
     }

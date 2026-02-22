@@ -14,7 +14,7 @@ object TypeParser {
             }
             TokenType.VARIABLE -> {
                 val value = token.value as? String
-                value != null && parser.context.isClassType(value)
+                value != null && (parser.context.isClassType(value) || parser.context.isGenericType(value))
             }
             else -> false
         }
@@ -62,8 +62,15 @@ object TypeParser {
             else -> {
                 val className = value as? String
                     ?: throw IllegalArgumentException("Unknown type value: $value")
-                parser.context.getClassType(className)
+                parser.context.getGenericType(className)?.let { return it }
+                val classType = parser.context.getClassType(className)
                     ?: throw IllegalArgumentException("Unknown type: $className")
+                if (classType.typeParams.isNotEmpty() && parser.match(TokenType.PUNCTUATION, '[')) {
+                    val typeArgs = parseDerivedTypes(parser, count = classType.typeParams.size)
+                    classType.copy(typeArgs = typeArgs)
+                } else {
+                    classType
+                }
             }
         }
     }

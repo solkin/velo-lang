@@ -35,7 +35,7 @@ object IntType : Numeric {
         }
     }
 
-    override fun log() = toString()
+    override fun log() = name()
 
     override fun vmType() = vm.VmType.Int
 

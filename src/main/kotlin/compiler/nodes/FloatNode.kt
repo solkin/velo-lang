@@ -23,7 +23,7 @@ object FloatType : Numeric {
 
     override fun prop(name: String): Prop? = null
 
-    override fun log() = toString()
+    override fun log() = name()
 
     override fun vmType() = vm.VmType.Float
 

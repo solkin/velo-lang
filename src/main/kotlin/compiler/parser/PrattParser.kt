@@ -45,13 +45,17 @@ class PrattParser(
                 operatorParselets[token.value as? String]
             }
             else -> if (token.type == TokenType.VARIABLE) {
-                // Check if variable is a class type and next token is also VARIABLE (variable name)
                 val varName = token.value as? String
                 val nextToken = stream.peek()
-                if (varName != null && context.isClassType(varName) &&
-                    nextToken?.type == TokenType.VARIABLE
-                ) {
-                    keywordParselets["__class_type__"]
+                if (varName != null && context.isClassType(varName)) {
+                    val classType = context.getClassType(varName)
+                    val isGenericTypeUsage = classType?.typeParams?.isNotEmpty() == true
+                            && nextToken?.type == TokenType.PUNCTUATION && nextToken.value == '['
+                    if (nextToken?.type == TokenType.VARIABLE || isGenericTypeUsage) {
+                        keywordParselets["__class_type__"]
+                    } else {
+                        null
+                    }
                 } else {
                     null
                 }

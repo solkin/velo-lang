@@ -77,7 +77,7 @@ data class ArrayType(val derived: Type) : IndexAssignable {
         }
     }
 
-    override fun log() = toString()
+    override fun log() = "array[${derived.log()}]"
 
     override fun vmType() = vm.VmType.Array(derived.vmType())
 

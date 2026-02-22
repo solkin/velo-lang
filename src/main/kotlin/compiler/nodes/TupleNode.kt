@@ -41,7 +41,7 @@ data class TupleType(val types: List<Type>) : Type {
         return TupleEntryProp(index = index - 1) // Minus 1 due to props has human-agreeable format 1+ instead of 0+
     }
 
-    override fun log() = toString()
+    override fun log() = "tuple[${types.joinToString(", ") { it.log() }}]"
 
     override fun vmType() = vm.VmType.Tuple(types.map { it.vmType() })
 

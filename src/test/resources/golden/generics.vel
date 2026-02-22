@@ -1,0 +1,166 @@
+include "lang/terminal.vel";
+
+# --- Generic Pair class ---
+
+class Pair[T, U](T first, U second) {
+    func getFirst() T {
+        first;
+    };
+    func getSecond() U {
+        second;
+    };
+};
+
+Pair[int, str] p = new Pair[int, str](42, "hello");
+term.println(p.getFirst().str);
+term.println(p.getSecond());
+
+# --- Generic Box class ---
+
+class Box[T](T value) {
+    func get() T {
+        value;
+    };
+    func set(T newValue) void {
+        value = newValue;
+    };
+};
+
+Box[int] b = new Box[int](10);
+term.println(b.get().str);
+b.set(20);
+term.println(b.get().str);
+
+# --- Generic function with type inference ---
+
+func identity[T](T value) T {
+    value;
+};
+
+int x = identity(99);
+term.println(x.str);
+
+str s = identity("world");
+term.println(s);
+
+# --- Nested generics: array inside generic class ---
+
+class Container[T]() {
+    array[T] items = new array[T](0);
+    int size = 0;
+
+    func add(T item) void {
+        items = items.plus(item);
+        size = size + 1;
+    };
+
+    func get(int index) T {
+        items[index];
+    };
+
+    func getSize() int {
+        size;
+    };
+};
+
+Container[str] c = new Container[str]();
+c.add("x");
+c.add("y");
+c.add("z");
+term.println(c.getSize().str);
+term.println(c.get(0));
+term.println(c.get(2));
+
+# --- Multiple instances with different type args ---
+
+Box[int] bi = new Box[int](1);
+Box[str] bs = new Box[str]("two");
+term.println(bi.get().str);
+term.println(bs.get());
+
+# --- Generic function inferring T from array[T] ---
+
+func first[T](array[T] items) T {
+    items[0];
+};
+
+array[int] nums = new array[int]{10, 20, 30};
+term.println(first(nums).str);
+
+array[str] words = new array[str]{"alpha", "beta"};
+term.println(first(words));
+
+# --- Generic function with multiple type params ---
+
+func makePair[A, B](A a, B b) Pair[A, B] {
+    new Pair[A, B](a, b);
+};
+
+Pair[int, str] mp = makePair(7, "seven");
+term.println(mp.getFirst().str);
+term.println(mp.getSecond());
+
+# --- Generic method inside generic class ---
+
+class Mapper[T]() {
+    array[T] items = new array[T](0);
+
+    func add(T item) void {
+        items = items.plus(item);
+    };
+
+    func transform[U](func[U] fn) array[U] {
+        items.map(fn);
+    };
+};
+
+func strLen(int idx, str item) int {
+    item.len;
+};
+
+Mapper[str] m = new Mapper[str]();
+m.add("hi");
+m.add("world");
+array[int] lengths = m.transform(strLen);
+term.println(lengths[0].str);
+term.println(lengths[1].str);
+
+# --- Generic method inside non-generic class ---
+
+class Utils() {
+    func wrap[T](T value) Box[T] {
+        new Box[T](value);
+    };
+};
+
+Utils u = new Utils();
+Box[int] wi = u.wrap(42);
+Box[str] ws = u.wrap("test");
+term.println(wi.get().str);
+term.println(ws.get());
+
+# --- Generic class using another generic class ---
+
+class Entry[K, V](K key, V val) {
+    func getKey() K { key; };
+    func getVal() V { val; };
+};
+
+class Registry[V]() {
+    array[Entry[str, V]] entries = new array[Entry[str, V]](0);
+
+    func put(str key, V value) void {
+        Entry[str, V] e = new Entry[str, V](key, value);
+        entries = entries.plus(e);
+    };
+
+    func getByIndex(int index) V {
+        entries[index].getVal();
+    };
+};
+
+Registry[int] reg = new Registry[int]();
+reg.put("a", 100);
+reg.put("b", 200);
+term.println(reg.getByIndex(0).str);
+term.println(reg.getByIndex(1).str);

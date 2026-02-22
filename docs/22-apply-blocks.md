@@ -162,4 +162,4 @@ int total = (new Counter() { it.add(5); }).value + 10;
 
 ---
 
-[Previous: Pointers ←](21-pointers.md)
+[Previous: Pointers ←](21-pointers.md) | [Next: Generics →](23-generics.md)
