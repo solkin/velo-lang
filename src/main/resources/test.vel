@@ -34,7 +34,7 @@ traverse(matrix);
 
 term.println(51966.format(16));
 
-Map map = new Map();
+Map[str, str] map = new Map[str, str]();
 
 map.put("One", "1");
 map.put("Two", "2");
@@ -50,5 +50,7 @@ map.put("Nine", "90"); # Update existing key
 
 term.println("Map size is: ".con(map.size.str));
 str key = "Nine";
-any val = map.get(key);
-term.println("Value for key '".con(key).con("' is: ").con(map.get(key)));
+ptr[str] val = map.get(key);
+if (val != null) {
+    term.println("Value for key '".con(key).con("' is: ").con(val.val));
+};
