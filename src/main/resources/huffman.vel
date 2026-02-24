@@ -1,0 +1,355 @@
+include "lang/terminal.vel";
+include "lang/map.vel";
+include "lang/filesystem.vel";
+include "lang/bool.vel";
+
+# === Huffman tree node ===
+
+class Node(int ch, int freq, bool isLeaf) {
+    Node left;
+    Node right;
+    bool hasLeft = false;
+    bool hasRight = false;
+
+    func setLeft(Node n) void { left = n; hasLeft = true; };
+    func setRight(Node n) void { right = n; hasRight = true; };
+};
+
+# Pairs a parsed tree with the position after it in the serialized string
+class ParseResult(Node node, int pos) {};
+
+# === String helpers ===
+
+func nextLine(str data, int from) str {
+    int i = from;
+    bool done = false;
+    while (i < data.len & done == false) {
+        if (data[i] == 10) {
+            done = true;
+        } else {
+            i = i + 1;
+        };
+    };
+    data.sub(from, i);
+};
+
+func padInt(int value, int width) str {
+    str s = value.str;
+    while (s.len < width) {
+        s = "0".con(s);
+    };
+    s;
+};
+
+# === Frequency counting ===
+
+func countFreqs(str input) Map[int, int] {
+    Map[int, int] freqs = new Map[int, int]();
+    int i = 0;
+    while (i < input.len) {
+        int ch = input[i];
+        freqs[ch] = freqs.getOrDefault(ch, 0) + 1;
+        i = i + 1;
+    };
+    freqs;
+};
+
+# === Priority queue operations on array ===
+
+func removeAt(array[Node] arr, int idx) array[Node] {
+    arr.sub(0, idx).con(arr.sub(idx + 1, arr.len));
+};
+
+func findMinIdx(array[Node] arr) int {
+    int minIdx = 0;
+    int minFreq = arr[0].freq;
+    int i = 1;
+    while (i < arr.len) {
+        if (arr[i].freq < minFreq) {
+            minIdx = i;
+            minFreq = arr[i].freq;
+        };
+        i = i + 1;
+    };
+    minIdx;
+};
+
+# === Build Huffman tree from frequencies ===
+
+func buildTree(Map[int, int] freqs) Node {
+    array[int] ks = freqs.keys();
+    array[Node] nodes = new array[Node](0);
+    int i = 0;
+    while (i < ks.len) {
+        nodes = nodes.plus(new Node(ks[i], freqs[ks[i]].val, true));
+        i = i + 1;
+    };
+
+    if (nodes.len == 1) {
+        nodes[0];
+    } else {
+        while (nodes.len > 1) {
+            int i1 = findMinIdx(nodes);
+            Node n1 = nodes[i1];
+            nodes = removeAt(nodes, i1);
+
+            int i2 = findMinIdx(nodes);
+            Node n2 = nodes[i2];
+            nodes = removeAt(nodes, i2);
+
+            Node parent = new Node(0, n1.freq + n2.freq, false);
+            parent.setLeft(n1);
+            parent.setRight(n2);
+            nodes = nodes.plus(parent);
+        };
+        nodes[0];
+    };
+};
+
+# === Serialize / deserialize tree ===
+# Leaf: "1" + 3-digit char code (e.g. "1032" for space)
+# Internal: "0" + left subtree + right subtree
+
+func serializeTree(Node node) str {
+    if (node.isLeaf) {
+        "1".con(padInt(node.ch, 3));
+    } else {
+        "0".con(serializeTree(node.left)).con(serializeTree(node.right));
+    };
+};
+
+func deserializeTree(str data, int pos) ParseResult {
+    if (data[pos] == 49) {
+        str code = data.sub(pos + 1, pos + 4);
+        int ch = code.int;
+        new ParseResult(new Node(ch, 0, true), pos + 4);
+    } else {
+        ParseResult leftR = deserializeTree(data, pos + 1);
+        ParseResult rightR = deserializeTree(data, leftR.pos);
+        Node node = new Node(0, 0, false);
+        node.setLeft(leftR.node);
+        node.setRight(rightR.node);
+        new ParseResult(node, rightR.pos);
+    };
+};
+
+# === Build code table by recursive tree traversal ===
+
+func buildCodes(Node node, str prefix, Map[int, str] codes) void {
+    if (node.isLeaf) {
+        if (prefix.len == 0) {
+            codes[node.ch] = "0";
+        } else {
+            codes[node.ch] = prefix;
+        };
+    } else {
+        if (node.hasLeft) {
+            buildCodes(node.left, prefix.con("0"), codes);
+        };
+        if (node.hasRight) {
+            buildCodes(node.right, prefix.con("1"), codes);
+        };
+    };
+};
+
+# === Encode string to bit string ===
+
+func encode(str input, Map[int, str] codes) str {
+    str bits = "";
+    int i = 0;
+    while (i < input.len) {
+        bits = bits.con(codes[input[i]].val);
+        i = i + 1;
+    };
+    bits;
+};
+
+# === Decode bit string using tree ===
+
+func decode(str bits, Node root) str {
+    str result = "";
+    int i = 0;
+
+    if (root.isLeaf) {
+        while (i < bits.len) {
+            result = result.con(root.ch.char);
+            i = i + 1;
+        };
+    } else {
+        Node current = root;
+        while (i < bits.len) {
+            if (bits[i] == 48) {
+                current = current.left;
+            } else {
+                current = current.right;
+            };
+            if (current.isLeaf) {
+                result = result.con(current.ch.char);
+                current = root;
+            };
+            i = i + 1;
+        };
+    };
+    result;
+};
+
+# === Pack bit string into printable ASCII (6 bits per char, offset +48) ===
+
+func packBits(str bits) str {
+    str packed = "";
+    int i = 0;
+    while (i < bits.len) {
+        int val = 0;
+        int j = 0;
+        while (j < 6 & (i + j) < bits.len) {
+            val = val * 2;
+            if (bits[i + j] == 49) {
+                val = val + 1;
+            };
+            j = j + 1;
+        };
+        while (j < 6) {
+            val = val * 2;
+            j = j + 1;
+        };
+        packed = packed.con((val + 48).char);
+        i = i + 6;
+    };
+    packed;
+};
+
+# === Unpack printable chars back to bit string ===
+
+func unpackBits(str packed, int bitCount) str {
+    str bits = "";
+    int i = 0;
+    while (i < packed.len) {
+        int val = packed[i] - 48;
+        int j = 5;
+        str chunk = "";
+        while (j >= 0) {
+            if ((val.shr(j) & 1) == 1) {
+                chunk = chunk.con("1");
+            } else {
+                chunk = chunk.con("0");
+            };
+            j = j - 1;
+        };
+        bits = bits.con(chunk);
+        i = i + 1;
+    };
+    bits.sub(0, bitCount);
+};
+
+# === Compress: build tree, encode, pack, serialize to string ===
+# Format: <original_len>\n<bit_count>\n<serialized_tree>\n\n<packed_data>
+
+func compress(str input) str {
+    Map[int, int] freqs = countFreqs(input);
+    Node tree = buildTree(freqs);
+    Map[int, str] codes = new Map[int, str]();
+    buildCodes(tree, "", codes);
+
+    str bits = encode(input, codes);
+    str packed = packBits(bits);
+    str treeSer = serializeTree(tree);
+
+    input.len.str
+        .con("\n").con(bits.len.str)
+        .con("\n").con(treeSer)
+        .con("\n\n").con(packed);
+};
+
+# === Decompress: parse header, rebuild tree, unpack, decode ===
+
+func decompress(str data) str {
+    int pos = 0;
+
+    str line1 = nextLine(data, pos);
+    int origLen = line1.int;
+    pos = pos + line1.len + 1;
+
+    str line2 = nextLine(data, pos);
+    int bitCount = line2.int;
+    pos = pos + line2.len + 1;
+
+    str line3 = nextLine(data, pos);
+    ParseResult pr = deserializeTree(line3, 0);
+    Node tree = pr.node;
+    pos = pos + line3.len + 1;
+
+    # Skip empty separator line
+    pos = pos + 1;
+
+    str packed = data.sub(pos, data.len);
+    str bits = unpackBits(packed, bitCount);
+    decode(bits, tree);
+};
+
+# ============================================================
+# Demo: compress a file and decompress it back
+# ============================================================
+
+FileSystem fs = new FileSystem();
+
+str source = "sample.txt";
+str compressed = "sample.huf";
+str restored = "sample.restored.txt";
+
+# Create a sample file to compress
+str text = "Huffman coding is a lossless data compression algorithm developed by David A. Huffman "
+    .con("while he was a PhD student at MIT. The idea came to him in 1951 as an alternative to the ")
+    .con("Shannon-Fano coding method. The algorithm works by building a binary tree where each leaf ")
+    .con("node represents a character from the input text. Characters that appear more frequently in ")
+    .con("the input are placed closer to the root of the tree, giving them shorter binary codes. Less ")
+    .con("frequent characters are placed deeper in the tree, resulting in longer codes. This approach ")
+    .con("guarantees that the total number of bits used to encode the entire input is minimized. The ")
+    .con("Huffman code is a prefix-free code, which means that no code word is a prefix of any other ")
+    .con("code word. This property allows the encoded data to be decoded unambiguously without needing ")
+    .con("any special separator between code words. To decode, one simply traverses the Huffman tree ")
+    .con("from the root, going left for a zero bit and right for a one bit, until reaching a leaf node. ")
+    .con("The character stored at that leaf is the next decoded character. Huffman coding is widely used ")
+    .con("in many practical applications. It forms the basis of several popular compression formats such ")
+    .con("as ZIP, GZIP, and PNG. It is also used as a component in more complex compression algorithms ")
+    .con("like DEFLATE, which combines Huffman coding with LZ77 for even better compression ratios.");
+
+fs.write(source, text);
+int originalSize = fs.size(source);
+term.println("Original file: ".con(source));
+term.println("Original size: ".con(originalSize.str).con(" bytes"));
+
+# Compress
+str packed = compress(text);
+fs.write(compressed, packed);
+int compressedSize = fs.size(compressed);
+term.println("");
+term.println("Compressed file: ".con(compressed));
+term.println("Compressed size: ".con(compressedSize.str).con(" bytes"));
+int ratio = compressedSize * 100 / originalSize;
+term.println("Compression ratio: ".con(ratio.str).con("%"));
+int saved = 100 - ratio;
+term.println("Space saved: ".con(saved.str).con("%"));
+
+# Decompress
+str loaded = fs.read(compressed);
+str output = decompress(loaded);
+fs.write(restored, output);
+term.println("");
+term.println("Restored file: ".con(restored));
+term.println("Restored size: ".con(fs.size(restored).str).con(" bytes"));
+
+# Verify
+if (text == output) {
+    term.println("");
+    term.println("Verification: OK - decompressed output matches original");
+} else {
+    term.println("");
+    term.println("Verification: FAIL");
+    term.println("Expected length: ".con(text.len.str));
+    term.println("Got length: ".con(output.len.str));
+};
+
+# Cleanup
+fs.delete(source);
+fs.delete(compressed);
+fs.delete(restored);
