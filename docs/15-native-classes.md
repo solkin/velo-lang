@@ -213,6 +213,7 @@ The following classes are registered by default:
 - `Time` - time operations
 - `FileSystem` - file operations
 - `Http` - HTTP client
+- `Socket` - TCP socket communication
 
 ## Summary Table
 

@@ -46,6 +46,7 @@ class VeloRuntime {
             .register(Time::class)
             .register(FileSystem::class)
             .register(Http::class)
+            .register(Socket::class)
     }
     
     /**

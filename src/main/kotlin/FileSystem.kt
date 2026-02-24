@@ -5,31 +5,28 @@ import kotlin.streams.toList
 
 class FileSystem() {
     
-    /**
-     * Читает содержимое файла как строку
-     * @param path Путь к файлу
-     * @return Содержимое файла как строка
-     */
     fun read(path: String): String {
         return Files.readString(Paths.get(path))
     }
     
-    /**
-     * Записывает строку в файл (перезаписывает существующий файл)
-     * @param path Путь к файлу
-     * @param content Содержимое для записи
-     */
     fun write(path: String, content: String) {
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)
     }
     
-    /**
-     * Добавляет строку в конец файла
-     * @param path Путь к файлу
-     * @param content Содержимое для добавления
-     */
     fun append(path: String, content: String) {
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+    }
+
+    fun readBytes(path: String): ByteArray {
+        return Files.readAllBytes(Paths.get(path))
+    }
+
+    fun writeBytes(path: String, data: Array<Byte>) {
+        Files.write(Paths.get(path), data.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)
+    }
+
+    fun appendBytes(path: String, data: Array<Byte>) {
+        Files.write(Paths.get(path), data.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
     }
     
     /**

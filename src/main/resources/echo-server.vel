@@ -1,0 +1,27 @@
+include "lang/socket.vel";
+include "lang/terminal.vel";
+
+int port = 9876;
+
+Socket srv = Socket();
+srv.bind(port);
+term.println("Echo server listening on port " + port.str);
+
+Socket client = srv.accept();
+term.println("Client connected: " + client.remoteAddress() + ":" + client.remotePort().str);
+
+int running = 1;
+while (running == 1) {
+    str line = client.readLine();
+    if (line == "quit") then {
+        term.println("Client disconnected");
+        running = 0;
+    } else {
+        term.println("Received: " + line);
+        client.writeLine("Echo: " + line);
+    };
+};
+
+client.close();
+srv.close();
+term.println("Server stopped");

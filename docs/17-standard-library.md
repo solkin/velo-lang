@@ -100,6 +100,58 @@ fs.delete("file.txt");
 int fileSize = fs.size("file.txt");
 ```
 
+## Socket
+
+Class for TCP socket communication. Supports both client and server modes.
+
+### Client
+
+```velo
+include "lang/socket.vel";
+
+Socket sock = Socket();
+sock.connect("127.0.0.1", 9876);
+
+sock.writeLine("Hello!");
+str reply = sock.readLine();
+
+sock.close();
+```
+
+### Server
+
+```velo
+include "lang/socket.vel";
+
+Socket srv = Socket();
+srv.bind(9876);
+
+Socket client = srv.accept();         # blocks until a client connects
+str msg = client.readLine();
+client.writeLine("Echo: " + msg);
+
+client.close();
+srv.close();
+```
+
+### Full API Reference
+
+| Method | Signature | Description |
+|---|---|---|
+| `connect` | `(str host, int port) void` | Connect to a remote host |
+| `bind` | `(int port) void` | Bind and listen on a port |
+| `accept` | `() Socket` | Accept an incoming connection (blocking) |
+| `write` | `(str data) void` | Send a string |
+| `writeLine` | `(str data) void` | Send a string followed by a newline |
+| `readLine` | `() str` | Read a line (blocking, strips newline) |
+| `read` | `(int size) str` | Read up to `size` characters |
+| `available` | `() int` | Bytes available without blocking |
+| `connected` | `() bool` | Check if socket is connected |
+| `close` | `() void` | Close the socket |
+| `remoteAddress` | `() str` | Remote peer IP address |
+| `remotePort` | `() int` | Remote peer port |
+| `setTimeout` | `(int millis) void` | Set timeout for blocking operations |
+
 ## Map
 
 A generic hash map (`Map[K, V]`) with separate chaining and automatic resizing. Supports operator overloading for bracket-based access.

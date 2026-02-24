@@ -39,23 +39,9 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
      */
     private fun wrapNativeResult(value: Any, ctx: VMContext): Record {
         return when (value) {
-            // Primitives - wrap directly in ValueRecord
             is Boolean, is Byte, is Int, is Long, is Float, is Double, is Char, is String -> {
                 ValueRecord(value)
             }
-            // Arrays - convert to Array<Record> and store in memory
-            is Array<*> -> {
-                val veloArray = Array<Record>(value.size) { i ->
-                    val element = value[i]
-                    if (element != null) {
-                        wrapNativeResult(element, ctx)
-                    } else {
-                        ValueRecord(Unit) // null placeholder
-                    }
-                }
-                RefRecord.array(veloArray, ctx)
-            }
-            // Maps - convert to MutableMap<Record, Record>
             is Map<*, *> -> {
                 val veloMap = HashMap<Record, Record>()
                 for ((k, v) in value) {
@@ -65,23 +51,26 @@ class NativeInvoke(val args: List<Pair<Int, VmType>>) : Operation {
                 }
                 RefRecord.dict(veloMap, ctx)
             }
-            // Lists - convert to Array<Record>
-            is List<*> -> {
-                val veloArray = Array<Record>(value.size) { i ->
-                    val element = value[i]
-                    if (element != null) {
-                        wrapNativeResult(element, ctx)
-                    } else {
-                        ValueRecord(Unit)
-                    }
-                }
-                RefRecord.array(veloArray, ctx)
-            }
-            // Other objects - store in memory as native
-            else -> {
-                RefRecord.native(value, ctx)
-            }
+            else -> asIterable(value)?.let { wrapIterable(it, ctx) }
+                ?: RefRecord.native(value, ctx)
         }
+    }
+
+    private fun asIterable(value: Any): Iterable<*>? = when (value) {
+        is Array<*> -> value.asIterable()
+        is ByteArray -> value.asIterable()
+        is IntArray -> value.asIterable()
+        is FloatArray -> value.asIterable()
+        is BooleanArray -> value.asIterable()
+        is List<*> -> value
+        else -> null
+    }
+
+    private fun wrapIterable(items: Iterable<*>, ctx: VMContext): Record {
+        val veloArray = items.map { element ->
+            if (element != null) wrapNativeResult(element, ctx) else ValueRecord(Unit)
+        }.toTypedArray()
+        return RefRecord.array(veloArray, ctx)
     }
 
 }

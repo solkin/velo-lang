@@ -1,0 +1,23 @@
+include "lang/socket.vel";
+include "lang/terminal.vel";
+
+Socket sock = Socket();
+sock.connect("127.0.0.1", 9876);
+term.println("Connected to server");
+
+int running = 1;
+while (running == 1) {
+    term.print("> ");
+    str msg = term.input();
+    if (msg == "quit") then {
+        sock.writeLine("quit");
+        running = 0;
+    } else {
+        sock.writeLine(msg);
+        str reply = sock.readLine();
+        term.println(reply);
+    };
+};
+
+sock.close();
+term.println("Disconnected");

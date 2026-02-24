@@ -1,0 +1,36 @@
+include "lang/terminal.vel";
+include "lang/bool.vel";
+include "lang/str.vel";
+include "lang/array.vel";
+
+# str -> array[byte]
+str hello = "Hello";
+array[byte] bytes = hello.bytes();
+term.println(bytes.len.str);
+term.println(bytes[0].str);
+term.println(bytes[1].str);
+term.println(bytes[4].str);
+
+# array[byte] -> str
+str back = bytes.str();
+term.println(back);
+
+# roundtrip
+str original = "Velo Lang!";
+str roundtrip = original.bytes().str();
+term.println(roundtrip);
+term.println((original == roundtrip).str);
+
+# empty string
+str empty = "";
+array[byte] emptyBytes = empty.bytes();
+term.println(emptyBytes.len.str);
+str emptyBack = emptyBytes.str();
+term.println(emptyBack.len.str);
+
+# single char
+str one = "A";
+array[byte] oneBytes = one.bytes();
+term.println(oneBytes.len.str);
+term.println(oneBytes[0].str);
+term.println(oneBytes.str());

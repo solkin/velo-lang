@@ -1,0 +1,55 @@
+# Native class for TCP socket communication
+native class Socket() {
+    # Connect to a remote host
+    # @param host hostname or IP address
+    # @param port port number
+    native func connect(str host, int port) void;
+
+    # Bind a server socket to a port and start listening
+    # @param port port number to listen on
+    native func bind(int port) void;
+
+    # Accept an incoming connection (blocks until a client connects)
+    # @return a new Socket representing the client connection
+    native func accept() Socket;
+
+    # Write a string to the socket
+    native func write(str data) void;
+
+    # Write a string followed by a newline
+    native func writeLine(str data) void;
+
+    # Write a byte array to the socket
+    native func writeBytes(array[byte] data) void;
+
+    # Read a line of text (blocks until newline received)
+    native func readLine() str;
+
+    # Read up to `size` characters as a string
+    native func read(int size) str;
+
+    # Read up to `size` bytes as a byte array
+    native func readBytes(int size) array[byte];
+
+    # Bytes available for reading without blocking
+    native func available() int;
+
+    # Check if the socket is connected
+    # @return true if connected, false otherwise
+    native func connected() bool;
+
+    # Close the socket and release resources
+    native func close() void;
+
+    # Get the remote address of the connected peer
+    # @return IP address as a string
+    native func remoteAddress() str;
+
+    # Get the remote port of the connected peer
+    # @return port number
+    native func remotePort() int;
+
+    # Set timeout for blocking operations (connect, read, accept)
+    # @param millis timeout in milliseconds (0 = infinite)
+    native func setTimeout(int millis) void;
+};

@@ -1,0 +1,9 @@
+ext(array[byte] a) str() str {
+    str result = "";
+    int i = 0;
+    while (i < a.len) {
+        result = result.con(a[i].char);
+        i = i + 1;
+    };
+    result
+};
