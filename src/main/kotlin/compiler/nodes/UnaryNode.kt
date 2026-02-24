@@ -11,17 +11,21 @@ data class UnaryNode(
     override fun compile(ctx: Context): Type {
         return when (operator) {
             "-" -> {
-                // Push zero first, then operand, then subtract: 0 - operand = -operand
-                // We need to compile operand first to get its type, then emit the right zero
                 val operandType = operand.compile(ctx)
+                if (operandType is ClassType) {
+                    val prop = ClassElementProp("op@neg")
+                    try {
+                        return prop.compile(operandType, args = emptyList(), ctx)
+                    } catch (e: IllegalArgumentException) {
+                        throw IllegalArgumentException("Unary operator '-' is not defined for class '${operandType.name}'")
+                    }
+                }
                 when (operandType) {
                     is ByteType -> ctx.add(Push(0.toByte()))
                     is FloatType -> ctx.add(Push(0f))
                     else -> ctx.add(Push(0))
                 }
-                // Swap so zero is below operand: stack becomes [0, operand]
                 ctx.add(vm.operations.Swap())
-                // Sub pops operand (rec1), pops 0 (rec2), computes 0 - operand
                 ctx.add(Sub())
                 operandType
             }

@@ -25,6 +25,7 @@
 21. [Pointers](21-pointers.md)
 22. [Apply Blocks](22-apply-blocks.md)
 23. [Generics](23-generics.md)
+24. [Operator Overloading](24-operator-overloading.md)
 
 ---
 

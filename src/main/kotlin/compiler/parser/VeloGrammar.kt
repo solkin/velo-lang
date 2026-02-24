@@ -26,6 +26,7 @@ object VeloGrammar {
         parser.registerKeyword("new", NewParselet())
         parser.registerKeyword("native", NativeParselet())
         parser.registerKeyword("include", IncludeParselet())
+        parser.registerKeyword("operator", OperatorParselet())
         
         // Type keywords (will be handled by DefParselet)
         parser.registerKeyword(BYTE, DefParselet())

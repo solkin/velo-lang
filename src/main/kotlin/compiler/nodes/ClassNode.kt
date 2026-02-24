@@ -17,14 +17,14 @@ data class ClassNode(
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        // Create class body frame with extended context
+        // Reserve the class name index before extending, so class body vars don't shadow it
+        val nameVar = ctx.def(name, VoidType)
+
         val classOps = ctx.extend()
         val argTypes = ArrayList<Type>()
 
         val classType: Type = ClassType(name, typeParams = typeParams, num = classOps.frame.num, parent = classOps, args = argTypes)
-
-        // Define class type as a variable
-        val nameVar = ctx.def(name, classType)
+        ctx.retype(name, classType)
 
         // Insert class frame pointer into stack
         ctx.add(Frame(num = classOps.frame.num))

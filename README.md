@@ -12,6 +12,8 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 - ✅ **Functional Style** - Support for higher-order functions and lambdas
 - ✅ **Compilable** - Code compiles to bytecode for virtual machine
 - ✅ **Embeddable** - Easy integration into other applications
+- ✅ **Generics** - Type-safe generic classes, functions, and methods
+- ✅ **Operator Overloading** - Custom operators for user-defined classes
 - ✅ **Native Classes** - Support for binding to native code via reflection
 - ✅ **Standard Library** - Built-in support for HTTP, file system, terminal I/O, and more
 
@@ -152,19 +154,43 @@ class Random(int seed) {
     int previous = 0;
 
     func setSeed(int seed) void {
-        previous = seed;  # Изменение поля внутри метода
+        previous = seed;
     };
 
     func next() int {
         int r = a * previous + c;
-        previous = r;     # Изменение поля внутри метода
+        previous = r;
         r;
     }
 };
 
 Random random = new Random(12345);
 int value = random.next();
-# random.previous = 10;  # ОШИБКА: поля доступны только для чтения снаружи
+# random.previous = 10;  # ERROR: fields are read-only from outside
+```
+
+### Operator Overloading
+
+```velo
+class Vector(int x, int y) {
+    operator +(Vector other) Vector {
+        new Vector(x + other.x, y + other.y);
+    };
+
+    operator ==(Vector other) bool {
+        x == other.x & y == other.y;
+    };
+
+    operator [](int index) int {
+        if (index == 0) then x else y;
+    };
+};
+
+Vector a = new Vector(1, 2);
+Vector b = new Vector(3, 4);
+Vector sum = a + b;          # Vector(4, 6)
+bool eq = a == a;            # true
+int first = a[0];            # 1
 ```
 
 ### Extension Functions

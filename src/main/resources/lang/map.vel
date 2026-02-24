@@ -2,88 +2,252 @@ include "lang/int.vel";
 
 class Map[K, V]() {
     class Entry(K key, V val) {
-        func setValue(V v) void {
-            val = v
-        };
-
         bool hasNext = false;
         Entry next;
+
+        func setValue(V v) void {
+            val = v;
+        };
 
         func setNext(Entry n) void {
             next = n;
             hasNext = true;
         };
+
+        func clearNext() void {
+            hasNext = false;
+        };
     };
 
-    int DEFAULT_CAPACITY = 16;
-    array[Entry] buckets = new array[Entry](DEFAULT_CAPACITY);
-    array[bool] occupied = new array[bool](DEFAULT_CAPACITY);
+    int capacity = 16;
+    array[Entry] buckets = new array[Entry](capacity);
+    array[bool] occupied = new array[bool](capacity);
     int size = 0;
 
-    int i = 0;
-    while (i < DEFAULT_CAPACITY) {
-        occupied[i] = false;
-        i = i + 1;
+    int ii = 0;
+    while (ii < capacity) {
+        occupied[ii] = false;
+        ii = ii + 1;
     };
 
     func bucketIndex(K key) int {
-        (key.hash % buckets.len).abs;
+        (key.hash % capacity).abs;
     };
 
     func empty() bool {
         size == 0;
     };
 
-    func put(K key, V value) void {
-        int bucketIndex = bucketIndex(key);
-        Entry newEntry = new Entry(key, value);
-
-        if (occupied[bucketIndex] == false) {
-            buckets[bucketIndex] = newEntry;
-            occupied[bucketIndex] = true;
-            size = size + 1;
+    # Finds an entry by key in a given bucket chain.
+    func findEntry(K key, Entry head) ptr[Entry] {
+        Entry current = head;
+        bool found = false;
+        while (found == false & current.hasNext) {
+            if (current.key == key) {
+                found = true;
+            } else {
+                current = current.next;
+            };
+        };
+        if (found | current.key == key) {
+            new ptr[Entry](current);
         } else {
-            Entry current = buckets[bucketIndex];
-            bool found = false;
-            while (current.hasNext & found == false) {
-                if (current.key == key) {
-                    current.setValue(value);
-                    found = true;
-                } else {
-                    current = current.next;
-                };
-            };
-            if (found == false) {
-                if (current.key == key) {
-                    current.setValue(value);
-                } else {
-                    current.setNext(newEntry);
-                    size = size + 1;
-                };
-            };
+            null;
+        };
+    };
+
+    func containsKey(K key) bool {
+        int idx = bucketIndex(key);
+        if (occupied[idx] == false) {
+            false;
+        } else {
+            ptr[Entry] entry = findEntry(key, buckets[idx]);
+            entry != null;
         };
     };
 
     func get(K key) ptr[V] {
-        int bucketIndex = bucketIndex(key);
-
-        if (occupied[bucketIndex]) {
-            Entry current = buckets[bucketIndex];
-            bool found = false;
-            while (current.hasNext & found == false) {
-                if (current.key == key) {
-                    found = true;
-                } else {
-                    current = current.next;
-                };
-            };
-            if (current.key == key) {
-                new ptr[V](current.val);
+        int idx = bucketIndex(key);
+        if (occupied[idx] == false) {
+            null;
+        } else {
+            ptr[Entry] entry = findEntry(key, buckets[idx]);
+            if (entry != null) {
+                new ptr[V](entry.val.val);
             } else {
                 null;
             };
-        } else {
-            null;
         };
+    };
+
+    func getOrDefault(K key, V defaultValue) V {
+        ptr[V] result = get(key);
+        if (result != null) {
+            result.val;
+        } else {
+            defaultValue;
+        };
+    };
+
+    func putInternal(K key, V value) void {
+        int idx = bucketIndex(key);
+        Entry newEntry = new Entry(key, value);
+
+        if (occupied[idx] == false) {
+            buckets[idx] = newEntry;
+            occupied[idx] = true;
+            size = size + 1;
+        } else {
+            ptr[Entry] existing = findEntry(key, buckets[idx]);
+            if (existing != null) {
+                existing.val.setValue(value);
+            } else {
+                Entry current = buckets[idx];
+                while (current.hasNext) {
+                    current = current.next;
+                };
+                current.setNext(newEntry);
+                size = size + 1;
+            };
+        };
+    };
+
+    func resize() void {
+        array[Entry] oldBuckets = buckets;
+        array[bool] oldOccupied = occupied;
+        int oldCapacity = capacity;
+
+        capacity = capacity * 2;
+        buckets = new array[Entry](capacity);
+        occupied = new array[bool](capacity);
+        size = 0;
+
+        int idx = 0;
+        while (idx < capacity) {
+            occupied[idx] = false;
+            idx = idx + 1;
+        };
+
+        idx = 0;
+        while (idx < oldCapacity) {
+            if (oldOccupied[idx]) {
+                Entry current = oldBuckets[idx];
+                putInternal(current.key, current.val);
+                while (current.hasNext) {
+                    current = current.next;
+                    putInternal(current.key, current.val);
+                };
+            };
+            idx = idx + 1;
+        };
+    };
+
+    func put(K key, V value) void {
+        if (size * 4 > capacity * 3) {
+            resize();
+        };
+        putInternal(key, value);
+    };
+
+    func putIfAbsent(K key, V value) bool {
+        if (containsKey(key)) {
+            false;
+        } else {
+            put(key, value);
+            true;
+        };
+    };
+
+    func remove(K key) bool {
+        int idx = bucketIndex(key);
+        if (occupied[idx] == false) {
+            false;
+        } else {
+            Entry head = buckets[idx];
+            if (head.key == key) {
+                if (head.hasNext) {
+                    buckets[idx] = head.next;
+                } else {
+                    occupied[idx] = false;
+                };
+                size = size - 1;
+                true;
+            } else {
+                Entry prev = head;
+                bool found = false;
+                while (prev.hasNext & found == false) {
+                    Entry curr = prev.next;
+                    if (curr.key == key) {
+                        if (curr.hasNext) {
+                            prev.setNext(curr.next);
+                        } else {
+                            prev.clearNext();
+                        };
+                        size = size - 1;
+                        found = true;
+                    } else {
+                        prev = curr;
+                    };
+                };
+                found;
+            };
+        };
+    };
+
+    func keys() array[K] {
+        array[K] result = new array[K](size);
+        int pos = 0;
+        int idx = 0;
+        while (idx < capacity) {
+            if (occupied[idx]) {
+                Entry current = buckets[idx];
+                result[pos] = current.key;
+                pos = pos + 1;
+                while (current.hasNext) {
+                    current = current.next;
+                    result[pos] = current.key;
+                    pos = pos + 1;
+                };
+            };
+            idx = idx + 1;
+        };
+        result;
+    };
+
+    func values() array[V] {
+        array[V] result = new array[V](size);
+        int pos = 0;
+        int idx = 0;
+        while (idx < capacity) {
+            if (occupied[idx]) {
+                Entry current = buckets[idx];
+                result[pos] = current.val;
+                pos = pos + 1;
+                while (current.hasNext) {
+                    current = current.next;
+                    result[pos] = current.val;
+                    pos = pos + 1;
+                };
+            };
+            idx = idx + 1;
+        };
+        result;
+    };
+
+    func clear() void {
+        int idx = 0;
+        while (idx < capacity) {
+            occupied[idx] = false;
+            idx = idx + 1;
+        };
+        size = 0;
+    };
+
+    operator [](K key) ptr[V] {
+        get(key);
+    };
+
+    operator []=(K key, V value) void {
+        put(key, value);
     };
 };

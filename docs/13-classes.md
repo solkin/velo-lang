@@ -148,6 +148,29 @@ r.setSeed(20);            # Modifying through method: OK
 # r.previous = 30;        # Direct modification from outside: ERROR
 ```
 
+## Operator Overloading
+
+Classes can define custom behavior for built-in operators using the `operator` keyword:
+
+```velo
+class Vector(int x, int y) {
+    operator +(Vector other) Vector {
+        new Vector(x + other.x, y + other.y);
+    };
+
+    operator [](int index) int {
+        if (index == 0) then x else y;
+    };
+};
+
+Vector a = new Vector(1, 2);
+Vector b = new Vector(3, 4);
+Vector sum = a + b;          # Vector(4, 6)
+int first = a[0];            # 1
+```
+
+For the full list of overloadable operators and detailed usage, see [Operator Overloading](24-operator-overloading.md).
+
 ---
 
 [Previous: Tuples ←](12-tuples.md) | [Next: Extension Functions →](14-extension-functions.md)

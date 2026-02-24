@@ -1,0 +1,152 @@
+include "lang/terminal.vel";
+
+class Vector(int x, int y) {
+    func getX() int { x; };
+    func getY() int { y; };
+
+    operator +(Vector other) Vector {
+        new Vector(x + other.x, y + other.y);
+    };
+
+    operator -(Vector other) Vector {
+        new Vector(x - other.x, y - other.y);
+    };
+
+    operator *(Vector other) Vector {
+        new Vector(x * other.x, y * other.y);
+    };
+
+    operator /(Vector other) Vector {
+        new Vector(x / other.x, y / other.y);
+    };
+
+    operator %(Vector other) Vector {
+        new Vector(x % other.x, y % other.y);
+    };
+
+    operator ==(Vector other) bool {
+        x == other.x & y == other.y;
+    };
+
+    operator !=(Vector other) bool {
+        x != other.x | y != other.y;
+    };
+
+    operator <(Vector other) bool {
+        x < other.x & y < other.y;
+    };
+
+    operator >(Vector other) bool {
+        x > other.x & y > other.y;
+    };
+
+    operator <=(Vector other) bool {
+        x <= other.x & y <= other.y;
+    };
+
+    operator >=(Vector other) bool {
+        x >= other.x & y >= other.y;
+    };
+
+    operator -() Vector {
+        new Vector(0 - x, 0 - y);
+    };
+
+    operator [](int index) int {
+        if (index == 0) then x else y;
+    };
+
+    operator []=(int index, int value) void {
+        if (index == 0) then x = value else y = value;
+    };
+
+    func toString() str {
+        "(".con(x.str).con(", ").con(y.str).con(")");
+    };
+};
+
+func bstr(bool v) str {
+    if (v) then "true" else "false";
+};
+
+# --- Binary: add, sub, mul, div, mod ---
+Vector a = new Vector(1, 2);
+Vector b = new Vector(3, 4);
+
+Vector sum = a + b;
+term.println(sum.toString());
+
+Vector diff = a - b;
+term.println(diff.toString());
+
+Vector prod = a * b;
+term.println(prod.toString());
+
+Vector quot = new Vector(10, 20) / new Vector(5, 4);
+term.println(quot.toString());
+
+Vector rem = new Vector(10, 7) % new Vector(3, 2);
+term.println(rem.toString());
+
+# --- Comparison operators ---
+term.println(bstr(a == a));
+term.println(bstr(a == b));
+term.println(bstr(a != b));
+term.println(bstr(a < b));
+term.println(bstr(b > a));
+term.println(bstr(a <= a));
+term.println(bstr(a >= a));
+term.println(bstr(new Vector(5, 5) <= new Vector(3, 6)));
+
+# --- Unary negation ---
+Vector neg = -a;
+term.println(neg.toString());
+
+# --- Double negation ---
+Vector dneg = -(-a);
+term.println(dneg.toString());
+
+# --- Self-referencing operation ---
+Vector doubled = a + a;
+term.println(doubled.toString());
+
+# --- Index read ---
+term.println(a[0].str);
+term.println(a[1].str);
+
+# --- Index write ---
+Vector c = new Vector(0, 0);
+c[0] = 10;
+c[1] = 20;
+term.println(c.toString());
+
+# --- Multiple index writes ---
+Vector d = new Vector(0, 0);
+d[0] = 100;
+d[1] = 200;
+d[0] = 300;
+term.println(d.toString());
+
+# --- Index compound assignment ---
+Vector e = new Vector(5, 10);
+e[0] = e[0] + 15;
+e[1] = e[1] + 20;
+term.println(e.toString());
+
+# --- Chained binary operations ---
+Vector chain = a + b + new Vector(5, 5);
+term.println(chain.toString());
+
+# --- Mixed operator and comparison ---
+term.println(bstr((a + b) == new Vector(4, 6)));
+
+# --- Compound assignment on class variable ---
+Vector f = new Vector(1, 1);
+f = f + new Vector(10, 10);
+term.println(f.toString());
+
+# --- Operator returning different type (bool from ==) used in expression ---
+bool eq1 = a == a;
+bool eq2 = a == b;
+term.println(bstr(eq1));
+term.println(bstr(eq2));

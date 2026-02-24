@@ -257,4 +257,4 @@ Box[str] b = new Box[str]("ok");
 
 ---
 
-[Previous: Apply Blocks ←](22-apply-blocks.md)
+[Previous: Apply Blocks ←](22-apply-blocks.md) | [Next: Operator Overloading →](24-operator-overloading.md)

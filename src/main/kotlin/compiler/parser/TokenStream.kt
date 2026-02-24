@@ -16,6 +16,7 @@ class TokenStream(private val input: Input) {
         "false",
         "null",
         "include",
+        "operator",
     ).plus(stdTypesSet)
 
     private fun isKeyword(str: String): Boolean {

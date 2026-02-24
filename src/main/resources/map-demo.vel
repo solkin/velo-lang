@@ -1,0 +1,104 @@
+include "lang/terminal.vel";
+include "lang/map.vel";
+include "lang/bool.vel";
+
+# --- Basic put / get / operator syntax ---
+
+Map[str, int] ages = new Map[str, int]();
+
+ages["Alice"] = 30;
+ages["Bob"] = 25;
+ages["Charlie"] = 35;
+ages.put("Diana", 28);
+
+term.println("size: ".con(ages.size.str));
+
+ptr[int] alice = ages["Alice"];
+if (alice != null) {
+    term.println("Alice: ".con(alice.val.str));
+};
+
+# --- containsKey ---
+
+term.println("has Bob: ".con(ages.containsKey("Bob").str));
+term.println("has Eve: ".con(ages.containsKey("Eve").str));
+
+# --- getOrDefault ---
+
+int eveAge = ages.getOrDefault("Eve", 0);
+term.println("Eve (default): ".con(eveAge.str));
+
+int bobAge = ages.getOrDefault("Bob", 0);
+term.println("Bob (default): ".con(bobAge.str));
+
+# --- putIfAbsent ---
+
+bool added = ages.putIfAbsent("Eve", 22);
+term.println("Eve added: ".con(added.str));
+term.println("Eve: ".con(ages["Eve"].val.str));
+
+bool addedAgain = ages.putIfAbsent("Eve", 99);
+term.println("Eve added again: ".con(addedAgain.str));
+term.println("Eve still: ".con(ages["Eve"].val.str));
+
+# --- Update existing key ---
+
+ages["Bob"] = 26;
+term.println("Bob updated: ".con(ages["Bob"].val.str));
+
+# --- remove ---
+
+term.println("size before remove: ".con(ages.size.str));
+bool removed = ages.remove("Charlie");
+term.println("Charlie removed: ".con(removed.str));
+term.println("size after remove: ".con(ages.size.str));
+term.println("has Charlie: ".con(ages.containsKey("Charlie").str));
+
+bool removedAgain = ages.remove("Charlie");
+term.println("Charlie removed again: ".con(removedAgain.str));
+
+# --- keys and values ---
+
+Map[str, str] colors = new Map[str, str]();
+colors["r"] = "red";
+colors["g"] = "green";
+colors["b"] = "blue";
+
+array[str] k = colors.keys();
+term.println("keys count: ".con(k.len.str));
+
+array[str] v = colors.values();
+term.println("values count: ".con(v.len.str));
+
+# --- clear ---
+
+colors.clear();
+term.println("after clear: ".con(colors.size.str));
+term.println("empty: ".con(colors.empty().str));
+
+# --- Dynamic resizing (insert > 12 entries to trigger resize from 16 to 32) ---
+
+Map[int, int] big = new Map[int, int]();
+int n = 0;
+while (n < 20) {
+    big[n] = n * n;
+    n = n + 1;
+};
+term.println("big size: ".con(big.size.str));
+term.println("big[0]: ".con(big[0].val.str));
+term.println("big[19]: ".con(big[19].val.str));
+term.println("big[10]: ".con(big[10].val.str));
+
+# Verify all entries survived resize
+int check = 0;
+int valid = 0;
+while (check < 20) {
+    ptr[int] val = big[check];
+    if (val != null) {
+        if (val.val == check * check) {
+            valid = valid + 1;
+        };
+    };
+    check = check + 1;
+};
+term.println("all valid: ".con((valid == 20).str));

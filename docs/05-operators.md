@@ -89,6 +89,10 @@ int shl = a << 1;     # Left shift
 int shr = a >> 1;     # Right shift
 ```
 
+## Operator Overloading
+
+All arithmetic, comparison, unary, and index operators can be overloaded for user-defined classes using the `operator` keyword. See [Operator Overloading](24-operator-overloading.md) for details.
+
 ---
 
 [Previous: Variables and Assignment ←](04-variables-and-assignment.md) | [Next: Conditional Statements →](06-conditionals.md)

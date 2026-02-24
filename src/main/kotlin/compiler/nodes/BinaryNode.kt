@@ -25,6 +25,15 @@ data class BinaryNode(
     override fun compile(ctx: Context): Type {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
+        if (leftType is ClassType) {
+            val opName = "op@$operator"
+            val prop = ClassElementProp(opName)
+            try {
+                return prop.compile(leftType, args = listOf(rightType), ctx)
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException("Operator '$operator' is not defined for class '${leftType.name}'")
+            }
+        }
         if (!leftType.sameAs(rightType)) {
             throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")
         }
