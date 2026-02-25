@@ -103,6 +103,7 @@ Collections are now fully supported with automatic type conversion in both direc
 
 | Velo Type | JVM Parameter Type | Notes |
 |-----------|-------------------|-------|
+| `array[byte]` | `Array<Byte>` | ✅ Auto-converted |
 | `array[int]` | `Array<Int>` | ✅ Auto-converted |
 | `array[str]` | `Array<String>` | ✅ Auto-converted |
 | `array[float]` | `Array<Float>` | ✅ Auto-converted |
@@ -151,6 +152,7 @@ class CollectionProcessor {
 
 | Velo Type | JVM Return Type | Notes |
 |-----------|-----------------|-------|
+| `array[byte]` | `ByteArray` | ✅ Auto-converted |
 | `array[int]` | `Array<Int>` | ✅ Auto-converted |
 | `array[str]` | `Array<String>` | ✅ Auto-converted |
 | `dict[K:V]` | `Map<K, V>` | ✅ Auto-converted |

@@ -27,6 +27,30 @@ str hex = (255).format(16);     # "ff"
 str bin = (10).format(2);       # "1010"
 ```
 
+## String Extensions
+
+Extension functions for string type:
+
+```velo
+include "lang/str.vel";
+
+str text = "Hello";
+array[byte] bytes = text.bytes();    # [72, 101, 108, 108, 111]
+```
+
+## Array Extensions
+
+Extension functions for array type:
+
+```velo
+include "lang/array.vel";
+
+array[byte] bytes = new array[byte]{72, 101, 108, 108, 111};
+str text = bytes.str();              # "Hello"
+```
+
+Both extensions enable roundtrip conversion: `text.bytes().str() == text`.
+
 ## Terminal
 
 Class for terminal operations:
@@ -77,10 +101,17 @@ include "lang/filesystem.vel";
 
 FileSystem fs = new FileSystem();
 
-# Reading and writing
+# Reading and writing strings
 fs.write("file.txt", "Content");
 str content = fs.read("file.txt");
 fs.append("file.txt", "\nMore content");
+
+# Reading and writing byte arrays
+include "lang/str.vel";
+array[byte] data = "binary data".bytes();
+fs.writeBytes("file.bin", data);
+array[byte] loaded = fs.readBytes("file.bin");
+fs.appendBytes("file.bin", data);
 
 # Checks
 bool exists = fs.exists("file.txt");
@@ -143,8 +174,10 @@ srv.close();
 | `accept` | `() Socket` | Accept an incoming connection (blocking) |
 | `write` | `(str data) void` | Send a string |
 | `writeLine` | `(str data) void` | Send a string followed by a newline |
+| `writeBytes` | `(array[byte] data) void` | Send a byte array |
 | `readLine` | `() str` | Read a line (blocking, strips newline) |
 | `read` | `(int size) str` | Read up to `size` characters |
+| `readBytes` | `(int size) array[byte]` | Read up to `size` bytes |
 | `available` | `() int` | Bytes available without blocking |
 | `connected` | `() bool` | Check if socket is connected |
 | `close` | `() void` | Close the socket |
