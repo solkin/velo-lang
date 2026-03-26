@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Native Classes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Native Classes</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Native classes bridge Velo to Java/Kotlin classes via reflection, enabling JVM interop.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Declare a native class with <code>native class</code> and <code>native func</code> for methods backed by JVM.</p></td>
+                <td class="code"><pre><code><span class="kw">native</span> <span class="kw">class</span> <span class="ty">Terminal</span>() {
+    <span class="kw">native</span> <span class="kw">func</span> print(<span class="ty">str</span> text) <span class="kw">void</span>;
+    <span class="kw">native</span> <span class="kw">func</span> input() <span class="ty">str</span>;
+
+    <span class="kw">func</span> println(<span class="ty">str</span> text) <span class="kw">void</span> {
+        print(text.con(<span class="st">&quot;\n&quot;</span>));
+    };
+};
+
+<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
+term.println(<span class="st">&quot;Hello!&quot;</span>);</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Register native classes in Kotlin using <code>VeloRuntime</code>.</p></td>
+                <td class="code"><pre><code>// Kotlin
+val runtime = VeloRuntime()
+    .register(MyClass::class)
+    .register(&quot;VeloName&quot;, JvmClass::class)
+
+runtime.runFile(&quot;script.vel&quot;)</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Type mapping between Velo and JVM is automatic for primitives and collections.</p></td>
+                <td class="code"><pre><code><span class="cm"># Velo     → JVM</span>
+<span class="cm"># int      → Int</span>
+<span class="cm"># float    → Float</span>
+<span class="cm"># str      → String</span>
+<span class="cm"># bool     → Boolean</span>
+<span class="cm"># byte     → Byte</span>
+<span class="cm"># array[T] → Array&lt;T&gt;</span>
+<span class="cm"># dict[K:V]→ Map&lt;K, V&gt;</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="hash-map.html">&larr; Hash Map</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

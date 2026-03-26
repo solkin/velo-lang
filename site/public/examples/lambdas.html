@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Lambda Functions</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Lambda Functions</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Velo supports anonymous functions (lambdas) that can be stored in variables and passed around.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A lambda is declared with <code>func</code> without a name and assigned to a variable.</p></td>
+                <td class="code"><pre><code><span class="ty">any</span> multiply <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    a <span class="op">*</span> b;
+};
+
+<span class="ty">int</span> result <span class="op">=</span> multiply(<span class="nu">4</span>, <span class="nu">5</span>);  <span class="cm"># 20</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>You can also use typed function variables.</p></td>
+                <td class="code"><pre><code><span class="kw">func</span>[<span class="ty">int</span>] add <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    a <span class="op">+</span> b;
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Lambdas are commonly used with array operations like <code>map</code>.</p></td>
+                <td class="code"><pre><code><span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>};
+
+<span class="ty">array</span>[<span class="ty">int</span>] doubled <span class="op">=</span> numbers.map(
+    <span class="kw">func</span>(<span class="ty">int</span> index, <span class="ty">int</span> value) <span class="ty">int</span> {
+        value <span class="op">*</span> <span class="nu">2</span>
+    }
+);</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="functions.html">&larr; Functions</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="recursion.html">Recursion &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

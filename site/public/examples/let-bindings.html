@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Let Bindings</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Let Bindings</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>The <code>let</code> construct creates scoped local variables, keeping the surrounding scope clean.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p><code>let</code> declares a variable that is only visible inside the block.</p></td>
+                <td class="code"><pre><code><span class="kw">let</span>(<span class="ty">any</span> result <span class="op">=</span> calculate()) {
+    term.println(result.<span class="ty">str</span>);
+};
+<span class="cm"># result is not accessible here</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>This is useful for binding intermediate results.</p></td>
+                <td class="code"><pre><code><span class="kw">let</span>(<span class="ty">any</span> res <span class="op">=</span> fib(<span class="nu">15</span>)) {
+    term.println(res.<span class="ty">str</span>);
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="modules.html">&larr; Modules</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="type-conversions.html">Type Conversions &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

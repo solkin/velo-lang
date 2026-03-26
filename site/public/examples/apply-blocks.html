@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Apply Blocks</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Apply Blocks</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Apply blocks let you execute operations in the context of an expression's result, using the implicit variable <code>it</code>. Similar to Kotlin's <code>.apply{}</code>.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>An apply block follows any expression with <code>{ }</code>. Inside, <code>it</code> refers to the expression's value.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Person</span>(<span class="ty">str</span> name, <span class="ty">int</span> age) {
+    <span class="kw">func</span> setName(<span class="ty">str</span> n) <span class="kw">void</span> { name <span class="op">=</span> n; };
+    <span class="kw">func</span> setAge(<span class="ty">int</span> a) <span class="kw">void</span> { age <span class="op">=</span> a; };
+};
+
+<span class="ty">Person</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Person</span>(<span class="st">&quot;&quot;</span>, <span class="nu">0</span>) {
+    it.setName(<span class="st">&quot;John&quot;</span>);
+    it.setAge(<span class="nu">25</span>);
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Apply blocks work with arrays and dictionaries for initialization.</p></td>
+                <td class="code"><pre><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">5</span>) {
+    it[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">1</span>;
+    it[<span class="nu">1</span>] <span class="op">=</span> <span class="nu">2</span>;
+    it[<span class="nu">2</span>] <span class="op">=</span> <span class="nu">3</span>;
+    it[<span class="nu">3</span>] <span class="op">=</span> <span class="nu">4</span>;
+    it[<span class="nu">4</span>] <span class="op">=</span> <span class="nu">5</span>;
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Apply blocks can be nested.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">func</span> setX(<span class="ty">int</span> val) <span class="kw">void</span> { x <span class="op">=</span> val; };
+    <span class="kw">func</span> setY(<span class="ty">int</span> val) <span class="kw">void</span> { y <span class="op">=</span> val; };
+};
+
+<span class="kw">class</span> <span class="ty">Line</span>(<span class="ty">Point</span> start, <span class="ty">Point</span> end) {};
+
+<span class="ty">Line</span> line <span class="op">=</span> <span class="kw">new</span> <span class="ty">Line</span>(
+    <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">0</span>, <span class="nu">0</span>), <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">0</span>, <span class="nu">0</span>)
+) {
+    it.start {
+        it.setX(<span class="nu">10</span>);
+        it.setY(<span class="nu">20</span>);
+    };
+    it.end {
+        it.setX(<span class="nu">100</span>);
+        it.setY(<span class="nu">200</span>);
+    };
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>They also work with primitives.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">5</span> {
+    it <span class="op">=</span> it <span class="op">*</span> <span class="nu">2</span>;
+};
+<span class="cm"># x = 10</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="generics.html">&larr; Generics</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="operator-overloading.html">Operator Overloading &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

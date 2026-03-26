@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Classes</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Classes</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Classes in Velo have constructor parameters, fields, and methods. Fields are read-only from outside the class.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A class is defined with <code>class</code>, constructor parameters in parentheses, and a body with fields and methods.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="ty">int</span> xCoord <span class="op">=</span> x;
+    <span class="ty">int</span> yCoord <span class="op">=</span> y;
+
+    <span class="kw">func</span> move(<span class="ty">int</span> dx, <span class="ty">int</span> dy) <span class="kw">void</span> {
+        xCoord <span class="op">=</span> xCoord <span class="op">+</span> dx;
+        yCoord <span class="op">=</span> yCoord <span class="op">+</span> dy;
+    };
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Create instances with <code>new</code>. Access fields (read-only from outside) and call methods.</p></td>
+                <td class="code"><pre><code><span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>);
+<span class="ty">int</span> x <span class="op">=</span> p.xCoord;       <span class="cm"># reading: OK</span>
+<span class="cm"># p.xCoord = 15;        # ERROR: read-only</span>
+p.move(<span class="nu">5</span>, <span class="nu">5</span>);            <span class="cm"># modify via method: OK</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>The class body acts as a constructor. Fields can be computed from parameters.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Counter</span>() {
+    <span class="ty">int</span> value <span class="op">=</span> <span class="nu">0</span>;
+
+    <span class="kw">func</span> increment() <span class="kw">void</span> {
+        value <span class="op">=</span> value <span class="op">+</span> <span class="nu">1</span>;
+    };
+
+    <span class="kw">func</span> getValue() <span class="ty">int</span> {
+        value;
+    };
+};
+
+<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();
+c.increment();
+c.increment();
+<span class="ty">int</span> v <span class="op">=</span> c.getValue();    <span class="cm"># 2</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Classes can be nested inside other classes.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">LinkedList</span>() {
+    <span class="kw">class</span> <span class="ty">Item</span>(<span class="ty">Item</span> prev, <span class="ty">any</span> value) {};
+
+    <span class="ty">Item</span> start;
+    <span class="ty">Item</span> end;
+    <span class="ty">int</span> length <span class="op">=</span> <span class="nu">0</span>;
+
+    <span class="kw">func</span> add(<span class="ty">any</span> value) <span class="kw">void</span> {
+        end <span class="op">=</span> <span class="kw">new</span> <span class="ty">Item</span>(end, value);
+        <span class="kw">if</span> (length <span class="op">==</span> <span class="nu">0</span>) {
+            start <span class="op">=</span> end;
+        };
+        length <span class="op">=</span> length <span class="op">+</span> <span class="nu">1</span>;
+    };
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="tuples.html">&larr; Tuples</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="extension-functions.html">Extension Functions &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Hash Map</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Hash Map</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>The <code>Map[K, V]</code> module provides a generic hash map with operator overloading for bracket access.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Create a Map and add entries using bracket syntax or <code>put</code>.</p></td>
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/map.vel&quot;</span>;
+
+<span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">int</span>] ages <span class="op">=</span> <span class="kw">new</span> <span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">int</span>]();
+
+ages[<span class="st">&quot;Alice&quot;</span>] <span class="op">=</span> <span class="nu">30</span>;
+ages[<span class="st">&quot;Bob&quot;</span>] <span class="op">=</span> <span class="nu">25</span>;
+ages.put(<span class="st">&quot;Charlie&quot;</span>, <span class="nu">35</span>);</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p><code>get</code> returns a <code>ptr</code> (null if key is missing). Use <code>getOrDefault</code> for a fallback value.</p></td>
+                <td class="code"><pre><code><span class="ty">ptr</span>[<span class="ty">int</span>] val <span class="op">=</span> ages[<span class="st">&quot;Alice&quot;</span>];
+<span class="kw">if</span> (val <span class="op">!=</span> <span class="kw">null</span>) {
+    <span class="ty">int</span> age <span class="op">=</span> val.val;    <span class="cm"># 30</span>
+};
+
+<span class="ty">int</span> age <span class="op">=</span> ages.getOrDefault(<span class="st">&quot;Eve&quot;</span>, <span class="nu">0</span>);  <span class="cm"># 0</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Check, insert conditionally, and remove entries.</p></td>
+                <td class="code"><pre><code><span class="ty">bool</span> has <span class="op">=</span> ages.containsKey(<span class="st">&quot;Bob&quot;</span>);        <span class="cm"># true</span>
+<span class="ty">bool</span> added <span class="op">=</span> ages.putIfAbsent(<span class="st">&quot;Diana&quot;</span>, <span class="nu">28</span>); <span class="cm"># true</span>
+<span class="ty">bool</span> removed <span class="op">=</span> ages.remove(<span class="st">&quot;Charlie&quot;</span>);     <span class="cm"># true</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Iterate using <code>keys()</code> and <code>values()</code>.</p></td>
+                <td class="code"><pre><code><span class="ty">array</span>[<span class="ty">str</span>] k <span class="op">=</span> ages.keys();
+<span class="ty">array</span>[<span class="ty">int</span>] v <span class="op">=</span> ages.values();
+
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (i <span class="op">&lt;</span> k.len) {
+    <span class="cm"># process k[i] and v[i]</span>
+    i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="sockets.html">&larr; TCP Sockets</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="native-classes.html">Native Classes &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

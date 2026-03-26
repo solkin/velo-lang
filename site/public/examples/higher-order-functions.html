@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Higher-Order Functions</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Higher-Order Functions</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Functions in Velo can accept other functions as parameters, enabling a functional programming style.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A function that takes another function as a parameter. The parameter type <code>func[int]</code> means "a function returning int".</p></td>
+                <td class="code"><pre><code><span class="kw">func</span> apply(<span class="ty">int</span> x, <span class="kw">func</span>[<span class="ty">int</span>] f) <span class="ty">int</span> {
+    f(x);
+};
+
+<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> {
+    x <span class="op">*</span> x;
+};
+
+<span class="ty">int</span> result <span class="op">=</span> apply(<span class="nu">5</span>, square);  <span class="cm"># 25</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>The built-in <code>map</code> method on arrays is a higher-order function. It takes a callback with <code>(index, value)</code> parameters.</p></td>
+                <td class="code"><pre><code><span class="ty">array</span>[<span class="ty">int</span>] nums <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>};
+
+<span class="ty">array</span>[<span class="ty">int</span>] doubled <span class="op">=</span> nums.map(
+    <span class="kw">func</span>(<span class="ty">int</span> i, <span class="ty">int</span> v) <span class="ty">int</span> {
+        v <span class="op">*</span> <span class="nu">2</span>
+    }
+);  <span class="cm"># [2, 4, 6, 8, 10]</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="recursion.html">&larr; Recursion</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="arrays.html">Arrays &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

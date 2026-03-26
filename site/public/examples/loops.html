@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: While Loops</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: While Loops</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Velo has a single loop construct: <code>while</code>. There is no <code>for</code> loop, and no <code>break</code> or <code>continue</code>.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A basic <code>while</code> loop runs as long as the condition is true.</p></td>
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;
+
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">1</span>;
+<span class="kw">while</span> (i <span class="op">&lt;=</span> <span class="nu">5</span>) {
+    term.println(i.<span class="ty">str</span>);
+    i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Use compound assignment for concise loop counters.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (i <span class="op">&lt;</span> <span class="nu">10</span>) {
+    i <span class="op">+=</span> <span class="nu">1</span>;
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>An infinite loop uses <code>true</code> as the condition. Since there is no <code>break</code>, use a boolean flag or modify the condition variable to exit.</p></td>
+                <td class="code"><pre><code><span class="ty">bool</span> running <span class="op">=</span> <span class="kw">true</span>;
+<span class="kw">while</span> (running) {
+    <span class="cm"># do work...</span>
+    running <span class="op">=</span> <span class="kw">false</span>;  <span class="cm"># exit the loop</span>
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>To simulate early exit, set the loop counter to the limit.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="ty">int</span> n <span class="op">=</span> <span class="nu">100</span>;
+<span class="kw">while</span> (i <span class="op">&lt;</span> n) {
+    <span class="kw">if</span> (found) {
+        i <span class="op">=</span> n;    <span class="cm"># exit the loop</span>
+    } <span class="kw">else</span> {
+        i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
+    };
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="conditionals.html">&larr; If/Else</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="functions.html">Functions &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

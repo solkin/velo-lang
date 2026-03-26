@@ -1,0 +1,234 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #ffffff;
+    --bg-code: #f7f7f9;
+    --bg-output: #e8e8ea;
+    --text: #252525;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --border: #e5e7eb;
+    --kw: #7c3aed;
+    --ty: #0891b2;
+    --st: #16a34a;
+    --nu: #dc2626;
+    --cm: #9ca3af;
+    --op: #6b7280;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", Menlo, Consolas, monospace;
+}
+
+html {
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* ---------- Index page ---------- */
+
+.index-page {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 60px 24px;
+}
+
+.index-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+}
+
+.index-header .tagline {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+}
+
+.index-intro {
+    margin-bottom: 32px;
+    line-height: 1.7;
+}
+
+.index-intro p {
+    margin-bottom: 12px;
+}
+
+.example-list {
+    list-style: none;
+    columns: 2;
+    column-gap: 24px;
+    margin-bottom: 40px;
+}
+
+.example-list li {
+    padding: 3px 0;
+    break-inside: avoid;
+}
+
+.example-list a {
+    display: inline-block;
+    padding: 2px 0;
+}
+
+.index-footer {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* ---------- Example page ---------- */
+
+.example-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+}
+
+.example-page h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.example-page h2 a {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.example-page table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.example-page td {
+    vertical-align: top;
+    padding: 4px 0;
+}
+
+.example-page td.docs {
+    width: 35%;
+    padding-right: 28px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.example-page td.docs p {
+    line-height: 1.65;
+    color: var(--text);
+}
+
+.example-page td.docs code {
+    background: var(--bg-code);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.example-page td.code {
+    width: 65%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.example-page td.code pre {
+    background: var(--bg-code);
+    border-radius: 6px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    margin: 4px 0;
+    line-height: 1.55;
+}
+
+.example-page td.code pre.output {
+    background: var(--bg-output);
+    border-left: 3px solid var(--text-muted);
+}
+
+.example-page td.code pre code {
+    font-size: 0.87rem;
+}
+
+.example-page td.empty {
+    padding: 0;
+}
+
+/* Syntax highlighting */
+.kw { color: var(--kw); font-weight: 600; }
+.ty { color: var(--ty); }
+.st { color: var(--st); }
+.nu { color: var(--nu); }
+.cm { color: var(--cm); font-style: italic; }
+.op { color: var(--op); }
+
+/* Navigation */
+.nav-footer {
+    padding-top: 24px !important;
+    border-top: 1px solid var(--border);
+}
+
+.nav-links {
+    display: flex;
+    justify-content: space-between;
+}
+
+.nav-prev { text-align: left; }
+.nav-next { text-align: right; margin-left: auto; }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+    .example-page table,
+    .example-page tbody,
+    .example-page tr,
+    .example-page td {
+        display: block;
+        width: 100%;
+    }
+
+    .example-page td.docs {
+        width: 100%;
+        padding-right: 0;
+        padding-bottom: 4px;
+    }
+
+    .example-page td.code {
+        width: 100%;
+        padding-bottom: 16px;
+    }
+
+    .example-list {
+        columns: 1;
+    }
+}

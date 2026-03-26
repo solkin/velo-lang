@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Pointers</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Pointers</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Velo has type-safe, memory-safe pointers for pass-by-reference semantics. No pointer arithmetic is allowed.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Create a pointer with an initial value, a null pointer, or take the address of a variable with <code>&amp;</code>.</p></td>
+                <td class="code"><pre><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
+<span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>];
+<span class="ty">ptr</span>[<span class="ty">int</span>] alsoNull <span class="op">=</span> <span class="kw">null</span>;
+
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
+<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Dereference with <code>.val</code>, <code>.*</code>, or the prefix <code>*</code> operator.</p></td>
+                <td class="code"><pre><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
+
+<span class="ty">int</span> value <span class="op">=</span> p.val;    <span class="cm"># 42</span>
+<span class="ty">int</span> value2 <span class="op">=</span> <span class="op">*</span>p;      <span class="cm"># 42</span>
+
+p.val <span class="op">=</span> <span class="nu">100</span>;
+<span class="op">*</span>p <span class="op">=</span> <span class="nu">200</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>The address-of operator creates a reference to an existing variable. Modifying through the pointer changes the original.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
+<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x;
+px.val <span class="op">=</span> <span class="nu">20</span>;
+<span class="cm"># x is now 20</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A classic swap function using pointers.</p></td>
+                <td class="code"><pre><code><span class="kw">func</span> swap(<span class="ty">ptr</span>[<span class="ty">int</span>] a, <span class="ty">ptr</span>[<span class="ty">int</span>] b) <span class="kw">void</span> {
+    <span class="ty">int</span> tmp <span class="op">=</span> a.val;
+    a.val <span class="op">=</span> b.val;
+    b.val <span class="op">=</span> tmp;
+};
+
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
+<span class="ty">int</span> y <span class="op">=</span> <span class="nu">20</span>;
+swap(<span class="op">&amp;</span>x, <span class="op">&amp;</span>y);
+<span class="cm"># x = 20, y = 10</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Check for null before dereferencing.</p></td>
+                <td class="code"><pre><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>];
+
+<span class="kw">if</span> (p <span class="op">!=</span> <span class="kw">null</span>) {
+    <span class="ty">int</span> v <span class="op">=</span> p.val;
+} <span class="kw">else</span> {
+    term.println(<span class="st">&quot;Pointer is null&quot;</span>);
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="extension-functions.html">&larr; Extension Functions</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="generics.html">Generics &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

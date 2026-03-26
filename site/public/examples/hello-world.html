@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Hello World</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Hello World</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Our first program will print the classic "Hello, World!" message. Here's the full source code.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>To print output, we first need to include the terminal module which provides console I/O.</p></td>
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>We declare a variable <code>hello</code> with type <code>str</code> and assign it a string value.</p></td>
+                <td class="code"><pre><code><span class="ty">str</span> hello <span class="op">=</span> <span class="st">&quot;Hello, World!&quot;</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>The <code>term</code> object (created by the terminal module) provides <code>print</code> and <code>println</code> methods for output.</p></td>
+                <td class="code"><pre><code>term.println(hello);</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>To run the program, save it as <code>hello.vel</code> and use Gradle.</p></td>
+                <td class="code output-cell"><pre class="output"><code>$ ./gradlew run --args=&quot;hello.vel&quot;
+Hello, World!</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="values.html">Values &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

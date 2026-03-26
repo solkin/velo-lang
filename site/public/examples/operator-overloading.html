@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Operator Overloading</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Operator Overloading</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Classes can define custom behavior for built-in operators using the <code>operator</code> keyword. Velo supports arithmetic, comparison, unary, and index operators.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Define binary operators like <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> inside a class.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">-</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">-</span> other.x, y <span class="op">-</span> other.y);
+    };
+};
+
+<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+<span class="ty">Vector</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">4</span>);
+<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> b;    <span class="cm"># Vector(4, 6)</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Comparison operators return <code>bool</code>.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">==</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        x <span class="op">==</span> other.x <span class="op">&amp;</span> y <span class="op">==</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&lt;</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        x <span class="op">&lt;</span> other.x <span class="op">&amp;</span> y <span class="op">&lt;</span> other.y;
+    };
+};
+
+<span class="ty">bool</span> eq <span class="op">=</span> a <span class="op">==</span> a;      <span class="cm"># true</span>
+<span class="ty">bool</span> lt <span class="op">=</span> a <span class="op">&lt;</span> b;       <span class="cm"># true</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Unary negation takes no parameters. The compiler distinguishes it from binary <code>-</code> by the parameter count.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">-</span>() <span class="ty">Vector</span> {
+        <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span> <span class="op">-</span> x, <span class="nu">0</span> <span class="op">-</span> y);
+    };
+};
+
+<span class="ty">Vector</span> neg <span class="op">=</span> <span class="op">-</span>a;       <span class="cm"># Vector(-1, -2)</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Index operators enable bracket-based read and write access.</p></td>
+                <td class="code"><pre><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> [](<span class="ty">int</span> index) <span class="ty">int</span> {
+        <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="kw">else</span> y;
+    };
+
+    <span class="kw">operator</span> []<span class="op">=</span>(<span class="ty">int</span> index, <span class="ty">int</span> value) <span class="kw">void</span> {
+        <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="op">=</span> value
+        <span class="kw">else</span> y <span class="op">=</span> value;
+    };
+};
+
+<span class="ty">Vector</span> v <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span>, <span class="nu">0</span>);
+v[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">10</span>;
+v[<span class="nu">1</span>] <span class="op">=</span> <span class="nu">20</span>;
+<span class="ty">int</span> first <span class="op">=</span> v[<span class="nu">0</span>];      <span class="cm"># 10</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Compound assignment (<code>+=</code>, <code>-=</code>, etc.) works automatically — it desugars to <code>a = a + b</code>.</p></td>
+                <td class="code"><pre><code><span class="ty">Vector</span> v <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+v <span class="op">=</span> v <span class="op">+</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">10</span>, <span class="nu">10</span>);
+<span class="cm"># v is now Vector(11, 12)</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="apply-blocks.html">&larr; Apply Blocks</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="modules.html">Modules &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

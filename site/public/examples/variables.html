@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Variables</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Variables</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>In Velo, variables are explicitly typed. Every variable declaration includes its type.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Variables are declared with an explicit type and an initial value.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
+<span class="ty">str</span> name <span class="op">=</span> <span class="st">&quot;Velo&quot;</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Variables can be reassigned to new values of the same type.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
+a <span class="op">=</span> <span class="nu">10</span>;
+a <span class="op">=</span> a <span class="op">+</span> <span class="nu">1</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Velo supports compound assignment operators for concise updates.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>;
+
+a <span class="op">+=</span> <span class="nu">5</span>;    <span class="cm"># a = a + 5 → 15</span>
+a <span class="op">-=</span> <span class="nu">3</span>;    <span class="cm"># a = a - 3 → 12</span>
+a <span class="op">*=</span> <span class="nu">2</span>;    <span class="cm"># a = a * 2 → 24</span>
+a <span class="op">/=</span> <span class="nu">4</span>;    <span class="cm"># a = a / 4 → 6</span>
+a <span class="op">%=</span> <span class="nu">4</span>;    <span class="cm"># a = a % 4 → 2</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>The <code>any</code> type allows a variable to hold values of different types.</p></td>
+                <td class="code"><pre><code><span class="ty">any</span> value <span class="op">=</span> <span class="nu">42</span>;
+value <span class="op">=</span> <span class="st">&quot;Hello&quot;</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="values.html">&larr; Values</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="operators.html">Operators &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Terminal I/O</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Terminal I/O</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>The Terminal module provides console input and output. It's the most commonly used standard library module.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Include the terminal module to get the <code>term</code> object.</p></td>
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p><code>print</code> outputs text without a newline. <code>println</code> adds a newline.</p></td>
+                <td class="code"><pre><code>term.print(<span class="st">&quot;Hello &quot;</span>);     <span class="cm"># no newline</span>
+term.println(<span class="st">&quot;World&quot;</span>);    <span class="cm"># with newline</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p><code>input()</code> reads a line from the console.</p></td>
+                <td class="code"><pre><code>term.print(<span class="st">&quot;Enter your name: &quot;</span>);
+<span class="ty">str</span> name <span class="op">=</span> term.input();
+term.println(<span class="st">&quot;Hello, &quot;</span>.con(name));</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="type-conversions.html">&larr; Type Conversions</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="file-system.html">File System &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

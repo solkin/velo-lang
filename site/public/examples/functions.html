@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velo by Example: Functions</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="example-page">
+        <h2><a href="../index.html">Velo by Example</a>: Functions</h2>
+        <table>
+            <tr>
+                <td class="docs"><p>Functions are first-class citizens in Velo. The last expression in a function body is automatically the return value.</p></td>
+                <td class="code empty"></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>A function is declared with <code>func</code>, parameter types, and a return type. The last expression becomes the return value — no <code>return</code> keyword needed.</p></td>
+                <td class="code"><pre><code><span class="kw">func</span> add(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    a <span class="op">+</span> b;
+};
+
+<span class="ty">int</span> result <span class="op">=</span> add(<span class="nu">5</span>, <span class="nu">3</span>);  <span class="cm"># 8</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Functions without parameters use empty parentheses.</p></td>
+                <td class="code"><pre><code><span class="kw">func</span> getAnswer() <span class="ty">int</span> {
+    <span class="nu">42</span>;
+};
+
+<span class="ty">int</span> answer <span class="op">=</span> getAnswer();</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Functions that don't return a value use the <code>void</code> return type.</p></td>
+                <td class="code"><pre><code><span class="kw">func</span> printHello() <span class="kw">void</span> {
+    term.println(<span class="st">&quot;Hello&quot;</span>);
+};</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-prev"><a href="loops.html">&larr; While Loops</a></span>
+                    </div>
+                </td>
+                <td class="code nav-footer">
+                    <div class="nav-links">
+                        <span class="nav-next"><a href="lambdas.html">Lambda Functions &rarr;</a></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
