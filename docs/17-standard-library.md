@@ -282,8 +282,11 @@ while (n < 100) {
 | `containsKey` | `(K key) bool` | Check key existence |
 | `putIfAbsent` | `(K key, V value) bool` | Insert if missing, returns true if inserted |
 | `remove` | `(K key) bool` | Remove entry, returns true if found |
+| `at` | `(K key) V` | Get value directly (error if missing) |
+| `contains` | `(V value) bool` | Check if value exists |
 | `keys` | `() array[K]` | All keys as array |
 | `values` | `() array[V]` | All values as array |
+| `entries` | `() array[tuple[K, V]]` | All entries as array of tuples |
 | `clear` | `() void` | Remove all entries |
 | `empty` | `() bool` | Check if map has no entries |
 | `size` | `int` (field) | Number of entries |
