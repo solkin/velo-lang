@@ -225,6 +225,11 @@ class GoldenTest {
         runGoldenTest("generics")
     }
 
+    @Test
+    fun `golden - hash map`() {
+        runGoldenTest("hash-map")
+    }
+
     // ========== Utility Methods ==========
 
     /**

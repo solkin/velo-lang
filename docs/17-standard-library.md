@@ -207,22 +207,25 @@ ages.put("Charlie", 35);
 ### Lookup
 
 ```velo
+# operator [] returns V directly
+int age = ages["Alice"];               # 30
+
 # get() returns ptr[V] — null if key is not found
-ptr[int] val = ages["Alice"];
+ptr[int] val = ages.get("Alice");
 if (val != null) {
-    int age = val.val;              # 30
+    int a = val.val;
 };
 
 # getOrDefault() returns V directly, with a fallback
-int age = ages.getOrDefault("Eve", 0);  # 0
+int eveAge = ages.getOrDefault("Eve", 0);  # 0
 ```
 
 ### Checking and Conditional Insert
 
 ```velo
-bool has = ages.containsKey("Bob");     # true
-bool empty = ages.empty();              # false
-int count = ages.size;                  # number of entries
+bool has = ages.key("Bob");            # true
+bool empty = ages.empty();             # false
+int count = ages.len;                  # number of entries
 
 # putIfAbsent — inserts only if key is missing, returns true if inserted
 bool added = ages.putIfAbsent("Diana", 28);     # true
@@ -232,15 +235,15 @@ bool again = ages.putIfAbsent("Diana", 99);     # false, value stays 28
 ### Removing Entries
 
 ```velo
-bool removed = ages.remove("Charlie");  # true
-bool noop = ages.remove("Charlie");     # false (already gone)
+bool removed = ages.del("Charlie");    # true
+bool noop = ages.del("Charlie");       # false (already gone)
 ```
 
 ### Iterating
 
 ```velo
 array[str] k = ages.keys();     # array of all keys
-array[int] v = ages.values();   # array of all values
+array[int] v = ages.vals();     # array of all values
 
 int i = 0;
 while (i < k.len) {
@@ -253,7 +256,7 @@ while (i < k.len) {
 
 ```velo
 ages.clear();
-# ages.size is 0, ages.empty() is true
+# ages.len is 0, ages.empty() is true
 ```
 
 ### Automatic Resizing
@@ -274,22 +277,22 @@ while (n < 100) {
 
 | Method / Operator | Signature | Description |
 |---|---|---|
-| `operator []` | `(K key) ptr[V]` | Lookup by key (null if missing) |
+| `operator []` | `(K key) V` | Lookup by key |
 | `operator []=` | `(K key, V value) void` | Insert or update |
 | `put` | `(K key, V value) void` | Insert or update |
 | `get` | `(K key) ptr[V]` | Lookup (null if missing) |
 | `getOrDefault` | `(K key, V defaultValue) V` | Lookup with fallback |
-| `containsKey` | `(K key) bool` | Check key existence |
-| `putIfAbsent` | `(K key, V value) bool` | Insert if missing, returns true if inserted |
-| `remove` | `(K key) bool` | Remove entry, returns true if found |
 | `at` | `(K key) V` | Get value directly (error if missing) |
-| `contains` | `(V value) bool` | Check if value exists |
+| `key` | `(K key) bool` | Check key existence |
+| `val` | `(V value) bool` | Check if value exists |
+| `putIfAbsent` | `(K key, V value) bool` | Insert if missing, returns true if inserted |
+| `del` | `(K key) bool` | Remove entry, returns true if found |
 | `keys` | `() array[K]` | All keys as array |
-| `values` | `() array[V]` | All values as array |
-| `entries` | `() array[tuple[K, V]]` | All entries as array of tuples |
+| `vals` | `() array[V]` | All values as array |
+| `arr` | `() array[tuple[K, V]]` | All entries as array of tuples |
 | `clear` | `() void` | Remove all entries |
 | `empty` | `() bool` | Check if map has no entries |
-| `size` | `int` (field) | Number of entries |
+| `len` | `int` (field) | Number of entries |
 
 ---
 

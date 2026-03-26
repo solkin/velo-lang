@@ -633,16 +633,16 @@ EXAMPLES = [
                 "code": 'include "lang/map.vel";\n\nMap[str, int] ages = new Map[str, int]();\n\nages["Alice"] = 30;\nages["Bob"] = 25;\nages.put("Charlie", 35);'
             },
             {
-                "docs": "<code>get</code> returns a <code>ptr</code> (null if key is missing). Use <code>getOrDefault</code> for a fallback value.",
-                "code": 'ptr[int] val = ages["Alice"];\nif (val != null) {\n    int age = val.val;    # 30\n};\n\nint age = ages.getOrDefault("Eve", 0);  # 0'
+                "docs": "Bracket access returns <code>V</code> directly. Use <code>getOrDefault</code> for a fallback value.",
+                "code": 'int age = ages["Alice"];    # 30\n\nint eveAge = ages.getOrDefault("Eve", 0);  # 0'
             },
             {
                 "docs": "Check, insert conditionally, and remove entries.",
-                "code": 'bool has = ages.containsKey("Bob");        # true\nbool added = ages.putIfAbsent("Diana", 28); # true\nbool removed = ages.remove("Charlie");     # true'
+                "code": 'bool has = ages.key("Bob");                # true\nbool added = ages.putIfAbsent("Diana", 28); # true\nbool removed = ages.del("Charlie");        # true'
             },
             {
-                "docs": "Iterate using <code>keys()</code> and <code>values()</code>.",
-                "code": "array[str] k = ages.keys();\narray[int] v = ages.values();\n\nint i = 0;\nwhile (i < k.len) {\n    # process k[i] and v[i]\n    i = i + 1;\n};"
+                "docs": "Iterate using <code>keys()</code> and <code>vals()</code>.",
+                "code": "array[str] k = ages.keys();\narray[int] v = ages.vals();\n\nint i = 0;\nwhile (i < k.len) {\n    # process k[i] and v[i]\n    i = i + 1;\n};"
             }
         ]
     },

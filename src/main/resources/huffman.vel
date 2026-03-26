@@ -81,7 +81,7 @@ func buildTree(Map[int, int] freqs) Node {
     array[Node] nodes = new array[Node](0);
     int i = 0;
     while (i < ks.len) {
-        nodes = nodes.plus(new Node(ks[i], freqs[ks[i]].val, true));
+        nodes = nodes.plus(new Node(ks[i], freqs[ks[i]], true));
         i = i + 1;
     };
 
@@ -158,7 +158,7 @@ func encode(str input, Map[int, str] codes) str {
     str bits = "";
     int i = 0;
     while (i < input.len) {
-        bits = bits.con(codes[input[i]].val);
+        bits = bits.con(codes[input[i]]);
         i = i + 1;
     };
     bits;

@@ -251,7 +251,7 @@ include "lang/map.vel";
 
 Map[str, str] map = new Map[str, str]();
 map["name"] = "Velo";        # calls operator []=
-ptr[str] val = map["name"];  # calls operator []
+str val = map["name"];       # calls operator []
 ```
 
 ## How It Works

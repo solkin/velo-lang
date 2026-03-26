@@ -25,24 +25,21 @@ ages[<span class="st">&quot;Bob&quot;</span>] <span class="op">=</span> <span cl
 ages.put(<span class="st">&quot;Charlie&quot;</span>, <span class="nu">35</span>);</code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p><code>get</code> returns a <code>ptr</code> (null if key is missing). Use <code>getOrDefault</code> for a fallback value.</p></td>
-                <td class="code"><pre><code><span class="ty">ptr</span>[<span class="ty">int</span>] val <span class="op">=</span> ages[<span class="st">&quot;Alice&quot;</span>];
-<span class="kw">if</span> (val <span class="op">!=</span> <span class="kw">null</span>) {
-    <span class="ty">int</span> age <span class="op">=</span> val.val;    <span class="cm"># 30</span>
-};
+                <td class="docs"><p>Bracket access returns <code>V</code> directly. Use <code>getOrDefault</code> for a fallback value.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> age <span class="op">=</span> ages[<span class="st">&quot;Alice&quot;</span>];    <span class="cm"># 30</span>
 
-<span class="ty">int</span> age <span class="op">=</span> ages.getOrDefault(<span class="st">&quot;Eve&quot;</span>, <span class="nu">0</span>);  <span class="cm"># 0</span></code></pre></td>
+<span class="ty">int</span> eveAge <span class="op">=</span> ages.getOrDefault(<span class="st">&quot;Eve&quot;</span>, <span class="nu">0</span>);  <span class="cm"># 0</span></code></pre></td>
             </tr>
             <tr>
                 <td class="docs"><p>Check, insert conditionally, and remove entries.</p></td>
-                <td class="code"><pre><code><span class="ty">bool</span> has <span class="op">=</span> ages.containsKey(<span class="st">&quot;Bob&quot;</span>);        <span class="cm"># true</span>
+                <td class="code"><pre><code><span class="ty">bool</span> has <span class="op">=</span> ages.key(<span class="st">&quot;Bob&quot;</span>);                <span class="cm"># true</span>
 <span class="ty">bool</span> added <span class="op">=</span> ages.putIfAbsent(<span class="st">&quot;Diana&quot;</span>, <span class="nu">28</span>); <span class="cm"># true</span>
-<span class="ty">bool</span> removed <span class="op">=</span> ages.remove(<span class="st">&quot;Charlie&quot;</span>);     <span class="cm"># true</span></code></pre></td>
+<span class="ty">bool</span> removed <span class="op">=</span> ages.del(<span class="st">&quot;Charlie&quot;</span>);        <span class="cm"># true</span></code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p>Iterate using <code>keys()</code> and <code>values()</code>.</p></td>
+                <td class="docs"><p>Iterate using <code>keys()</code> and <code>vals()</code>.</p></td>
                 <td class="code"><pre><code><span class="ty">array</span>[<span class="ty">str</span>] k <span class="op">=</span> ages.keys();
-<span class="ty">array</span>[<span class="ty">int</span>] v <span class="op">=</span> ages.values();
+<span class="ty">array</span>[<span class="ty">int</span>] v <span class="op">=</span> ages.vals();
 
 <span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
 <span class="kw">while</span> (i <span class="op">&lt;</span> k.len) {

@@ -1,0 +1,110 @@
+include "lang/terminal.vel";
+include "lang/map.vel";
+include "lang/bool.vel";
+
+# --- put and operator [] ---
+
+Map[str, int] m = new Map[str, int]();
+m["Alice"] = 30;
+m["Bob"] = 25;
+m.put("Charlie", 35);
+
+term.println(m["Alice"].str);
+term.println(m["Bob"].str);
+term.println(m["Charlie"].str);
+
+# --- len ---
+
+term.println(m.len.str);
+
+# --- key (containsKey) ---
+
+term.println(m.key("Alice").str);
+term.println(m.key("Nobody").str);
+
+# --- val (contains value) ---
+
+term.println(m.val(25).str);
+term.println(m.val(999).str);
+
+# --- getOrDefault ---
+
+term.println(m.getOrDefault("Alice", 0).str);
+term.println(m.getOrDefault("Nobody", 42).str);
+
+# --- get returns ptr ---
+
+ptr[int] found = m.get("Bob");
+term.println((found != null).str);
+ptr[int] missing = m.get("Nobody");
+term.println((missing == null).str);
+
+# --- at ---
+
+term.println(m.at("Charlie").str);
+
+# --- putIfAbsent ---
+
+bool added = m.putIfAbsent("Diana", 28);
+term.println(added.str);
+bool again = m.putIfAbsent("Diana", 99);
+term.println(again.str);
+term.println(m["Diana"].str);
+
+# --- update existing key ---
+
+m["Bob"] = 26;
+term.println(m["Bob"].str);
+
+# --- del ---
+
+bool removed = m.del("Charlie");
+term.println(removed.str);
+bool removedAgain = m.del("Charlie");
+term.println(removedAgain.str);
+term.println(m.len.str);
+
+# --- keys and vals ---
+
+Map[str, str] colors = new Map[str, str]();
+colors["r"] = "red";
+colors["g"] = "green";
+colors["b"] = "blue";
+
+term.println(colors.keys().len.str);
+term.println(colors.vals().len.str);
+
+# --- arr (entries) ---
+
+term.println(colors.arr().len.str);
+
+# --- empty and clear ---
+
+term.println(colors.empty().str);
+colors.clear();
+term.println(colors.empty().str);
+term.println(colors.len.str);
+
+# --- resize (insert > 12 entries to trigger resize) ---
+
+Map[int, int] big = new Map[int, int]();
+int n = 0;
+while (n < 20) {
+    big[n] = n * n;
+    n = n + 1;
+};
+term.println(big.len.str);
+term.println(big[0].str);
+term.println(big[19].str);
+term.println(big[10].str);
+
+# Verify all entries survived resize
+int check = 0;
+int valid = 0;
+while (check < 20) {
+    if (big[check] == check * check) {
+        valid = valid + 1;
+    };
+    check = check + 1;
+};
+term.println((valid == 20).str);
