@@ -13,19 +13,28 @@ data class CallNode(
         }
         val returnType = func.compile(ctx)
         if (returnType is Callable) {
-            val funcArgTypes = returnType.args ?: throw Exception("Callable type arguments is not defined")
-            if (funcArgTypes.size != argTypes.size) {
-                throw Exception("Call args count ${argTypes.size} is differ from required ${funcArgTypes.size}")
-            }
-            val resolvedArgTypes = if (returnType is FuncType) {
-                resolveFuncArgTypes(returnType, funcArgTypes, argTypes)
-            } else {
-                funcArgTypes
-            }
-            resolvedArgTypes.forEachIndexed { i, def ->
-                val argType = argTypes[i]
-                if (!argType.sameAs(def)) {
-                    throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
+            // [funcArgTypes] is `null` when the callable's declared type does
+            // not carry argument information — most commonly the loose form
+            // `func[T]` (only the return type is known) used for higher-order
+            // parameters, callbacks and stored function values. In that case
+            // we skip compile-time arity / argument type checks and trust the
+            // caller. The strict-typed path below is preserved for fully
+            // typed callables where `args` is non-null.
+            val funcArgTypes = returnType.args
+            if (funcArgTypes != null) {
+                if (funcArgTypes.size != argTypes.size) {
+                    throw Exception("Call args count ${argTypes.size} is differ from required ${funcArgTypes.size}")
+                }
+                val resolvedArgTypes = if (returnType is FuncType) {
+                    resolveFuncArgTypes(returnType, funcArgTypes, argTypes)
+                } else {
+                    funcArgTypes
+                }
+                resolvedArgTypes.forEachIndexed { i, def ->
+                    val argType = argTypes[i]
+                    if (!argType.sameAs(def)) {
+                        throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
+                    }
                 }
             }
         }

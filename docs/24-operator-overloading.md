@@ -275,4 +275,4 @@ If an operator is used on a class that doesn't define it, the compiler reports a
 
 ---
 
-[Previous: Generics ←](23-generics.md)
+[Previous: Generics ←](23-generics.md) | [Next: Closures →](25-closures.md)

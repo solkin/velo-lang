@@ -33,9 +33,12 @@ class VMContext(
     fun isStackEmpty(): Boolean = stack.empty()
 
     /**
-     * Load a frame by number
+     * Load a frame by number.
+     *
+     * @param parentVars the variable chain to attach as the new frame's
+     *   parent for closure / lexical-scope lookup.
      */
-    fun loadFrame(num: Int, parent: Frame?): Frame? = frameLoader.loadFrame(num, parent)
+    fun loadFrame(num: Int, parentVars: Vars?): Frame? = frameLoader.loadFrame(num, parentVars)
 
     /**
      * Store a value in the memory area and return its ID

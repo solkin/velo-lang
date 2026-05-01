@@ -232,15 +232,54 @@ EXAMPLES = [
     {
         "id": "higher-order-functions",
         "title": "Higher-Order Functions",
-        "intro": "Functions in Velo can accept other functions as parameters, enabling a functional programming style.",
+        "intro": "Functions in Velo are first-class values: pass them as arguments, return them, store them in variables. Use <code>func[T]</code> as the parameter type when only the return type matters.",
         "segments": [
             {
-                "docs": "A function that takes another function as a parameter. The parameter type <code>func[int]</code> means \"a function returning int\".",
+                "docs": "A function that takes another function as a parameter. <code>func[int]</code> means \"any callable that returns <code>int</code>\".",
                 "code": "func apply(int x, func[int] f) int {\n    f(x);\n};\n\nany square = func(int x) int {\n    x * x;\n};\n\nint result = apply(5, square);  # 25"
             },
             {
                 "docs": "The built-in <code>map</code> method on arrays is a higher-order function. It takes a callback with <code>(index, value)</code> parameters.",
                 "code": "array[int] nums = new array[int]{1, 2, 3, 4, 5};\n\narray[int] doubled = nums.map(\n    func(int i, int v) int {\n        v * 2\n    }\n);  # [2, 4, 6, 8, 10]"
+            },
+            {
+                "docs": "<code>twice</code> applies a function to its own result.",
+                "code": "func twice(int x, func[int] f) int {\n    f(f(x));\n};\n\nany inc = func(int x) int { x + 1; };\nint y = twice(3, inc);  # 5"
+            },
+            {
+                "docs": "Compose two functions to build a new one. The result is itself a <code>func[int]</code> value that can be stored, passed around, or invoked later.",
+                "code": "func compose(func[int] f, func[int] g) func[int] {\n    func(int x) int {\n        f(g(x));\n    };\n};\n\nfunc[int] incThenSquare = compose(square, inc);\nint r = incThenSquare(4);  # (4+1)^2 = 25"
+            },
+            {
+                "docs": "A predicate-driven counter. The lambda is built at the call site and captures <code>threshold</code> from the surrounding scope.",
+                "code": "func count(array[int] arr, func[bool] pred) int {\n    int n = 0;\n    int i = 0;\n    while (i < arr.len) {\n        if (pred(arr[i])) {\n            n = n + 1;\n        };\n        i = i + 1;\n    };\n    n;\n};\n\nint threshold = 10;\nint big = count(\n    new array[int]{3, 12, 7, 25},\n    func(int v) bool { v > threshold; }\n);  # 2"
+            }
+        ]
+    },
+    {
+        "id": "closures",
+        "title": "Closures",
+        "intro": "Functions in Velo capture the variables of their defining scope. The captured environment lives as long as the function value itself, even after the enclosing function has returned.",
+        "segments": [
+            {
+                "docs": "<code>makeAdder</code> returns a lambda that adds a captured number. Each call to <code>makeAdder</code> produces a fresh closure with its own <code>n</code>.",
+                "code": "func makeAdder(int n) func[int] {\n    func(int x) int {\n        x + n;\n    };\n};\n\nfunc[int] add5 = makeAdder(5);\nfunc[int] add10 = makeAdder(10);\n\nadd5(3);   # 8\nadd10(3);  # 13"
+            },
+            {
+                "docs": "Closures can capture <em>mutable</em> state. Two counters made from the same factory keep their counts independent.",
+                "code": "func makeCounter() func[int] {\n    int count = 0;\n    func() int {\n        count = count + 1;\n        count;\n    };\n};\n\nfunc[int] c1 = makeCounter();\nfunc[int] c2 = makeCounter();\n\nc1();  # 1\nc1();  # 2\nc2();  # 1 — independent state\nc1();  # 3"
+            },
+            {
+                "docs": "A factory can return multiple closures sharing the same captured variable — a classic recipe for encapsulated state.",
+                "code": "class Pair(func[void] add, func[int] get) {};\n\nfunc makeAccumulator() Pair {\n    int total = 0;\n    new Pair(\n        func(int v) void { total = total + v; },\n        func() int { total; }\n    );\n};\n\nPair acc = makeAccumulator();\nacc.add(7);\nacc.add(35);\nacc.get();   # 42"
+            },
+            {
+                "docs": "Currying: a function that returns another function lets you bind arguments one at a time.",
+                "code": "func add(int a) func[int] {\n    func(int b) int {\n        a + b;\n    };\n};\n\nfunc[int] addTen = add(10);\naddTen(5);   # 15\nadd(3)(4);   # 7"
+            },
+            {
+                "docs": "Closures are ordinary values: store them in fields, arrays, or pass them across function boundaries. Their captured environment is reachable as long as the closure itself is reachable.",
+                "code": "class Button(str label, func[void] onClick) {};\n\nint clicks = 0;\nButton b = new Button(\"OK\", func() void {\n    clicks = clicks + 1;\n});\n\nb.onClick();\nb.onClick();\n# clicks is now 2"
             }
         ]
     },

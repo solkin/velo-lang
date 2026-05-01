@@ -26,6 +26,7 @@
 22. [Apply Blocks](22-apply-blocks.md)
 23. [Generics](23-generics.md)
 24. [Operator Overloading](24-operator-overloading.md)
+25. [Closures](25-closures.md)
 
 ---
 

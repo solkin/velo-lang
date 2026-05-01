@@ -230,6 +230,16 @@ class GoldenTest {
         runGoldenTest("hash-map")
     }
 
+    @Test
+    fun `golden - closures`() {
+        runGoldenTest("closures")
+    }
+
+    @Test
+    fun `golden - higher order`() {
+        runGoldenTest("higher-order")
+    }
+
     // ========== Utility Methods ==========
 
     /**

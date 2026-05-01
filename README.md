@@ -9,7 +9,7 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 ## Features
 
 - ✅ **Strict Typing** - All variables have explicit types
-- ✅ **Functional Style** - Support for higher-order functions and lambdas
+- ✅ **Functional Style** - Higher-order functions, lambdas and lexical closures
 - ✅ **Compilable** - Code compiles to bytecode for virtual machine
 - ✅ **Embeddable** - Easy integration into other applications
 - ✅ **Generics** - Type-safe generic classes, functions, and methods
@@ -68,6 +68,26 @@ any multiply = func(int a, int b) int {
 func fib(int n) int {
     if n < 2 then n else fib(n - 1) + fib(n - 2);
 };
+```
+
+### Higher-Order Functions and Closures
+
+Functions are first-class values: pass them around, return them, store them.
+Lambdas capture the variables of the scope they were defined in (lexical closures).
+
+```velo
+# Higher-order: a function that takes a function
+func apply(int x, func[int] f) int {
+    f(x);
+};
+
+# Closure: returned lambda remembers `n` after makeAdder returns
+func makeAdder(int n) func[int] {
+    func(int x) int { x + n; };
+};
+
+func[int] add5 = makeAdder(5);
+int r = apply(3, add5);   # 8
 ```
 
 ### Conditional Operators
@@ -319,6 +339,8 @@ The project includes many example programs in `src/main/resources/`:
 - `huffman.vel` - Huffman compression algorithm
 - `class.vel` - Class usage examples
 - `ext.vel` - Extension function examples
+- `closures.vel` - Closures, captured state and currying
+- `higher-order.vel` - `apply`, `compose`, `count` and array.map with captures
 - `http-example.vel` - HTTP request examples
 - `filesystem-example.vel` - File system operations examples
 - `game-of-life.vel` - Conway's Game of Life implementation

@@ -1,0 +1,52 @@
+include "lang/terminal.vel";
+
+# Closures: lambdas that capture their defining environment.
+# The captured variables stay alive as long as the closure is reachable.
+
+# --- 1. Captured value -----------------------------------------
+func makeAdder(int n) func[int] {
+    func(int x) int { x + n; };
+};
+
+func[int] add5  = makeAdder(5);
+func[int] add10 = makeAdder(10);
+
+term.println("add5(3)  = " + add5(3).str);
+term.println("add10(3) = " + add10(3).str);
+
+# --- 2. Captured mutable state ---------------------------------
+func makeCounter() func[int] {
+    int count = 0;
+    func() int {
+        count = count + 1;
+        count;
+    };
+};
+
+func[int] c1 = makeCounter();
+func[int] c2 = makeCounter();
+
+term.println("c1: " + c1().str + ", " + c1().str + ", " + c1().str);
+term.println("c2: " + c2().str + " (independent state)");
+term.println("c1 again: " + c1().str);
+
+# --- 3. Closures stored in classes -----------------------------
+class Button(str label, func[void] onClick) {};
+
+int clicks = 0;
+Button ok = new Button("OK", func() void {
+    clicks = clicks + 1;
+});
+
+ok.onClick();
+ok.onClick();
+ok.onClick();
+
+term.println(ok.label + " clicked " + clicks.str + " times");
+
+# --- 4. Currying -----------------------------------------------
+func add(int a) func[int] {
+    func(int b) int { a + b; };
+};
+
+term.println("add(3)(4) = " + add(3)(4).str);

@@ -7,6 +7,7 @@ import vm.operations.Call
 import vm.operations.Div
 import vm.operations.Dup
 import vm.operations.Equals
+import vm.operations.Frame as FrameOp
 import vm.operations.Halt
 import vm.operations.If
 import vm.operations.IntStr
@@ -61,7 +62,7 @@ class VMTest {
             nativeRegistry = NativeRegistry()
         )
         
-        val frame = ctx.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
+        val frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
         ctx.pushFrame(frame)
         
         while (ctx.currentFrame().pc < ctx.currentFrame().ops.size) {
@@ -83,7 +84,7 @@ class VMTest {
             nativeRegistry = NativeRegistry()
         )
         
-        val frame = ctx.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
+        val frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
         ctx.pushFrame(frame)
         
         try {
@@ -682,5 +683,120 @@ class VMTest {
         val ctx = runVM(frames)
         
         assertEquals(42, ctx.currentFrame().subs.pop().getInt())
+    }
+
+    // ========== Closure / FuncRecord Tests ==========
+
+    /**
+     * Escaping closure: a lambda is created in an inner scope, returned to the
+     * outer scope, and invoked there. The lambda must still be able to read
+     * `n` from the (now-returned-from) frame that defined it.
+     *
+     * Velo equivalent (which the type system can't express today, hence this
+     * lower-level reconstruction):
+     *
+     *   func makeAdder(int n) ... {
+     *       func(int x) int { x + n }   # captures n
+     *   }
+     *   any add5 = makeAdder(5)
+     *   add5(3)                          # = 8
+     *
+     * Without FuncRecord (plain ValueRecord(Int) frame numbers + caller-as-parent
+     * scoping), the inner Load(1) would walk main's vars chain — which doesn't
+     * contain n — and crash with "Undefined variable 1".
+     *
+     * With FuncRecord, the function captures the defining frame's Vars at
+     * creation time, so n is reachable when the lambda is invoked from main.
+     */
+    @Test
+    fun `VM resolves escaping closure via captured vars`() {
+        val frames = listOf(
+            // Frame 0: main
+            //   var[0] is the slot that stores the returned FuncRecord
+            createFrame(0, listOf(
+                Push(5),                   // arg n=5 for makeAdder
+                FrameOp(num = 1),          // push FuncRecord(1, mainVars)
+                Call(args = 1),            // call makeAdder(5) -> FuncRecord(2, makeAdderVars)
+                Store(0),                  // save returned closure into main.var[0]
+                Push(3),                   // arg x=3 for the closure
+                Load(0),                   // push the closure
+                Call(args = 1)             // invoke it; result (8) ends up on main's stack
+            ), vars = listOf(0)),
+
+            // Frame 1: makeAdder body
+            //   var[1] holds parameter n
+            createFrame(1, listOf(
+                Store(1),                  // store arg n
+                FrameOp(num = 2),          // push FuncRecord(2, makeAdderVars containing n)
+                Ret()                      // return the closure
+            ), vars = listOf(1)),
+
+            // Frame 2: inner lambda body
+            //   var[2] holds parameter x; n is reached via captured vars chain
+            createFrame(2, listOf(
+                Store(2),                  // store arg x
+                Load(2),                   // x
+                Load(1),                   // n - resolved through FuncRecord.capturedVars
+                Add(),
+                Ret()
+            ), vars = listOf(2))
+        )
+
+        val ctx = runVM(frames)
+
+        assertEquals(8, ctx.currentFrame().subs.pop().getInt())
+    }
+
+    /**
+     * Two independent closures created from the same `makeAdder` factory must
+     * each carry their own captured `n`. This guards against accidental
+     * sharing of the captured Vars chain between sibling closures.
+     */
+    @Test
+    fun `VM keeps captured vars distinct across closure instances`() {
+        // Same shape as the test above, but produces two closures with
+        // different captured n values, then calls each independently.
+        // var[0] = first closure (captures n=5), var[3] = second (captures n=10)
+        val frames = listOf(
+            createFrame(0, listOf(
+                // add5 = makeAdder(5)
+                Push(5),
+                FrameOp(num = 1),
+                Call(args = 1),
+                Store(0),
+                // add10 = makeAdder(10)
+                Push(10),
+                FrameOp(num = 1),
+                Call(args = 1),
+                Store(3),
+                // add5(3) -> 8
+                Push(3),
+                Load(0),
+                Call(args = 1),
+                // add10(3) -> 13
+                Push(3),
+                Load(3),
+                Call(args = 1),
+                Add()                      // sum: 8 + 13 = 21
+            ), vars = listOf(0, 3)),
+
+            createFrame(1, listOf(
+                Store(1),
+                FrameOp(num = 2),
+                Ret()
+            ), vars = listOf(1)),
+
+            createFrame(2, listOf(
+                Store(2),
+                Load(2),
+                Load(1),
+                Add(),
+                Ret()
+            ), vars = listOf(2))
+        )
+
+        val ctx = runVM(frames)
+
+        assertEquals(21, ctx.currentFrame().subs.pop().getInt())
     }
 }

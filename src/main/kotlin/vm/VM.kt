@@ -32,7 +32,7 @@ class VM(
             nativeRegistry = nativeRegistry
         )
         
-        var frame = ctx.loadFrame(num = 0, parent = null) ?: throw Exception("No main frame")
+        var frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
         
         profiler.start()
         try {

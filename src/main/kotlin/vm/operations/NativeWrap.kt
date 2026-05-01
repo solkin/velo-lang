@@ -28,7 +28,7 @@ class NativeWrap(
         val jvmObject = frame.subs.pop().get<Any>()
         
         // Load the class frame
-        val classFrame = ctx.loadFrame(num = classFrameNum, parent = frame)
+        val classFrame = ctx.loadFrame(num = classFrameNum, parentVars = frame.vars)
             ?: throw Exception("Class frame $classFrameNum not found")
         
         // Execute the class frame to initialize methods
