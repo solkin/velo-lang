@@ -1,0 +1,363 @@
+# Minimal raw DEFLATE writer.
+# compress() emits fixed-Huffman blocks (BTYPE=01) with a simple LZ77 matcher.
+# compressStored() keeps the no-compression stored-block path for debugging.
+class DeflateBitWriter(int capacity) {
+    array[byte] data = new array[byte](capacity);
+    int bytePos = 0;
+    int bitPos = 0;
+
+    int initPos = 0;
+    while (initPos < capacity) {
+        data[initPos] = 0;
+        initPos = initPos + 1;
+    };
+
+    func pow2(int exp) int {
+        int result = 1;
+        int i = 0;
+        while (i < exp) {
+            result = result * 2;
+            i = i + 1;
+        };
+        result;
+    };
+
+    func writeBit(int bit) void {
+        if (bit != 0) {
+            data[bytePos] = data[bytePos] + pow2(bitPos);
+        };
+
+        bitPos = bitPos + 1;
+        if (bitPos == 8) {
+            bitPos = 0;
+            bytePos = bytePos + 1;
+        };
+    };
+
+    func writeBits(int value, int count) void {
+        int i = 0;
+        int v = value;
+        while (i < count) {
+            writeBit(v % 2);
+            v = v / 2;
+            i = i + 1;
+        };
+    };
+
+    func len() int {
+        if (bitPos == 0) then bytePos else bytePos + 1;
+    };
+
+    func bytes() array[byte] {
+        data.sub(0, len());
+    };
+};
+
+class DeflateMatch(int length, int distance) {};
+
+class RawDeflate() {
+    int maxStoredBlock = 65535;
+    int maxMatchLength = 258;
+    int minMatchLength = 3;
+
+    # Keep the search bounded so this remains usable on the Velo VM.
+    int maxSearchDistance = 2048;
+
+    array[int] lengthBase = new array[int]{
+        3, 4, 5, 6, 7, 8, 9, 10,
+        11, 13, 15, 17,
+        19, 23, 27, 31,
+        35, 43, 51, 59,
+        67, 83, 99, 115,
+        131, 163, 195, 227,
+        258
+    };
+
+    array[int] lengthExtra = new array[int]{
+        0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 1,
+        2, 2, 2, 2,
+        3, 3, 3, 3,
+        4, 4, 4, 4,
+        5, 5, 5, 5,
+        0
+    };
+
+    array[int] distanceBase = new array[int]{
+        1, 2, 3, 4,
+        5, 7, 9, 13,
+        17, 25, 33, 49,
+        65, 97, 129, 193,
+        257, 385, 513, 769,
+        1025, 1537, 2049, 3073,
+        4097, 6145, 8193, 12289,
+        16385, 24577
+    };
+
+    array[int] distanceExtra = new array[int]{
+        0, 0, 0, 0,
+        1, 1, 2, 2,
+        3, 3, 4, 4,
+        5, 5, 6, 6,
+        7, 7, 8, 8,
+        9, 9, 10, 10,
+        11, 11, 12, 12,
+        13, 13
+    };
+
+    func blockCount(int inputLen) int {
+        if (inputLen == 0) then {
+            1;
+        } else {
+            (inputLen + maxStoredBlock - 1) / maxStoredBlock;
+        };
+    };
+
+    func lowByte(int value) byte {
+        value % 256;
+    };
+
+    func highByte(int value) byte {
+        (value / 256) % 256;
+    };
+
+    func storedOutputLen(int inputLen) int {
+        inputLen + blockCount(inputLen) * 5;
+    };
+
+    func byteToInt(byte value) int {
+        int v = 0 + value;
+        if (v < 0) {
+            v = v + 256;
+        };
+        v;
+    };
+
+    func reverseBits(int value, int count) int {
+        int result = 0;
+        int v = value;
+        int i = 0;
+        while (i < count) {
+            result = result * 2 + v % 2;
+            v = v / 2;
+            i = i + 1;
+        };
+        result;
+    };
+
+    func pow2(int exp) int {
+        int result = 1;
+        int i = 0;
+        while (i < exp) {
+            result = result * 2;
+            i = i + 1;
+        };
+        result;
+    };
+
+    func fixedCode(int symbol) int {
+        if (symbol <= 143) {
+            48 + symbol;
+        } else if (symbol <= 255) {
+            400 + symbol - 144;
+        } else if (symbol <= 279) {
+            symbol - 256;
+        } else {
+            192 + symbol - 280;
+        };
+    };
+
+    func fixedCodeLen(int symbol) int {
+        if (symbol <= 143) {
+            8;
+        } else if (symbol <= 255) {
+            9;
+        } else if (symbol <= 279) {
+            7;
+        } else {
+            8;
+        };
+    };
+
+    func writeFixedSymbol(DeflateBitWriter writer, int symbol) void {
+        int bits = fixedCodeLen(symbol);
+        writer.writeBits(reverseBits(fixedCode(symbol), bits), bits);
+    };
+
+    func lengthCodeIndex(int length) int {
+        if (length == 258) {
+            28;
+        } else {
+            int idx = 0;
+            bool found = false;
+            while (idx < lengthBase.len & found == false) {
+                int extra = lengthExtra[idx];
+                int maxLen = lengthBase[idx] + pow2(extra) - 1;
+                if (idx == 27) {
+                    maxLen = 257;
+                };
+                if (length >= lengthBase[idx] & length <= maxLen) {
+                    found = true;
+                } else {
+                    idx = idx + 1;
+                };
+            };
+            idx;
+        };
+    };
+
+    func distanceCodeIndex(int distance) int {
+        int idx = 0;
+        bool found = false;
+        while (idx < distanceBase.len & found == false) {
+            int extra = distanceExtra[idx];
+            int maxDistance = distanceBase[idx] + pow2(extra) - 1;
+            if (distance >= distanceBase[idx] & distance <= maxDistance) {
+                found = true;
+            } else {
+                idx = idx + 1;
+            };
+        };
+        idx;
+    };
+
+    func writeLength(DeflateBitWriter writer, int length) void {
+        int idx = lengthCodeIndex(length);
+        int code = 257 + idx;
+        writeFixedSymbol(writer, code);
+
+        int extra = lengthExtra[idx];
+        if (extra > 0) {
+            writer.writeBits(length - lengthBase[idx], extra);
+        };
+    };
+
+    func writeDistance(DeflateBitWriter writer, int distance) void {
+        int idx = distanceCodeIndex(distance);
+        writer.writeBits(reverseBits(idx, 5), 5);
+
+        int extra = distanceExtra[idx];
+        if (extra > 0) {
+            writer.writeBits(distance - distanceBase[idx], extra);
+        };
+    };
+
+    func findMatch(array[byte] input, int pos) DeflateMatch {
+        int maxDistance = pos;
+        if (maxDistance > maxSearchDistance) {
+            maxDistance = maxSearchDistance;
+        };
+
+        int bestLength = 0;
+        int bestDistance = 0;
+        int distance = 1;
+
+        while (distance <= maxDistance & bestLength < maxMatchLength) {
+            int length = 0;
+            bool same = true;
+            while (
+                same
+                & length < maxMatchLength
+                & pos + length < input.len
+            ) {
+                int left = byteToInt(input[pos + length]);
+                int right = byteToInt(input[pos - distance + length]);
+                if (left == right) {
+                    length = length + 1;
+                } else {
+                    same = false;
+                };
+            };
+
+            if (length >= minMatchLength & length > bestLength) {
+                bestLength = length;
+                bestDistance = distance;
+            };
+
+            distance = distance + 1;
+        };
+
+        new DeflateMatch(bestLength, bestDistance);
+    };
+
+    func fixedOutputCapacity(int inputLen) int {
+        inputLen * 2 + 1024;
+    };
+
+    func compressFixed(array[byte] input) array[byte] {
+        DeflateBitWriter writer = new DeflateBitWriter(fixedOutputCapacity(input.len));
+
+        writer.writeBits(1, 1); # BFINAL=1
+        writer.writeBits(1, 2); # BTYPE=01 (fixed Huffman), LSB-first
+
+        int pos = 0;
+        while (pos < input.len) {
+            DeflateMatch match = findMatch(input, pos);
+            if (match.length >= minMatchLength) {
+                writeLength(writer, match.length);
+                writeDistance(writer, match.distance);
+                pos = pos + match.length;
+            } else {
+                writeFixedSymbol(writer, byteToInt(input[pos]));
+                pos = pos + 1;
+            };
+        };
+
+        writeFixedSymbol(writer, 256); # end-of-block
+        writer.bytes();
+    };
+
+    func writeStoredHeader(array[byte] out, int pos, bool finalBlock, int len) int {
+        if (finalBlock) {
+            out[pos] = 1;     # BFINAL=1, BTYPE=00, already byte-aligned
+        } else {
+            out[pos] = 0;     # BFINAL=0, BTYPE=00
+        };
+
+        int nlen = 65535 - len;
+        out[pos + 1] = lowByte(len);
+        out[pos + 2] = highByte(len);
+        out[pos + 3] = lowByte(nlen);
+        out[pos + 4] = highByte(nlen);
+        pos + 5;
+    };
+
+    func compressStored(array[byte] input) array[byte] {
+        array[byte] out = new array[byte](storedOutputLen(input.len));
+
+        int inPos = 0;
+        int outPos = 0;
+        bool done = false;
+
+        while (done == false) {
+            int remaining = input.len - inPos;
+            int len = remaining;
+            if (len > maxStoredBlock) {
+                len = maxStoredBlock;
+            };
+
+            bool finalBlock = inPos + len >= input.len;
+            outPos = writeStoredHeader(out, outPos, finalBlock, len);
+
+            int i = 0;
+            while (i < len) {
+                out[outPos] = input[inPos];
+                outPos = outPos + 1;
+                inPos = inPos + 1;
+                i = i + 1;
+            };
+
+            if (finalBlock) {
+                done = true;
+            };
+        };
+
+        out;
+    };
+
+    func compress(array[byte] input) array[byte] {
+        compressFixed(input);
+    };
+};
+
+RawDeflate rawDeflate = new RawDeflate();

@@ -1,0 +1,63 @@
+class Crc32() {
+    array[int] table = new array[int](256);
+    int polynomial = -306674912; # 0xEDB88320 as signed int
+
+    func byteToInt(byte value) int {
+        int v = 0 + value;
+        if (v < 0) {
+            v = v + 256;
+        };
+        v;
+    };
+
+    func ushr1(int value) int {
+        if (value < 0) {
+            ((value & 2147483647) / 2) + 1073741824;
+        } else {
+            value / 2;
+        };
+    };
+
+    func ushr(int value, int count) int {
+        int result = value;
+        int i = 0;
+        while (i < count) {
+            result = ushr1(result);
+            i = i + 1;
+        };
+        result;
+    };
+
+    func initTable() void {
+        int n = 0;
+        while (n < 256) {
+            int c = n;
+            int k = 0;
+            while (k < 8) {
+                if ((c & 1) == 1) {
+                    c = ushr1(c) ^ polynomial;
+                } else {
+                    c = ushr1(c);
+                };
+                k = k + 1;
+            };
+            table[n] = c;
+            n = n + 1;
+        };
+    };
+
+    initTable();
+
+    func checksum(array[byte] data) int {
+        int crc = -1;
+        int i = 0;
+        while (i < data.len) {
+            int idx = (crc ^ byteToInt(data[i])) & 255;
+            crc = ushr(crc, 8) ^ table[idx];
+            i = i + 1;
+        };
+        crc ^ -1;
+    };
+};
+
+Crc32 crc32 = new Crc32();

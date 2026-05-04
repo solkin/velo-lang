@@ -1,0 +1,121 @@
+include "lang/terminal.vel";
+include "lang/filesystem.vel";
+include "lang/zip.vel";
+
+FileSystem fs = new FileSystem();
+
+func repeat(str value, int count) str {
+    str result = "";
+    int i = 0;
+    while (i < count) {
+        result = result.con(value);
+        i = i + 1;
+    };
+    result;
+};
+
+func padRight(str value, int width) str {
+    str result = value;
+    while (result.len < width) {
+        result = result.con(" ");
+    };
+    result;
+};
+
+func printKV(str key, str value) void {
+    term.println("  ".con(padRight(key, 16)).con(value));
+    void;
+};
+
+func percentBar(int percent) str {
+    int width = 30;
+    int filled = percent * width / 100;
+    if (filled < 0) {
+        filled = 0;
+    };
+    if (filled > width) {
+        filled = width;
+    };
+    "[".con(repeat("#", filled)).con(repeat(".", width - filled)).con("]");
+};
+
+func baseName(str path) str {
+    int slash = 0 - 1;
+    int i = 0;
+    while (i < path.len) {
+        if (path[i] == 47) {
+            slash = i;
+        };
+        i = i + 1;
+    };
+    path.sub(slash + 1, path.len);
+};
+
+term.println("");
+term.println("Velo ZIP Packer");
+term.println("===============");
+term.println("Creates a ZIP32 archive with raw DEFLATE compression.");
+term.println("");
+term.print("Input file path: ");
+str inputPath = term.input();
+
+if (inputPath.len == 0) {
+    term.println("");
+    term.println("error: no input path provided");
+} else if (fs.exists(inputPath) == false) {
+    term.println("");
+    term.println("error: file not found");
+    printKV("path", inputPath);
+} else if (fs.isFile(inputPath) == false) {
+    term.println("");
+    term.println("error: path is not a file");
+    printKV("path", inputPath);
+} else {
+    str outputPath = inputPath.con(".zip");
+    str entryName = baseName(inputPath);
+
+    term.println("");
+    term.println("Input");
+    term.println("-----");
+    printKV("file", inputPath);
+    printKV("entry", entryName);
+    printKV("output", outputPath);
+
+    term.println("");
+    term.println("Progress");
+    term.println("--------");
+    term.println("[1/3] Reading input file...");
+    array[byte] input = fs.readBytes(inputPath);
+    term.println("      read ".con(input.len.str).con(" bytes"));
+
+    term.println("[2/3] Compressing with raw DEFLATE...");
+    term.println("      output file is written after compression finishes");
+    array[byte] archive = zip.create(input, entryName);
+
+    term.println("[3/3] Writing ZIP archive...");
+    fs.writeBytes(outputPath, archive);
+    term.println("      wrote ".con(archive.len.str).con(" bytes"));
+
+    term.println("");
+    term.println("Result");
+    term.println("------");
+    printKV("archive", outputPath);
+    printKV("original size", input.len.str.con(" bytes"));
+    printKV("archive size", archive.len.str.con(" bytes"));
+
+    if (input.len > 0) {
+        int ratio = archive.len * 100 / input.len;
+        int saved = 100 - ratio;
+        printKV("ratio", ratio.str.con("% ").con(percentBar(ratio)));
+        if (saved >= 0) {
+            printKV("space saved", saved.str.con("% ").con(percentBar(saved)));
+        } else {
+            printKV("size increased", (0 - saved).str.con("%"));
+        };
+    } else {
+        printKV("ratio", "n/a for empty input");
+    };
+
+    term.println("");
+    term.println("Done.");
+};
