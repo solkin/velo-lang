@@ -101,38 +101,45 @@ class ActorHandle private constructor(
         }
     }
 
-    private fun handleConstruct(req: ActorRequest.Construct) {
-        try {
-            val classFrame = ctx.loadFrame(req.classFrameNum, parentVars = null)
-                ?: error("Class frame ${req.classFrameNum} not found")
-            val produced = runFrame(classFrame, req.args)
-            val ref = produced as? RefRecord
-                ?: error("Actor constructor must produce a class instance, got ${produced::class.simpleName}")
-            require(ref.kind == RefKind.CLASS) {
-                "Actor constructor must produce a class instance, got ${ref.kind}"
-            }
-            val objectId = registerObject(ref.get(ctx))
-            req.response.complete(ActorResponse.Constructed(objectId))
-        } catch (ex: Throwable) {
-            unwindStack()
-            req.response.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
+    private fun handleConstruct(req: ActorRequest.Construct) = respond(req.response) {
+        val classFrame = ctx.loadFrame(req.classFrameNum, parentVars = null)
+            ?: error("Class frame ${req.classFrameNum} not found")
+        val produced = runFrame(classFrame, req.args)
+        val ref = produced as? RefRecord
+            ?: error("Actor constructor must produce a class instance, got ${produced::class.simpleName}")
+        require(ref.kind == RefKind.CLASS) {
+            "Actor constructor must produce a class instance, got ${ref.kind}"
         }
+        ActorResponse.Constructed(registerObject(ref.get(ctx)))
     }
 
-    private fun handleCall(req: ActorRequest.Call) {
+    private fun handleCall(req: ActorRequest.Call) = respond(req.response) {
+        val instance = idToFrame[req.objectId]
+            ?: error("Actor object #${req.objectId} no longer alive")
+        val callable = instance.vars.get(req.methodVarIndex)
+        val funcRec = callable as? FuncRecord
+            ?: error("Actor method index ${req.methodVarIndex} is not callable: $callable")
+        val methodFrame = ctx.loadFrame(funcRec.frameNum, parentVars = instance.vars)
+            ?: error("Method frame ${funcRec.frameNum} not found")
+        val returned = runFrame(methodFrame, req.args)
+        ActorResponse.Returned(StructuredClone.encode(returned, ctx))
+    }
+
+    /**
+     * Run [build] and complete [future] with its result, translating any
+     * thrown exception into [ActorResponse.Failure] after fully unwinding the
+     * actor's call stack. Centralises the error-handling protocol so
+     * individual handlers can read top-down without try/catch noise.
+     */
+    private inline fun respond(
+        future: CompletableFuture<ActorResponse>,
+        build: () -> ActorResponse,
+    ) {
         try {
-            val instance = idToFrame[req.objectId]
-                ?: error("Actor object #${req.objectId} no longer alive")
-            val callable = instance.vars.get(req.methodVarIndex)
-            val funcRec = callable as? FuncRecord
-                ?: error("Actor method index ${req.methodVarIndex} is not callable: $callable")
-            val methodFrame = ctx.loadFrame(funcRec.frameNum, parentVars = instance.vars)
-                ?: error("Method frame ${funcRec.frameNum} not found")
-            val returned = runFrame(methodFrame, req.args)
-            req.response.complete(ActorResponse.Returned(StructuredClone.encode(returned, ctx)))
+            future.complete(build())
         } catch (ex: Throwable) {
             unwindStack()
-            req.response.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
+            future.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
         }
     }
 
@@ -181,19 +188,39 @@ class ActorHandle private constructor(
     )
 
     /**
-     * Synchronously invoke a method on an object owned by this actor.
+     * Asynchronously invoke a method on an object owned by this actor.
      *
-     * Returns the marshalled response — the caller decodes it back into its
-     * own [VMContext]. Failures propagate as [RuntimeException]s.
+     * Posts the work to the mailbox and returns the still-pending
+     * [CompletableFuture] without blocking. The caller is expected to wrap
+     * the future in a [FutureRecord] (which transfers lifetime ownership to
+     * the GC-driven counter on this handle) and feed it into a later
+     * `await`. Failures surface when the future is awaited, not here.
      */
-    fun requestCall(objectId: Int, methodVarIndex: Int, args: List<ActorValue>): ActorValue {
+    fun requestCallAsync(
+        objectId: Int,
+        methodVarIndex: Int,
+        args: List<ActorValue>,
+    ): CompletableFuture<ActorResponse> {
         val future = CompletableFuture<ActorResponse>()
         mailbox.put(ActorRequest.Call(objectId, methodVarIndex, args, future))
-        return when (val resp = future.join()) {
-            is ActorResponse.Returned -> resp.value
-            is ActorResponse.Failure -> throw RuntimeException("[actor $rootClassName] ${resp.message}")
-            is ActorResponse.Constructed -> error("Unexpected Constructed response for Call request")
-        }
+        return future
+    }
+
+    /**
+     * Decode an [ActorResponse] produced by this actor into a host-level
+     * value, throwing on failures. Used by `FutureAwait` after joining a
+     * [FutureRecord]'s future, and by the synchronous test helpers.
+     */
+    fun unwrapResponse(resp: ActorResponse): ActorValue = when (resp) {
+        is ActorResponse.Returned -> resp.value
+        is ActorResponse.Failure -> throw RuntimeException("[actor $rootClassName] ${resp.message}")
+        is ActorResponse.Constructed -> error("Unexpected Constructed response for Call request")
+    }
+
+    /** Synchronous shortcut: post + join + unwrap. Kept for tests; production
+     *  code goes through `requestCallAsync` + a future-aware opcode. */
+    fun requestCall(objectId: Int, methodVarIndex: Int, args: List<ActorValue>): ActorValue {
+        return unwrapResponse(requestCallAsync(objectId, methodVarIndex, args).join())
     }
 
     fun requestShutdown() {

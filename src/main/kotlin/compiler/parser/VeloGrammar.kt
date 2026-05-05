@@ -26,6 +26,7 @@ object VeloGrammar {
         parser.registerKeyword("new", NewParselet())
         parser.registerKeyword("native", NativeParselet())
         parser.registerKeyword("actor", ActorParselet())
+        parser.registerKeyword("async", AsyncParselet())
         parser.registerKeyword("await", AwaitParselet())
         parser.registerKeyword("include", IncludeParselet())
         parser.registerKeyword("operator", OperatorParselet())
@@ -43,6 +44,7 @@ object VeloGrammar {
         parser.registerKeyword(PTR, DefParselet())
         // VOID is handled by VoidParselet, not DefParselet
         parser.registerKeyword(ANY, DefParselet())
+        parser.registerKeyword(FUTURE, DefParselet())
         
         // Class type parselet (special keyword for class types)
         parser.registerKeyword("__class_type__", ClassTypeParselet())

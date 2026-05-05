@@ -4,7 +4,7 @@ import vm.Operation
 import vm.VMContext
 import vm.actors.ActorHandle
 import vm.actors.ActorRefRecord
-import vm.actors.StructuredClone
+import vm.actors.popAndEncodeArgs
 
 /**
  * Instantiate an `actor class` on a fresh worker thread.
@@ -35,9 +35,7 @@ class ActorSpawn(
 
     override fun exec(pc: Int, ctx: VMContext): Int {
         val frame = ctx.currentFrame()
-        val popped = Array(args) { frame.subs.pop() }
-        // Restore declaration order: stack pops are reverse of push order.
-        val cloned = popped.reversed().map { StructuredClone.encode(it, ctx) }
+        val cloned = popAndEncodeArgs(frame, args, ctx)
 
         val (handle, rootObjectId) = ActorHandle.spawn(
             runtime = ctx.actorRuntime,

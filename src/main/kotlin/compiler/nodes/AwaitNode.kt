@@ -1,80 +1,46 @@
 package compiler.nodes
 
 import compiler.Context
-import vm.operations.ActorAwaitCall
+import vm.operations.FutureAwait
 
 /**
- * `await receiver.method(args)` — synchronous cross-actor method invocation.
+ * `await futureExpr` — block until a [FutureType] value resolves, yielding
+ * the underlying [FutureType.derived] type.
  *
- * Why a dedicated AST node instead of letting [PropNode] handle it:
- *   - `actor[T]` deliberately exposes no props ([ActorBoundType.prop] returns
- *     `null`), so naked `receiver.method(...)` on an actor-bound value fails
- *     compilation. `await` is the only way to invoke methods across the
- *     actor boundary, which is exactly the rule we want to enforce.
- *   - Compilation here resolves the method against the *underlying* class
- *     definition (kept in [ClassType.parent]), reuses the same arity / type
- *     checks as ordinary method dispatch, and emits a single
- *     [ActorAwaitCall] op that does the marshalling at runtime.
+ * `await` does only one thing: unwrap a future. Cross-actor calls are
+ * started by [AsyncNode] (which produces the future); the canonical
+ * synchronous form is `await async receiver.method(args)`, where the inner
+ * `async` produces a `future[T]` and the outer `await` immediately drains
+ * it. There is no special "synchronous call" syntax — keeping `await` and
+ * `async` as orthogonal operations means the language has exactly two
+ * cross-actor primitives, each with one job.
  *
- * The wrapped [expr] must be a [PropNode] with non-null `args` (i.e., a
- * method call). Property reads on actors are intentionally not supported —
- * actors should expose their state through methods.
+ * Compile-time enforcement: the inner expression's type must be a
+ * [FutureType]. Any other type is a clear user error (e.g., forgetting the
+ * `async` prefix on a method call) and is rejected here.
  */
 data class AwaitNode(val expr: Node) : Node() {
 
     override fun compile(ctx: Context): Type {
-        if (expr !is PropNode || expr.args == null) {
-            throw IllegalArgumentException("'await' requires an actor method call: await receiver.method(args)")
-        }
+        val type = expr.compile(ctx)
+        val futureType = type as? FutureType
+            ?: throw IllegalArgumentException(buildAwaitTypeError(type))
+        ctx.add(FutureAwait())
+        return futureType.derived
+    }
 
-        val receiverType = expr.parent.compile(ctx)
-        val actorType = receiverType as? ActorBoundType
-            ?: throw IllegalArgumentException(
-                "'await' requires an actor[T] receiver, but got ${receiverType.log()}"
-            )
-
-        val classType = actorType.derived
-        // The class type carried by `actor[T]` may be a bare type registered
-        // by the parser (no `parent`/`num`). Re-resolve through the compiler
-        // context to get the fully-elaborated ClassType — same trick as
-        // [ClassElementProp.compile].
-        val resolved = (ctx.opt(classType.name)?.type as? ClassType) ?: classType
-        val classCtx = resolved.parent
-            ?: throw IllegalStateException("Actor class '${classType.name}' has no compilation context")
-
-        val methodVar = classCtx.frame.vars[expr.name]
-            ?: throw IllegalArgumentException("Actor '${classType.name}' has no method '${expr.name}'")
-        val funcType = methodVar.type as? FuncType
-            ?: throw IllegalArgumentException(
-                "'${classType.name}.${expr.name}' is not a method (type ${methodVar.type.log()})"
-            )
-
-        val argTypes = expr.args.map { it.compile(ctx) }
-        val expectedTypes = funcType.args
-        if (expectedTypes != null) {
-            if (expectedTypes.size != argTypes.size) {
-                throw IllegalArgumentException(
-                    "Actor method '${classType.name}.${expr.name}' expects ${expectedTypes.size} args, got ${argTypes.size}"
-                )
-            }
-            expectedTypes.forEachIndexed { i, expected ->
-                val actual = argTypes[i]
-                if (!actual.sameAs(expected)) {
-                    throw IllegalArgumentException(
-                        "Actor method '${classType.name}.${expr.name}' arg #${i + 1}: " +
-                            "expected ${expected.log()}, got ${actual.log()}"
-                    )
-                }
-            }
-        }
-
-        ctx.add(ActorAwaitCall(methodVarIndex = methodVar.index, args = expr.args.size))
-
-        // Wrap class-typed returns as `actor[T]` — they live inside the actor
-        // and must keep the same calling discipline.
-        return when (val ret = funcType.derived) {
-            is ClassType -> if (ret.isActor) ActorBoundType(ret) else ret
-            else -> ret
+    /**
+     * The hint about a missing `async` is only useful when the user clearly
+     * wrote a method call (`await x.foo(...)`); for arbitrary expressions
+     * such as `await 5` it would be misleading, so it's added conditionally.
+     */
+    private fun buildAwaitTypeError(actual: Type): String {
+        val base = "'await' requires a future[T] value, but got ${actual.log()}"
+        val isMethodCall = expr is PropNode && expr.args != null
+        return if (isMethodCall) {
+            "$base; did you forget `async` before the actor method call?"
+        } else {
+            base
         }
     }
 }

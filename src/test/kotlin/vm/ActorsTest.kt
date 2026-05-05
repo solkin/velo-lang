@@ -29,12 +29,12 @@ import kotlin.test.assertTrue
  * Each test compiles a small Velo source program and asserts on its captured
  * stdout. Working from source (rather than hand-built ops) keeps the tests
  * close to user-visible behaviour and exercises every layer of the
- * `actor class` / `actor[T]` / `await` story.
+ * `actor class` / `actor[T]` / `async` / `await` / `future[T]` story.
  */
 class ActorsTest {
 
     @Test
-    fun `await on actor method returns the produced value`() {
+    fun `await async on actor method returns the produced value`() {
         val output = compileAndRun(
             """
             include "lang/terminal.vel";
@@ -48,9 +48,9 @@ class ActorsTest {
             };
 
             actor[Counter] c = new Counter();
-            term.println(await c.bump().str);
-            term.println(await c.bump().str);
-            term.println(await c.bump().str);
+            term.println((await async c.bump()).str);
+            term.println((await async c.bump()).str);
+            term.println((await async c.bump()).str);
             """.trimIndent()
         )
         assertEquals("1\n2\n3", output)
@@ -72,10 +72,10 @@ class ActorsTest {
 
             actor[Counter] a = new Counter(10);
             actor[Counter] b = new Counter(100);
-            term.println(await a.bump().str);
-            term.println(await b.bump().str);
-            term.println(await a.bump().str);
-            term.println(await b.bump().str);
+            term.println((await async a.bump()).str);
+            term.println((await async b.bump()).str);
+            term.println((await async a.bump()).str);
+            term.println((await async b.bump()).str);
             """.trimIndent()
         )
         assertEquals("11\n101\n12\n102", output)
@@ -107,9 +107,9 @@ class ActorsTest {
 
             actor[Bag] b = new Bag();
             array[int] xs = new array[int]{1, 2, 3};
-            await b.put(xs);
+            await async b.put(xs);
             xs[0] = 99;
-            term.println(await b.sum().str);
+            term.println((await async b.sum()).str);
             """.trimIndent()
         )
         assertEquals("6", output)
@@ -137,9 +137,9 @@ class ActorsTest {
             };
 
             actor[Container] c = new Container();
-            actor[Counter] x = await c.get();
-            term.println(await x.bump().str);
-            term.println(await x.bump().str);
+            actor[Counter] x = await async c.get();
+            term.println((await async x.bump()).str);
+            term.println((await async x.bump()).str);
             """.trimIndent()
         )
         assertEquals("1\n2", output)
@@ -176,7 +176,7 @@ class ActorsTest {
     }
 
     @Test
-    fun `compile-time failure when await is omitted on actor method`() {
+    fun `compile-time failure when async is omitted on actor method`() {
         val ex = assertFails {
             compileOrThrow(
                 """
@@ -190,10 +190,47 @@ class ActorsTest {
         }
         val msg = ex.message ?: ""
         assertTrue(
-            msg.contains("Property 'ping' of actor[A] is not supported") ||
-                msg.contains("await"),
+            msg.contains("Property 'ping' of actor[A] is not supported"),
             "Unexpected error: $msg",
         )
+    }
+
+    @Test
+    fun `compile-time failure when await receives a non-future value`() {
+        val ex = assertFails {
+            compileOrThrow(
+                """
+                int x = 1;
+                int y = await x;
+                """.trimIndent()
+            )
+        }
+        val msg = ex.message ?: ""
+        assertTrue(msg.contains("await"), "Unexpected error: $msg")
+        assertTrue(msg.contains("future"), "Unexpected error: $msg")
+    }
+
+    @Test
+    fun `compile-time failure when actor method returns a future`() {
+        // future[T] is not transferable: actor methods cannot expose it.
+        val ex = assertFails {
+            compileOrThrow(
+                """
+                actor class W() {
+                    func work() int { 7; };
+                };
+                actor class Bad() {
+                    actor[W] w = new W();
+                    func dispatch() future[int] {
+                        async w.work();
+                    };
+                };
+                """.trimIndent()
+            )
+        }
+        val msg = ex.message ?: ""
+        assertTrue(msg.contains("Bad.dispatch"), "Unexpected error: $msg")
+        assertTrue(msg.contains("not transferable"), "Unexpected error: $msg")
     }
 
     @Test
@@ -280,13 +317,95 @@ class ActorsTest {
             };
 
             actor[Hub] h = new Hub();
-            array[int] back = await h.echo(new array[int]{1, 2, 3}, new dict[int:str]{1:"a"});
+            array[int] back = await async h.echo(new array[int]{1, 2, 3}, new dict[int:str]{1:"a"});
             term.println(back[0].str);
             term.println(back[1].str);
             term.println(back[2].str);
             """.trimIndent()
         )
         assertEquals("1\n2\n3", output)
+    }
+
+    @Test
+    fun `async returns a future that survives across statements`() {
+        // Two `async` calls fire in order, then both await yield correctly —
+        // exercises the FutureRecord lifetime + cleaner registration.
+        val output = compileAndRun(
+            """
+            include "lang/terminal.vel";
+
+            actor class Counter(int start) {
+                int n = start;
+                func bump() int {
+                    n += 1;
+                    n;
+                };
+            };
+
+            actor[Counter] a = new Counter(10);
+            actor[Counter] b = new Counter(100);
+            future[int] fa = async a.bump();
+            future[int] fb = async b.bump();
+            term.println((await fa).str);
+            term.println((await fb).str);
+            """.trimIndent()
+        )
+        assertEquals("11\n101", output)
+    }
+
+    @Test
+    fun `async dispatches both actors before either await blocks`() {
+        // Real parallelism check: each actor sleeps for SLEEP_MS via the
+        // native Time.sleep binding. Sequential awaits would take ~2 *
+        // SLEEP_MS wall time; parallel async + later awaits must finish
+        // close to SLEEP_MS. The cap (1.5x) leaves slack for test machine
+        // variance and JVM startup.
+        val sleepMs = 200
+        val src = """
+            native class Time() {
+                native func sleep(int ms) void;
+                native func unix() int;
+            };
+
+            actor class Sleeper() {
+                Time t = new Time();
+                func nap(int ms) int {
+                    t.sleep(ms);
+                    ms;
+                };
+            };
+
+            actor[Sleeper] a = new Sleeper();
+            actor[Sleeper] b = new Sleeper();
+            future[int] fa = async a.nap($sleepMs);
+            future[int] fb = async b.nap($sleepMs);
+            int x = await fa;
+            int y = await fb;
+        """.trimIndent()
+
+        val frames = assertNotNull(compile(src), "compilation failed")
+        val nativeRegistry = NativeRegistry()
+            .register(Terminal::class)
+            .register(Time::class)
+            .register(FileSystem::class)
+            .register(Http::class)
+        val baos = ByteArrayOutputStream()
+        val oldOut = System.out
+        System.setOut(PrintStream(baos))
+        val started = System.currentTimeMillis()
+        try {
+            val vm = VM(nativeRegistry)
+            vm.load(SimpleParser(frames))
+            vm.run()
+        } finally {
+            System.setOut(oldOut)
+        }
+        val elapsed = System.currentTimeMillis() - started
+        val cap = (sleepMs * 1.5).toLong()
+        assertTrue(
+            elapsed < cap,
+            "expected parallel async to finish under ${cap}ms but took ${elapsed}ms",
+        )
     }
 
     @Test
@@ -313,6 +432,160 @@ class ActorsTest {
         val ok = handle.requestCall(ref.objectId, methodVarIndex = worksIndex, args = emptyList())
         assertTrue(ok is vm.actors.ActorValue.Primitive && (ok.value as Int) == 42)
         ctx.actorRuntime.shutdownAll()
+    }
+
+    @Test
+    fun `await on a completed future is idempotent`() {
+        // CompletableFuture.join() is idempotent; awaiting the same FutureRecord
+        // twice must yield the same value without re-running the actor method.
+        // (If the body re-ran, the second value would be 2, not 1.)
+        val output = compileAndRun(
+            """
+            include "lang/terminal.vel";
+
+            actor class Counter() {
+                int n = 0;
+                func bump() int {
+                    n += 1;
+                    n;
+                };
+            };
+
+            actor[Counter] c = new Counter();
+            future[int] f = async c.bump();
+            int first = await f;
+            int second = await f;
+            term.println(first.str);
+            term.println(second.str);
+            """.trimIndent()
+        )
+        assertEquals("1\n1", output)
+    }
+
+    @Test
+    fun `actor method can fan out to other actors via async`() {
+        // Boss runs a normal cross-actor async/await inside its own method
+        // body. Two different worker threads are involved, so no risk of
+        // self-call deadlock — this validates that nothing prevents an actor
+        // from being a client of another actor.
+        val output = compileAndRun(
+            """
+            include "lang/terminal.vel";
+
+            actor class Worker() {
+                func square(int x) int { x * x; };
+            };
+
+            actor class Boss() {
+                actor[Worker] w = new Worker();
+                func dispatch(int n) int {
+                    future[int] f = async w.square(n);
+                    await f;
+                };
+            };
+
+            actor[Boss] b = new Boss();
+            term.println((await async b.dispatch(7)).str);
+            term.println((await async b.dispatch(9)).str);
+            """.trimIndent()
+        )
+        assertEquals("49\n81", output)
+    }
+
+    @Test
+    fun `array of futures can be awaited element by element`() {
+        // future[T] is a regular Velo type; container generics work too. Tests
+        // that array[future[int]] type-checks, holds the futures alive, and
+        // each entry can be awaited independently. Indices need parens
+        // because PROPERTY/INDEX share precedence inside the await operand.
+        val output = compileAndRun(
+            """
+            include "lang/terminal.vel";
+
+            actor class Counter() {
+                int n = 0;
+                func bump() int {
+                    n += 1;
+                    n;
+                };
+            };
+
+            actor[Counter] a = new Counter();
+            actor[Counter] b = new Counter();
+            array[future[int]] futures = new array[future[int]]{
+                async a.bump(),
+                async b.bump()
+            };
+            term.println((await (futures[0])).str);
+            term.println((await (futures[1])).str);
+            """.trimIndent()
+        )
+        assertEquals("1\n1", output)
+    }
+
+    @Test
+    fun `runtime failure inside actor surfaces through await async`() {
+        // The compile-time error path is covered by other tests; this one
+        // verifies the *runtime* path through ActorCall + FutureAwait. An
+        // out-of-bounds read inside the actor's method becomes an
+        // ActorResponse.Failure, which FutureAwait re-throws on the caller's
+        // thread. We bypass VM.run's catch-all so the exception propagates
+        // out of `executor.run()` directly.
+        val frames = assertNotNull(
+            compile(
+                """
+                actor class A() {
+                    func boom() int {
+                        array[int] xs = new array[int]{};
+                        xs[0];
+                    };
+                };
+
+                actor[A] a = new A();
+                int x = await async a.boom();
+                """.trimIndent()
+            ),
+            "compilation failed",
+        )
+        val (ctx, executor) = startProgram(frames)
+        val ex = assertFails {
+            try {
+                executor.run()
+            } finally {
+                ctx.actorRuntime.shutdownAll()
+            }
+        }
+        assertContains(ex.message ?: "", "[actor A]")
+    }
+
+    @Test
+    fun `parse error when async is not followed by a dot`() {
+        val ex = assertFails {
+            compileOrThrow(
+                """
+                actor class A() { func ping() int { 1; }; };
+                actor[A] a = new A();
+                future[int] f = async a;
+                """.trimIndent()
+            )
+        }
+        val msg = ex.message ?: ""
+        assertTrue(msg.contains("'async' must be followed by a method call"), "Unexpected error: $msg")
+    }
+
+    @Test
+    fun `parse error when async method call has no parentheses`() {
+        val ex = assertFails {
+            compileOrThrow(
+                """
+                actor class A() { func ping() int { 1; }; };
+                actor[A] a = new A();
+                future[int] f = async a.ping;
+                """.trimIndent()
+            )
+        }
+        val msg = ex.message ?: ""
+        assertTrue(msg.contains("'async' requires a method call"), "Unexpected error: $msg")
     }
 
     @Test

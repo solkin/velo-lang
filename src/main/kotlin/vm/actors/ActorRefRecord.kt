@@ -47,9 +47,7 @@ class ActorRefRecord(
     override fun hashCode(): Int = 31 * System.identityHashCode(handle) + objectId
 
     companion object {
-        private val cleaner: Cleaner = Cleaner.create { runnable ->
-            Thread(runnable, "velo-actor-ref-cleaner").apply { isDaemon = true }
-        }
+        private val cleaner: Cleaner = Cleaner.create()
     }
 
     /** Static class so the [Cleaner] action doesn't capture the [ActorRefRecord]. */

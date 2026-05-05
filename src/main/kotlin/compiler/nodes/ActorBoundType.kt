@@ -7,16 +7,13 @@ import compiler.Context
  *
  * Surface syntax: `actor[T]` where `T` is some `actor class`. Constructed by
  * [TypeParser][compiler.parser.parselets.TypeParser] when it encounters
- * `actor[...]`, by [ClassNode] / [CallNode] when an actor class is
- * instantiated, and by [AwaitNode] when an actor method returns another
- * actor-bound class.
+ * `actor[...]`, and by [CallNode] when an actor class is instantiated.
  *
  * `prop()` deliberately returns `null` so any direct method or field access
  * fails compilation with a clear "property not supported" error. The only
- * way to invoke methods on this type is through [AwaitNode], which performs
- * its own resolution and emits an `ActorAwaitCall` opcode. This is the
- * compile-time guarantee that *every* cross-actor call is preceded by
- * `await`.
+ * way to invoke methods on this type is through [AsyncNode], which performs
+ * its own method resolution and emits an `ActorCall` opcode that produces a
+ * [FutureType] value. The eventual result is then unwrapped by [AwaitNode].
  */
 data class ActorBoundType(val derived: ClassType) : Type {
 
@@ -44,6 +41,44 @@ data class ActorBoundType(val derived: ClassType) : Type {
 }
 
 /**
+ * Compile-time type of an in-flight cross-actor computation.
+ *
+ * Surface syntax: `future[T]`, where `T` is the value the underlying actor
+ * method ultimately produces. Created by [AsyncNode] when compiling
+ * `async receiver.method(args)`, and consumed by [AwaitNode] when compiling
+ * `await futureExpr` — there is no other way to obtain or use a value of
+ * this type.
+ *
+ * `prop()` returns `null` for the same reason as [ActorBoundType]: a
+ * future is opaque from Velo's surface, and the only legal operation on it
+ * is `await`. Ban on direct property access keeps the language honest about
+ * the fact that the value is not yet computed.
+ *
+ * Not transferable across actor boundaries (see [isTransferable]): a
+ * future's lifecycle is tied to the actor that completes it, and shipping
+ * it to a third actor would create cross-thread blocking semantics we do
+ * not currently model.
+ */
+data class FutureType(val derived: Type) : Type {
+
+    override fun sameAs(type: Type): Boolean {
+        return type is FutureType && derived.sameAs(type.derived)
+    }
+
+    override fun default(ctx: Context) {
+        throw IllegalStateException("Type 'future[${derived.log()}]' has no default value; create one with `async`")
+    }
+
+    override fun prop(name: String): Prop? = null
+
+    override fun log() = "future[${derived.log()}]"
+
+    override fun vmType() = vm.VmType.Any
+
+    override fun name() = "future"
+}
+
+/**
  * Whether values of this [Type] may safely cross an actor boundary.
  *
  * Two transport modes exist:
@@ -65,6 +100,7 @@ fun Type.isTransferable(): Boolean = when (this) {
     is TupleType -> types.all { it.isTransferable() }
     is DictType -> derived.types.all { it.isTransferable() }
     is ActorBoundType -> true
+    is FutureType -> false   // pinned to the actor that completes it; see [FutureType] kdoc
     else -> false
 }
 

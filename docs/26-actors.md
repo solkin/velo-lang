@@ -6,9 +6,10 @@ The model is small and explicit:
 
 - Declare an actor with `actor class`.
 - Instantiate with `new ActorClass(args)`. The result is typed `actor[T]`.
-- Invoke methods with `await receiver.method(args)`.
+- Start a method with `async receiver.method(args)`. The result is typed `future[T]`.
+- Block on a future with `await futureExpr`.
 
-That's it. Three pieces of syntax, two new opcodes, no scheduler.
+The synchronous shorthand is `await async receiver.method(args)`. There is no other "synchronous call" syntax — `await` always means "drain a future", `async` always means "start one", and the two compose.
 
 ## Declaring an Actor
 
@@ -32,22 +33,24 @@ The body of an `actor class` is identical to a regular class — fields, methods
 ```velo
 actor[Counter] counter = new Counter(0);
 
-term.println((await counter.bump()).str);  # 1
-term.println((await counter.bump()).str);  # 2
-term.println((await counter.value()).str); # 2
+term.println((await async counter.bump()).str);  # 1
+term.println((await async counter.bump()).str);  # 2
+term.println((await async counter.value()).str); # 2
 ```
 
-`new Counter(0)` produces a value of type `actor[Counter]` — a typed remote handle. Method calls on that handle:
+`new Counter(0)` produces a value of type `actor[Counter]` — a typed remote handle. The `async ... .method(args)` step does three things at runtime:
 
-- block the caller thread until the actor responds;
-- run on the actor's worker, never on the caller;
-- structurally clone serialisable arguments and return values so neither side can poke the other's memory.
+- structurally clones the arguments so the actor cannot see caller memory;
+- posts a `Call` message to the actor's mailbox;
+- pushes a `future[T]` value (no waiting yet — the call site stays running).
 
-`await` is mandatory. Naked `counter.bump()` doesn't compile, because the type `actor[Counter]` exposes no properties — only `await` resolves them.
+The matching `await` then blocks the caller's thread until that future resolves and decodes the response into a fresh value in the caller's memory area.
 
-### Why `await`?
+`async` is mandatory. Naked `counter.bump()` doesn't compile, because the type `actor[Counter]` exposes no properties — only `async` resolves them. `await` on its own doesn't compile either, because it only consumes futures.
 
-The keyword is a deliberate visual marker that *this call crosses a thread boundary*. Velo doesn't currently have user-level coroutines, so `await` is synchronous: it suspends the calling thread until the actor replies. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice".
+### Why two keywords?
+
+The pair is a deliberate visual marker that *this call crosses a thread boundary*. Velo does not have user-level coroutines, so `await` is synchronous: it suspends the calling thread until the actor replies. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice". Splitting it into `async` (start) and `await` (wait) keeps the cost visible *and* unlocks parallelism — see [Parallel Work](#parallel-work-with-async) below.
 
 ## What Crosses the Boundary
 
@@ -77,6 +80,39 @@ actor class Bad() {
 
 To share structured data, use a tuple/dict; to share an object identity, wrap it as another `actor class`.
 
+## Parallel Work with `async`
+
+`async` returns immediately, so two computations on different actors run concurrently:
+
+```velo
+actor[Worker] a = new Worker();
+actor[Worker] b = new Worker();
+
+future[int] fa = async a.compute(input1);   # both calls dispatched
+future[int] fb = async b.compute(input2);   # before either blocks
+int x = await fa;                            # wall time ≈ max(a, b),
+int y = await fb;                            # not a + b
+```
+
+The same pattern works inside an actor for fan-out:
+
+```velo
+actor class Coordinator() {
+    actor[Worker] w1 = new Worker();
+    actor[Worker] w2 = new Worker();
+
+    func process(int p, int q) tuple[int, int] {
+        future[int] fp = async w1.compute(p);
+        future[int] fq = async w2.compute(q);
+        new tuple(await fp, await fq);
+    };
+};
+```
+
+The `Coordinator.process` method is itself synchronous from the outside (the caller does `await async coordinator.process(...)`), but internally it gets parallel execution on `w1` and `w2`.
+
+`future[T]` is **not** transferable across actor boundaries — it's pinned to the actor that completes it. Trying to pass or return a future from an actor method is a compile error. (Want to expose parallelism through a façade actor? Have it expose `actor[T]` handles instead and let the caller call `async` itself.)
+
 ## Returning Other Actors
 
 An actor's method may return an `actor[T]` — either itself or another actor. The receiver gets a handle pinned to the original actor:
@@ -89,13 +125,13 @@ actor class Container() {
 };
 
 actor[Container] box = new Container();
-actor[Counter] held = await box.get();
+actor[Counter] held = await async box.get();
 
-await held.bump();    # 1 — runs on `inner`'s worker, not Container's
-await held.bump();    # 2
+await async held.bump();    # 1 — runs on `inner`'s worker, not Container's
+await async held.bump();    # 2
 ```
 
-Repeated `await box.get()` yields handles that compare equal — same actor, same internal `objectId`. The second `held` and the first one share state.
+Repeated `await async box.get()` yields handles that compare equal — same actor, same internal `objectId`. The second `held` and the first one share state.
 
 ## Lifetime
 
@@ -111,8 +147,8 @@ There is no built-in `join`/`done`/`terminate` API — actors don't have a "fini
 Two `actor[T]` values compare equal when they refer to the same internal object on the same actor:
 
 ```velo
-actor[Counter] a = await box.get();
-actor[Counter] b = await box.get();
+actor[Counter] a = await async box.get();
+actor[Counter] b = await async box.get();
 # a == b — both point at Container's `inner`
 ```
 
@@ -124,7 +160,7 @@ Think of an `actor[T]` as a typed channel to a single-threaded service:
 
 - the service's local data is *its* alone, no shared memory;
 - the wire format is "method name + cloned args" in, "cloned result" out;
-- you cross the wire only at `await`, and the type system makes those crossings impossible to forget.
+- `async` puts the call on the wire and gives you a future; `await` collects the response off the wire.
 
 ## Example: Independent Counters
 
@@ -142,9 +178,9 @@ actor class Counter(int start) {
 actor[Counter] a = new Counter(10);
 actor[Counter] b = new Counter(100);
 
-term.println((await a.bump()).str);  # 11
-term.println((await b.bump()).str);  # 101
-term.println((await a.bump()).str);  # 12
+term.println((await async a.bump()).str);  # 11
+term.println((await async b.bump()).str);  # 101
+term.println((await async a.bump()).str);  # 12
 ```
 
 Two actors, two threads, two private `n`s — no `mutex`, no race.
@@ -153,8 +189,27 @@ Two actors, two threads, two private `n`s — no `mutex`, no race.
 
 - `actor class` cannot be `native` — there's nothing on the JVM side to dispatch to.
 - `actor class` is not generic. Wrap your generic logic in plain classes and let the actor hold them.
-- `await` parses tightly: `await receiver.method(args)`. Use parentheses around the receiver (`await (foo()).method()`) or around the result (`(await x.foo()).str`) when chaining.
+- `async` parses tightly: `async receiver.method(args)`. Use parentheses around the receiver (`async (foo()).method()`) or around the result (`(await async x.foo()).str`) when chaining.
+- `await` parses any expression but only accepts `future[T]` types. `await someInt` is a compile error.
+- `await` shares precedence with `.` / `[]` / `()`, so `await arr[i]` parses as `(await arr)[i]`. When the future comes from indexing, calling, or any other postfix, wrap it: `await (arr[i])`, `await (someFunc())`.
+- `future[T]` is pinned to its producing actor. It cannot appear in another `actor class`'s method signatures (param or return).
 - Method-call values (`func[T]`) and pointers cannot cross the boundary. Pass strings/ids and have the actor look up the closure on its side.
+
+### Errors in unawaited futures are silently dropped
+
+If you start an asynchronous call with `async` but never `await` the resulting `future[T]`, and the actor's method throws, **no one observes the error**. The completion is recorded inside the underlying `CompletableFuture`, but with no awaiter the failure is lost when the `FutureRecord` is garbage-collected (just as JVM `CompletableFuture` does).
+
+```velo
+async worker.boom();   # if boom() throws, the error vanishes
+```
+
+This is intentional — fire-and-forget is a useful pattern for void operations — but it means you should `await` any future whose completion you care about, even when you don't need the value. For void methods that's:
+
+```velo
+await async worker.notify();   # ensures errors propagate to the caller
+```
+
+If a future does need to be discarded knowingly (e.g. you're broadcasting to many actors and don't want any single failure to block), make that explicit in the calling code with a comment. A future warning facility may be added later if this pattern proves error-prone in real programs.
 
 ---
 

@@ -231,7 +231,7 @@ str result = "Hello".insert(5, " World");  # "Hello World"
 
 ### Actors
 
-Concurrency without locks: an `actor class` instance lives on its own daemon thread, fields are private, and every interaction crosses the boundary via `await`.
+Concurrency without locks: an `actor class` instance lives on its own daemon thread, fields are private, and every interaction crosses the boundary via `async` (start) + `await` (wait).
 
 ```velo
 actor class Counter(int start) {
@@ -243,11 +243,18 @@ actor class Counter(int start) {
 };
 
 actor[Counter] c = new Counter(0);
-term.println((await c.bump()).str);  # 1
-term.println((await c.bump()).str);  # 2
+term.println((await async c.bump()).str);  # 1
+term.println((await async c.bump()).str);  # 2
+
+# Real parallel work: keep the future, await later.
+actor[Counter] d = new Counter(100);
+future[int] f1 = async c.bump();
+future[int] f2 = async d.bump();
+int x = await f1;   # ≈ wall time of one bump, not two
+int y = await f2;
 ```
 
-See [Actors](docs/26-actors.md) for the full model — argument cloning, identity preservation, lifetime management.
+See [Actors](docs/26-actors.md) for the full model — argument cloning, identity preservation, lifetime management, parallel work patterns.
 
 ### Native Classes
 

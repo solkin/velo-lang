@@ -69,6 +69,13 @@ object TypeParser {
                 }
                 ActorBoundType(derived)
             }
+            FUTURE -> {
+                // Syntax: future[T]. Any type is accepted at the surface;
+                // transferability rules (FutureType is non-transferable) are
+                // enforced at actor-signature validation time, not here.
+                val derived = parseDerivedTypes(parser, count = 1).first()
+                FutureType(derived)
+            }
             else -> {
                 val className = value as? String
                     ?: throw IllegalArgumentException("Unknown type value: $value")

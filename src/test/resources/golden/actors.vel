@@ -2,7 +2,7 @@ include "lang/terminal.vel";
 
 # Actor class — like a regular class, but every instance lives on its own
 # daemon thread. Construction (`new Counter(0)`) and method calls
-# (`await counter.bump()`) are serialised through a private mailbox, so the
+# (via `async` + `await`) are serialised through a private mailbox, so the
 # actor's mutable state is implicitly thread-safe.
 
 actor class Counter(int start) {
@@ -20,14 +20,25 @@ actor class Counter(int start) {
 
 actor[Counter] counter = new Counter(10);
 
-# `await` is mandatory whenever you cross the actor boundary. The compiler
-# rejects naked `counter.bump()` because `actor[Counter]` exposes no props.
-term.println(await counter.value().str);
-term.println(await counter.bump().str);
-term.println(await counter.bump().str);
-term.println(await counter.value().str);
+# Synchronous form is `await async receiver.method(args)`:
+#   `async ...`  starts the call and yields a `future[T]`;
+#   `await ...`  blocks until that future resolves.
+# The compiler refuses naked `counter.bump()` because `actor[Counter]`
+# exposes no props, and refuses `await counter.bump()` because `await`
+# only consumes futures.
+term.println((await async counter.value()).str);
+term.println((await async counter.bump()).str);
+term.println((await async counter.bump()).str);
+term.println((await async counter.value()).str);
 
 # Spawn a second, independent counter to show that each actor owns its own state.
 actor[Counter] other = new Counter(0);
-term.println(await other.bump().str);
-term.println(await counter.value().str);
+term.println((await async other.bump()).str);
+term.println((await async counter.value()).str);
+
+# Parallel form: keep the future, await later. Both actors run concurrently
+# between the two `async` lines and the matching `await`s.
+future[int] fc = async counter.bump();
+future[int] fo = async other.bump();
+term.println((await fc).str);
+term.println((await fo).str);
