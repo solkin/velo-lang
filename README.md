@@ -15,6 +15,7 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 - ✅ **Generics** - Type-safe generic classes, functions, and methods
 - ✅ **Operator Overloading** - Custom operators for user-defined classes
 - ✅ **Native Classes** - Support for binding to native code via reflection
+- ✅ **Actors** - `actor class` + `await` for thread-isolated state without locks
 - ✅ **Standard Library** - Built-in support for HTTP, file system, terminal I/O, and more
 
 ## Quick Start
@@ -227,6 +228,26 @@ ext(str a) insert(int index, str s) str {
 int maxValue = 5.max(10);  # 10
 str result = "Hello".insert(5, " World");  # "Hello World"
 ```
+
+### Actors
+
+Concurrency without locks: an `actor class` instance lives on its own daemon thread, fields are private, and every interaction crosses the boundary via `await`.
+
+```velo
+actor class Counter(int start) {
+    int n = start;
+    func bump() int {
+        n += 1;
+        n;
+    };
+};
+
+actor[Counter] c = new Counter(0);
+term.println((await c.bump()).str);  # 1
+term.println((await c.bump()).str);  # 2
+```
+
+See [Actors](docs/26-actors.md) for the full model — argument cloning, identity preservation, lifetime management.
 
 ### Native Classes
 

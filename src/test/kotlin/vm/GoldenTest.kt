@@ -240,6 +240,11 @@ class GoldenTest {
         runGoldenTest("higher-order")
     }
 
+    @Test
+    fun `golden - actors`() {
+        runGoldenTest("actors")
+    }
+
     // ========== Utility Methods ==========
 
     /**

@@ -23,33 +23,31 @@ class VM(
         val stack: Stack<Frame> = LifoStack()
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
         val memory = MemoryAreaImpl()
-        
-        // Create VMContext with all subsystems
+
         val ctx = VMContext(
             stack = stack,
             frameLoader = frameLoader,
             memory = memory,
             nativeRegistry = nativeRegistry
         )
-        
-        var frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
-        
+
+        val frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
+        ctx.pushFrame(frame)
+
+        val executor = VMExecutor(ctx, profiler)
+
         profiler.start()
         try {
-            ctx.pushFrame(frame)
-            while (frame.pc < frame.ops.size) {
-                val cmd = frame.ops[frame.pc]
-                profiler.beforeOp(cmd)
-                frame.pc = cmd.exec(pc = frame.pc, ctx)
-                profiler.afterOp()
-                frame = ctx.currentFrame()
-            }
+            executor.run()
             println("\n✓ Program finished successfully")
         } catch (_: HaltException) {
             println("\n⏹ Program halted by user request")
         } catch (ex: Throwable) {
-            val op = frame.ops[frame.pc]
-            printError(ex, op, frame, stack)
+            val current = if (!stack.empty()) stack.peek() else frame
+            val op = if (current.pc < current.ops.size) current.ops[current.pc] else current.ops.last()
+            printError(ex, op, current, stack)
+        } finally {
+            ctx.actorRuntime.shutdownAll()
         }
         profiler.stop()
         profiler.memoryStats = memory.getStats()

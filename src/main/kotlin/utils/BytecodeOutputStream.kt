@@ -30,6 +30,8 @@ import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Mul
+import vm.operations.ActorAwaitCall
+import vm.operations.ActorSpawn
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
@@ -196,6 +198,17 @@ class BytecodeOutputStream(
             is PtrRef -> out.writeByte(0x53).also { out.writeInt(op.varIndex) }
             is PtrRefIndex -> out.writeByte(0x54)
 
+            // Actor operations
+            is ActorSpawn -> out.writeByte(0x60).also {
+                out.writeInt(op.classFrameNum)
+                out.writeUTF(op.className)
+                out.writeInt(op.args)
+            }
+            is ActorAwaitCall -> out.writeByte(0x61).also {
+                out.writeInt(op.methodVarIndex)
+                out.writeInt(op.args)
+            }
+
             else -> throw IllegalArgumentException("Operation $op is not supported")
         }
     }
@@ -277,7 +290,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 
 const val MAGIC = 0x5e10
 const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x0f
+const val VERSION_MINOR = 0x10
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

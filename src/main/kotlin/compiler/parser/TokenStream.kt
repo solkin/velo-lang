@@ -10,6 +10,8 @@ class TokenStream(private val input: Input) {
         "while",
         "new",
         "native",
+        "actor",
+        "await",
         "ext",
         "let",
         "true",
@@ -284,6 +286,7 @@ const val FUNC = "func"
 const val VOID = "void"
 const val ANY = "any"
 const val PTR = "ptr"
+const val ACTOR = "actor"
 
 val stdTypesSet = setOf(
     BYTE,
@@ -299,4 +302,5 @@ val stdTypesSet = setOf(
     VOID,
     ANY,
     PTR,
+    ACTOR,
 )

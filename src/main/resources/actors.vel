@@ -1,0 +1,51 @@
+include "lang/terminal.vel";
+
+# An `actor class` lives on its own daemon thread. State is private —
+# accessible only by serialised method calls coming through the actor's
+# mailbox.
+actor class Counter(int start) {
+    int n = start;
+
+    func bump() int {
+        n += 1;
+        n;
+    };
+
+    func value() int { n; };
+};
+
+# `new ActorClass(args)` spawns the worker, runs its constructor, and hands
+# back a typed remote handle.
+actor[Counter] counter = new Counter(0);
+
+# Every cross-actor invocation is prefixed with `await`. Without it the
+# compiler refuses to access methods on `actor[T]`.
+term.println("start: ".con((await counter.value()).str));
+term.println("bump:  ".con((await counter.bump()).str));
+term.println("bump:  ".con((await counter.bump()).str));
+term.println("now:   ".con((await counter.value()).str));
+
+# Each actor owns its own state: spawning a second Counter is fully isolated.
+actor[Counter] other = new Counter(100);
+term.println("other: ".con((await other.bump()).str));
+term.println("first: ".con((await counter.value()).str));
+
+# Composition: an actor can hold a handle to another actor and return it
+# from a method. The returned `actor[T]` is identity-preserving — repeated
+# calls to `Container.get()` hand back refs to the same internal Counter.
+actor class Container() {
+    actor[Counter] inner = new Counter(0);
+
+    func get() actor[Counter] { inner; };
+
+    func tick() int {
+        await inner.bump();
+    };
+};
+
+actor[Container] box = new Container();
+term.println("box-tick: ".con((await box.tick()).str));
+term.println("box-tick: ".con((await box.tick()).str));
+
+actor[Counter] held = await box.get();
+term.println("held-now: ".con((await held.value()).str));

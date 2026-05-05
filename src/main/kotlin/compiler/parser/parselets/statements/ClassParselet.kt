@@ -12,14 +12,26 @@ import compiler.parser.parselets.ExpressionParser
 import compiler.parser.parselets.PrefixParselet
 import compiler.parser.parselets.TypeParser
 
+/**
+ * Parses a `class X(...) {...}` declaration.
+ *
+ * The marker passed via [token].value selects the modifier: `"native"`
+ * produces a native class, `"actor"` an actor class, anything else a plain
+ * class. This is the same trick [NativeParselet] uses to share the body
+ * parser; [ActorParselet] does the equivalent for `actor`.
+ */
 class ClassParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val native = token.value == "native"
+        val isActor = token.value == "actor"
         val className = TypeParser.parseVarname(parser)
         val typeParams = parseTypeParams(parser)
         val savedGenerics = parser.context.saveGenericTypes()
         typeParams.forEach { parser.context.registerGenericType(it) }
-        parser.context.registerClass(className, ClassType(name = className, typeParams = typeParams))
+        parser.context.registerClass(
+            className,
+            ClassType(name = className, isActor = isActor, typeParams = typeParams),
+        )
         val defsNodes = parser.parseDelimited('(', ')', ',') {
             TypeParser.parseDef(parser)
         }
@@ -36,9 +48,10 @@ class ClassParselet : PrefixParselet {
         return ClassNode(
             name = className,
             native = native,
+            isActor = isActor,
             typeParams = typeParams,
             defs = defs,
-            body = body
+            body = body,
         )
     }
 }

@@ -27,6 +27,7 @@
 23. [Generics](23-generics.md)
 24. [Operator Overloading](24-operator-overloading.md)
 25. [Closures](25-closures.md)
+26. [Actors](26-actors.md)
 
 ---
 

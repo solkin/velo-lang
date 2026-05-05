@@ -30,6 +30,8 @@ import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Mul
+import vm.operations.ActorAwaitCall
+import vm.operations.ActorSpawn
 import vm.operations.NativeConstructor
 import vm.operations.NativeFunction
 import vm.operations.NativeInvoke
@@ -195,6 +197,17 @@ class BytecodeInputStream(
             0x52 -> PtrStore()
             0x53 -> PtrRef(varIndex = inp.readInt())
             0x54 -> PtrRefIndex()
+
+            // Actor operations
+            0x60 -> ActorSpawn(
+                classFrameNum = inp.readInt(),
+                className = inp.readUTF(),
+                args = inp.readInt(),
+            )
+            0x61 -> ActorAwaitCall(
+                methodVarIndex = inp.readInt(),
+                args = inp.readInt(),
+            )
 
             else -> throw IllegalStateException("Unsupported opcode: $opcode")
         }

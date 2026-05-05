@@ -59,6 +59,16 @@ object TypeParser {
             }
             VOID -> VoidType
             ANY -> AnyType
+            ACTOR -> {
+                // Syntax: actor[ClassName]. Parser-level we accept any single
+                // class type wrapper; the actor-class invariant is enforced
+                // by ActorBoundType's `init` block at compile time.
+                val derived = parseDerivedTypes(parser, count = 1).first()
+                require(derived is ClassType) {
+                    "actor[T] requires a class type, got ${derived.log()}"
+                }
+                ActorBoundType(derived)
+            }
             else -> {
                 val className = value as? String
                     ?: throw IllegalArgumentException("Unknown type value: $value")

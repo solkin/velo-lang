@@ -1,16 +1,27 @@
 package vm
 
+import vm.actors.ActorHandle
+import vm.actors.ActorRuntime
 import vm.records.RefRecord
 
 /**
  * Context for VM execution.
  * Provides access to all VM subsystems for operations.
+ *
+ * `actorRuntime` is shared across the whole program (main thread + all actor
+ * threads) and is used by `ActorSpawn` to create new actors.
+ *
+ * `currentActor` is set only when this context belongs to an [ActorHandle]'s
+ * worker thread. Operations that need to know "am I executing inside an actor"
+ * (e.g. for actor-aware identity assignment) consult this field.
  */
 class VMContext(
     val stack: Stack<Frame>,
     val frameLoader: FrameLoader,
     val memory: MemoryArea,
     val nativeRegistry: NativeRegistry,
+    val actorRuntime: ActorRuntime = ActorRuntime(),
+    val currentActor: ActorHandle? = null,
 ) {
     /**
      * Get current frame from stack

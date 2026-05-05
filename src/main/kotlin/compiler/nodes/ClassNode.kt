@@ -12,18 +12,32 @@ import vm.operations.Store
 data class ClassNode(
     val name: String,
     val native: Boolean,
+    val isActor: Boolean = false,
     val typeParams: List<String> = emptyList(),
     val defs: List<DefNode>,
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
+        if (isActor && native) {
+            throw IllegalStateException("'actor' and 'native' modifiers are mutually exclusive on class '$name'")
+        }
+        if (isActor && typeParams.isNotEmpty()) {
+            throw IllegalStateException("Generic 'actor class' is not supported (class '$name')")
+        }
         // Reserve the class name index before extending, so class body vars don't shadow it
         val nameVar = ctx.def(name, VoidType)
 
         val classOps = ctx.extend()
         val argTypes = ArrayList<Type>()
 
-        val classType: Type = ClassType(name, typeParams = typeParams, num = classOps.frame.num, parent = classOps, args = argTypes)
+        val classType: Type = ClassType(
+            name = name,
+            isActor = isActor,
+            typeParams = typeParams,
+            num = classOps.frame.num,
+            parent = classOps,
+            args = argTypes,
+        )
         ctx.retype(name, classType)
 
         // Insert class frame pointer into stack
@@ -50,15 +64,44 @@ data class ClassNode(
         classOps.add(Instance(nativeIndex))
         classOps.add(Ret())
 
+        if (isActor) {
+            validateActorSignatures(classOps)
+        }
+
         // Add class operations to the real context
         ctx.merge(classOps)
 
         return VoidType
     }
+
+    /**
+     * Enforce that every value reaching or leaving this actor's surface is
+     * transferable (see [isTransferable]).
+     *
+     * Velo classes are mutable; sharing them by reference across actor
+     * threads would race, and structural-copy semantics for unrestricted
+     * classes would silently turn aliased mutations into snapshots. The
+     * compiler closes the gap at the point of declaration so the user sees
+     * a clear error here rather than an opaque marshalling failure inside
+     * `await`.
+     */
+    private fun validateActorSignatures(classCtx: Context) {
+        defs.forEach { def ->
+            requireTransferable(def.type, "Actor '$name' constructor parameter '${def.name}'")
+        }
+        classCtx.frame.vars.forEach { (memberName, v) ->
+            val funcType = v.type as? FuncType ?: return@forEach
+            funcType.args?.forEachIndexed { i, argType ->
+                requireTransferable(argType, "Actor method '$name.$memberName' arg #${i + 1}")
+            }
+            requireTransferable(funcType.derived, "Actor method '$name.$memberName' return type")
+        }
+    }
 }
 
 data class ClassType(
     val name: String,
+    val isActor: Boolean = false,
     val typeParams: List<String> = emptyList(),
     val typeArgs: List<Type> = emptyList(),
     val num: Int? = null,
