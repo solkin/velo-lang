@@ -284,6 +284,33 @@ EXAMPLES = [
         ]
     },
     {
+        "id": "actors",
+        "title": "Actors",
+        "intro": "An <code>actor class</code> runs on its own thread with private state. You hold a typed handle <code>actor[T]</code>; calls cross the thread boundary through <code>async</code> (dispatch) and <code>await</code> (collect).",
+        "segments": [
+            {
+                "docs": "Mark a class with <code>actor</code>. Every <code>new</code> spawns a fresh worker thread, and the variable receives an <code>actor[T]</code> handle, not the instance itself.",
+                "code": "actor class Counter() {\n    int n = 0;\n    func bump() int {\n        n += 1;\n        n;\n    };\n};\n\nactor[Counter] c = new Counter();"
+            },
+            {
+                "docs": "<code>async</code> dispatches a method call and returns a <code>future[T]</code> immediately. <code>await</code> blocks until the future is ready and unwraps the value. The two are orthogonal — combine them when you need the result right away.",
+                "code": "future[int] f = async c.bump();\nint n = await f;                # 1\n\n# Most calls inline both:\nint m = await async c.bump();   # 2"
+            },
+            {
+                "docs": "Each actor owns its data — two actors mean two threads, two private <code>n</code>s, no shared memory, no locks.",
+                "code": "actor[Counter] a = new Counter();\nactor[Counter] b = new Counter();\n\nawait async a.bump();   # 1\nawait async b.bump();   # 1 — independent\nawait async a.bump();   # 2"
+            },
+            {
+                "docs": "Because <code>async</code> returns immediately, two calls on two actors run in parallel. Wait time is the slower one, not the sum.",
+                "code": "future[int] fa = async a.bump();   # both dispatched\nfuture[int] fb = async b.bump();   # before either blocks\nint x = await fa;\nint y = await fb;"
+            },
+            {
+                "docs": "Arguments and return values are deep-copied across the boundary (primitives, arrays, dicts, tuples). Other <code>actor[T]</code> values cross by reference. Plain class instances, function values, and pointers can't — wrap them in their own <code>actor</code> if you need shared access.",
+                "code": "actor class Bag() {\n    array[int] held = new array[int]{};\n    func put(array[int] xs) void { held = xs; };\n};\n\nactor[Bag] b = new Bag();\narray[int] xs = new array[int]{1, 2, 3};\nawait async b.put(xs);\nxs[0] = 99;             # local mutation —\n                        # the actor's copy is unaffected"
+            }
+        ]
+    },
+    {
         "id": "arrays",
         "title": "Arrays",
         "intro": "Arrays in Velo are typed collections. They are declared with <code>array[T]</code> syntax.",
@@ -720,10 +747,11 @@ def highlight_velo(code):
         'include', 'func', 'class', 'native', 'ext', 'operator',
         'if', 'then', 'else', 'while', 'let', 'new', 'null', 'void',
         'true', 'false',
+        'actor', 'async', 'await',
     ]
     types = [
         'int', 'float', 'str', 'bool', 'byte', 'any',
-        'array', 'dict', 'tuple', 'ptr',
+        'array', 'dict', 'tuple', 'ptr', 'future',
     ]
 
     lines = code.split('\n')
