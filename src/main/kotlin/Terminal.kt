@@ -1,10 +1,12 @@
 import java.util.Scanner
 
 class Terminal() {
+    private val scanner = Scanner(System.`in`)
+
     fun print(text: String) {
         kotlin.io.print(text)
     }
     fun input(): String {
-        return Scanner(System.`in`).nextLine()
+        return scanner.nextLine()
     }
 }
