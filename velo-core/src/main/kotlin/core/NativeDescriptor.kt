@@ -175,10 +175,6 @@ class NativeClassDescriptor(
             c == Any::class.java -> VmType.Any
             c.isArray -> mapJvmType(c.componentType, null, registry)?.let { VmType.Array(it) }
             List::class.java.isAssignableFrom(c) -> VmType.Array(genericArg(generic, 0, registry))
-            Map::class.java.isAssignableFrom(c) -> VmType.Dict(
-                keyType = genericArg(generic, 0, registry),
-                valueType = genericArg(generic, 1, registry),
-            )
             c == VeloFunction::class.java -> VmType.Func(args = null, ret = VmType.Void)
             isKotlinFunction(c) -> mapKotlinFunction(generic, registry)
             else -> registry.getByJvmClass(c)?.let { VmType.Class(it.veloName) }

@@ -209,58 +209,6 @@ sealed interface Op {
         override val opcode get() = 0x32
     }
 
-    // ---- Dictionaries ----
-
-    /** Build a dict of `size` entries. Stack: `[k_1, v_1, ..., size] -> [dict]` */
-    object DictOf : Op {
-        override val opcode get() = 0x3c
-    }
-
-    /** Stack: `[value, dict, key] -> []` */
-    object DictSet : Op {
-        override val opcode get() = 0x3d
-    }
-
-    /** Lookup; pushes void for a missing key. Stack: `[dict, key] -> [value]` */
-    object DictIndex : Op {
-        override val opcode get() = 0x38
-    }
-
-    /** Remove a key. Stack: `[dict, key] -> [removed?]` */
-    object DictDel : Op {
-        override val opcode get() = 0x37
-    }
-
-    /** Stack: `[dict, key] -> [contains?]` */
-    object DictKey : Op {
-        override val opcode get() = 0x39
-    }
-
-    /** Stack: `[dict, value] -> [contains?]` */
-    object DictVal : Op {
-        override val opcode get() = 0x3e
-    }
-
-    /** Stack: `[dict] -> [size]` */
-    object DictLen : Op {
-        override val opcode get() = 0x3b
-    }
-
-    /** Stack: `[dict] -> [array of keys]` */
-    object DictKeys : Op {
-        override val opcode get() = 0x3a
-    }
-
-    /** Stack: `[dict] -> [array of values]` */
-    object DictVals : Op {
-        override val opcode get() = 0x3f
-    }
-
-    /** Entries as `[key, value]` tuples. Stack: `[dict] -> [array of tuples]` */
-    object DictArr : Op {
-        override val opcode get() = 0x36
-    }
-
     // ---- Variables ----
 
     /** Load local variable [index]. Stack: `[] -> [value]` */

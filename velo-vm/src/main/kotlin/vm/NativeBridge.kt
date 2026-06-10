@@ -84,15 +84,6 @@ object NativeBridge {
             null, Unit -> null
             is Boolean, is Byte, is Int, is Long, is Float, is Double, is Char, is String ->
                 ValueRecord(value)
-            is Map<*, *> -> {
-                val veloMap = HashMap<Record, Record>()
-                for ((k, v) in value) {
-                    if (k != null && v != null) {
-                        veloMap[toVelo(k, ctx)!!] = toVelo(v, ctx)!!
-                    }
-                }
-                RefRecord.dict(veloMap, ctx)
-            }
             else -> asIterable(value)?.let { wrapIterable(it, ctx) }
                 ?: RefRecord.native(value, ctx)
         }
@@ -131,7 +122,6 @@ internal fun VmType.toBoxedJvm(): Class<*> = when (this) {
     is VmType.Str -> String::class.java
     is VmType.Tuple -> Array::class.java
     is VmType.Array -> JArray.newInstance(elementType.toBoxedJvm(), 0)::class.java
-    is VmType.Dict -> Map::class.java
     is VmType.Class -> throw IllegalArgumentException(
         "Arrays of native class instances ($name) cannot cross the native boundary"
     )

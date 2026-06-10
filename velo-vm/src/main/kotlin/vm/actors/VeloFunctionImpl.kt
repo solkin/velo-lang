@@ -74,16 +74,10 @@ class VeloFunctionImpl internal constructor(
             val elementType = (expected as? VmType.Array)?.elementType
             ActorValue.Array(value.map { encodeHost(it, elementType, where) })
         }
-        is Map<*, *> -> {
-            val dictType = expected as? VmType.Dict
-            ActorValue.Dict(value.entries.map { (k, v) ->
-                encodeHost(k, dictType?.keyType, where) to encodeHost(v, dictType?.valueType, where)
-            })
-        }
         is VeloFunctionImpl -> ActorValue.Callback(value.handle, value.func)
         else -> throw IllegalArgumentException(
             "Callback $where: unsupported host type ${value::class.qualifiedName}; " +
-                "use Int/Float/Boolean/Byte/String, List, Map or VeloFunction"
+                "use Int/Float/Boolean/Byte/String, List or VeloFunction"
         )
     }
 
@@ -108,9 +102,6 @@ class VeloFunctionImpl internal constructor(
         ActorValue.Void -> null
         is ActorValue.Primitive -> value.value
         is ActorValue.Array -> value.items.map { toHost(it) }
-        is ActorValue.Dict -> LinkedHashMap<Any?, Any?>(value.entries.size).apply {
-            value.entries.forEach { (k, v) -> put(toHost(k), toHost(v)) }
-        }
         is ActorValue.Callback -> VeloFunctionImpl(value.handle, value.func, argTypes = null)
         is ActorValue.Ref -> throw IllegalStateException(
             "actor[${value.className}] values cannot be materialised on the host side"

@@ -47,10 +47,6 @@ sealed class VmType {
         override fun toString() = "array[$elementType]"
     }
 
-    data class Dict(val keyType: VmType = Any, val valueType: VmType = Any) : VmType() {
-        override fun toString() = "dict[$keyType, $valueType]"
-    }
-
     /** A registered native class, referenced by its Velo name. */
     data class Class(val name: String) : VmType() {
         override fun toString() = name

@@ -47,9 +47,6 @@ interface Record {
     /** Get value as an array of Records (for Velo arrays and tuples) */
     fun getArray(): Array<Record> = get()
 
-    /** Get value as a mutable map (for Velo dictionaries) */
-    fun getDict(): MutableMap<Record, Record> = get()
-
     /** Get value as a Frame (for class instances) */
     fun getFrame(): Frame = get()
 
@@ -75,7 +72,6 @@ interface Record {
             is VmType.Bool -> getBool()
             is VmType.Tuple -> convertTuple(vmType, ctx)
             is VmType.Array -> convertArray(vmType, ctx)
-            is VmType.Dict -> convertDict(vmType, ctx)
             is VmType.Func -> convertFunc(vmType, ctx)
             is VmType.Class -> {
                 // Native instances are opaque handles — unwrap the JVM object.
@@ -144,25 +140,6 @@ interface Record {
             val elemType = vmType.elementTypes.getOrElse(i) { VmType.Any }
             record.getAs(elemType, ctx)
         }.toTypedArray()
-    }
-
-    /**
-     * Convert a Velo dict (MutableMap<Record, Record>) to a typed JVM Map.
-     */
-    private fun convertDict(vmType: VmType.Dict, ctx: VMContext?): Any {
-        val veloDict = getDict()
-        val keyType = vmType.keyType
-        val valueType = vmType.valueType
-        
-        val jvmMap = LinkedHashMap<Any, Any>()
-        
-        for ((k, v) in veloDict) {
-            val jvmKey = k.getAs(keyType, ctx)
-            val jvmValue = v.getAs(valueType, ctx)
-            jvmMap[jvmKey] = jvmValue
-        }
-        
-        return jvmMap
     }
 
 }

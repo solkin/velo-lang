@@ -20,7 +20,7 @@ import vm.records.ValueRecord
  *     indices, captured `Vars`, or memory addresses respectively).
  *
  * Cloneable: primitives, host strings/booleans/chars/bytes/numbers, arrays
- * (which double as the runtime form of tuples), dicts, plus two handle
+ * (which double as the runtime form of tuples), plus two handle
  * types that travel by reference instead of by copy: [ActorRefRecord]s and
  * function values ([FuncRecord]/[CallbackRecord] → [ActorValue.Callback],
  * pinned to the actor that owns the closure). Anything else is rejected
@@ -64,12 +64,6 @@ object StructuredClone {
                     val array: Array<Record> = record.get(source)
                     ActorValue.Array(array.map { encode(it, source) })
                 }
-                RefKind.DICT -> {
-                    val dict: MutableMap<Record, Record> = record.get(source)
-                    ActorValue.Dict(dict.entries.map { (k, v) ->
-                        encode(k, source) to encode(v, source)
-                    })
-                }
                 RefKind.CLASS -> throw ActorMarshallingException(
                     "Cannot transfer non-actor class instance across actors; " +
                         "wrap the type as `actor[T]` to share by reference."
@@ -102,13 +96,6 @@ object StructuredClone {
             is ActorValue.Array -> {
                 val arr: Array<Record> = Array(value.items.size) { idx -> decode(value.items[idx], target) }
                 RefRecord.array(arr, target)
-            }
-            is ActorValue.Dict -> {
-                val map = LinkedHashMap<Record, Record>(value.entries.size)
-                for ((k, v) in value.entries) {
-                    map[decode(k, target)] = decode(v, target)
-                }
-                RefRecord.dict(map, target)
             }
         }
     }

@@ -110,7 +110,4 @@ internal fun vmTypeToType(vmType: VmType, ctx: Context): Type = when (vmType) {
         NativeClassType(descriptor)
     }
     is VmType.Ptr -> PtrType(derived = vmTypeToType(vmType.derived, ctx))
-    is VmType.Dict -> throw IllegalArgumentException(
-        "Native Map signatures are not supported: dict is a stdlib class, not a VM type"
-    )
 }

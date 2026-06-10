@@ -17,10 +17,11 @@ import java.io.File
 object Bytecode {
 
     const val MAGIC = 0x5e10
-    const val VERSION_MAJOR = 0x09
+    const val VERSION_MAJOR = 0x0a
     const val VERSION_MINOR = 0x00
 
     // Tags for inline values and serialized VmTypes.
+    // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
     private const val TYPE_VOID = 0x00
     private const val TYPE_ANY = 0x01
     private const val TYPE_BYTE = 0x02
@@ -30,7 +31,6 @@ object Bytecode {
     private const val TYPE_BOOL = 0x06
     private const val TYPE_TUPLE = 0x07
     private const val TYPE_ARRAY = 0x08
-    private const val TYPE_DICT = 0x09
     private const val TYPE_CLASS = 0x0a
     private const val TYPE_FUNC = 0x0b
     private const val TYPE_PTR = 0x0c
@@ -152,11 +152,6 @@ object Bytecode {
                 out.writeByte(TYPE_ARRAY)
                 writeType(t.elementType, out)
             }
-            is VmType.Dict -> {
-                out.writeByte(TYPE_DICT)
-                writeType(t.keyType, out)
-                writeType(t.valueType, out)
-            }
             is VmType.Class -> {
                 out.writeByte(TYPE_CLASS)
                 out.writeUTF(t.name)
@@ -259,16 +254,6 @@ object Bytecode {
             0x33 -> Op.StrSub
             0x34 -> Op.Swap
             0x35 -> Op.Xor
-            0x36 -> Op.DictArr
-            0x37 -> Op.DictDel
-            0x38 -> Op.DictIndex
-            0x39 -> Op.DictKey
-            0x3a -> Op.DictKeys
-            0x3b -> Op.DictLen
-            0x3c -> Op.DictOf
-            0x3d -> Op.DictSet
-            0x3e -> Op.DictVal
-            0x3f -> Op.DictVals
             0x40 -> Op.StrInt
             0x42 -> Op.Instance
             0x43 -> Op.NativeCall(
@@ -320,7 +305,6 @@ object Bytecode {
             TYPE_BOOL -> VmType.Bool
             TYPE_TUPLE -> VmType.Tuple(List(inp.readByte().toInt()) { readType(inp) })
             TYPE_ARRAY -> VmType.Array(elementType = readType(inp))
-            TYPE_DICT -> VmType.Dict(keyType = readType(inp), valueType = readType(inp))
             TYPE_CLASS -> VmType.Class(name = inp.readUTF())
             TYPE_FUNC -> {
                 val args = if (inp.readBoolean()) {

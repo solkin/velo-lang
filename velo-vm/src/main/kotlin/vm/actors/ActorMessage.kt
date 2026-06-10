@@ -18,7 +18,6 @@ sealed class ActorValue {
     object Void : ActorValue()
     data class Primitive(val value: Any) : ActorValue()
     data class Array(val items: List<ActorValue>) : ActorValue()
-    data class Dict(val entries: List<Pair<ActorValue, ActorValue>>) : ActorValue()
 
     /**
      * Cross-thread description of an `actor[T]` value. Carries only what's

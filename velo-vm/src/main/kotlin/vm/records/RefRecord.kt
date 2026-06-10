@@ -11,8 +11,6 @@ import vm.VMContext
 enum class RefKind {
     /** Array of Records */
     ARRAY,
-    /** Dictionary (MutableMap<Record, Record>) */
-    DICT,
     /** Class instance (Frame) */
     CLASS,
     /** Native JVM object */
@@ -55,17 +53,6 @@ data class RefRecord(
     }
 
     /**
-     * Get value as a mutable map.
-     * Validates that this is a DICT reference.
-     */
-    override fun getDict(): MutableMap<Record, Record> {
-        if (kind != RefKind.DICT) {
-            throw IllegalStateException("Expected DICT reference, got $kind")
-        }
-        return get()
-    }
-
-    /**
      * Get value as a Frame.
      * Validates that this is a CLASS reference.
      */
@@ -88,16 +75,6 @@ data class RefRecord(
             )
         }
 
-        /**
-         * Create a RefRecord for a dictionary.
-         */
-        fun dict(value: MutableMap<Record, Record>, ctx: VMContext): RefRecord {
-            return RefRecord(
-                id = ctx.memoryPut(value),
-                kind = RefKind.DICT,
-                memory = ctx.memory
-            )
-        }
 
         /**
          * Create a RefRecord for a class instance.
