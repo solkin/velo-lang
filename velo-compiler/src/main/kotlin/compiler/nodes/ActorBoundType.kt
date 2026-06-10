@@ -107,7 +107,6 @@ fun Type.isTransferable(): Boolean = when (this) {
     ByteType, IntType, FloatType, StringType, BoolType, VoidType -> true
     is ArrayType -> derived.isTransferable()
     is TupleType -> types.all { it.isTransferable() }
-    is DictType -> derived.types.all { it.isTransferable() }
     is ActorBoundType -> true
     is FutureType -> false   // pinned to the actor that completes it; see [FutureType] kdoc
     is FuncType -> derived.sameAs(VoidType) && args?.all { it.isTransferable() } == true

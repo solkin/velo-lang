@@ -15,6 +15,19 @@ class Parser(
     }
 
     fun parse(): Node {
+        val statements = parseStatements()
+        // dict[K:V] is sugar over the stdlib Map class: when the program
+        // used dict syntax and did not include the implementation itself,
+        // pull it in and compile it ahead of the user code.
+        if (context.dictUsed && !depLoader.isLoaded(SourceLoader.STDLIB_MAP)) {
+            depLoader.load(SourceLoader.STDLIB_MAP)
+            val stdlib = parseStatements()
+            return ProgramNode(prog = stdlib + statements)
+        }
+        return ProgramNode(prog = statements)
+    }
+
+    private fun parseStatements(): List<Node> {
         val statements = mutableListOf<Node>()
         while (!pratt.eof()) {
             statements.add(pratt.parseExpression())
@@ -22,6 +35,6 @@ class Parser(
                 pratt.consume(TokenType.PUNCTUATION, ';')
             }
         }
-        return ProgramNode(prog = statements)
+        return statements
     }
 }

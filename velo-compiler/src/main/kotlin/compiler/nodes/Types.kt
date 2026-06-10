@@ -131,7 +131,6 @@ fun resolveGenericType(type: Type, typeParams: List<String>, typeArgs: List<Type
         }
         is ArrayType -> ArrayType(derived = resolveGenericType(type.derived, typeParams, typeArgs))
         is TupleType -> TupleType(types = type.types.map { resolveGenericType(it, typeParams, typeArgs) })
-        is DictType -> DictType(TupleType(type.derived.types.map { resolveGenericType(it, typeParams, typeArgs) }))
         is PtrType -> PtrType(derived = resolveGenericType(type.derived, typeParams, typeArgs))
         is FuncType -> FuncType(
             derived = resolveGenericType(type.derived, typeParams, typeArgs),

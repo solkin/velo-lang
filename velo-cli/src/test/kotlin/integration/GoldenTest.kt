@@ -248,6 +248,11 @@ class GoldenTest {
     }
 
     @Test
+    fun `golden - dict`() {
+        runGoldenTest("dict")
+    }
+
+    @Test
     fun `golden - closures`() {
         runGoldenTest("closures")
     }

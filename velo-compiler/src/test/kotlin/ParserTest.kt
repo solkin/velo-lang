@@ -396,8 +396,8 @@ class ParserTest {
             expected = AssignNode(
                 left = VarNode(name = "a"),
                 right = DictNode(dictOf = emptyMap(), keyType = IntType, valType = StringType)
-            ).wrapProgram(),
-            actual = node,
+            ),
+            actual = node.lastStatement(),
         )
     }
 
@@ -419,8 +419,8 @@ class ParserTest {
                     keyType = IntType,
                     valType = StringType,
                 )
-            ).wrapProgram(),
-            actual = node,
+            ),
+            actual = node.lastStatement(),
         )
     }
 
@@ -442,8 +442,8 @@ class ParserTest {
                     valType = BoolType,
                 ),
                 index = IntNode(2)
-            ).wrapProgram(),
-            actual = node,
+            ),
+            actual = node.lastStatement(),
         )
     }
 
@@ -807,6 +807,15 @@ class ParserTest {
 
     private fun Node.wrapProgram(): Node {
         return ProgramNode(listOf(this))
+    }
+
+    /**
+     * The user statement of a parsed program. Dict syntax makes the parser
+     * prepend the auto-included stdlib Map class, so dict tests compare
+     * against the last statement instead of the whole program.
+     */
+    private fun Node.lastStatement(): Node {
+        return (this as ProgramNode).prog.last()
     }
 
     private fun makeSimpleParser(str: String, deps: Map<String, String> = emptyMap()): Parser {

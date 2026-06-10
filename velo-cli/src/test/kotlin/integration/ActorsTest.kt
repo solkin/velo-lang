@@ -317,28 +317,49 @@ class ActorsTest {
 
     @Test
     fun `transferable containers are accepted on actor signatures`() {
-        // array[int], dict[int:str], tuple[int,str], actor[T] must all pass
-        // the transferability check and round-trip cleanly through await.
+        // array[int], array[tuple[int,str]], actor[T] must all pass the
+        // transferability check and round-trip cleanly through await.
+        // array[tuple[K,V]] is also the wire format for maps (Map.arr).
         val output = compileAndRun(
             """
             Terminal term = new Terminal();
 
             actor class Hub() {
                 array[int] last = new array[int]{};
-                func echo(array[int] xs, dict[int:str] tags) array[int] {
+                func echo(array[int] xs, array[tuple[int,str]] tags) array[int] {
                     last = xs;
                     last;
                 };
             };
 
+            dict[int:str] tags = new dict[int:str]{1:"a"};
             actor[Hub] h = new Hub();
-            array[int] back = await async h.echo(new array[int]{1, 2, 3}, new dict[int:str]{1:"a"});
+            array[int] back = await async h.echo(new array[int]{1, 2, 3}, tags.arr);
             term.println(back[0].str);
             term.println(back[1].str);
             term.println(back[2].str);
             """.trimIndent()
         )
         assertEquals("1\n2\n3", output)
+    }
+
+    @Test
+    fun `compile-time failure when actor method takes a dict`() {
+        // dict is the stdlib Map class — a mutable class instance — and
+        // class instances do not cross actor boundaries. Maps travel as
+        // array[tuple[K,V]] (Map.arr) instead.
+        val ex = assertFails {
+            compileOrThrow(
+                """
+                actor class A() {
+                    func take(dict[int:str] tags) void {};
+                };
+                """.trimIndent()
+            )
+        }
+        val msg = ex.message ?: ""
+        assertTrue(msg.contains("A.take"), "Unexpected error: $msg")
+        assertTrue(msg.contains("not transferable"), "Unexpected error: $msg")
     }
 
     @Test

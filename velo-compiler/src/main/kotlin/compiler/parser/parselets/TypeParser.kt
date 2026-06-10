@@ -50,8 +50,13 @@ object TypeParser {
                 ArrayType(derived.first())
             }
             DICT -> {
+                // dict[K:V] is sugar for the stdlib Map[K, V] class; the
+                // class itself resolves by name at compile time. typeParams
+                // must mirror the `class Map[K, V]` declaration so generic
+                // members resolve against these typeArgs.
                 val types = parseDerivedTypes(parser, count = 2, separator = ':')
-                DictType(TupleType(types))
+                parser.context.dictUsed = true
+                ClassType(name = DICT_CLASS, typeParams = listOf("K", "V"), typeArgs = types)
             }
             FUNC -> parseFuncType(parser)
             PTR -> {

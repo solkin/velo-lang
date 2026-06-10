@@ -100,9 +100,6 @@ internal fun vmTypeToType(vmType: VmType, ctx: Context): Type = when (vmType) {
     is VmType.Bool -> BoolType
     is VmType.Array -> ArrayType(vmTypeToType(vmType.elementType, ctx))
     is VmType.Tuple -> TupleType(vmType.elementTypes.map { vmTypeToType(it, ctx) })
-    is VmType.Dict -> DictType(
-        TupleType(listOf(vmTypeToType(vmType.keyType, ctx), vmTypeToType(vmType.valueType, ctx)))
-    )
     is VmType.Func -> FuncType(
         derived = vmType.ret?.let { vmTypeToType(it, ctx) } ?: VoidType,
         args = vmType.args?.map { vmTypeToType(it, ctx) },
@@ -113,4 +110,7 @@ internal fun vmTypeToType(vmType: VmType, ctx: Context): Type = when (vmType) {
         NativeClassType(descriptor)
     }
     is VmType.Ptr -> PtrType(derived = vmTypeToType(vmType.derived, ctx))
+    is VmType.Dict -> throw IllegalArgumentException(
+        "Native Map signatures are not supported: dict is a stdlib class, not a VM type"
+    )
 }

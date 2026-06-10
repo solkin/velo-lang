@@ -20,6 +20,13 @@ class ParserContext(
     val classTypes = mutableMapOf<String, ClassType>()
     private val genericTypes = mutableMapOf<String, GenericType>()
 
+    /**
+     * Set when the program uses `dict` syntax. Dict lowers onto the stdlib
+     * Map class, which [compiler.parser.Parser.parse] then pulls in
+     * automatically.
+     */
+    var dictUsed = false
+
     fun registerClass(name: String, type: ClassType) {
         classTypes[name] = type
     }

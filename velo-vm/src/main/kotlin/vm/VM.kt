@@ -124,9 +124,8 @@ private fun printFrameInfo(frame: Frame, depth: Int, out: PrintStream) {
     if (!frame.vars.empty()) {
         val vars = frame.vars.vars.entries.take(5)
         out.print("$indent  vars: ")
-        out.println(vars.joinToString(", ") { (idx, rec) -> 
-            val value = try { rec.get<Any>() } catch (_: Exception) { "?" }
-            val short = value.toString().take(20).let { if (it.length == 20) "$it…" else it }
+        out.println(vars.joinToString(", ") { (idx, rec) ->
+            val short = renderValue(rec, 20)
             "[$idx]=$short"
         })
         if (frame.vars.vars.size > 5) {
@@ -143,8 +142,7 @@ private fun printFrameInfo(frame: Frame, depth: Int, out: PrintStream) {
         while (!frame.subs.empty() && count < 3) {
             val rec = frame.subs.pop()
             tempStack.push(rec)
-            val value = try { rec.get<Any>() } catch (_: Exception) { "?" }
-            items.add(value.toString().take(15).let { if (it.length == 15) "$it…" else it })
+            items.add(renderValue(rec, 15))
             count++
         }
         // Restore stack
@@ -153,4 +151,18 @@ private fun printFrameInfo(frame: Frame, depth: Int, out: PrintStream) {
         }
         out.println(items.joinToString(" | "))
     }
+}
+
+/**
+ * A record value for the error dump. Records reachable from a frame may
+ * form reference cycles (closures, class instances), so only primitives
+ * are rendered through toString; everything else is shown by kind.
+ */
+private fun renderValue(rec: Record, limit: Int): String {
+    val value = try { rec.get<Any>() } catch (_: Exception) { "?" }
+    val text = when (value) {
+        is Number, is Boolean, is Char, is String, is Unit -> value.toString()
+        else -> value.javaClass.simpleName
+    }
+    return text.take(limit).let { if (it.length == limit) "$it…" else it }
 }

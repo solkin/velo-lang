@@ -1,0 +1,93 @@
+Terminal term = new Terminal();
+include "lang/bool.vel";
+
+# --- literal + index read ---
+
+dict[int:str] d = new dict[int:str]{
+    1:"a",
+    2:"b",
+    3:"c"
+};
+term.println(d[1]);
+term.println(d.len.str);
+
+# --- index assignment: insert and update ---
+
+d[5] = "e";
+d[1] = "A";
+term.println(d[5]);
+term.println(d[1]);
+term.println(d.len.str);
+
+# --- del ---
+
+term.println(d.del(2).str);
+term.println(d.del(20).str);
+term.println(d.len.str);
+
+# --- key / val membership ---
+
+term.println(d.key(3).str);
+term.println(d.key(99).str);
+term.println(d.val("c").str);
+term.println(d.val("zzz").str);
+
+# --- keys / vals / arr ---
+
+term.println(d.keys.len.str);
+term.println(d.vals.len.str);
+d.arr.map(
+    func(int i, tuple[int,str] e) int {
+        term.println(e.1.str.con(":").con(e.2));
+        i;
+    }
+);
+
+# --- str keys + getOrDefault on a miss ---
+
+dict[str:int] ages = new dict[str:int]{"alice":30, "bob":25};
+ages["carol"] = 35;
+term.println(ages["alice"].str);
+term.println(ages.getOrDefault("nobody", 42).str);
+
+# --- growth across resize ---
+
+dict[int:int] big = new dict[int:int]{};
+int n = 0;
+while (n < 40) {
+    big[n] = n * n;
+    n = n + 1;
+};
+term.println(big.len.str);
+term.println(big[39].str);
+int check = 0;
+int ok = 0;
+while (check < 40) {
+    if (big[check] == check * check) {
+        ok = ok + 1;
+    };
+    check = check + 1;
+};
+term.println((ok == 40).str);
+
+# --- dict in function signatures ---
+
+func tally(dict[str:int] m, str k) int {
+    if (m.key(k)) {
+        m[k];
+    } else {
+        0;
+    };
+};
+term.println(tally(ages, "bob").str);
+term.println(tally(ages, "ghost").str);
+
+# --- dict as a generic type argument ---
+
+class Box[T](T item) {
+    func get() T {
+        item;
+    };
+};
+Box[dict[str:int]] boxed = new Box[dict[str:int]](ages);
+term.println(boxed.get()["carol"].str);
