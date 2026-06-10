@@ -43,7 +43,7 @@ Invocations of one callback are serialised in posting order. A callback that tra
 
 ## Native to Velo: `VeloFunction`
 
-On the JVM side a callback parameter is declared either as a plain Kotlin function type — `cb: (String) -> Unit`, which gives Velo the full signature for compile-time checking and gives the host an ordinary lambda to invoke — or as `vm.actors.VeloFunction`, the explicit handle:
+On the JVM side a callback parameter is declared either as a plain Kotlin function type — `cb: (String) -> Unit`, which gives Velo the full signature for compile-time checking and gives the host an ordinary lambda to invoke — or as `core.VeloFunction`, the explicit handle:
 
 ```kotlin
 class Notifications {
@@ -87,7 +87,7 @@ Velo has no exception handling: every unhandled runtime error stops the program 
 
 ```kotlin
 val runtime = VeloRuntime().register(UiBridge::class)
-val program = runtime.start(frames, Dispatcher.from { mainHandler.post(it) })
+val program = runtime.start(Bytecode.read(File("app.vbc")), Dispatcher.from { mainHandler.post(it) })
 // ... UI events flow through VeloFunction.post(...), Velo code runs on the UI thread
 program.stop()
 ```

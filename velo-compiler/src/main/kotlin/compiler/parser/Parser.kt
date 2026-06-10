@@ -1,0 +1,27 @@
+package compiler.parser
+
+import compiler.nodes.Node
+import compiler.nodes.ProgramNode
+import core.NativeRegistry
+
+class Parser(
+    private val stream: TokenStream,
+    private val depLoader: DependencyLoader,
+    nativeRegistry: NativeRegistry? = null,
+) {
+    private val context = ParserContext(nativeRegistry)
+    private val pratt = PrattParser(stream, context, depLoader).also {
+        VeloGrammar.configure(it)
+    }
+
+    fun parse(): Node {
+        val statements = mutableListOf<Node>()
+        while (!pratt.eof()) {
+            statements.add(pratt.parseExpression())
+            if (!pratt.eof()) {
+                pratt.consume(TokenType.PUNCTUATION, ';')
+            }
+        }
+        return ProgramNode(prog = statements)
+    }
+}

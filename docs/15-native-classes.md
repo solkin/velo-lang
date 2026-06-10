@@ -13,10 +13,16 @@ class Counter(start: Int) {
     fun value(): Int = n
 }
 
-val runtime = VeloRuntime()
+val natives = NativeRegistry()
     .register(Counter::class)              // Velo name = "Counter"
     .register("Ticker", Clock::class)      // custom Velo name
+
+val compiler = VeloCompiler(natives)       // compile-time checking
+val runtime = VeloRuntime(natives)         // load-time linking
 ```
+
+The same registry serves both sides; `VeloCompiler` and `VeloRuntime` also
+expose `register(...)` directly when only one of them is in the process.
 
 Velo side — just use it:
 
@@ -26,7 +32,10 @@ term.println(c.bump().str);   # 11
 term.println(c.value().str);  # 11
 ```
 
-`Terminal`, `Time`, `FileSystem`, `Http` and `Socket` are registered by default; the stdlib module `lang/terminal.vel` only provides the conventional `term` global.
+The CLI registers `Terminal`, `Time`, `FileSystem`, `Http` and `Socket` for
+every program it runs; an embedding application picks its own set. The
+stdlib module `lang/terminal.vel` only provides the conventional `term`
+global.
 
 ## How It Works
 

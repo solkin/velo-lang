@@ -360,9 +360,41 @@ if (a | b) {
 };
 ```
 
+## Project Structure
+
+The project is split into four Gradle modules so the compiler and the VM
+can be used independently:
+
+- `velo-core` — the contract shared by both sides: the `Op` instruction set,
+  `VmType`, the native-interop registry/descriptors, and the `.vbc` bytecode
+  format (`Bytecode`). No execution engine.
+- `velo-compiler` — parser and compiler: `.vel` sources → `SerializedProgram`.
+  Depends only on `velo-core`; a build tool can compile bytecode without the VM.
+- `velo-vm` — the execution engine: interpreter, records, memory, actors, and
+  the embedding API (`VeloRuntime`). Depends only on `velo-core`; a client
+  application can run `.vbc` programs without the compiler.
+- `velo-cli` — the command-line tool plus the default native classes
+  (`Terminal`, `Time`, `FileSystem`, `Http`, `Socket`). The only module that
+  links the compiler and the VM together.
+
+Embedding the VM in an application:
+
+```kotlin
+val runtime = VeloRuntime().register(MyApi::class)
+runtime.run(Bytecode.read(File("app.vbc")))
+```
+
+Compiling without running:
+
+```kotlin
+val compiler = VeloCompiler().register(MyApi::class)
+val program = compiler.compile("app.vel") ?: return
+Bytecode.write(program, File("app.vbc"))
+```
+
 ## Examples
 
-The project includes many example programs in `src/main/resources/`:
+The project includes many example programs in `velo-cli/src/main/resources/`:
 
 - `hello.vel` - Hello, World program
 - `fibonacci-recursive.vel` - Recursive Fibonacci algorithm
@@ -404,8 +436,8 @@ Run sample programs from bytecode:
 # Run tests
 ./gradlew test
 
-# Run a program
-./gradlew run --args="hello.vel"
+# Run a program (paths resolve from the repository root)
+./gradlew run --args="velo-cli/src/main/resources/hello.vel"
 ```
 
 ## Documentation

@@ -1,0 +1,642 @@
+package vm.operations
+
+import core.Op
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
+import vm.Frame
+import vm.LifoStack
+import vm.TestUtils
+import vm.VMContext
+import vm.Vars
+import vm.records.PtrRecord
+import vm.records.ValueRecord
+
+class PointerOperationsTest {
+
+    private fun createTestFrame(): Frame {
+        return Frame(
+            pc = 0,
+            subs = LifoStack(),
+            vars = Vars(HashMap(), null),
+            ops = emptyList()
+        )
+    }
+
+    private fun createTestContext(): VMContext {
+        return TestUtils.createTestContext()
+    }
+
+    // ========== PtrNew (BoxPtrRecord) Tests ==========
+
+    @Test
+    fun `PtrNew - create pointer with integer value`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord(42))
+        Op.PtrNew.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop()
+        assertTrue(ptr is PtrRecord.Box)
+        assertFalse(ptr.isNull())
+        assertEquals(42, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrNew - create pointer with string value`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord("hello"))
+        Op.PtrNew.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop()
+        assertTrue(ptr is PtrRecord.Box)
+        assertEquals("hello", ptr.deref().getString())
+    }
+
+    @Test
+    fun `PtrNew - create pointer with float value`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord(3.14f))
+        Op.PtrNew.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop()
+        assertTrue(ptr is PtrRecord.Box)
+        assertEquals(3.14f, ptr.deref().getFloat())
+    }
+
+    // ========== PtrLoad Tests ==========
+
+    @Test
+    fun `PtrLoad - dereference box pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Create pointer
+        frame.subs.push(ValueRecord(100))
+        Op.PtrNew.exec(frame, ctx)
+        
+        // Load value through pointer
+        Op.PtrLoad.exec(frame, ctx)
+        
+        assertEquals(100, frame.subs.pop().getInt())
+    }
+
+    @Test
+    fun `PtrLoad - dereference null pointer throws exception`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(PtrRecord.Null)
+        
+        assertFailsWith<NullPointerException> {
+            Op.PtrLoad.exec(frame, ctx)
+        }
+    }
+
+    @Test
+    fun `PtrLoad - non-pointer value throws exception`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord(42))
+        
+        assertFailsWith<IllegalStateException> {
+            Op.PtrLoad.exec(frame, ctx)
+        }
+    }
+
+    @Test
+    fun `PtrLoad - dereference var pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Set up variable
+        frame.vars.vars[0] = ValueRecord(200)
+        
+        // Create pointer to variable
+        Op.PtrRef(0).exec(frame, ctx)
+        
+        // Load value through pointer
+        Op.PtrLoad.exec(frame, ctx)
+        
+        assertEquals(200, frame.subs.pop().getInt())
+    }
+
+    @Test
+    fun `PtrLoad - dereference array pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(10),
+            ValueRecord(20),
+            ValueRecord(30)
+        )
+        
+        // Push array and index
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(1))
+        
+        // Create pointer to array element
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        // Load value through pointer
+        Op.PtrLoad.exec(frame, ctx)
+        
+        assertEquals(20, frame.subs.pop().getInt())
+    }
+
+    // ========== PtrStore Tests ==========
+
+    @Test
+    fun `PtrStore - store value through box pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Create pointer with initial value
+        frame.subs.push(ValueRecord(100))
+        Op.PtrNew.exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Box
+        
+        // Store new value
+        frame.subs.push(ValueRecord(200))
+        frame.subs.push(ptr)
+        Op.PtrStore.exec(frame, ctx)
+        
+        // Verify value changed
+        assertEquals(200, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrStore - store value through null pointer throws exception`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord(200))
+        frame.subs.push(PtrRecord.Null)
+        
+        assertFailsWith<NullPointerException> {
+            Op.PtrStore.exec(frame, ctx)
+        }
+    }
+
+    @Test
+    fun `PtrStore - store through var pointer modifies variable`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Set up variable
+        frame.vars.vars[0] = ValueRecord(100)
+        
+        // Create pointer to variable
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Var
+        
+        // Store new value through pointer
+        frame.subs.push(ValueRecord(300))
+        frame.subs.push(ptr)
+        Op.PtrStore.exec(frame, ctx)
+        
+        // Verify variable changed
+        assertEquals(300, frame.vars.get(0).getInt())
+        assertEquals(300, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrStore - store through array pointer modifies array`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(10),
+            ValueRecord(20),
+            ValueRecord(30)
+        )
+        
+        // Create pointer to array element
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(1))
+        Op.PtrRefIndex.exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        // Store new value through pointer
+        frame.subs.push(ValueRecord(999))
+        frame.subs.push(ptr)
+        Op.PtrStore.exec(frame, ctx)
+        
+        // Verify array element changed
+        assertEquals(999, array[1].getInt())
+        assertEquals(999, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrStore - non-pointer value throws exception`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.subs.push(ValueRecord(200))
+        frame.subs.push(ValueRecord(42)) // Not a pointer
+        
+        assertFailsWith<IllegalStateException> {
+            Op.PtrStore.exec(frame, ctx)
+        }
+    }
+
+    // ========== PtrRef (VarPtrRecord) Tests ==========
+
+    @Test
+    fun `PtrRef - create pointer to variable`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.vars.vars[0] = ValueRecord(42)
+        Op.PtrRef(0).exec(frame, ctx)
+        
+        val ptr = frame.subs.pop()
+        assertTrue(ptr is PtrRecord.Var)
+        assertFalse(ptr.isNull())
+        assertEquals(42, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrRef - pointer reflects variable changes`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.vars.vars[0] = ValueRecord(100)
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Var
+        
+        // Change variable directly
+        frame.vars.set(0, ValueRecord(200))
+        
+        // Pointer should see new value
+        assertEquals(200, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrRef - multiple pointers to same variable`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        frame.vars.vars[0] = ValueRecord(50)
+        
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr1 = frame.subs.pop() as PtrRecord.Var
+        
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr2 = frame.subs.pop() as PtrRecord.Var
+        
+        // Both pointers should point to same variable
+        assertEquals(50, ptr1.deref().getInt())
+        assertEquals(50, ptr2.deref().getInt())
+        
+        // Modify through one pointer
+        ptr1.assign(ValueRecord(100))
+        
+        // Both should see change
+        assertEquals(100, ptr1.deref().getInt())
+        assertEquals(100, ptr2.deref().getInt())
+        assertEquals(100, frame.vars.get(0).getInt())
+    }
+
+    @Test
+    fun `PtrRef - pointer to variable in parent scope`() {
+        val parentVars = Vars(
+            vars = HashMap<Int, vm.Record>().apply {
+                put(0, ValueRecord(500))
+            },
+            parent = null
+        )
+        
+        val frame = Frame(
+            pc = 0,
+            subs = LifoStack(),
+            vars = Vars(HashMap(), parent = parentVars),
+            ops = emptyList()
+        )
+        
+        val ctx = createTestContext()
+        
+        // Create pointer to variable in parent scope
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Var
+        
+        assertEquals(500, ptr.deref().getInt())
+        
+        // Modify through pointer
+        ptr.assign(ValueRecord(600))
+        
+        assertEquals(600, parentVars.get(0).getInt())
+    }
+
+    // ========== PtrRefIndex (ArrayPtrRecord) Tests ==========
+
+    @Test
+    fun `PtrRefIndex - create pointer to array element`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(1),
+            ValueRecord(2),
+            ValueRecord(3)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(0))
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop()
+        assertTrue(ptr is PtrRecord.Array)
+        assertFalse(ptr.isNull())
+        assertEquals(1, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrRefIndex - pointer to middle element`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(10),
+            ValueRecord(20),
+            ValueRecord(30),
+            ValueRecord(40)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(2))
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        assertEquals(30, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrRefIndex - pointer reflects array changes`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(100),
+            ValueRecord(200)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(1))
+        Op.PtrRefIndex.exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        // Modify array directly
+        array[1] = ValueRecord(300)
+        
+        // Pointer should see change
+        assertEquals(300, ptr.deref().getInt())
+    }
+
+    @Test
+    fun `PtrRefIndex - out of bounds index throws exception on deref`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(1),
+            ValueRecord(2)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(10)) // Out of bounds
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        assertFailsWith<IndexOutOfBoundsException> {
+            ptr.deref()
+        }
+    }
+
+    @Test
+    fun `PtrRefIndex - negative index throws exception`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(1)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(-1))
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        assertFailsWith<IndexOutOfBoundsException> {
+            ptr.deref()
+        }
+    }
+
+    @Test
+    fun `PtrRefIndex - out of bounds index throws exception on assign`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(1)
+        )
+        
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(5))
+        Op.PtrRefIndex.exec(frame, ctx)
+        
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        assertFailsWith<IndexOutOfBoundsException> {
+            ptr.assign(ValueRecord(999))
+        }
+    }
+
+    // ========== NullPtrRecord Tests ==========
+
+    @Test
+    fun `NullPtrRecord - isNull returns true`() {
+        assertTrue(PtrRecord.Null.isNull())
+    }
+
+    @Test
+    fun `NullPtrRecord - deref throws exception`() {
+        assertFailsWith<NullPointerException> {
+            PtrRecord.Null.deref()
+        }
+    }
+
+    @Test
+    fun `NullPtrRecord - assign throws exception`() {
+        assertFailsWith<NullPointerException> {
+            PtrRecord.Null.assign(ValueRecord(42))
+        }
+    }
+
+    // ========== Integration Tests ==========
+
+    @Test
+    fun `Integration - create pointer, load, modify, load again`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Create pointer
+        frame.subs.push(ValueRecord(10))
+        Op.PtrNew.exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Box
+        
+        // Load value
+        frame.subs.push(ptr)
+        Op.PtrLoad.exec(frame, ctx)
+        assertEquals(10, frame.subs.pop().getInt())
+        
+        // Modify through pointer
+        frame.subs.push(ValueRecord(20))
+        frame.subs.push(ptr)
+        Op.PtrStore.exec(frame, ctx)
+        
+        // Load again
+        frame.subs.push(ptr)
+        Op.PtrLoad.exec(frame, ctx)
+        assertEquals(20, frame.subs.pop().getInt())
+    }
+
+    @Test
+    fun `Integration - pointer to variable, modify through pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Set up variable
+        frame.vars.vars[0] = ValueRecord(100)
+        
+        // Create pointer
+        Op.PtrRef(0).exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Var
+        
+        // Modify through pointer
+        ptr.assign(ValueRecord(200))
+        
+        // Verify variable changed
+        assertEquals(200, frame.vars.get(0).getInt())
+        
+        // Load through pointer
+        frame.subs.push(ptr)
+        Op.PtrLoad.exec(frame, ctx)
+        assertEquals(200, frame.subs.pop().getInt())
+    }
+
+    @Test
+    fun `Integration - pointer to array element, modify through pointer`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val array = arrayOf<vm.Record>(
+            ValueRecord(1),
+            ValueRecord(2),
+            ValueRecord(3)
+        )
+        
+        // Create pointer to middle element
+        frame.subs.push(ValueRecord(array))
+        frame.subs.push(ValueRecord(1))
+        Op.PtrRefIndex.exec(frame, ctx)
+        val ptr = frame.subs.pop() as PtrRecord.Array
+        
+        // Modify through pointer
+        ptr.assign(ValueRecord(999))
+        
+        // Verify array changed
+        assertEquals(999, array[1].getInt())
+        
+        // Load through pointer
+        frame.subs.push(ptr)
+        Op.PtrLoad.exec(frame, ctx)
+        assertEquals(999, frame.subs.pop().getInt())
+    }
+
+    @Test
+    fun `Integration - multiple pointers to same box`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Create box pointer
+        frame.subs.push(ValueRecord(50))
+        Op.PtrNew.exec(frame, ctx)
+        val ptr1 = frame.subs.pop() as PtrRecord.Box
+        
+        // Create another pointer to same box (by copying the pointer)
+        val ptr2 = PtrRecord.Box(ptr1.deref())
+        
+        // Modify through first pointer
+        ptr1.assign(ValueRecord(100))
+        
+        // First pointer should see change
+        assertEquals(100, ptr1.deref().getInt())
+        
+        // Second pointer points to different box, so unchanged
+        assertEquals(50, ptr2.deref().getInt())
+    }
+
+    @Test
+    fun `Integration - pointer chain through operations`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        // Create variable
+        frame.vars.vars[0] = ValueRecord(1000)
+        
+        // Create pointer to variable
+        Op.PtrRef(0).exec(frame, ctx)
+        val varPtr = frame.subs.pop() as PtrRecord.Var
+        
+        // Load value and create new box pointer
+        frame.subs.push(varPtr)
+        Op.PtrLoad.exec(frame, ctx)
+        Op.PtrNew.exec(frame, ctx)
+        val boxPtr = frame.subs.pop() as PtrRecord.Box
+        
+        // Modify box pointer
+        boxPtr.assign(ValueRecord(2000))
+        
+        // Original variable unchanged (box pointer is independent)
+        assertEquals(1000, frame.vars.get(0).getInt())
+        assertEquals(2000, boxPtr.deref().getInt())
+    }
+
+    @Test
+    fun `Integration - null pointer check before operations`() {
+        val frame = createTestFrame()
+        val ctx = createTestContext()
+        
+        val nullPtr = PtrRecord.Null
+        
+        // Check isNull
+        assertTrue(nullPtr.isNull())
+        
+        // Attempting to load should throw
+        frame.subs.push(nullPtr)
+        assertFailsWith<NullPointerException> {
+            Op.PtrLoad.exec(frame, ctx)
+        }
+        
+        // Attempting to store should throw
+        frame.subs.push(ValueRecord(42))
+        frame.subs.push(nullPtr)
+        assertFailsWith<NullPointerException> {
+            Op.PtrStore.exec(frame, ctx)
+        }
+    }
+}
+

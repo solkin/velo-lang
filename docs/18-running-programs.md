@@ -1,25 +1,31 @@
 # Running Programs
 
-## Running from Resources
-
-Programs from the `src/main/resources` directory can be run with the `res://` prefix:
-
-```bash
-./gradlew run --args="res://hello.vel"
-./gradlew run --args="res://primes-range.vel"
-```
-
 ## Running from File
 
-To run a program from a file, use the `file://` prefix:
+Pass the path to a `.vel` file (paths resolve from the repository root):
 
 ```bash
-./gradlew run --args="file:///path/to/program.vel"
+./gradlew run --args="velo-cli/src/main/resources/hello.vel"
+./gradlew run --args="velo-cli/src/main/resources/primes-range.vel"
+```
+
+`include` paths are resolved relative to the program's own directory, so a
+program that uses the standard library (`include "lang/terminal.vel"`) needs
+a `lang/` directory next to it — the bundled examples already have one.
+
+## Compiling to Bytecode
+
+A second argument compiles the program to a `.vbc` bytecode file instead of
+running it; a `.vbc` file as the first argument runs pre-compiled bytecode:
+
+```bash
+./gradlew run --args="velo-cli/src/main/resources/hello.vel hello.vbc"
+./gradlew run --args="hello.vbc"
 ```
 
 ## Example Programs
 
-The project includes many examples:
+The project includes many examples in `velo-cli/src/main/resources/`:
 
 - `hello.vel` — Hello, World
 - `fibonacci-recursive.vel` — Recursive Fibonacci algorithm

@@ -1,27 +1,26 @@
 plugins {
-    kotlin("jvm") version "1.8.0"
-    application
+    kotlin("jvm") version "1.8.0" apply false
 }
 
-group = "org.velo.lang"
-version = "1.0-SNAPSHOT"
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
 
-repositories {
-    mavenCentral()
-}
+    group = "org.velo.lang"
+    version = "1.0-SNAPSHOT"
 
-dependencies {
-    testImplementation(kotlin("test"))
-}
+    repositories {
+        mavenCentral()
+    }
 
-tasks.test {
-    useJUnitPlatform()
-}
+    dependencies {
+        "testImplementation"(kotlin("test"))
+    }
 
-kotlin {
-    jvmToolchain(11)
-}
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
 
-application {
-    mainClass.set("MainKt")
+    extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+        jvmToolchain(11)
+    }
 }
