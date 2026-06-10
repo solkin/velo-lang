@@ -1,4 +1,6 @@
-include "lang/int.vel";
+# A generic hash map: separate chaining, amortized O(1) get/put,
+# doubling resize at 3/4 load. Pure Velo — this is the implementation
+# behind the language's dict[K:V] syntax.
 
 class Map[K, V]() {
     class Entry(K key, V val) {
@@ -31,29 +33,16 @@ class Map[K, V]() {
     };
 
     func bucketIndex(K key) int {
-        (key.hash % capacity).abs;
+        int idx = key.hash % capacity;
+        if (idx < 0) {
+            idx + capacity;
+        } else {
+            idx;
+        };
     };
 
     func empty() bool {
         len == 0;
-    };
-
-    # Finds an entry by key in a given bucket chain.
-    func findEntry(K key, Entry head) ptr[Entry] {
-        Entry current = head;
-        bool found = false;
-        while (found == false & current.hasNext) {
-            if (current.key == key) {
-                found = true;
-            } else {
-                current = current.next;
-            };
-        };
-        if (found | current.key == key) {
-            new ptr[Entry](current);
-        } else {
-            null;
-        };
     };
 
     func key(K key) bool {
@@ -61,8 +50,15 @@ class Map[K, V]() {
         if (occupied[idx] == false) {
             false;
         } else {
-            ptr[Entry] entry = findEntry(key, buckets[idx]);
-            entry != null;
+            Entry current = buckets[idx];
+            bool found = current.key == key;
+            while (found == false & current.hasNext) {
+                current = current.next;
+                if (current.key == key) {
+                    found = true;
+                };
+            };
+            found;
         };
     };
 
@@ -71,9 +67,16 @@ class Map[K, V]() {
         if (occupied[idx] == false) {
             null;
         } else {
-            ptr[Entry] entry = findEntry(key, buckets[idx]);
-            if (entry != null) {
-                new ptr[V](entry.val.val);
+            Entry current = buckets[idx];
+            bool found = current.key == key;
+            while (found == false & current.hasNext) {
+                current = current.next;
+                if (current.key == key) {
+                    found = true;
+                };
+            };
+            if (found) {
+                new ptr[V](current.val);
             } else {
                 null;
             };
@@ -89,30 +92,34 @@ class Map[K, V]() {
         };
     };
 
+    # The value under the key; dereferences null on a missing key —
+    # check with key() or use getOrDefault() when unsure.
     func at(K key) V {
-        ptr[V] result = get(key);
-        result.val;
+        get(key).val;
     };
 
     func putInternal(K key, V value) void {
         int idx = bucketIndex(key);
-        Entry newEntry = new Entry(key, value);
-
         if (occupied[idx] == false) {
-            buckets[idx] = newEntry;
+            buckets[idx] = new Entry(key, value);
             occupied[idx] = true;
             len = len + 1;
         } else {
-            ptr[Entry] existing = findEntry(key, buckets[idx]);
-            if (existing != null) {
-                existing.val.setValue(value);
-            } else {
-                Entry current = buckets[idx];
-                while (current.hasNext) {
-                    current = current.next;
+            Entry current = buckets[idx];
+            bool done = false;
+            while (done == false) {
+                if (current.key == key) {
+                    current.setValue(value);
+                    done = true;
+                } else {
+                    if (current.hasNext) {
+                        current = current.next;
+                    } else {
+                        current.setNext(new Entry(key, value));
+                        len = len + 1;
+                        done = true;
+                    };
                 };
-                current.setNext(newEntry);
-                len = len + 1;
             };
         };
     };
