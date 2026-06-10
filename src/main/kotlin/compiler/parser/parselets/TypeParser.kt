@@ -49,10 +49,7 @@ object TypeParser {
                 val types = parseDerivedTypes(parser, count = 2, separator = ':')
                 DictType(TupleType(types))
             }
-            FUNC -> {
-                val derived = parseDerivedTypes(parser, count = 1)
-                FuncType(derived = derived.first())
-            }
+            FUNC -> parseFuncType(parser)
             PTR -> {
                 val derived = parseDerivedTypes(parser, count = 1)
                 PtrType(derived = derived.first())
@@ -90,6 +87,36 @@ object TypeParser {
                 }
             }
         }
+    }
+
+    /**
+     * Two surface forms of a function type:
+     *   - `func[T]`            — loose: only the return type is declared;
+     *     arity and argument types are unchecked at call sites.
+     *   - `func[(T1, T2) T]`   — full signature (use `()` for no args).
+     *     Required for callbacks that cross an actor or native boundary.
+     */
+    private fun parseFuncType(parser: ExpressionParser): FuncType {
+        parser.consume(TokenType.PUNCTUATION, '[')
+        val type = if (parser.match(TokenType.PUNCTUATION, '(')) {
+            parser.consume(TokenType.PUNCTUATION, '(')
+            val argTypes = mutableListOf<Type>()
+            var first = true
+            while (!parser.eof() && !parser.match(TokenType.PUNCTUATION, ')')) {
+                if (first) {
+                    first = false
+                } else {
+                    parser.consume(TokenType.PUNCTUATION, ',')
+                }
+                argTypes.add(parseDefType(parser))
+            }
+            parser.consume(TokenType.PUNCTUATION, ')')
+            FuncType(derived = parseDefType(parser), args = argTypes)
+        } else {
+            FuncType(derived = parseDefType(parser))
+        }
+        parser.consume(TokenType.PUNCTUATION, ']')
+        return type
     }
 
     fun parseDerivedTypes(

@@ -59,12 +59,17 @@ The compiler enforces a static notion of **transferable** types — anything tha
 - primitives (`int`, `float`, `byte`, `bool`, `str`)
 - `array[T]`, `tuple[…]`, `dict[K:V]` whose element types are themselves transferable
 - another actor's `actor[T]` handle
+- fully-signed void functions — `func[(args…) void]` — shipped as **callbacks**:
+  the closure stays with its owner, the receiver gets a handle, and invoking it
+  posts the call back to the owner's thread (see [Callbacks](27-callbacks.md))
 - `void`
 
 Everything else is non-transferable and rejected **at the point of declaration** — not at the call site:
 
 - non-actor `class` instances — they live in a single `MemoryArea` and would race
-- function values (`func[T]`) — capture mutable lexical state
+- loose function values (`func[T]`, no argument signature) and functions returning
+  a value — a callback is a one-way notification; results flow back through
+  ordinary `async`/`await`
 - pointers (`ptr[T]`) — refer to specific var slots
 - `any`, generics, native (JVM) objects — no defined wire format
 
@@ -193,7 +198,7 @@ Two actors, two threads, two private `n`s — no `mutex`, no race.
 - `await` parses any expression but only accepts `future[T]` types. `await someInt` is a compile error.
 - `await` shares precedence with `.` / `[]` / `()`, so `await arr[i]` parses as `(await arr)[i]`. When the future comes from indexing, calling, or any other postfix, wrap it: `await (arr[i])`, `await (someFunc())`.
 - `future[T]` is pinned to its producing actor. It cannot appear in another `actor class`'s method signatures (param or return).
-- Method-call values (`func[T]`) and pointers cannot cross the boundary. Pass strings/ids and have the actor look up the closure on its side.
+- Loose function values (`func[T]`) and pointers cannot cross the boundary. Functions with a full void signature — `func[(int) void]` — *can*: they travel as callbacks executed on their owner's thread (see [Callbacks](27-callbacks.md)).
 
 ### Errors in unawaited futures are silently dropped
 

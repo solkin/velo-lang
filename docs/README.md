@@ -28,6 +28,7 @@
 24. [Operator Overloading](24-operator-overloading.md)
 25. [Closures](25-closures.md)
 26. [Actors](26-actors.md)
+27. [Callbacks](27-callbacks.md)
 
 ---
 

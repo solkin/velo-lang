@@ -3,6 +3,7 @@ package vm.actors
 import vm.Record
 import vm.VMContext
 import vm.records.EmptyRecord
+import vm.records.FuncRecord
 import vm.records.RefKind
 import vm.records.RefRecord
 import vm.records.ValueRecord
@@ -19,9 +20,12 @@ import vm.records.ValueRecord
  *     indices, captured `Vars`, or memory addresses respectively).
  *
  * Cloneable: primitives, host strings/booleans/chars/bytes/numbers, arrays
- * (which double as the runtime form of tuples), dicts, plus [ActorRefRecord]s.
- * Anything else is rejected with a clear error so invalid attempts surface at
- * the call site rather than corrupting state.
+ * (which double as the runtime form of tuples), dicts, plus two handle
+ * types that travel by reference instead of by copy: [ActorRefRecord]s and
+ * function values ([FuncRecord]/[CallbackRecord] → [ActorValue.Callback],
+ * pinned to the actor that owns the closure). Anything else is rejected
+ * with a clear error so invalid attempts surface at the call site rather
+ * than corrupting state.
  *
  * Note: this is a runtime safety net. The compiler statically rejects
  * non-transferable types in `actor class` signatures (see
@@ -43,6 +47,18 @@ object StructuredClone {
             EmptyRecord -> ActorValue.Void
             is ValueRecord -> ActorValue.Primitive(record.get<Any>())
             is ActorRefRecord -> ActorValue.Ref(record.handle, record.objectId, record.className)
+            // A function travels as a handle to (owner, closure). The owner of
+            // a bare FuncRecord is whoever is encoding it — closures are only
+            // ever created and held inside their own context. A CallbackRecord
+            // is already a foreign handle; forwarding it preserves the
+            // original owner (A → B → C still calls back into A).
+            is FuncRecord -> {
+                val owner = source.currentActor ?: throw ActorMarshallingException(
+                    "Cannot transfer a function from a context without an actor identity."
+                )
+                ActorValue.Callback(owner, record)
+            }
+            is CallbackRecord -> ActorValue.Callback(record.handle, record.func)
             is RefRecord -> when (record.kind) {
                 RefKind.ARRAY -> {
                     val array: Array<Record> = record.get(source)
@@ -78,6 +94,11 @@ object StructuredClone {
             ActorValue.Void -> EmptyRecord
             is ActorValue.Primitive -> ValueRecord(value.value)
             is ActorValue.Ref -> ActorRefRecord(value.handle, value.objectId, value.className)
+            // A callback coming home (A → B → ... → A) unwraps to the
+            // original closure: it is local again, no mailbox hop needed.
+            is ActorValue.Callback ->
+                if (value.handle === target.currentActor) value.func
+                else CallbackRecord(value.handle, value.func)
             is ActorValue.Array -> {
                 val arr: Array<Record> = Array(value.items.size) { idx -> decode(value.items[idx], target) }
                 RefRecord.array(arr, target)

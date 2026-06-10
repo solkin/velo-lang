@@ -107,8 +107,19 @@ data class FuncType(
     override val args: List<Type>? = null,
     val typeParams: List<String> = emptyList(),
 ) : Callable {
+    /**
+     * Return types must always agree. Argument lists are compared only when
+     * both sides declare them: the loose form `func[T]` (args unknown) stays
+     * assignment-compatible with any function returning `T`, preserving the
+     * untyped higher-order style. The full form `func[(T1, T2) T]` is strict —
+     * that's what actor signatures and native callbacks rely on.
+     */
     override fun sameAs(type: Type): Boolean {
-        return type is FuncType && type.derived.sameAs(derived)
+        if (type !is FuncType || !type.derived.sameAs(derived)) return false
+        val expected = args ?: return true
+        val actual = type.args ?: return true
+        return expected.size == actual.size &&
+            expected.zip(actual).all { (a, b) -> a.sameAs(b) }
     }
 
     override fun default(ctx: Context) {
@@ -117,9 +128,14 @@ data class FuncType(
 
     override fun prop(name: String): Prop? = null
 
-    override fun log() = "func[${derived.log()}]"
+    override fun log() = args
+        ?.let { "func[(${it.joinToString(", ") { a -> a.log() }}) ${derived.log()}]" }
+        ?: "func[${derived.log()}]"
 
-    override fun vmType() = vm.VmType.Func
+    override fun vmType() = vm.VmType.Func(
+        args = args?.map { it.vmType() },
+        ret = derived.vmType(),
+    )
 
     override fun name() = "func"
 }

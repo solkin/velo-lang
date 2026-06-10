@@ -1,7 +1,6 @@
 package vm.actors
 
 import vm.Record
-import java.lang.ref.Cleaner
 
 /**
  * Reference to an object that lives inside an [ActorHandle]'s VMContext.
@@ -30,7 +29,7 @@ class ActorRefRecord(
 
     init {
         handle.refCount.incrementAndGet()
-        cleaner.register(this, ReleaseTask(handle))
+        Pins.cleaner.register(this, Pins.Release(handle))
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -45,15 +44,4 @@ class ActorRefRecord(
     }
 
     override fun hashCode(): Int = 31 * System.identityHashCode(handle) + objectId
-
-    companion object {
-        private val cleaner: Cleaner = Cleaner.create()
-    }
-
-    /** Static class so the [Cleaner] action doesn't capture the [ActorRefRecord]. */
-    private class ReleaseTask(private val handle: ActorHandle) : Runnable {
-        override fun run() {
-            handle.releaseRef()
-        }
-    }
 }

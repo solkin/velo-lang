@@ -75,6 +75,7 @@ interface Record {
             is VmType.Tuple -> convertTuple(vmType, ctx)
             is VmType.Array -> convertArray(vmType, ctx)
             is VmType.Dict -> convertDict(vmType, ctx)
+            is VmType.Func -> convertFunc(vmType, ctx)
             is VmType.Class -> {
                 // For native classes, extract the underlying JVM object from the class frame
                 if (this !is RefRecord || kind != RefKind.CLASS) {
@@ -87,6 +88,24 @@ interface Record {
                 frame.vars.get(index).cast(vmType.toJvmType())
             }
             else -> throw IllegalArgumentException("Inconvertible type $vmType")
+        }
+    }
+
+    /**
+     * Wrap a Velo function value into a [vm.actors.VeloFunction] for a
+     * native method parameter. The wrapper pins the actor that owns the
+     * closure and routes every host invocation through that actor's
+     * dispatcher, so the body always runs on its owner's thread.
+     */
+    private fun convertFunc(vmType: VmType.Func, ctx: VMContext?): Any {
+        val actor = ctx?.currentActor
+            ?: throw IllegalStateException("Passing a callback to native code requires an actor context")
+        return when (this) {
+            is vm.records.FuncRecord -> vm.actors.VeloFunction(actor, this, vmType.args)
+            is vm.actors.CallbackRecord -> vm.actors.VeloFunction(handle, func, vmType.args)
+            else -> throw IllegalArgumentException(
+                "Expected a function value for a func parameter, got ${this::class.simpleName}"
+            )
         }
     }
 

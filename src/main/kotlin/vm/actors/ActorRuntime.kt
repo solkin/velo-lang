@@ -26,8 +26,30 @@ class ActorRuntime {
 
     private val nextId = java.util.concurrent.atomic.AtomicInteger(0)
     private val handles = ConcurrentHashMap<Int, ActorHandle>()
+    private val fatalRef = java.util.concurrent.atomic.AtomicReference<Throwable?>(null)
+
+    /**
+     * Invoked once when the first fatal failure is raised. Used by embedded
+     * hosts (`VeloRuntime.start`) to report and stop the program; in CLI mode
+     * the main pump polls [fatalOrNull] instead and rethrows on its own thread.
+     */
+    @Volatile
+    var onFatal: ((Throwable) -> Unit)? = null
 
     fun nextActorId(): Int = nextId.getAndIncrement()
+
+    /**
+     * Record an unrecoverable failure that has no awaiting future to surface
+     * through — e.g. a fire-and-forget callback that threw. First failure
+     * wins; the program terminates loudly instead of corrupting silently.
+     */
+    fun raiseFatal(ex: Throwable) {
+        if (fatalRef.compareAndSet(null, ex)) {
+            onFatal?.invoke(ex)
+        }
+    }
+
+    fun fatalOrNull(): Throwable? = fatalRef.get()
 
     fun register(handle: ActorHandle) {
         handles[handle.id] = handle

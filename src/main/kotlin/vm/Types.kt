@@ -66,8 +66,16 @@ sealed class VmType {
         override fun toJvmType(): java.lang.Class<*> = java.lang.Class.forName(name)
     }
 
-    object Func : VmType() {
-        override fun toJvmType(): java.lang.Class<*> = throw IllegalArgumentException("Inconvertible type VmType.Func")
+    /**
+     * Function value. [args]/[ret] carry the declared Velo signature when
+     * known (`func[(str, int) void]`); the loose `func[T]` form has
+     * `args == null`. Native methods receive function values as
+     * [vm.actors.VeloFunction] parameters — the signature is what lets the
+     * host side validate and convert invocation arguments without the
+     * compiler around.
+     */
+    data class Func(val args: List<VmType>? = null, val ret: VmType? = null) : VmType() {
+        override fun toJvmType(): java.lang.Class<*> = vm.actors.VeloFunction::class.java
     }
 
     data class Ptr(val derived: VmType) : VmType() {

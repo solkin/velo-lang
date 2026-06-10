@@ -85,14 +85,23 @@ data class FutureType(val derived: Type) : Type {
  *   - **Structural copy** (primitives, void, recursive containers of
  *     transferable elements): `StructuredClone` materialises a fresh value
  *     in the receiver's [vm.MemoryArea].
- *   - **Pinned handle** ([ActorBoundType]): the value stays in its owning
- *     actor's memory; the receiver gets a typed remote reference.
+ *   - **Pinned handle** ([ActorBoundType], fully-signed void [FuncType]):
+ *     the value stays in its owning actor's memory; the receiver gets a
+ *     typed remote reference.
  *
- * Everything else — bare class instances, function values, pointers, native
- * objects, generics, `any` — would either alias mutable state across threads
- * or has no defined wire format. The compiler rejects such types in actor
- * signatures so the violation surfaces at the point of declaration rather
- * than as an opaque runtime failure inside `await`.
+ * Function values travel as callbacks — a handle to (owning actor, closure).
+ * To qualify, the signature must be fully declared (`func[(int, str) void]`),
+ * every argument must itself be transferable, and the return type must be
+ * `void`: a callback is a notification, it executes asynchronously on its
+ * owner and cannot produce a value for the invoking side. Results flow back
+ * through ordinary `async`/`await` calls, which keeps
+ * await-cycle deadlocks impossible by construction.
+ *
+ * Everything else — bare class instances, loose `func[T]` values, pointers,
+ * native objects, generics, `any` — would either alias mutable state across
+ * threads or has no defined wire format. The compiler rejects such types in
+ * actor signatures so the violation surfaces at the point of declaration
+ * rather than as an opaque runtime failure inside `await`.
  */
 fun Type.isTransferable(): Boolean = when (this) {
     ByteType, IntType, FloatType, StringType, BoolType, VoidType -> true
@@ -101,6 +110,7 @@ fun Type.isTransferable(): Boolean = when (this) {
     is DictType -> derived.types.all { it.isTransferable() }
     is ActorBoundType -> true
     is FutureType -> false   // pinned to the actor that completes it; see [FutureType] kdoc
+    is FuncType -> derived.sameAs(VoidType) && args?.all { it.isTransferable() } == true
     else -> false
 }
 
@@ -110,10 +120,14 @@ fun Type.isTransferable(): Boolean = when (this) {
  * error fires at declaration time, not deep inside `await`.
  */
 fun requireTransferable(type: Type, where: String) {
-    if (!type.isTransferable()) {
-        throw IllegalStateException(
-            "$where has type '${type.log()}', which is not transferable across an actor boundary; " +
-                "use a primitive, a container of transferable values, or wrap as actor[T]"
-        )
+    if (type.isTransferable()) return
+    val hint = if (type is FuncType) {
+        "callbacks must declare a full signature with transferable arguments and return void, " +
+            "e.g. func[(int, str) void]"
+    } else {
+        "use a primitive, a container of transferable values, or wrap as actor[T]"
     }
+    throw IllegalStateException(
+        "$where has type '${type.log()}', which is not transferable across an actor boundary; $hint"
+    )
 }

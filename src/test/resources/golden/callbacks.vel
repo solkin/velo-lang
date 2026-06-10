@@ -1,0 +1,25 @@
+include "lang/terminal.vel";
+
+# Callbacks: a func with a full signature — func[(args) void] — can cross
+# an actor boundary. The closure itself never leaves its owner: the receiver
+# gets a handle, and invoking it posts the call back to the owner's thread.
+# That's also how natives call back into Velo (see VeloFunction on the host).
+
+actor class Worker() {
+    func process(int value, func[(int) void] done) void {
+        # `done` belongs to the main context; this call does not run it here —
+        # it ships the argument and returns immediately (callbacks are void).
+        done(value * 2);
+        void
+    };
+};
+
+actor[Worker] w = new Worker();
+
+await async w.process(21, func(int v) void {
+    # Runs on the main thread, after the main frame completes.
+    term.println("callback got: ".con(v.str));
+    void
+});
+
+term.println("main frame done");

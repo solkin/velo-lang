@@ -1,6 +1,9 @@
 package vm
 
 import utils.SerializedFrame
+import vm.actors.ActorHandle
+import vm.actors.ActorRuntime
+import vm.actors.PumpDispatcher
 import java.io.PrintStream
 
 class VM(
@@ -19,38 +22,53 @@ class VM(
         frameLoader = GeneralFrameLoader(frames)
     }
 
+    /**
+     * Run the program to completion on the calling thread.
+     *
+     * The program's main context is an ordinary [ActorHandle] ("actor #0")
+     * driven by a [PumpDispatcher]: the calling thread first executes the
+     * main frame, then keeps draining the main mailbox — host callbacks and
+     * cross-actor callback invocations land there — until nothing pins the
+     * main context any more (no live callbacks handed out to natives or
+     * other actors). For programs that never share a callback the pump
+     * exits immediately after the main frame, exactly like the old loop.
+     */
     fun run() {
-        val stack: Stack<Frame> = LifoStack()
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
-        val memory = MemoryAreaImpl()
-
-        val ctx = VMContext(
-            stack = stack,
-            frameLoader = frameLoader,
-            memory = memory,
-            nativeRegistry = nativeRegistry
+        val actorRuntime = ActorRuntime()
+        val pump = PumpDispatcher()
+        val main = ActorHandle.main(
+            runtime = actorRuntime,
+            sharedFrameLoader = frameLoader,
+            sharedNativeRegistry = nativeRegistry,
+            dispatcher = pump,
+            profiler = profiler,
         )
-
-        val frame = ctx.loadFrame(num = 0, parentVars = null) ?: throw Exception("No main frame")
-        ctx.pushFrame(frame)
-
-        val executor = VMExecutor(ctx, profiler)
 
         profiler.start()
         try {
-            executor.run()
+            main.requestMain(frameNum = 0)
+            pump.pump(
+                fatal = { actorRuntime.fatalOrNull() },
+                idle = { main.refCount.get() <= 0 },
+            )
             println("\n✓ Program finished successfully")
         } catch (_: HaltException) {
             println("\n⏹ Program halted by user request")
         } catch (ex: Throwable) {
-            val current = if (!stack.empty()) stack.peek() else frame
-            val op = if (current.pc < current.ops.size) current.ops[current.pc] else current.ops.last()
-            printError(ex, op, current, stack)
+            val stack = main.ctx.stack
+            if (!stack.empty()) {
+                val current = stack.peek()
+                val op = if (current.pc < current.ops.size) current.ops[current.pc] else current.ops.last()
+                printError(ex, op, current, stack)
+            } else {
+                System.err.println("\n!! Runtime error: ${ex.message ?: ex}")
+            }
         } finally {
-            ctx.actorRuntime.shutdownAll()
+            actorRuntime.shutdownAll()
         }
         profiler.stop()
-        profiler.memoryStats = memory.getStats()
+        profiler.memoryStats = main.ctx.memory.getStats()
         profiler.printReport()
     }
 

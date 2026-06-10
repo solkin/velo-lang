@@ -31,17 +31,49 @@ sealed class ActorValue {
         val objectId: Int,
         val className: String,
     ) : ActorValue()
+
+    /**
+     * Cross-thread description of a `func[(args) void]` value: the owning
+     * handle plus the owner's [FuncRecord]. The record's captured `Vars`
+     * are only ever touched by the owner's dispatcher, so carrying the
+     * reference itself is safe.
+     *
+     * Unlike [Ref], this *does* pin the owner while in flight: the whole
+     * point of handing out a callback is that the owner stays serviceable
+     * until it is delivered. Without the pin, a main context could finish
+     * its frame and stop pumping in the gap between `async` encoding the
+     * callback and the receiving actor materialising a [CallbackRecord].
+     * The pin is dropped by GC ([Pins]) once the payload itself is dropped;
+     * the decoded record carries its own pin from construction.
+     */
+    class Callback(
+        val handle: ActorHandle,
+        val func: vm.records.FuncRecord,
+    ) : ActorValue() {
+        init {
+            handle.refCount.incrementAndGet()
+            Pins.cleaner.register(this, Pins.Release(handle))
+        }
+    }
 }
 
 /**
  * One unit of work scheduled on an actor's event loop.
  *
- * [Construct] is sent exactly once at spawn time. [Call] is the typed remote
- * method invocation. [Shutdown] is the cooperative termination signal injected
- * by the runtime when an [ActorHandle] becomes unreachable; it carries no
+ * [Main] runs a whole program frame and is used only by the main context
+ * (the program itself is "actor #0"); its failures either propagate to the
+ * pumping thread (CLI) or go to [onFailure] (embedded hosts). [Construct] is
+ * sent exactly once at spawn time. [Call] is the typed remote method
+ * invocation. [Shutdown] is the cooperative termination signal injected by
+ * the runtime when an [ActorHandle] becomes unreachable; it carries no
  * payload because the sender does not wait for confirmation.
  */
 sealed class ActorRequest {
+    data class Main(
+        val frameNum: Int,
+        val onFailure: ((Throwable) -> Unit)?,
+    ) : ActorRequest()
+
     data class Construct(
         val classFrameNum: Int,
         val args: List<ActorValue>,
@@ -53,6 +85,19 @@ sealed class ActorRequest {
         val methodVarIndex: Int,
         val args: List<ActorValue>,
         val response: CompletableFuture<ActorResponse>,
+    ) : ActorRequest()
+
+    /**
+     * Invoke a function value owned by this actor — the delivery half of a
+     * transferred callback, posted by a foreign `Call` opcode (Velo side) or
+     * a host's `VeloFunction` (native side). [response] is `null` for
+     * fire-and-forget posts; failures of those are program-fatal via
+     * [ActorRuntime.raiseFatal] because nobody is waiting to observe them.
+     */
+    data class InvokeFunc(
+        val func: vm.records.FuncRecord,
+        val args: List<ActorValue>,
+        val response: CompletableFuture<ActorResponse>?,
     ) : ActorRequest()
 
     object Shutdown : ActorRequest()

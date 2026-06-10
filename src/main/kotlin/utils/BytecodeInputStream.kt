@@ -258,7 +258,16 @@ private fun DataInputStream.readType(): VmType {
         TYPE_ARRAY -> VmType.Array(elementType = readType())
         TYPE_DICT -> VmType.Dict(keyType = readType(), valueType = readType())
         TYPE_CLASS -> VmType.Class(name = readUTF())
-        TYPE_FUNC -> VmType.Func
+        TYPE_FUNC -> {
+            val args = if (readBoolean()) {
+                val count = readByte().toInt()
+                (0 until count).map { readType() }
+            } else {
+                null
+            }
+            val ret = if (readBoolean()) readType() else null
+            VmType.Func(args = args, ret = ret)
+        }
         TYPE_PTR -> VmType.Ptr(derived = readType())
         else -> throw Exception("Unsupported bytecode data type $t")
     }

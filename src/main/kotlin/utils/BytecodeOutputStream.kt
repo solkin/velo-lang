@@ -285,14 +285,27 @@ private fun DataOutputStream.writeType(t: VmType) {
             writeType(t.valueType)
         }
         is VmType.Class -> writeByte(TYPE_CLASS).also { writeUTF(t.name) }
-        is VmType.Func -> writeByte(TYPE_FUNC)
+        is VmType.Func -> {
+            writeByte(TYPE_FUNC)
+            val args = t.args
+            writeBoolean(args != null)
+            if (args != null) {
+                writeByte(args.size)
+                args.forEach { writeType(it) }
+            }
+            val ret = t.ret
+            writeBoolean(ret != null)
+            if (ret != null) {
+                writeType(ret)
+            }
+        }
         is VmType.Ptr -> writeByte(TYPE_PTR).also { writeType(t.derived) }
     }
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x07
-const val VERSION_MINOR = 0x11
+const val VERSION_MAJOR = 0x08
+const val VERSION_MINOR = 0x00
 
 const val TYPE_VOID = 0x00
 const val TYPE_ANY = 0x01

@@ -3,6 +3,8 @@ package vm.operations
 import vm.Operation
 import vm.VMContext
 import vm.Vars
+import vm.actors.CallbackRecord
+import vm.actors.StructuredClone
 import vm.records.FuncRecord
 import kotlin.math.abs
 
@@ -10,8 +12,9 @@ import kotlin.math.abs
  * Invokes a callable value sitting on top of the operand stack.
  *
  * Stack layout (top to bottom) at the moment of execution:
- * 1. callable             — a [FuncRecord] (or, for legacy bytecode, a
- *                           plain value containing the frame number)
+ * 1. callable             — a [FuncRecord], a [CallbackRecord], or (for
+ *                           legacy bytecode) a plain value containing the
+ *                           frame number
  * 2. arg_n, arg_{n-1}, ... — actual arguments, count `|args|`
  * 3. receiver frame        — present iff [classParent] is `true`,
  *                           popped as the parent for class-method dispatch
@@ -27,18 +30,40 @@ import kotlin.math.abs
  * - Legacy fallback: for older bytecode the callable may be a plain
  *   integer record. In that case we fall back to the caller's vars,
  *   which preserves pre-FuncRecord behaviour.
+ *
+ * Foreign callbacks: a [CallbackRecord] is a function owned by another
+ * actor. Invoking it does not grow the local call stack — the arguments
+ * are structurally cloned and posted to the owner's dispatcher, where the
+ * closure executes with its own captured state. The invocation is
+ * fire-and-forget and produces no value (transferable callbacks are void
+ * by construction), so awaited-actor → callback-into-awaiter cycles cannot
+ * deadlock. Should a callback ever come home and be invoked by its own
+ * actor, it is executed inline as a plain local call.
  */
 class Call(val args: Int, val classParent: Boolean = false) : Operation {
 
     override fun exec(pc: Int, ctx: VMContext): Int {
         val thisFrame = ctx.currentFrame()
         val callable = thisFrame.subs.pop()
+
+        if (callable is CallbackRecord && ctx.currentActor !== callable.handle) {
+            val argsArray = Array(size = abs(args), init = { thisFrame.subs.pop() })
+                .let { arr -> if (args > 0) arr.reversedArray() else arr }
+            val encoded = argsArray.map { StructuredClone.encode(it, ctx) }
+            callable.handle.postInvoke(callable.func, encoded)
+            return pc + 1
+        }
+
         val frameNum: Int
         val capturedVars: Vars?
         when (callable) {
             is FuncRecord -> {
                 frameNum = callable.frameNum
                 capturedVars = callable.capturedVars
+            }
+            is CallbackRecord -> {
+                frameNum = callable.func.frameNum
+                capturedVars = callable.func.capturedVars
             }
             else -> {
                 frameNum = callable.getInt()

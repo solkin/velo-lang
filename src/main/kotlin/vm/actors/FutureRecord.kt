@@ -1,7 +1,6 @@
 package vm.actors
 
 import vm.Record
-import java.lang.ref.Cleaner
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -29,7 +28,7 @@ class FutureRecord(
 
     init {
         handle.refCount.incrementAndGet()
-        cleaner.register(this, ReleaseTask(handle))
+        Pins.cleaner.register(this, Pins.Release(handle))
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -37,15 +36,4 @@ class FutureRecord(
 
     override fun toString(): String =
         "future@${handle.id}${if (future.isDone) "[done]" else "[pending]"}"
-
-    companion object {
-        private val cleaner: Cleaner = Cleaner.create()
-    }
-
-    /** Static class so the [Cleaner] action does not capture the [FutureRecord]. */
-    private class ReleaseTask(private val handle: ActorHandle) : Runnable {
-        override fun run() {
-            handle.releaseRef()
-        }
-    }
 }
