@@ -1,10 +1,4 @@
-native class Terminal() {
-    native func print(str text) str;
-    native func input() str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
-
+# Terminal is a host (native) class registered on the runtime; its type is
+# synthesized from the registration — no declaration needed. This module
+# just provides the conventional global instance.
 Terminal term = new Terminal();
-

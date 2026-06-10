@@ -1,5 +1,3 @@
-native class Time() {
-    native func sleep(int millis) void;
-    native func unix() int;
-    native func print(Terminal term) void;
-};
+# Time is a host (native) class registered on the runtime; its type is
+# synthesized from the registration — no declaration needed.
+# Methods: sleep(int millis), unix() int, print(Terminal term).

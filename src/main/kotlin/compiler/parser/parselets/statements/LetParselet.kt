@@ -26,7 +26,6 @@ class LetParselet : PrefixParselet {
             return CallNode(
                 func = FuncNode(
                     name = name,
-                    native = false,
                     defs = defs,
                     type = type,
                     body = body

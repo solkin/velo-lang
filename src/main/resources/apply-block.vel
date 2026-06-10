@@ -1,11 +1,6 @@
 # Apply Block Examples
 # Demonstrates the use of {} apply-blocks for contextual operations
 
-native class Terminal() {
-    native func print(str text) str;
-    func println(str text) str { print(text.con("\n")) };
-};
-
 Terminal term = new Terminal();
 
 # --- Example 1: Basic apply block with a class ---

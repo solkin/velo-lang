@@ -53,6 +53,7 @@ class ActorHandle private constructor(
     private val runtime: ActorRuntime,
     sharedFrameLoader: FrameLoader,
     sharedNativeRegistry: NativeRegistry,
+    sharedNatives: Array<vm.BoundNative>,
     private val dispatcher: Dispatcher,
     profiler: VMProfiler? = null,
 ) {
@@ -71,6 +72,7 @@ class ActorHandle private constructor(
         nativeRegistry = sharedNativeRegistry,
         actorRuntime = runtime,
         currentActor = this,
+        natives = sharedNatives,
     )
 
     private val executor = VMExecutor(ctx, profiler)
@@ -388,6 +390,7 @@ class ActorHandle private constructor(
             runtime: ActorRuntime,
             sharedFrameLoader: FrameLoader,
             sharedNativeRegistry: NativeRegistry,
+            sharedNatives: Array<vm.BoundNative> = emptyArray(),
             dispatcher: Dispatcher,
             profiler: VMProfiler? = null,
         ): ActorHandle {
@@ -397,6 +400,7 @@ class ActorHandle private constructor(
                 runtime = runtime,
                 sharedFrameLoader = sharedFrameLoader,
                 sharedNativeRegistry = sharedNativeRegistry,
+                sharedNatives = sharedNatives,
                 dispatcher = dispatcher,
                 profiler = profiler,
             )
@@ -419,6 +423,7 @@ class ActorHandle private constructor(
             runtime: ActorRuntime,
             sharedFrameLoader: FrameLoader,
             sharedNativeRegistry: NativeRegistry,
+            sharedNatives: Array<vm.BoundNative>,
             classFrameNum: Int,
             className: String,
             args: List<ActorValue>,
@@ -430,6 +435,7 @@ class ActorHandle private constructor(
                 runtime = runtime,
                 sharedFrameLoader = sharedFrameLoader,
                 sharedNativeRegistry = sharedNativeRegistry,
+                sharedNatives = sharedNatives,
                 dispatcher = ThreadDispatcher(name = "velo-actor-$id-$className"),
             )
             runtime.register(handle)

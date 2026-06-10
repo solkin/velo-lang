@@ -1,0 +1,607 @@
+include "lang/terminal.vel";
+include "lang/filesystem.vel";
+include "lang/time.vel";
+
+# ======================================================
+# Velo Todo — simple but fully functional task manager
+# ======================================================
+#
+# todo.txt file format:
+#   id|done|created|title
+#
+#   - done: 0 or 1
+#   - created: unix timestamp (seconds)
+#   - title: may contain | character (stored as || in the file)
+#
+# Example:
+#   1|0|1717001234|Buy milk
+#   2|1|1717000456|Design the todo example
+#
+# Commands:
+#   add <text>      — add a new task
+#   list            — show all tasks
+#   done <id>       — mark task as done
+#   undone <id>     — mark task as not done
+#   delete <id>     — delete a task
+#   clear-done      — remove all completed tasks
+#   stats           — show statistics
+#   help            — show this help
+#   quit            — exit
+# ======================================================
+
+
+# ---------- Low-level helper functions ----------
+
+func repeat(str value, int count) str {
+    str result = "";
+    int i = 0;
+    while (i < count) {
+        result = result.con(value);
+        i = i + 1;
+    };
+    result;
+};
+
+func padRight(str value, int width) str {
+    str result = value;
+    while (result.len < width) {
+        result = result.con(" ");
+    };
+    result;
+};
+
+func padLeft(str value, int width) str {
+    int needed = width - value.len;
+    if (needed <= 0) then value else repeat(" ", needed).con(value);
+};
+
+# Replace all occurrences of a substring
+func replaceAll(str s, str from, str to) str {
+    if (from.len == 0) then s else {
+        str result = "";
+        int i = 0;
+        int flen = from.len;
+        while (i < s.len) {
+            bool matches = true;
+            int j = 0;
+            while (j < flen & matches) {
+                if (s[i + j] != from[j]) {
+                    matches = false;
+                };
+                j = j + 1;
+            };
+            if (matches) {
+                result = result.con(to);
+                i = i + flen;
+            } else {
+                result = result.con(s[i].char);
+                i = i + 1;
+            };
+        };
+        result;
+    };
+};
+
+func escapeTitle(str title) str {
+    replaceAll(title, "|", "||");
+};
+
+func unescapeTitle(str title) str {
+    replaceAll(title, "||", "|");
+};
+
+# Split text into lines by \n (handles \r\n)
+func splitLines(str s) array[str] {
+    array[str] result = new array[str](64);
+    int count = 0;
+    int start = 0;
+    int i = 0;
+
+    while (i < s.len) {
+        if (s[i] == 10) {  # '\n'
+            str line = s.sub(start, i);
+            if (line.len > 0 & line[line.len - 1] == 13) {
+                line = line.sub(0, line.len - 1);
+            };
+            result[count] = line;
+            count = count + 1;
+            start = i + 1;
+        };
+        i = i + 1;
+    };
+    if (start < s.len) {
+        result[count] = s.sub(start, s.len);
+        count = count + 1;
+    };
+
+    array[str] trimmed = new array[str](count);
+    i = 0;
+    while (i < count) {
+        trimmed[i] = result[i];
+        i = i + 1;
+    };
+    trimmed;
+};
+
+func parseTaskLine(str line) ptr[array[str]] {
+    if (line.len == 0) then null else {
+        if (line[0] == 35) then null else {  # '#'
+            int p1 = 0 - 1;
+            int p2 = 0 - 1;
+            int p3 = 0 - 1;
+            int i = 0;
+
+            while (i < line.len) {
+                if (line[i] == 124) {  # '|'
+                    if (p1 < 0) {
+                        p1 = i;
+                    } else if (p2 < 0) {
+                        p2 = i;
+                    } else if (p3 < 0) {
+                        p3 = i;
+                    };
+                };
+                i = i + 1;
+            };
+
+            if (p3 < 0) then null else {
+                str idStr    = line.sub(0, p1);
+                str doneStr  = line.sub(p1 + 1, p2);
+                str timeStr  = line.sub(p2 + 1, p3);
+                str titleRaw = line.sub(p3 + 1, line.len);
+
+                new ptr[array[str]](new array[str]{idStr, doneStr, timeStr, unescapeTitle(titleRaw)});
+            };
+        };
+    };
+};
+
+
+# ---------- Classes (must be defined before use in signatures) ----------
+
+class Task(int id, str title, bool done, int created) {
+
+    func toggle() Task {
+        new Task(id, title, done == false, created);
+    };
+
+    func markDone() Task {
+        new Task(id, title, true, created);
+    };
+
+    func markUndone() Task {
+        new Task(id, title, false, created);
+    };
+
+    func withTitle(str newTitle) Task {
+        new Task(id, newTitle, done, created);
+    };
+};
+
+class TodoList(str filePath) {
+    array[Task] tasks = new array[Task](0);
+    int nextId = 1;
+
+    # === Read methods (must come before methods that call them) ===
+
+    func findIndex(int id) int {
+        int result = 0 - 1;
+        int i = 0;
+        while (i < tasks.len & result < 0) {
+            if (tasks[i].id == id) {
+                result = i;
+            } else {
+                i = i + 1;
+            };
+        };
+        result;
+    };
+
+    func find(int id) ptr[Task] {
+        int idx = findIndex(id);
+        if (idx < 0) then null else new ptr[Task](tasks[idx]);
+    };
+
+    func all() array[Task] {
+        tasks;
+    };
+
+    func pending() array[Task] {
+        array[Task] result = new array[Task](tasks.len);
+        int write = 0;
+        int i = 0;
+        while (i < tasks.len) {
+            if (tasks[i].done == false) {
+                result[write] = tasks[i];
+                write = write + 1;
+            };
+            i = i + 1;
+        };
+        array[Task] trimmed = new array[Task](write);
+        i = 0;
+        while (i < write) {
+            trimmed[i] = result[i];
+            i = i + 1;
+        };
+        trimmed;
+    };
+
+    func stats() dict[str:int] {
+        int total = tasks.len;
+        int doneCount = 0;
+        int i = 0;
+        while (i < tasks.len) {
+            if (tasks[i].done) {
+                doneCount = doneCount + 1;
+            };
+            i = i + 1;
+        };
+        dict[str:int] d = new dict[str:int]{};
+        d["total"]   = total;
+        d["done"]    = doneCount;
+        d["pending"] = total - doneCount;
+        d;
+    };
+
+    # === Persistence ===
+
+    func serialize() str {
+        str result = "# Velo Todo — format: id|done|created|title\n";
+
+        int i = 0;
+        while (i < tasks.len) {
+            Task t = tasks[i];
+            str line = t.id.str
+                .con("|")
+                .con(if t.done then "1" else "0")
+                .con("|")
+                .con(t.created.str)
+                .con("|")
+                .con(escapeTitle(t.title))
+                .con("\n");
+            result = result.con(line);
+            i = i + 1;
+        };
+        result;
+    };
+
+    func save() void {
+        FileSystem fs = new FileSystem();
+        fs.write(filePath, serialize());
+    };
+
+    func initFromFile() void {
+        FileSystem fs = new FileSystem();
+        if (fs.exists(filePath)) {
+            str content = fs.read(filePath);
+            array[str] lines = splitLines(content);
+
+            array[Task] loaded = new array[Task](lines.len);
+            int write = 0;
+            int maxId = 0;
+            int i = 0;
+
+            while (i < lines.len) {
+                ptr[array[str]] fields = parseTaskLine(lines[i]);
+                if (fields != null) {
+                    str idStr   = fields.val[0];
+                    str doneStr = fields.val[1];
+                    str timeStr = fields.val[2];
+                    str title   = fields.val[3];
+
+                    int id = idStr.int;
+                    bool done = doneStr == "1";
+                    int created = timeStr.int;
+
+                    if (id > 0 & title.len > 0) {
+                        loaded[write] = new Task(id, title, done, created);
+                        if (id > maxId) {
+                            maxId = id;
+                        };
+                        write = write + 1;
+                    };
+                };
+                i = i + 1;
+            };
+
+            array[Task] final = new array[Task](write);
+            i = 0;
+            while (i < write) {
+                final[i] = loaded[i];
+                i = i + 1;
+            };
+
+            tasks = final;
+            nextId = if (maxId + 1 > 1) then maxId + 1 else 1;
+        };
+    };
+
+    # === Mutating operations (modify object state) ===
+
+    func add(str title) void {
+        if (title.len > 0) {
+            Time t = new Time();
+            int now = t.unix();
+
+            Task newTask = new Task(nextId, title, false, now);
+            array[Task] newTasks = new array[Task](tasks.len + 1);
+
+            int i = 0;
+            while (i < tasks.len) {
+                newTasks[i] = tasks[i];
+                i = i + 1;
+            };
+            newTasks[tasks.len] = newTask;
+
+            tasks = newTasks;
+            nextId = nextId + 1;
+        };
+    };
+
+    func toggle(int id) void {
+        int idx = findIndex(id);
+        if (idx >= 0) {
+            Task old = tasks[idx];
+            Task updated = old.toggle();
+
+            array[Task] newTasks = new array[Task](tasks.len);
+            int i = 0;
+            while (i < tasks.len) {
+                if (i == idx) {
+                    newTasks[i] = updated;
+                } else {
+                    newTasks[i] = tasks[i];
+                };
+                i = i + 1;
+            };
+            tasks = newTasks;
+        };
+    };
+
+    func delete(int id) void {
+        int idx = findIndex(id);
+        if (idx >= 0) {
+            array[Task] newTasks = new array[Task](tasks.len - 1);
+            int write = 0;
+            int read = 0;
+            while (read < tasks.len) {
+                if (read != idx) {
+                    newTasks[write] = tasks[read];
+                    write = write + 1;
+                };
+                read = read + 1;
+            };
+            tasks = newTasks;
+        };
+    };
+
+    func clearDone() void {
+        array[Task] newTasks = new array[Task](tasks.len);
+        int write = 0;
+        int i = 0;
+        while (i < tasks.len) {
+            if (tasks[i].done == false) {
+                newTasks[write] = tasks[i];
+                write = write + 1;
+            };
+            i = i + 1;
+        };
+
+        array[Task] finalTasks = new array[Task](write);
+        i = 0;
+        while (i < write) {
+            finalTasks[i] = newTasks[i];
+            i = i + 1;
+        };
+        tasks = finalTasks;
+    };
+};
+
+func formatTask(Task t) str {
+    str status = if t.done then "[x]" else "[ ]";
+    str idStr = padLeft(t.id.str, 2);
+    status.con(" ").con(idStr).con("  ").con(t.title);
+};
+
+func renderTaskList(array[Task] tasks) void {
+    if (tasks.len == 0) {
+        term.println("  (list is empty)");
+    } else {
+        int i = 0;
+        while (i < tasks.len) {
+            term.println("  ".con(formatTask(tasks[i])));
+            i = i + 1;
+        };
+    };
+};
+
+func renderStats(TodoList list) void {
+    dict[str:int] st = list.stats();
+    int total   = st["total"];
+    int done    = st["done"];
+    int pending = st["pending"];
+
+    str line = "  Total: " + total.str
+        + "   Done: " + done.str
+        + "   Remaining: " + pending.str;
+
+    term.println("");
+    term.println(line);
+    term.println("");
+    void;
+};
+
+func printHeader() void {
+    term.println("");
+    term.println("Velo Todo");
+    term.println("=========");
+    term.println("");
+    void;
+};
+
+func printHelp() void {
+    term.println("");
+    term.println("Commands:");
+    term.println("  add <text>      - add a new task");
+    term.println("  list            - show all tasks");
+    term.println("  done <id>       - mark a task as done");
+    term.println("  undone <id>     - mark a task as not done");
+    term.println("  delete <id>     - delete a task");
+    term.println("  clear-done      - remove all completed tasks");
+    term.println("  stats           - show statistics");
+    term.println("  help            - show this help");
+    term.println("  quit            - exit");
+    term.println("");
+    void;
+};
+
+func printError(str msg) void {
+    term.println("  error: ".con(msg));
+    void;
+};
+
+# Returns tuple[command, argument]
+func parseCommand(str input) tuple[str,str] {
+    str trimmed = input;
+    int start = 0;
+    while (start < trimmed.len & trimmed[start] == 32) {
+        start = start + 1;
+    };
+    trimmed = trimmed.sub(start, trimmed.len);
+
+    int space = 0 - 1;
+    int i = 0;
+    while (i < trimmed.len & space < 0) {
+        if (trimmed[i] == 32) {
+            space = i;
+        };
+        i = i + 1;
+    };
+
+    if (space < 0) {
+        new tuple(trimmed, "");
+    } else {
+        str cmd = trimmed.sub(0, space);
+        str arg = trimmed.sub(space + 1, trimmed.len);
+        start = 0;
+        while (start < arg.len & arg[start] == 32) {
+            start = start + 1;
+        };
+        arg = arg.sub(start, arg.len);
+        new tuple(cmd, arg);
+    };
+};
+
+
+# ---------- Main loop ----------
+
+func main() void {
+    TodoList list = new TodoList("todo.txt");
+    list.initFromFile();
+
+    printHeader();
+    term.println("Using file: " + list.filePath);
+    term.println("");
+
+    renderTaskList(list.all());
+    renderStats(list);
+    printHelp();
+
+    bool running = true;
+    while (running) {
+        term.print("> ");
+        str input = term.input();
+
+        tuple[str,str] parsed = parseCommand(input);
+        str cmd = parsed.1;
+        str arg = parsed.2;
+
+        if (cmd == "quit" | cmd == "exit" | cmd == "q") {
+            term.println("Goodbye!");
+            running = false;
+
+        } else if (cmd == "help" | cmd == "?" | cmd == "h") {
+            printHelp();
+
+        } else if (cmd == "list" | cmd == "ls" | cmd == "l") {
+            renderTaskList(list.all());
+            renderStats(list);
+
+        } else if (cmd == "stats" | cmd == "st") {
+            renderStats(list);
+
+        } else if (cmd == "add" | cmd == "a") {
+            if (arg.len == 0) {
+                printError("please provide a task description after 'add'");
+            } else {
+                list.add(arg);
+                list.save();
+                term.println("  Added task (id=" + list.tasks[list.tasks.len - 1].id.str + ")");
+            };
+
+        } else if (cmd == "done" | cmd == "d") {
+            int id = arg.int;
+            if (id <= 0) {
+                printError("please provide a valid task id");
+            } else {
+                ptr[Task] t = list.find(id);
+                if (t == null) {
+                    printError("task not found: ".con(id.str));
+                } else {
+                    list.toggle(id);
+                    list.save();
+                    term.println("  Marked task as done: " + t.val.title);
+                };
+            };
+
+        } else if (cmd == "undone" | cmd == "u") {
+            int id = arg.int;
+            if (id <= 0) {
+                printError("please provide a valid task id");
+            } else {
+                ptr[Task] t = list.find(id);
+                if (t == null) {
+                    printError("task not found: ".con(id.str));
+                } else {
+                    list.toggle(id);
+                    list.save();
+                    term.println("  Marked task as not done: " + t.val.title);
+                };
+            };
+
+        } else if (cmd == "delete" | cmd == "del" | cmd == "rm") {
+            int id = arg.int;
+            if (id <= 0) {
+                printError("please provide a valid task id");
+            } else {
+                ptr[Task] t = list.find(id);
+                if (t == null) {
+                    printError("task not found: ".con(id.str));
+                } else {
+                    str title = t.val.title;
+                    list.delete(id);
+                    list.save();
+                    term.println("  Deleted task: " + title);
+                };
+            };
+
+        } else if (cmd == "clear-done" | cmd == "clear") {
+            int before = list.stats()["done"];
+            list.clearDone();
+            list.save();
+            str countStr = before.str;
+            str plural = if before == 1 then "task" else "tasks";
+            term.println("  Cleared " + countStr + " completed " + plural);
+
+        } else if (cmd.len > 0) {
+            printError("unknown command '" + cmd + "' (type 'help' for available commands)");
+
+        } else {
+            # empty input — just show the current list
+            renderTaskList(list.all());
+            renderStats(list);
+        };
+    };
+};
+
+main();

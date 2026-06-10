@@ -11,25 +11,11 @@
         <h2><a href="../index.html">Velo by Example</a>: Native Classes</h2>
         <table>
             <tr>
-                <td class="docs"><p>Native classes bridge Velo to Java/Kotlin classes via reflection, enabling JVM interop.</p></td>
+                <td class="docs"><p>Host (JVM) classes are bound by registration — no declarations in Velo source. The type is synthesized from the class itself and checked at compile time.</p></td>
                 <td class="code empty"></td>
             </tr>
             <tr>
-                <td class="docs"><p>Declare a native class with <code>native class</code> and <code>native func</code> for methods backed by JVM.</p></td>
-                <td class="code"><pre><code><span class="kw">native</span> <span class="kw">class</span> <span class="ty">Terminal</span>() {
-    <span class="kw">native</span> <span class="kw">func</span> print(<span class="ty">str</span> text) <span class="kw">void</span>;
-    <span class="kw">native</span> <span class="kw">func</span> input() <span class="ty">str</span>;
-
-    <span class="kw">func</span> println(<span class="ty">str</span> text) <span class="kw">void</span> {
-        print(text.con(<span class="st">&quot;\n&quot;</span>));
-    };
-};
-
-<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
-term.println(<span class="st">&quot;Hello!&quot;</span>);</code></pre></td>
-            </tr>
-            <tr>
-                <td class="docs"><p>Register native classes in Kotlin using <code>VeloRuntime</code>.</p></td>
+                <td class="docs"><p>Register plain Kotlin classes on <code>VeloRuntime</code> — that is the whole binding.</p></td>
                 <td class="code"><pre><code>// Kotlin
 val runtime = VeloRuntime()
     .register(MyClass::class)
@@ -38,15 +24,32 @@ val runtime = VeloRuntime()
 runtime.runFile(&quot;script.vel&quot;)</code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p>Type mapping between Velo and JVM is automatic for primitives and collections.</p></td>
-                <td class="code"><pre><code><span class="cm"># Velo     → JVM</span>
-<span class="cm"># int      → Int</span>
-<span class="cm"># float    → Float</span>
-<span class="cm"># str      → String</span>
-<span class="cm"># bool     → Boolean</span>
-<span class="cm"># byte     → Byte</span>
-<span class="cm"># array[T] → Array&lt;T&gt;</span>
-<span class="cm"># dict[K:V]→ Map&lt;K, V&gt;</span></code></pre></td>
+                <td class="docs"><p>Use the class directly in Velo — <code>Terminal</code>, <code>Time</code>, <code>FileSystem</code>, <code>Http</code> and <code>Socket</code> are registered by default.</p></td>
+                <td class="code"><pre><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
+term.println(<span class="st">&quot;Hello!&quot;</span>);
+
+<span class="ty">Time</span> time <span class="op">=</span> <span class="kw">new</span> <span class="ty">Time</span>();
+term.println(time.unix().<span class="ty">str</span>);</code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Type mapping between Velo and JVM is automatic for primitives, collections and callbacks.</p></td>
+                <td class="code"><pre><code><span class="cm"># Velo            → JVM</span>
+<span class="cm"># int             → Int</span>
+<span class="cm"># float           → Float</span>
+<span class="cm"># str             → String</span>
+<span class="cm"># bool            → Boolean</span>
+<span class="cm"># byte            → Byte</span>
+<span class="cm"># array[T]        → Array&lt;T&gt;</span>
+<span class="cm"># dict[K:V]       → Map&lt;K, V&gt;</span>
+<span class="cm"># func[(T) void]  → VeloFunction / (T) -&gt; Unit</span></code></pre></td>
+            </tr>
+            <tr>
+                <td class="docs"><p>Callbacks work both ways: a <code>func[(args) void]</code> handed to native code always runs back on its owning Velo thread.</p></td>
+                <td class="code"><pre><code><span class="ty">Notifications</span> n <span class="op">=</span> <span class="kw">new</span> <span class="ty">Notifications</span>();
+n.subscribe(<span class="kw">func</span>(<span class="ty">str</span> text) <span class="kw">void</span> {
+    term.println(<span class="st">&quot;got: &quot;</span>.con(text));
+    <span class="kw">void</span>
+});</code></pre></td>
             </tr>
             <tr>
                 <td class="docs nav-footer">

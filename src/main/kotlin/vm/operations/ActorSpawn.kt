@@ -41,6 +41,7 @@ class ActorSpawn(
             runtime = ctx.actorRuntime,
             sharedFrameLoader = ctx.frameLoader,
             sharedNativeRegistry = ctx.nativeRegistry,
+            sharedNatives = ctx.natives,
             classFrameNum = classFrameNum,
             className = className,
             args = cloned,

@@ -22,6 +22,7 @@ class VMContext(
     val nativeRegistry: NativeRegistry,
     val actorRuntime: ActorRuntime = ActorRuntime(),
     val currentActor: ActorHandle? = null,
+    val natives: Array<BoundNative> = emptyArray(),
 ) {
     /**
      * Get current frame from stack

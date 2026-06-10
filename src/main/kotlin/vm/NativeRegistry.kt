@@ -13,10 +13,17 @@ data class NativeClassInfo(
 /**
  * Registry for native classes that can be used from Velo Lang.
  * Allows mapping between Velo class names and JVM classes.
+ *
+ * Registration itself is just a name↔class mapping. The full binding —
+ * introspection, signature mapping, [java.lang.invoke.MethodHandle]
+ * resolution — happens lazily in [descriptor] on first compile/link use and
+ * is cached. Laziness makes registration order irrelevant for classes that
+ * reference each other in their signatures.
  */
 class NativeRegistry {
     private val byVeloName = HashMap<String, NativeClassInfo>()
     private val byJvmClass = HashMap<Class<*>, NativeClassInfo>()
+    private val descriptors = HashMap<String, NativeClassDescriptor>()
 
     /**
      * Register a native class with the same name in Velo and JVM
@@ -73,5 +80,21 @@ class NativeRegistry {
      * Get all registered class names
      */
     fun getAllNames(): Set<String> = byVeloName.keys.toSet()
+
+    /**
+     * Get (building and caching on first use) the full binding descriptor
+     * for a registered class, or `null` when the name is not registered.
+     *
+     * @throws NativeMappingException when the host class cannot be bound
+     *   (overloads, multiple constructors, unmappable signature types) —
+     *   the message lists every problem at once.
+     */
+    fun descriptor(veloName: String): NativeClassDescriptor? {
+        descriptors[veloName]?.let { return it }
+        val info = byVeloName[veloName] ?: return null
+        val descriptor = NativeClassDescriptor.introspect(info.veloName, info.jvmClass, registry = this)
+        descriptors[info.veloName] = descriptor
+        return descriptor
+    }
 }
 

@@ -10,6 +10,9 @@ import compiler.parser.Token
 class ClassTypeParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val className = token.value as String
+        parser.context.getNativeType(className)?.let { nativeType ->
+            return TypeParser.parseDefBody(parser, nativeType)
+        }
         val classType = parser.context.getClassType(className)
             ?: throw IllegalArgumentException("Unknown class type: $className")
         val resolvedType = if (classType.typeParams.isNotEmpty()

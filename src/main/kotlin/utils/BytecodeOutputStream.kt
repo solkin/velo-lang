@@ -30,13 +30,11 @@ import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Mul
+import vm.NativeRef
 import vm.operations.ActorCall
 import vm.operations.ActorSpawn
 import vm.operations.FutureAwait
-import vm.operations.NativeConstructor
-import vm.operations.NativeFunction
-import vm.operations.NativeInvoke
-import vm.operations.NativeWrap
+import vm.operations.NativeCall
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.ArrCopy
@@ -77,10 +75,28 @@ class BytecodeOutputStream(
         }
     }
 
-    fun write(frames: List<SerializedFrame>) {
-        out.writeShort(frames.size)
-        frames.forEach { frame ->
+    fun write(program: SerializedProgram) {
+        writeNatives(program.natives)
+        out.writeShort(program.frames.size)
+        program.frames.forEach { frame ->
             write(frame)
+        }
+    }
+
+    /**
+     * Native pool section: every native entry point the program references,
+     * keyed by Velo class name + method name + full signature. Resolved
+     * against the host registry at load time (see [vm.NativeLinker]).
+     */
+    private fun writeNatives(natives: List<NativeRef>) {
+        out.writeShort(natives.size)
+        natives.forEach { ref ->
+            out.writeByte(if (ref.kind == NativeRef.Kind.CONSTRUCTOR) 0 else 1)
+            out.writeUTF(ref.className)
+            out.writeUTF(ref.methodName)
+            out.writeByte(ref.params.size)
+            ref.params.forEach { out.writeType(it) }
+            out.writeType(ref.returns)
         }
     }
 
@@ -155,37 +171,13 @@ class BytecodeOutputStream(
             is DictVals -> out.writeByte(0x3f)
             is StrInt -> out.writeByte(0x40)
 
-            is Instance -> out.writeByte(0x42).also {
-                out.writeNullableInt(op.nativeIndex)
-            }
-            is NativeConstructor -> out.writeByte(0x43).also {
-                out.writeUTF(op.name)
+            is Instance -> out.writeByte(0x42)
+            is NativeCall -> out.writeByte(0x43).also {
+                out.writeShort(op.poolIndex)
                 out.writeByte(op.args.size)
                 op.args.forEach { arg ->
-                    out.writeInt(arg.first)
-                    out.writeType(arg.second)
-                }
-            }
-
-            is NativeFunction -> out.writeByte(0x44).also {
-                out.writeUTF(op.name)
-                out.writeByte(op.argTypes.size)
-                op.argTypes.forEach { arg ->
                     out.writeType(arg)
                 }
-            }
-
-            is NativeInvoke -> out.writeByte(0x45).also {
-                out.writeByte(op.args.size)
-                op.args.forEach { arg ->
-                    out.writeInt(arg.first)
-                    out.writeType(arg.second)
-                }
-            }
-
-            is NativeWrap -> out.writeByte(0x49).also {
-                out.writeInt(op.classFrameNum)
-                out.writeInt(op.nativeInstanceIndex)
             }
 
             is Shl -> out.writeByte(0x46)
@@ -304,7 +296,7 @@ private fun DataOutputStream.writeType(t: VmType) {
 }
 
 const val MAGIC = 0x5e10
-const val VERSION_MAJOR = 0x08
+const val VERSION_MAJOR = 0x09
 const val VERSION_MINOR = 0x00
 
 const val TYPE_VOID = 0x00

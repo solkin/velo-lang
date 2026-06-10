@@ -4,6 +4,7 @@ import Terminal
 import VeloProgram
 import VeloRuntime
 import compiler.CompilerFrame
+import compiler.CompilerShared
 import compiler.Context
 import compiler.parser.InputStack
 import compiler.parser.Parser
@@ -13,6 +14,7 @@ import compiler.parser.TokenStream
 import utils.BytecodeInputStream
 import utils.BytecodeOutputStream
 import utils.SerializedFrame
+import utils.SerializedProgram
 import vm.actors.ThreadDispatcher
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -295,7 +297,7 @@ class CallbacksTest {
             });
             term.println("embedded ready");
         """.trimIndent()
-        val frames = assertNotNull(compile(src), "compilation failed")
+        val compiled = assertNotNull(compile(src), "compilation failed")
         val runtime = VeloRuntime().register("TestBridge", TestBridge::class)
 
         val baos = ByteArrayOutputStream()
@@ -303,7 +305,7 @@ class CallbacksTest {
         System.setOut(PrintStream(baos, true))
         var program: VeloProgram? = null
         try {
-            program = runtime.start(frames, ThreadDispatcher("test-main-dispatcher"))
+            program = runtime.start(compiled, ThreadDispatcher("test-main-dispatcher"))
             awaitNotNull("callback registration") { TestBridge.captured }
             val cb = assertNotNull(TestBridge.captured)
 
@@ -344,71 +346,66 @@ class CallbacksTest {
             });
             term.println("main done");
         """.trimIndent()
-        val frames = assertNotNull(compile(src), "compilation failed")
+        val compiled = assertNotNull(compile(src), "compilation failed")
 
         val bytes = ByteArrayOutputStream().use { baos ->
             DataOutputStream(baos).use { dos ->
                 BytecodeOutputStream(dos).use { bos ->
-                    bos.write(frames)
+                    bos.write(compiled)
                     bos.flush()
                 }
             }
             baos.toByteArray()
         }
         val reread = DataInputStream(ByteArrayInputStream(bytes)).use { dis ->
-            BytecodeInputStream(dis).readFrames()
+            BytecodeInputStream(dis).readProgram()
         }
 
-        assertEquals(frames.size, reread.size)
-        val output = runFrames(reread)
+        assertEquals(compiled.frames.size, reread.frames.size)
+        assertEquals(compiled.natives, reread.natives)
+        val output = runProgram(reread)
         assertEquals("main done\nroundtrip: 42", output)
     }
 
     // ---- helpers ----
 
-    private val terminalLib = """
-        native class Terminal() {
-            native func print(str text) str;
-            native func input() str;
-            func println(str text) str {
-                print(text.con("\n"));
-            };
-        };
+    private val testRegistry = NativeRegistry()
+        .register(Terminal::class)
+        .register("TestBridge", TestBridge::class)
 
+    private val terminalLib = """
         Terminal term = new Terminal();
     """.trimIndent()
 
     private val bridgeLib = """
-        native class TestBridge() {
-            native func register(func[(int) void] cb) void;
-            native func mark() void;
-            native func fireFromBackground(int value) void;
-            native func fireInline(int value) void;
-            native func release() void;
-        };
         TestBridge bridge = new TestBridge();
     """.trimIndent()
 
-    private fun compile(src: String): List<SerializedFrame>? {
+    private fun compile(src: String): SerializedProgram? {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
         val deps = mapOf("lang/terminal.vel" to terminalLib)
-        val parser = Parser(stream, SimpleInput(deps, input))
+        val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
+        val shared = CompilerShared(testRegistry)
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(0, mutableListOf(), mutableMapOf(), AtomicInteger()),
             frameCounter = AtomicInteger(),
+            shared = shared,
         )
         return try {
             node.compile(ctx)
-            ctx.frames().map {
-                SerializedFrame(
-                    num = it.num,
-                    ops = it.ops,
-                    vars = it.vars.map { v -> v.value.index },
-                )
-            }
+            SerializedProgram(
+                natives = shared.nativePool.toList(),
+                frames = ctx.frames().map {
+                    SerializedFrame(
+                        num = it.num,
+                        ops = it.ops,
+                        vars = it.vars.map { v -> v.value.index },
+                    )
+                },
+            )
         } catch (ex: Throwable) {
             ex.printStackTrace()
             null
@@ -419,31 +416,29 @@ class CallbacksTest {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
         val deps = mapOf("lang/terminal.vel" to terminalLib)
-        val parser = Parser(stream, SimpleInput(deps, input))
+        val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(0, mutableListOf(), mutableMapOf(), AtomicInteger()),
             frameCounter = AtomicInteger(),
+            shared = CompilerShared(testRegistry),
         )
         node.compile(ctx)
     }
 
     private fun compileAndRun(src: String): String {
-        val frames = assertNotNull(compile(src), "compilation failed")
-        return runFrames(frames)
+        val program = assertNotNull(compile(src), "compilation failed")
+        return runProgram(program)
     }
 
-    private fun runFrames(frames: List<SerializedFrame>): String {
-        val nativeRegistry = NativeRegistry()
-            .register(Terminal::class)
-            .register("TestBridge", TestBridge::class)
+    private fun runProgram(program: SerializedProgram): String {
         val baos = ByteArrayOutputStream()
         val oldOut = System.out
         System.setOut(PrintStream(baos))
         try {
-            val vm = VM(nativeRegistry)
-            vm.load(SimpleParser(frames))
+            val vm = VM(testRegistry)
+            vm.load(program)
             vm.run()
         } finally {
             System.setOut(oldOut)

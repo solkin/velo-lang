@@ -2,9 +2,14 @@ package compiler.parser
 
 import compiler.nodes.Node
 import compiler.nodes.ProgramNode
+import vm.NativeRegistry
 
-class Parser(private val stream: TokenStream, private val depLoader: DependencyLoader) {
-    private val context = ParserContext()
+class Parser(
+    private val stream: TokenStream,
+    private val depLoader: DependencyLoader,
+    nativeRegistry: NativeRegistry? = null,
+) {
+    private val context = ParserContext(nativeRegistry)
     private val pratt = PrattParser(stream, context, depLoader).also {
         VeloGrammar.configure(it)
     }

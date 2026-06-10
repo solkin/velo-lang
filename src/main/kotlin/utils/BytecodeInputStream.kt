@@ -30,13 +30,11 @@ import vm.operations.Sub
 import vm.operations.More
 import vm.operations.Move
 import vm.operations.Mul
+import vm.NativeRef
 import vm.operations.ActorCall
 import vm.operations.ActorSpawn
 import vm.operations.FutureAwait
-import vm.operations.NativeConstructor
-import vm.operations.NativeFunction
-import vm.operations.NativeInvoke
-import vm.operations.NativeWrap
+import vm.operations.NativeCall
 import vm.operations.Or
 import vm.operations.Add
 import vm.operations.ArrCopy
@@ -84,12 +82,29 @@ class BytecodeInputStream(
         }
     }
 
-    fun readFrames(): List<SerializedFrame> {
+    fun readProgram(): SerializedProgram {
+        val natives = readNatives()
         val count = inp.readShort().toInt()
-        return ArrayList<SerializedFrame>(count).apply {
+        val frames = ArrayList<SerializedFrame>(count).apply {
             repeat(count) {
                 val frame = readFrame()
                 add(frame)
+            }
+        }
+        return SerializedProgram(natives = natives, frames = frames)
+    }
+
+    private fun readNatives(): List<NativeRef> {
+        val count = inp.readShort().toInt()
+        return ArrayList<NativeRef>(count).apply {
+            repeat(count) {
+                val kind = if (inp.readByte().toInt() == 0) NativeRef.Kind.CONSTRUCTOR else NativeRef.Kind.METHOD
+                val className = inp.readUTF()
+                val methodName = inp.readUTF()
+                val paramCount = inp.readByte().toInt()
+                val params = (0 until paramCount).map { inp.readType() }
+                val returns = inp.readType()
+                add(NativeRef(kind, className, methodName, params, returns))
             }
         }
     }
@@ -168,24 +183,10 @@ class BytecodeInputStream(
             0x3e -> DictVal()
             0x3f -> DictVals()
             0x40 -> StrInt()
-            0x42 -> Instance(nativeIndex = inp.readNullableInt())
-            0x43 -> NativeConstructor(
-                name = inp.readUTF(),
-                args = inp.readArray { Pair(inp.readInt(), inp.readType()) }
-            )
-
-            0x44 -> NativeFunction(
-                name = inp.readUTF(),
-                argTypes = inp.readArray { inp.readType() }
-            )
-
-            0x45 -> NativeInvoke(
-                args = inp.readArray { Pair(inp.readInt(), inp.readType()) }
-            )
-
-            0x49 -> NativeWrap(
-                classFrameNum = inp.readInt(),
-                nativeInstanceIndex = inp.readInt()
+            0x42 -> Instance()
+            0x43 -> NativeCall(
+                poolIndex = inp.readShort().toInt(),
+                args = inp.readArray { inp.readType() }
             )
 
             0x46 -> Shl()

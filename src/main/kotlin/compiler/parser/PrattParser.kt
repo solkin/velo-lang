@@ -56,6 +56,12 @@ class PrattParser(
                     } else {
                         null
                     }
+                } else if (varName != null && context.isNativeType(varName) &&
+                    nextToken?.type == TokenType.VARIABLE
+                ) {
+                    // `RegisteredHostClass varname ...` — a definition typed by
+                    // a native class synthesized from the registry.
+                    keywordParselets["__class_type__"]
                 } else {
                     null
                 }

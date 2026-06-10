@@ -5,22 +5,17 @@ import vm.operations.Call
 import vm.operations.Frame
 import vm.operations.Load
 import vm.operations.Instance
-import vm.operations.NativeConstructor
 import vm.operations.Ret
 import vm.operations.Store
 
 data class ClassNode(
     val name: String,
-    val native: Boolean,
     val isActor: Boolean = false,
     val typeParams: List<String> = emptyList(),
     val defs: List<DefNode>,
     val body: Node,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        if (isActor && native) {
-            throw IllegalStateException("'actor' and 'native' modifiers are mutually exclusive on class '$name'")
-        }
         if (isActor && typeParams.isNotEmpty()) {
             throw IllegalStateException("Generic 'actor class' is not supported (class '$name')")
         }
@@ -51,17 +46,9 @@ data class ClassNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
-        val nativeIndex = if (native) {
-            classOps.add(NativeConstructor(name, args = args.map { Pair(it.index, it.type.vmType()) }))
-            val nativeInstance = classOps.def(name = NATIVE_INSTANCE, type = AnyType)
-            classOps.add(Store(index = nativeInstance.index))
-            nativeInstance.index
-        } else {
-            null
-        }
 
         body.compile(ctx = classOps)
-        classOps.add(Instance(nativeIndex))
+        classOps.add(Instance())
         classOps.add(Ret())
 
         if (isActor) {
@@ -182,5 +169,3 @@ data class ClassElementProp(val name: String) : Prop {
         return resolved
     }
 }
-
-const val NATIVE_INSTANCE = "native@instance"

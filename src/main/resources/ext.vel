@@ -44,12 +44,11 @@ ext(int num) hex() str {
     hexString;
 };
 
-native class Terminal() {
-    native func print(str text) str;
-    func println(str text) str { print(text.con("\n")) };
-};
+Terminal term = new Terminal();
 
-ext(Terminal t) printInt(int a) str {
+# Extension functions work on native (host) classes too — the type comes
+# from the runtime registration, the extension is plain Velo.
+ext(Terminal t) printInt(int a) void {
     t.println(a.str);
 };
 

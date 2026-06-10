@@ -159,7 +159,6 @@ class ParserTest {
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = BoolType,
                 body = BoolNode(value = false),
-                native = false,
             ).wrapProgram(),
             actual = node,
         )
@@ -177,7 +176,6 @@ class ParserTest {
                 defs = listOf(DefNode("a", IntType, def = null)),
                 type = VoidType,
                 body = VoidNode,
-                native = false,
             ).wrapProgram(),
             actual = node,
         )
@@ -195,7 +193,6 @@ class ParserTest {
                 defs = listOf(DefNode("i", IntType, def = null), DefNode("a", IntType, def = null)),
                 type = VoidType,
                 body = VoidNode,
-                native = false,
             ).wrapProgram(),
             actual = node,
         )
@@ -589,7 +586,6 @@ class ParserTest {
                 prog = listOf(
                     ClassNode(
                         name = "A",
-                        native = false,
                         defs = emptyList(),
                         body = VoidNode
                     ),
@@ -615,7 +611,6 @@ class ParserTest {
                 prog = listOf(
                     ClassNode(
                         name = "A",
-                        native = false,
                         defs = listOf(
                             DefNode(
                                 name = "i",
@@ -691,7 +686,6 @@ class ParserTest {
                     )
                 ),
                 body = VoidNode,
-                native = false,
             ).wrapProgram(),
             actual = node,
         )
@@ -725,51 +719,9 @@ class ParserTest {
                             defs = listOf(DefNode("d", IntType, def = null)),
                             type = BoolType,
                             body = BoolNode(value = true),
-                            native = false,
                         )
                     )
                 ),
-                native = false,
-            ).wrapProgram(),
-            actual = node,
-        )
-    }
-
-    @Test
-    fun testParseNativeClassDeclaration() {
-        val parser = makeSimpleParser("native class A() {}")
-
-        val node = parser.parse()
-
-        assertEquals(
-            expected = ClassNode(
-                name = "A",
-                defs = listOf(),
-                body = VoidNode,
-                native = true,
-            ).wrapProgram(),
-            actual = node,
-        )
-    }
-
-    @Test
-    fun testParseNativeClassFields() {
-        val parser = makeSimpleParser("native class A() { native func n() int; }")
-
-        val node = parser.parse()
-
-        assertEquals(
-            expected = ClassNode(
-                name = "A",
-                defs = listOf(),
-                body = FuncNode(
-                    name = "n",
-                    defs = listOf(),
-                    type = IntType,
-                    body = VoidNode,
-                    native = true,
-                ),
-                native = true,
             ).wrapProgram(),
             actual = node,
         )

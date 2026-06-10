@@ -1,14 +1,44 @@
 package compiler
 
 import compiler.nodes.Type
+import vm.NativeClassDescriptor
+import vm.NativeRef
+import vm.NativeRegistry
 import vm.Operation
 import java.util.concurrent.atomic.AtomicInteger
+
+/**
+ * Compilation-wide state shared by every [Context] in a program, however
+ * the context tree branches (`extend`/`discrete`/`inner`).
+ *
+ * Holds the [NativeRegistry] the program is compiled against and the
+ * **native pool** — the ordered, deduplicated list of every native entry
+ * point the code references. `NativeCall` ops carry indexes into this pool;
+ * the pool itself is serialized into the program (and `.vbc`) and linked
+ * against the host registry at load time.
+ */
+class CompilerShared(
+    val nativeRegistry: NativeRegistry? = null,
+) {
+    val nativePool = mutableListOf<NativeRef>()
+
+    fun intern(ref: NativeRef): Int {
+        val existing = nativePool.indexOf(ref)
+        if (existing >= 0) return existing
+        nativePool.add(ref)
+        return nativePool.size - 1
+    }
+
+    fun descriptor(veloName: String): NativeClassDescriptor? =
+        nativeRegistry?.descriptor(veloName)
+}
 
 data class Context(
     val parent: Context?,
     val frame: CompilerFrame,
     val frameCounter: AtomicInteger,
     val subFrame: Boolean = false,
+    val shared: CompilerShared = CompilerShared(),
 ) {
 
     private val frames: MutableList<CompilerFrame> = ArrayList()
@@ -47,6 +77,7 @@ data class Context(
                 varCounter = AtomicInteger(frame.varCounter.get()),
             ),
             frameCounter,
+            shared = shared,
         )
     }
 
@@ -60,6 +91,7 @@ data class Context(
                 varCounter = AtomicInteger(frame.varCounter.get()),
             ),
             frameCounter,
+            shared = shared,
         )
     }
 
@@ -74,6 +106,7 @@ data class Context(
             ),
             frameCounter,
             subFrame = true,
+            shared = shared,
         )
     }
 

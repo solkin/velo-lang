@@ -1,6 +1,6 @@
 package vm
 
-import utils.SerializedFrame
+import utils.SerializedProgram
 import vm.actors.ActorHandle
 import vm.actors.ActorRuntime
 import vm.actors.PumpDispatcher
@@ -12,14 +12,16 @@ class VM(
 ) {
 
     private var frameLoader: FrameLoader? = null
+    private var natives: Array<BoundNative> = emptyArray()
 
-    fun load(parser: Parser) {
-        val frames = HashMap<Int, SerializedFrame>()
-        while (!parser.eof()) {
-            val frame = parser.next() ?: break
-            frames.put(frame.num, frame)
-        }
-        frameLoader = GeneralFrameLoader(frames)
+    /**
+     * Load a compiled program and link its native pool against the
+     * registry. Linking happens here — before any code runs — and reports
+     * every unresolved or mismatched native entry in a single error.
+     */
+    fun load(program: SerializedProgram) {
+        frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
+        natives = NativeLinker.link(program.natives, nativeRegistry)
     }
 
     /**
@@ -41,6 +43,7 @@ class VM(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,
             sharedNativeRegistry = nativeRegistry,
+            sharedNatives = natives,
             dispatcher = pump,
             profiler = profiler,
         )

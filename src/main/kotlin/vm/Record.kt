@@ -77,15 +77,12 @@ interface Record {
             is VmType.Dict -> convertDict(vmType, ctx)
             is VmType.Func -> convertFunc(vmType, ctx)
             is VmType.Class -> {
-                // For native classes, extract the underlying JVM object from the class frame
-                if (this !is RefRecord || kind != RefKind.CLASS) {
-                    throw IllegalStateException("Non-class reference record")
+                // Native instances are opaque handles — unwrap the JVM object.
+                if (this !is RefRecord || kind != RefKind.NATIVE) {
+                    throw IllegalStateException("Expected a native ${vmType.name} instance, got ${this::class.simpleName}")
                 }
-                val index = nativeIndex ?: throw IllegalStateException("Native index is not defined")
-                // Get the class frame from context
-                val frame = if (ctx != null) get<Frame>(ctx) else getFrame()
-                // Extract and cast the native instance from the frame's variables
-                frame.vars.get(index).cast(vmType.toJvmType())
+                val context = ctx ?: throw IllegalStateException("Native instance access requires a VM context")
+                get<Any>(context)
             }
             else -> throw IllegalArgumentException("Inconvertible type $vmType")
         }

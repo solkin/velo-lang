@@ -1,8 +1,10 @@
 package compiler.nodes
 
 import compiler.Context
+import vm.NativeClassDescriptor
 import vm.operations.ActorSpawn
 import vm.operations.Call
+import vm.operations.NativeCall
 
 data class CallNode(
     val func: Node,
@@ -16,6 +18,15 @@ data class CallNode(
             val resolved = ctx.opt(func.name)?.type as? ClassType
             if (resolved != null && resolved.isActor) {
                 return compileActorSpawn(resolved, ctx)
+            }
+            // `new RegisteredHostClass(args)` — no Velo declaration exists;
+            // the type is synthesized from the registry and the construction
+            // is a single NativeCall over the program's native pool. A local
+            // variable with the same name shadows the native class.
+            if (ctx.opt(func.name) == null) {
+                ctx.shared.descriptor(func.name)?.let { descriptor ->
+                    return compileNativeNew(descriptor, ctx)
+                }
             }
         }
 
@@ -85,6 +96,29 @@ data class CallNode(
         val funcArgTypes = funcType.args ?: return funcType.derived
         val bindings = inferTypeBindings(funcType.typeParams, funcArgTypes, actualArgTypes)
         return resolveGenericType(funcType.derived, funcType.typeParams, bindings)
+    }
+
+    private fun compileNativeNew(descriptor: NativeClassDescriptor, ctx: Context): Type {
+        val expected = descriptor.ctorParams.map { vmTypeToType(it, ctx) }
+        if (expected.size != args.size) {
+            throw IllegalArgumentException(
+                "Native class '${descriptor.veloName}' constructor expects ${expected.size} args, got ${args.size}"
+            )
+        }
+        // Push args in reverse so the first argument ends up on top —
+        // the same stack shape NativeCall sees for method dispatch.
+        val actual = args.reversed().map { it.compile(ctx) }.reversed()
+        expected.forEachIndexed { i, exp ->
+            if (!exp.sameAs(actual[i])) {
+                throw IllegalArgumentException(
+                    "Native class '${descriptor.veloName}' constructor arg #${i + 1}: " +
+                        "expected ${exp.log()}, got ${actual[i].log()}"
+                )
+            }
+        }
+        val index = ctx.shared.intern(descriptor.constructorRef())
+        ctx.add(NativeCall(poolIndex = index, args = callSiteVmTypes(descriptor.ctorParams, actual)))
+        return NativeClassType(descriptor)
     }
 
     private fun compileActorSpawn(classType: ClassType, ctx: Context): Type {

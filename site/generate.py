@@ -715,20 +715,24 @@ EXAMPLES = [
     {
         "id": "native-classes",
         "title": "Native Classes",
-        "intro": "Native classes bridge Velo to Java/Kotlin classes via reflection, enabling JVM interop.",
+        "intro": "Host (JVM) classes are bound by registration — no declarations in Velo source. The type is synthesized from the class itself and checked at compile time.",
         "segments": [
             {
-                "docs": "Declare a native class with <code>native class</code> and <code>native func</code> for methods backed by JVM.",
-                "code": 'native class Terminal() {\n    native func print(str text) void;\n    native func input() str;\n\n    func println(str text) void {\n        print(text.con("\\n"));\n    };\n};\n\nTerminal term = new Terminal();\nterm.println("Hello!");'
-            },
-            {
-                "docs": "Register native classes in Kotlin using <code>VeloRuntime</code>.",
+                "docs": "Register plain Kotlin classes on <code>VeloRuntime</code> — that is the whole binding.",
                 "code": '// Kotlin\nval runtime = VeloRuntime()\n    .register(MyClass::class)\n    .register("VeloName", JvmClass::class)\n\nruntime.runFile("script.vel")',
                 "lang": "kotlin"
             },
             {
-                "docs": "Type mapping between Velo and JVM is automatic for primitives and collections.",
-                "code": "# Velo     → JVM\n# int      → Int\n# float    → Float\n# str      → String\n# bool     → Boolean\n# byte     → Byte\n# array[T] → Array<T>\n# dict[K:V]→ Map<K, V>"
+                "docs": "Use the class directly in Velo — <code>Terminal</code>, <code>Time</code>, <code>FileSystem</code>, <code>Http</code> and <code>Socket</code> are registered by default.",
+                "code": 'Terminal term = new Terminal();\nterm.println("Hello!");\n\nTime time = new Time();\nterm.println(time.unix().str);'
+            },
+            {
+                "docs": "Type mapping between Velo and JVM is automatic for primitives, collections and callbacks.",
+                "code": "# Velo            → JVM\n# int             → Int\n# float           → Float\n# str             → String\n# bool            → Boolean\n# byte            → Byte\n# array[T]        → Array<T>\n# dict[K:V]       → Map<K, V>\n# func[(T) void]  → VeloFunction / (T) -> Unit"
+            },
+            {
+                "docs": "Callbacks work both ways: a <code>func[(args) void]</code> handed to native code always runs back on its owning Velo thread.",
+                "code": 'Notifications n = new Notifications();\nn.subscribe(func(str text) void {\n    term.println("got: ".con(text));\n    void\n});'
             }
         ]
     }

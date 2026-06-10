@@ -26,23 +26,17 @@ class FuncParselet : PrefixParselet {
         }
         val defs = defsNodes.map { it as DefNode }
         val type = TypeParser.parseDefType(parser)
-        val body = if (parser.match(TokenType.KEYWORD, "native")) {
-            parser.consume(TokenType.KEYWORD, "native")
-            VoidNode
-        } else {
-            val bodyList = parser.parseDelimited('{', '}', ';') {
-                parser.parseExpression()
-            }
-            when (bodyList.size) {
-                0 -> VoidNode
-                1 -> bodyList[0]
-                else -> ProgramNode(prog = bodyList)
-            }
+        val bodyList = parser.parseDelimited('{', '}', ';') {
+            parser.parseExpression()
+        }
+        val body = when (bodyList.size) {
+            0 -> VoidNode
+            1 -> bodyList[0]
+            else -> ProgramNode(prog = bodyList)
         }
         parser.context.restoreGenericTypes(savedGenerics)
         return FuncNode(
             name = name,
-            native = false,
             typeParams = typeParams,
             defs = defs,
             type = type,

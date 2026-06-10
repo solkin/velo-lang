@@ -5,6 +5,7 @@ import Http
 import Terminal
 import Time
 import compiler.CompilerFrame
+import compiler.CompilerShared
 import compiler.Context
 import compiler.parser.InputStack
 import compiler.parser.Parser
@@ -12,6 +13,7 @@ import compiler.parser.SimpleInput
 import compiler.parser.StringInput
 import compiler.parser.TokenStream
 import utils.SerializedFrame
+import utils.SerializedProgram
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.concurrent.atomic.AtomicInteger
@@ -362,11 +364,6 @@ class ActorsTest {
         // variance and JVM startup.
         val sleepMs = 200
         val src = """
-            native class Time() {
-                native func sleep(int ms) void;
-                native func unix() int;
-            };
-
             actor class Sleeper() {
                 Time t = new Time();
                 func nap(int ms) int {
@@ -383,19 +380,14 @@ class ActorsTest {
             int y = await fb;
         """.trimIndent()
 
-        val frames = assertNotNull(compile(src), "compilation failed")
-        val nativeRegistry = NativeRegistry()
-            .register(Terminal::class)
-            .register(Time::class)
-            .register(FileSystem::class)
-            .register(Http::class)
+        val program = assertNotNull(compileProgram(src), "compilation failed")
         val baos = ByteArrayOutputStream()
         val oldOut = System.out
         System.setOut(PrintStream(baos))
         val started = System.currentTimeMillis()
         try {
-            val vm = VM(nativeRegistry)
-            vm.load(SimpleParser(frames))
+            val vm = VM(testRegistry)
+            vm.load(program)
             vm.run()
         } finally {
             System.setOut(oldOut)
@@ -643,54 +635,60 @@ class ActorsTest {
         return Triple(vmCtx, executor, methodVar.index)
     }
 
-    private val terminalLib = """
-        native class Terminal() {
-            native func print(str text) str;
-            native func input() str;
-            func println(str text) str {
-                print(text.con("\n"));
-            };
-        };
+    private val testRegistry = NativeRegistry()
+        .register(Terminal::class)
+        .register(Time::class)
+        .register(FileSystem::class)
+        .register(Http::class)
 
+    private val terminalLib = """
         Terminal term = new Terminal();
     """.trimIndent()
 
-    private fun compile(src: String): List<SerializedFrame>? {
+    private fun compileProgram(src: String): SerializedProgram? {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
         val deps = mapOf("lang/terminal.vel" to terminalLib)
-        val parser = Parser(stream, SimpleInput(deps, input))
+        val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
+        val shared = CompilerShared(testRegistry)
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(0, mutableListOf(), mutableMapOf(), AtomicInteger()),
             frameCounter = AtomicInteger(),
+            shared = shared,
         )
         return try {
             node.compile(ctx)
-            ctx.frames().map {
-                SerializedFrame(
-                    num = it.num,
-                    ops = it.ops,
-                    vars = it.vars.map { v -> v.value.index },
-                )
-            }
+            SerializedProgram(
+                natives = shared.nativePool.toList(),
+                frames = ctx.frames().map {
+                    SerializedFrame(
+                        num = it.num,
+                        ops = it.ops,
+                        vars = it.vars.map { v -> v.value.index },
+                    )
+                },
+            )
         } catch (ex: Throwable) {
             ex.printStackTrace()
             null
         }
     }
 
+    private fun compile(src: String): List<SerializedFrame>? = compileProgram(src)?.frames
+
     private fun compileOrThrow(src: String) {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
         val deps = mapOf("lang/terminal.vel" to terminalLib)
-        val parser = Parser(stream, SimpleInput(deps, input))
+        val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(0, mutableListOf(), mutableMapOf(), AtomicInteger()),
             frameCounter = AtomicInteger(),
+            shared = CompilerShared(testRegistry),
         )
         node.compile(ctx)
     }
@@ -713,18 +711,13 @@ class ActorsTest {
     }
 
     private fun compileAndRun(src: String): String {
-        val frames = assertNotNull(compile(src), "compilation failed")
-        val nativeRegistry = NativeRegistry()
-            .register(Terminal::class)
-            .register(Time::class)
-            .register(FileSystem::class)
-            .register(Http::class)
+        val program = assertNotNull(compileProgram(src), "compilation failed")
         val baos = ByteArrayOutputStream()
         val oldOut = System.out
         System.setOut(PrintStream(baos))
         try {
-            val vm = VM(nativeRegistry)
-            vm.load(SimpleParser(frames))
+            val vm = VM(testRegistry)
+            vm.load(program)
             vm.run()
         } finally {
             System.setOut(oldOut)

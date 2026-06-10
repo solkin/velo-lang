@@ -5,11 +5,13 @@ import Http
 import Terminal
 import Time
 import compiler.CompilerFrame
+import compiler.CompilerShared
 import compiler.Context
 import compiler.parser.FileInput
 import compiler.parser.Parser
 import compiler.parser.TokenStream
 import utils.SerializedFrame
+import utils.SerializedProgram
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
@@ -43,14 +45,21 @@ class GoldenTest {
         return File("src/test/resources/golden")
     }
 
-    private fun compile(sourceFile: File): List<SerializedFrame>? {
+    private val nativeRegistry = NativeRegistry()
+        .register(Terminal::class)
+        .register(Time::class)
+        .register(FileSystem::class)
+        .register(Http::class)
+
+    private fun compile(sourceFile: File): SerializedProgram? {
         val input = FileInput(dir = sourceFile.parent).apply {
             load(name = sourceFile.name)
         }
         val stream = TokenStream(input)
-        val parser = Parser(stream, depLoader = input)
+        val parser = Parser(stream, depLoader = input, nativeRegistry = nativeRegistry)
         val node = parser.parse()
 
+        val shared = CompilerShared(nativeRegistry)
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(
@@ -60,17 +69,21 @@ class GoldenTest {
                 varCounter = AtomicInteger()
             ),
             frameCounter = AtomicInteger(),
+            shared = shared,
         )
 
         return try {
             node.compile(ctx)
-            ctx.frames().map {
-                SerializedFrame(
-                    num = it.num,
-                    ops = it.ops,
-                    vars = it.vars.map { v -> v.value.index }
-                )
-            }
+            SerializedProgram(
+                natives = shared.nativePool.toList(),
+                frames = ctx.frames().map {
+                    SerializedFrame(
+                        num = it.num,
+                        ops = it.ops,
+                        vars = it.vars.map { v -> v.value.index }
+                    )
+                },
+            )
         } catch (ex: Throwable) {
             System.err.println("Compilation error: ${ex.message}")
             ex.printStackTrace(System.err)
@@ -78,20 +91,14 @@ class GoldenTest {
         }
     }
 
-    private fun runAndCaptureOutput(frames: List<SerializedFrame>): String {
-        val nativeRegistry = NativeRegistry()
-            .register(Terminal::class)
-            .register(Time::class)
-            .register(FileSystem::class)
-            .register(Http::class)
-
+    private fun runAndCaptureOutput(program: SerializedProgram): String {
         val baos = ByteArrayOutputStream()
         val oldOut = System.out
         System.setOut(PrintStream(baos))
 
         try {
             val vm = VM(nativeRegistry)
-            vm.load(SimpleParser(frames))
+            vm.load(program)
             vm.run()
         } finally {
             System.setOut(oldOut)
@@ -136,12 +143,12 @@ class GoldenTest {
             fail("Golden file not found: ${goldenFile.absolutePath}")
         }
 
-        val frames = compile(sourceFile)
-        if (frames == null) {
+        val program = compile(sourceFile)
+        if (program == null) {
             fail("Compilation failed for $testName")
         }
 
-        val actualOutput = runAndCaptureOutput(frames)
+        val actualOutput = runAndCaptureOutput(program)
         val expectedOutput = goldenFile.readText().trimEnd('\n')
 
         assertEquals(

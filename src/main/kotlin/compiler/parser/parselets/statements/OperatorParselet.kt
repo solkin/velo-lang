@@ -34,7 +34,6 @@ class OperatorParselet : PrefixParselet {
         }
         return FuncNode(
             name = name,
-            native = false,
             defs = defs,
             type = type,
             body = body

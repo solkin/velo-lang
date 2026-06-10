@@ -6,6 +6,9 @@ class Terminal() {
     fun print(text: String) {
         kotlin.io.print(text)
     }
+    fun println(text: String) {
+        kotlin.io.println(text)
+    }
     fun input(): String {
         return scanner.nextLine()
     }

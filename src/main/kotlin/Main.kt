@@ -1,6 +1,6 @@
 import utils.BytecodeInputStream
 import utils.BytecodeOutputStream
-import utils.SerializedFrame
+import utils.SerializedProgram
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
@@ -18,33 +18,33 @@ fun main(args: Array<String>) {
     // Create runtime with default native classes registered
     val runtime = VeloRuntime()
 
-    val frames = if (path.endsWith(".vel")) {
+    val program = if (path.endsWith(".vel")) {
         runtime.compile(path)
     } else if (path.endsWith(".vbc")) {
-        var frames: List<SerializedFrame>?
+        var program: SerializedProgram?
         val file = File(path)
         FileInputStream(file).use { fis ->
             DataInputStream(fis).use { dis ->
                 BytecodeInputStream(dis).use { bis ->
-                    frames = bis.readFrames().also { ops ->
-                        println("Bytecode read: ${ops.size} frames / ${file.length()} bytes")
+                    program = bis.readProgram().also { p ->
+                        println("Bytecode read: ${p.frames.size} frames, ${p.natives.size} native refs / ${file.length()} bytes")
                     }
                 }
             }
         }
-        frames
+        program
     } else {
         println("Unsupported file type")
         return
     }
 
-    if (frames != null) {
+    if (program != null) {
         if (bc != null) {
             val file = File(bc)
             FileOutputStream(file).use { fos ->
                 DataOutputStream(fos).use { dos ->
                     BytecodeOutputStream(dos).use { bos ->
-                        bos.write(frames)
+                        bos.write(program)
                         bos.flush()
                     }
                 }
@@ -52,7 +52,7 @@ fun main(args: Array<String>) {
             println("Bytecode written: ${file.length()} bytes")
         } else {
             println()
-            runtime.run(frames)
+            runtime.run(program)
         }
     }
 }

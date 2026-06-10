@@ -49,9 +49,6 @@ class VMTest {
     }
 
     private fun runVM(frames: List<SerializedFrame>): VMContext {
-        val vm = VM()
-        vm.load(SimpleParser(frames))
-        
         // Create context manually for testing
         val stack: Stack<Frame> = LifoStack()
         val frameLoader = GeneralFrameLoader(frames.associateBy { it.num })

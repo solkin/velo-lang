@@ -24,7 +24,6 @@ object VeloGrammar {
         parser.registerKeyword("let", LetParselet())
         parser.registerKeyword("ext", ExtParselet())
         parser.registerKeyword("new", NewParselet())
-        parser.registerKeyword("native", NativeParselet())
         parser.registerKeyword("actor", ActorParselet())
         parser.registerKeyword("async", AsyncParselet())
         parser.registerKeyword("await", AwaitParselet())

@@ -1,19 +1,10 @@
-native class Terminal() {
-    native func print(str text) void;
-    native func input() str;
-    func println(str text) void {
-        print(text.con("\n"));
-    };
-};
-
-native class Time() {
-    native func sleep(int millis) void;
-    native func unix() int;
-};
+# Native (host) classes: registered on the runtime, no declaration needed.
+# Terminal, Time, FileSystem, Http and Socket are registered by default;
+# their Velo types are synthesized from the host classes themselves.
 
 Terminal term = new Terminal();
 term.println("Hello, World!");
-term.print("input sleeping amound in sec: ");
+term.print("input sleeping amount in sec: ");
 int sec = term.input().int;
 
 Time time = new Time();

@@ -9,7 +9,6 @@ class TokenStream(private val input: Input) {
         "else",
         "while",
         "new",
-        "native",
         "actor",
         "async",
         "await",

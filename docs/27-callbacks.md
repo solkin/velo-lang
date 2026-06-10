@@ -43,7 +43,7 @@ Invocations of one callback are serialised in posting order. A callback that tra
 
 ## Native to Velo: `VeloFunction`
 
-On the JVM side a callback parameter is declared as `vm.actors.VeloFunction` — one concrete class, no proxies or codegen:
+On the JVM side a callback parameter is declared either as a plain Kotlin function type — `cb: (String) -> Unit`, which gives Velo the full signature for compile-time checking and gives the host an ordinary lambda to invoke — or as `vm.actors.VeloFunction`, the explicit handle:
 
 ```kotlin
 class Notifications {

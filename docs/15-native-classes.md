@@ -1,232 +1,99 @@
 # Native Classes
 
-Native classes allow using Java/Kotlin classes in Velo Lang through reflection.
+Native classes are plain JVM (Kotlin/Java) classes exposed to Velo. There is no declaration on the Velo side at all: **registering the class on the runtime is the single source of truth**. The compiler synthesizes the Velo type from the class itself, checks every call against it, and the VM links all native entry points before the first opcode runs.
 
-## Defining Native Classes
+## Binding a Class
 
-```velo
-native class Terminal() {
-    native func print(str text) void;
-    native func input() str;
-    
-    # Regular methods can use native ones
-    func println(str text) void {
-        print(text.con("\n"));
-    };
-};
-
-Terminal term = new Terminal();
-term.println("Hello, World!");
-```
-
-## Requirements for Native Classes
-
-1. The class name in Velo Lang must match the Java/Kotlin class name (or use custom mapping via `VeloRuntime.register()`)
-2. Method signatures must match the expected JVM types
-3. The constructor must have the same parameters
-
-## Type Mapping: Velo ↔ JVM
-
-### Primitives (Full Support)
-
-| Velo Type | JVM Type | Notes |
-|-----------|----------|-------|
-| `int` | `Int` | ✅ Automatic conversion |
-| `float` | `Float` | ✅ Automatic conversion |
-| `str` | `String` | ✅ Automatic conversion |
-| `bool` | `Boolean` | ✅ Automatic conversion |
-| `byte` | `Byte` | ✅ Automatic conversion |
-
-### Native Classes
-
-| Direction | Support | Notes |
-|-----------|---------|-------|
-| Pass native class as argument | ✅ | Works automatically |
-| Return native class | ✅ | Wrapped via `NativeWrap` |
-| Return array of native classes | ❌ | Not supported |
-
-**Example: Passing native class to native method**
-
-```velo
-native class Terminal() {
-    native func print(str text) void;
-};
-
-native class Time() {
-    native func print(Terminal term) void;  # Pass Terminal to Time
-};
-
-Terminal term = new Terminal();
-Time time = new Time();
-time.print(term);  # Works!
-```
+Host side — any plain class, no annotations:
 
 ```kotlin
-// Kotlin implementation
-class Time {
-    fun print(term: Terminal) {
-        term.print(System.currentTimeMillis().toString())
-    }
+class Counter(start: Int) {
+    private var n = start
+    fun bump(): Int = ++n
+    fun value(): Int = n
 }
-```
 
-**Example: Returning native class from native method**
-
-```velo
-native class Terminal() {
-    native func print(str text) void;
-};
-
-native class TerminalFactory() {
-    native func create() Terminal;  # Returns Terminal
-};
-
-TerminalFactory factory = new TerminalFactory();
-Terminal t = factory.create();
-t.print("Hello!");  # Works!
-```
-
-```kotlin
-// Kotlin implementation
-class TerminalFactory {
-    fun create(): Terminal {
-        return Terminal()
-    }
-}
-```
-
-### Collections (Full Type Support)
-
-Collections are now fully supported with automatic type conversion in both directions.
-
-#### Passing Collections to Native Methods (✅ Full Support)
-
-| Velo Type | JVM Parameter Type | Notes |
-|-----------|-------------------|-------|
-| `array[byte]` | `Array<Byte>` | ✅ Auto-converted |
-| `array[int]` | `Array<Int>` | ✅ Auto-converted |
-| `array[str]` | `Array<String>` | ✅ Auto-converted |
-| `array[float]` | `Array<Float>` | ✅ Auto-converted |
-| `array[bool]` | `Array<Boolean>` | ✅ Auto-converted |
-| `dict[K:V]` | `Map<K, V>` | ✅ Auto-converted |
-
-**Example: Passing arrays and maps to native methods**
-
-```velo
-native class CollectionProcessor() {
-    native func joinStrings(array[str] arr, str separator) str;
-    native func sumInts(array[int] arr) int;
-    native func getFromMap(dict[str:int] map, str key) int;
-};
-
-CollectionProcessor processor = new CollectionProcessor();
-
-array[str] words = new array[str]{"hello", "world", "velo"};
-str joined = processor.joinStrings(words, " ");  # "hello world velo"
-
-array[int] numbers = new array[int]{1, 2, 3, 4, 5};
-int sum = processor.sumInts(numbers);  # 15
-
-dict[str:int] scores = new dict[str:int]{"alice": 100, "bob": 85};
-int score = processor.getFromMap(scores, "alice");  # 100
-```
-
-```kotlin
-// Kotlin implementation - use natural typed signatures
-class CollectionProcessor {
-    fun joinStrings(arr: Array<String>, separator: String): String {
-        return arr.joinToString(separator)
-    }
-    
-    fun sumInts(arr: Array<Int>): Int {
-        return arr.sum()
-    }
-    
-    fun getFromMap(map: Map<String, Int>, key: String): Int {
-        return map[key] ?: -1
-    }
-}
-```
-
-#### Returning Collections from Native Methods (✅ Full Support)
-
-| Velo Type | JVM Return Type | Notes |
-|-----------|-----------------|-------|
-| `array[byte]` | `ByteArray` | ✅ Auto-converted |
-| `array[int]` | `Array<Int>` | ✅ Auto-converted |
-| `array[str]` | `Array<String>` | ✅ Auto-converted |
-| `dict[K:V]` | `Map<K, V>` | ✅ Auto-converted |
-| `array[NativeClass]` | `Array<NativeClass>` | ❌ Not supported |
-
-**Example: Returning collections from native methods**
-
-```velo
-native class DataProvider() {
-    native func getNames() array[str];
-    native func getNumbers() array[int];
-    native func getConfig() dict[str:int];
-};
-
-DataProvider provider = new DataProvider();
-
-array[str] names = provider.getNames();
-names[0];  # "Alice"
-
-array[int] nums = provider.getNumbers();
-nums[0] + nums[1];  # Works!
-
-dict[str:int] config = provider.getConfig();
-config["timeout"];  # Works!
-```
-
-```kotlin
-// Kotlin implementation
-class DataProvider {
-    fun getNames(): Array<String> {
-        return arrayOf("Alice", "Bob", "Charlie")
-    }
-    
-    fun getNumbers(): Array<Int> {
-        return arrayOf(10, 20, 30)
-    }
-    
-    fun getConfig(): Map<String, Int> {
-        return mapOf("timeout" to 1000, "retries" to 3)
-    }
-}
-```
-
-## Registering Native Classes
-
-Use `VeloRuntime` to register native classes:
-
-```kotlin
 val runtime = VeloRuntime()
-    .register(MyClass::class)                    // Same name in Velo
-    .register("VeloName", JvmClass::class)       // Custom Velo name
-
-runtime.runFile("script.vel")
+    .register(Counter::class)              // Velo name = "Counter"
+    .register("Ticker", Clock::class)      // custom Velo name
 ```
 
-### Default Native Classes
+Velo side — just use it:
 
-The following classes are registered by default:
-- `Terminal` - console I/O
-- `Time` - time operations
-- `FileSystem` - file operations
-- `Http` - HTTP client
-- `Socket` - TCP socket communication
+```velo
+Counter c = new Counter(10);
+term.println(c.bump().str);   # 11
+term.println(c.value().str);  # 11
+```
 
-## Summary Table
+`Terminal`, `Time`, `FileSystem`, `Http` and `Socket` are registered by default; the stdlib module `lang/terminal.vel` only provides the conventional `term` global.
 
-| Feature | Velo → JVM | JVM → Velo |
-|---------|------------|------------|
-| Primitives | ✅ Auto | ✅ Auto |
-| Native class | ✅ Auto | ✅ Auto (via NativeWrap) |
-| Array of primitives | ✅ Auto (typed) | ✅ Auto |
-| Map of primitives | ✅ Auto (typed) | ✅ Auto |
-| Array of native classes | ❌ Not supported | ❌ Not supported |
+## How It Works
 
----
+1. **Registration** stores a Velo-name → JVM-class mapping. On first use the registry introspects the class once: public declared methods, the single public constructor, signatures mapped to Velo types, `MethodHandle`s resolved. No KSP, no codegen, no per-call reflection.
+2. **Compilation** resolves `new Counter(...)` and `c.bump()` against that descriptor — argument counts and types are verified at compile time — and interns each used entry point into the program's **native pool**.
+3. **Loading** links the pool against the host registry (`.vbc` carries the pool by Velo names, so the same bytecode links against different host implementations). Every missing or mismatched entry is reported in one error, before execution.
+4. **Calling** is a direct `MethodHandle` invocation through a single `NativeCall` opcode.
 
-[Previous: Extension Functions ←](14-extension-functions.md) | [Next: Modules and Includes →](16-modules-and-includes.md)
+## Binding Rules
+
+- Exactly **one public constructor**.
+- Every **public declared method** is exposed; method names must be unique (Velo has no overloads). Inherited `Object` methods are not exposed.
+- Every signature must be expressible in Velo types (see below). Violations are reported at registration/compile time — all problems at once.
+
+## Type Mapping: Velo ⇄ JVM
+
+| Velo | JVM parameter / return |
+|------|------------------------|
+| `int` | `Int` |
+| `float` | `Float` |
+| `bool` | `Boolean` |
+| `byte` | `Byte` |
+| `str` | `String` |
+| `array[T]` | `Array<T>` (boxed), `ByteArray`/`IntArray`/... for returns, `List<T>` |
+| `dict[K:V]` | `Map<K, V>` |
+| registered native class | the class itself |
+| `func[(args) void]` | `VeloFunction` or Kotlin `(args) -> Unit` |
+| `void` | `Unit` / `void` |
+
+Native instances are opaque handles in Velo — no fields, only method calls. They can be passed to and returned from other native methods freely:
+
+```velo
+Socket client = server.accept();   # returns a new native instance
+time.print(term);                  # passes one native to another
+```
+
+They cannot cross actor boundaries (an actor must create its own). Extension functions work on native types like on any other:
+
+```velo
+ext(Terminal t) printInt(int a) void {
+    t.println(a.str);
+};
+term.printInt(42);
+```
+
+## Callbacks: native code calling Velo
+
+A `func[(args) void]` argument arrives on the host either as an explicit `VeloFunction` (`post`/`call` from any thread) or as a plain Kotlin function value when the parameter is declared as one:
+
+```kotlin
+class Notifications {
+    fun subscribe(cb: (String) -> Unit) { onMessage = cb }
+}
+```
+
+```velo
+Notifications n = new Notifications();
+n.subscribe(func(str text) void {
+    term.println("message: ".con(text));
+    void
+});
+```
+
+The Kotlin-function form carries the full signature, so the compiler checks the Velo lambda against it. Either way the body always executes on the thread that owns the closure. See [Callbacks](27-callbacks.md) for the whole model.
+
+## Errors
+
+- Unregistered class, missing method, wrong signature → compile-time error.
+- Program loaded into a host missing some registrations → one load-time error listing **every** unresolved entry.
+- A native method throwing at runtime → Velo runtime error tagged with the native entry (`Native call Http.get(Str) failed: ...`).

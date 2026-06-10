@@ -1,13 +1,15 @@
 import compiler.CompilerFrame
+import compiler.CompilerShared
 import compiler.Context
 import compiler.parser.FileInput
 import compiler.parser.Parser
 import compiler.parser.TokenStream
 import utils.SerializedFrame
+import utils.SerializedProgram
 import vm.GeneralFrameLoader
 import vm.HaltException
+import vm.NativeLinker
 import vm.NativeRegistry
-import vm.SimpleParser
 import vm.VM
 import vm.VMProfiler
 import vm.actors.ActorHandle
@@ -121,52 +123,62 @@ class VeloRuntime {
     
     /**
      * Compile a Velo source file.
-     * 
+     *
      * @param path Path to the .vel file
-     * @return Compiled frames or null if compilation failed
+     * @return Compiled program or null if compilation failed
      */
-    fun compile(path: String): List<SerializedFrame>? {
+    fun compile(path: String): SerializedProgram? {
         val file = File(path)
         return compile(FileInput(dir = file.parent).apply {
             load(name = file.name)
         })
     }
-    
+
     /**
      * Compile from a FileInput source.
+     *
+     * Native classes registered on this runtime are visible to the program
+     * being compiled: their types are synthesized from the registry, and
+     * every native entry point used by the code is interned into the
+     * program's native pool.
      */
-    fun compile(input: FileInput): List<SerializedFrame>? {
+    fun compile(input: FileInput): SerializedProgram? {
         val stream = TokenStream(input)
-        val parser = Parser(stream, depLoader = input)
+        val parser = Parser(stream, depLoader = input, nativeRegistry = nativeRegistry)
         val node = parser.parse()
 
+        val shared = CompilerShared(nativeRegistry)
         val ctx = Context(
             parent = null,
             frame = CompilerFrame(num = 0, ops = mutableListOf(), vars = mutableMapOf(), varCounter = AtomicInteger()),
             frameCounter = AtomicInteger(),
+            shared = shared,
         )
         try {
             node.compile(ctx)
-            return ctx.frames().map {
-                SerializedFrame(
-                    num = it.num,
-                    ops = it.ops,
-                    vars = it.vars.map { i -> i.value.index }
-                )
-            }
+            return SerializedProgram(
+                natives = shared.nativePool.toList(),
+                frames = ctx.frames().map {
+                    SerializedFrame(
+                        num = it.num,
+                        ops = it.ops,
+                        vars = it.vars.map { i -> i.value.index }
+                    )
+                },
+            )
         } catch (ex: Throwable) {
             println("!! Compilation failed: ${ex.message}")
         }
         return null
     }
-    
+
     /**
-     * Run compiled frames.
+     * Run a compiled program.
      */
-    fun run(frames: List<SerializedFrame>) {
+    fun run(program: SerializedProgram) {
         val profiler = VMProfiler(enabled = profilingEnabled)
         val vm = VM(nativeRegistry, profiler)
-        vm.load(SimpleParser(frames))
+        vm.load(program)
         vm.run()
     }
     
@@ -176,8 +188,8 @@ class VeloRuntime {
      * @param path Path to the .vel file
      */
     fun runFile(path: String) {
-        val frames = compile(path) ?: return
-        run(frames)
+        val program = compile(path) ?: return
+        run(program)
     }
 
     /**
@@ -199,13 +211,15 @@ class VeloRuntime {
      * to tear it down deterministically. Runtime failures stop the program
      * and are reported via [VeloProgram.failure].
      */
-    fun start(frames: List<SerializedFrame>, dispatcher: Dispatcher): VeloProgram {
-        val frameLoader = GeneralFrameLoader(frames.associateBy { it.num })
+    fun start(program: SerializedProgram, dispatcher: Dispatcher): VeloProgram {
+        val frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
+        val natives = NativeLinker.link(program.natives, nativeRegistry)
         val actorRuntime = ActorRuntime()
         val main = ActorHandle.main(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,
             sharedNativeRegistry = nativeRegistry,
+            sharedNatives = natives,
             dispatcher = dispatcher,
         )
         actorRuntime.onFatal = { ex ->

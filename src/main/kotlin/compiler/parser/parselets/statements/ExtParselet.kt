@@ -40,7 +40,6 @@ class ExtParselet : PrefixParselet {
         }
         return FuncNode(
             name = self.first().type.name() + "@" + (name ?: ""),
-            native = false,
             defs = self + defs,
             type = type,
             body = body

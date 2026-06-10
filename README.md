@@ -14,7 +14,7 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 - ✅ **Embeddable** - Easy integration into other applications
 - ✅ **Generics** - Type-safe generic classes, functions, and methods
 - ✅ **Operator Overloading** - Custom operators for user-defined classes
-- ✅ **Native Classes** - Support for binding to native code via reflection
+- ✅ **Native Classes** - Host classes bound by registration, with two-way callbacks
 - ✅ **Actors** - `actor class` + `await` for thread-isolated state without locks
 - ✅ **Standard Library** - Built-in support for HTTP, file system, terminal I/O, and more
 
@@ -258,20 +258,24 @@ See [Actors](docs/26-actors.md) for the full model — argument cloning, identit
 
 ### Native Classes
 
-Velo Lang supports native classes binding via reflection:
+Host (JVM) classes are bound by registration — no declarations in Velo
+source. Register a plain Kotlin/Java class on the runtime and its Velo type
+is synthesized from the class itself; signatures are checked at compile
+time and linked before the program runs:
+
+```kotlin
+val runtime = VeloRuntime().register(Terminal::class)
+```
 
 ```velo
-native class Terminal() {
-    native func print(str text) str;
-    native func input() str;
-    func println(str text) str {
-        print(text.con("\n"));
-    };
-};
-
 Terminal term = new Terminal();
 term.println("Hello, World!");
 ```
+
+Two-way integration: a `func[(args) void]` argument arrives in native code
+as a `VeloFunction` (or a plain Kotlin `(Int) -> Unit`), and invoking it
+from any thread runs the closure back on its owning Velo thread — see
+[Callbacks](docs/27-callbacks.md).
 
 ## Standard Library
 
