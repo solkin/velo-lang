@@ -52,7 +52,7 @@ class ActorsTest {
     fun `await async on actor method returns the produced value`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter() {
                 int n = 0;
@@ -75,7 +75,7 @@ class ActorsTest {
     fun `each actor owns isolated state`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter(int start) {
                 int n = start;
@@ -102,7 +102,7 @@ class ActorsTest {
         // copy the actor stored.
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Bag() {
                 array[int] held = new array[int]{};
@@ -136,7 +136,7 @@ class ActorsTest {
         // a method that returns that field gives back a working actor[T].
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter() {
                 int n = 0;
@@ -321,7 +321,7 @@ class ActorsTest {
         // the transferability check and round-trip cleanly through await.
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Hub() {
                 array[int] last = new array[int]{};
@@ -347,7 +347,7 @@ class ActorsTest {
         // exercises the FutureRecord lifetime + cleaner registration.
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter(int start) {
                 int n = start;
@@ -446,7 +446,7 @@ class ActorsTest {
         // (If the body re-ran, the second value would be 2, not 1.)
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter() {
                 int n = 0;
@@ -475,7 +475,7 @@ class ActorsTest {
         // from being a client of another actor.
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Worker() {
                 func square(int x) int { x * x; };
@@ -505,7 +505,7 @@ class ActorsTest {
         // because PROPERTY/INDEX share precedence inside the await operand.
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Counter() {
                 int n = 0;
@@ -654,14 +654,10 @@ class ActorsTest {
         .register(FileSystem::class)
         .register(Http::class)
 
-    private val terminalLib = """
-        Terminal term = new Terminal();
-    """.trimIndent()
-
     private fun compileProgram(src: String): SerializedProgram? {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
-        val deps = mapOf("lang/terminal.vel" to terminalLib)
+        val deps = emptyMap<String, String>()
         val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val shared = CompilerShared(testRegistry)
@@ -694,7 +690,7 @@ class ActorsTest {
     private fun compileOrThrow(src: String) {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
-        val deps = mapOf("lang/terminal.vel" to terminalLib)
+        val deps = emptyMap<String, String>()
         val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val ctx = Context(

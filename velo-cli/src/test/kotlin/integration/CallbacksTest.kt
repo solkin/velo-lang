@@ -56,7 +56,7 @@ class CallbacksTest {
     fun `callback handed to actor runs on main after the main frame`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Worker() {
                 func process(int value, func[(int) void] done) void {
@@ -82,7 +82,7 @@ class CallbacksTest {
     fun `callback captures and mutates main context state`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Worker() {
                 func run(func[(int) void] cb) void {
@@ -110,7 +110,7 @@ class CallbacksTest {
     fun `actor-to-actor callback executes on the owning actor`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Holder() {
                 int n = 0;
@@ -148,7 +148,7 @@ class CallbacksTest {
     fun `callback coming home unwraps to a local function`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Echo() {
                 func give(func[(int) void] cb) func[(int) void] { cb; };
@@ -232,7 +232,7 @@ class CallbacksTest {
     fun `full func signature accepts a matching lambda and call`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             func[(int, str) void] show = func(int n, str s) void {
                 term.println(s.con(": ").con(n.str));
@@ -251,7 +251,7 @@ class CallbacksTest {
         val mainThread = Thread.currentThread().name
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
             $bridgeLib
 
             bridge.register(func(int v) void {
@@ -274,7 +274,7 @@ class CallbacksTest {
     fun `native callback invoked inline from the owner thread`() {
         val output = compileAndRun(
             """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
             $bridgeLib
 
             bridge.register(func(int v) void {
@@ -294,7 +294,7 @@ class CallbacksTest {
     @Test
     fun `embedded program on a host dispatcher runs callbacks on that dispatcher`() {
         val src = """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
             $bridgeLib
 
             bridge.register(func(int v) void {
@@ -339,7 +339,7 @@ class CallbacksTest {
     @Test
     fun `func signature survives a vbc write-read roundtrip`() {
         val src = """
-            include "lang/terminal.vel";
+            Terminal term = new Terminal();
 
             actor class Worker() {
                 func process(int value, func[(int) void] done) void {
@@ -377,10 +377,6 @@ class CallbacksTest {
         .register(Terminal::class)
         .register("TestBridge", TestBridge::class)
 
-    private val terminalLib = """
-        Terminal term = new Terminal();
-    """.trimIndent()
-
     private val bridgeLib = """
         TestBridge bridge = new TestBridge();
     """.trimIndent()
@@ -388,7 +384,7 @@ class CallbacksTest {
     private fun compile(src: String): SerializedProgram? {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
-        val deps = mapOf("lang/terminal.vel" to terminalLib)
+        val deps = emptyMap<String, String>()
         val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val shared = CompilerShared(testRegistry)
@@ -419,7 +415,7 @@ class CallbacksTest {
     private fun compileOrThrow(src: String) {
         val input = InputStack().push(name = "test", StringInput(src))
         val stream = TokenStream(input)
-        val deps = mapOf("lang/terminal.vel" to terminalLib)
+        val deps = emptyMap<String, String>()
         val parser = Parser(stream, SimpleInput(deps, input), nativeRegistry = testRegistry)
         val node = parser.parse()
         val ctx = Context(

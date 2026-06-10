@@ -11,12 +11,12 @@
         <h2><a href="../index.html">Velo by Example</a>: Terminal I/O</h2>
         <table>
             <tr>
-                <td class="docs"><p>The Terminal module provides console input and output. It's the most commonly used standard library module.</p></td>
+                <td class="docs"><p><code>Terminal</code> provides console input and output. It's a native class — the most commonly used one — so it needs no <code>include</code>.</p></td>
                 <td class="code empty"></td>
             </tr>
             <tr>
-                <td class="docs"><p>Include the terminal module to get the <code>term</code> object.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;</code></pre></td>
+                <td class="docs"><p>Create a <code>Terminal</code> — a native class, so no <code>include</code> is needed.</p></td>
+                <td class="code"><pre><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();</code></pre></td>
             </tr>
             <tr>
                 <td class="docs"><p><code>print</code> outputs text without a newline. <code>println</code> adds a newline.</p></td>

@@ -16,9 +16,9 @@
             </tr>
             <tr>
                 <td class="docs"><p>Use <code>include</code> to load other <code>.vel</code> files. Paths are relative to the current file.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;   <span class="cm"># the `term` global</span>
-<span class="kw">include</span> <span class="st">&quot;lang/bool.vel&quot;</span>;       <span class="cm"># bool extension functions</span>
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/bool.vel&quot;</span>;       <span class="cm"># bool extension functions</span>
 
+<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
 term.println(<span class="kw">true</span>.<span class="ty">str</span>);        <span class="cm"># &quot;true&quot;</span></code></pre></td>
             </tr>
             <tr>
@@ -29,10 +29,7 @@ term.println(<span class="kw">true</span>.<span class="ty">str</span>);        <
 <span class="kw">include</span> <span class="st">&quot;lang/str.vel&quot;</span>;         <span class="cm"># String extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/array.vel&quot;</span>;       <span class="cm"># Array extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/map.vel&quot;</span>;         <span class="cm"># Generic hash map</span>
-<span class="kw">include</span> <span class="st">&quot;lang/base64.vel&quot;</span>;      <span class="cm"># Base64 encoding</span>
-
-<span class="cm"># Convenience: the conventional `term` global</span>
-<span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;</code></pre></td>
+<span class="kw">include</span> <span class="st">&quot;lang/base64.vel&quot;</span>;      <span class="cm"># Base64 encoding</span></code></pre></td>
             </tr>
             <tr>
                 <td class="docs nav-footer">

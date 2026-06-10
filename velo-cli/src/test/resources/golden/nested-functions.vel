@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # Вложенная анонимная функция вызываемая сразу (как в test.vel)
 func[int] test = func(int a) int {

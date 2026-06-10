@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 class Vector(int x, int y) {
     func getX() int { x; };

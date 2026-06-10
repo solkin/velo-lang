@@ -28,7 +28,7 @@
             </tr>
             <tr>
                 <td class="docs"><p>Use <code>let</code> to bind the result and print it.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;
+                <td class="code"><pre><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
 
 <span class="kw">let</span>(<span class="ty">any</span> res <span class="op">=</span> fib(<span class="nu">15</span>)) {
     term.println(res.<span class="ty">str</span>);

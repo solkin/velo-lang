@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # Callbacks: a func with a full signature — func[(args) void] — can cross
 # an actor boundary. The closure itself never leaves its owner: the receiver

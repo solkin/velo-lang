@@ -18,15 +18,15 @@ EXAMPLES = [
         "intro": "Our first program will print the classic \"Hello, World!\" message. Here's the full source code.",
         "segments": [
             {
-                "docs": "To print output, we first need to include the terminal module which provides console I/O.",
-                "code": 'include "lang/terminal.vel";'
+                "docs": "To print output, we create a <code>Terminal</code> — a native class, so no <code>include</code> is needed.",
+                "code": 'Terminal term = new Terminal();'
             },
             {
                 "docs": "We declare a variable <code>hello</code> with type <code>str</code> and assign it a string value.",
                 "code": 'str hello = "Hello, World!";'
             },
             {
-                "docs": "The <code>term</code> object (created by the terminal module) provides <code>print</code> and <code>println</code> methods for output.",
+                "docs": "The <code>term</code> object provides <code>print</code> and <code>println</code> methods for output.",
                 "code": "term.println(hello);"
             },
             {
@@ -151,7 +151,7 @@ EXAMPLES = [
         "segments": [
             {
                 "docs": "A basic <code>while</code> loop runs as long as the condition is true.",
-                "code": 'include "lang/terminal.vel";\n\nint i = 1;\nwhile (i <= 5) {\n    term.println(i.str);\n    i = i + 1;\n};'
+                "code": 'Terminal term = new Terminal();\n\nint i = 1;\nwhile (i <= 5) {\n    term.println(i.str);\n    i = i + 1;\n};'
             },
             {
                 "docs": "Use compound assignment for concise loop counters.",
@@ -220,7 +220,7 @@ EXAMPLES = [
             },
             {
                 "docs": "Use <code>let</code> to bind the result and print it.",
-                "code": 'include "lang/terminal.vel";\n\nlet(any res = fib(15)) {\n    term.println(res.str);\n};'
+                "code": 'Terminal term = new Terminal();\n\nlet(any res = fib(15)) {\n    term.println(res.str);\n};'
             },
             {
                 "docs": "",
@@ -563,11 +563,11 @@ EXAMPLES = [
         "segments": [
             {
                 "docs": "Use <code>include</code> to load other <code>.vel</code> files. Paths are relative to the current file.",
-                "code": 'include "lang/terminal.vel";   # the `term` global\ninclude "lang/bool.vel";       # bool extension functions\n\nterm.println(true.str);        # "true"'
+                "code": 'include "lang/bool.vel";       # bool extension functions\n\nTerminal term = new Terminal();\nterm.println(true.str);        # "true"'
             },
             {
                 "docs": "Standard library modules are real Velo code you include to use. Native classes (Terminal, Time, Http, FileSystem, Socket) need no include — the runtime provides them.",
-                "code": '# Type extensions & utilities\ninclude "lang/bool.vel";        # Bool extensions\ninclude "lang/int.vel";         # Int extensions\ninclude "lang/str.vel";         # String extensions\ninclude "lang/array.vel";       # Array extensions\ninclude "lang/map.vel";         # Generic hash map\ninclude "lang/base64.vel";      # Base64 encoding\n\n# Convenience: the conventional `term` global\ninclude "lang/terminal.vel";'
+                "code": '# Type extensions & utilities\ninclude "lang/bool.vel";        # Bool extensions\ninclude "lang/int.vel";         # Int extensions\ninclude "lang/str.vel";         # String extensions\ninclude "lang/array.vel";       # Array extensions\ninclude "lang/map.vel";         # Generic hash map\ninclude "lang/base64.vel";      # Base64 encoding'
             }
         ]
     },
@@ -616,11 +616,11 @@ EXAMPLES = [
     {
         "id": "terminal-io",
         "title": "Terminal I/O",
-        "intro": "The Terminal module provides console input and output. It's the most commonly used standard library module.",
+        "intro": "<code>Terminal</code> provides console input and output. It's a native class — the most commonly used one — so it needs no <code>include</code>.",
         "segments": [
             {
-                "docs": "Include the terminal module to get the <code>term</code> object.",
-                "code": 'include "lang/terminal.vel";'
+                "docs": "Create a <code>Terminal</code> — a native class, so no <code>include</code> is needed.",
+                "code": 'Terminal term = new Terminal();'
             },
             {
                 "docs": "<code>print</code> outputs text without a newline. <code>println</code> adds a newline.",

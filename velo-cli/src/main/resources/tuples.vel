@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 class TupleWorker(Terminal term) {
     func mutate(tuple[int,str,float] t) void {

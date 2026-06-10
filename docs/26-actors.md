@@ -170,7 +170,7 @@ Think of an `actor[T]` as a typed channel to a single-threaded service:
 ## Example: Independent Counters
 
 ```velo
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 actor class Counter(int start) {
     int n = start;

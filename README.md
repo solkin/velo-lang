@@ -23,7 +23,7 @@ Velo Lang is a functional, strict-typed compilable programming language. It runs
 ### Hello, World!
 
 ```velo
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 str hello = "Hello, World!";
 term.println(hello);
@@ -282,8 +282,6 @@ from any thread runs the closure back on its owning Velo thread — see
 ### Terminal I/O
 
 ```velo
-include "lang/terminal.vel";
-
 Terminal term = new Terminal();
 term.print("Enter your name: ");
 str name = term.input();

@@ -3,7 +3,7 @@
 ## Hello, World!
 
 ```velo
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 str hello = "Hello, World!";
 term.println(hello);

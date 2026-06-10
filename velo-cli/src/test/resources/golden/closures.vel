@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # ============================================================
 # Closures: functions that capture their defining scope

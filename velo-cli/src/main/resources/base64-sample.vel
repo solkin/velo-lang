@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 include "lang/base64.vel";
 
 term.println("=== BASE64 Кодирование и Декодирование (чистый Velo Lang) ===");

@@ -33,9 +33,9 @@ term.println(c.value().str);  # 11
 ```
 
 The CLI registers `Terminal`, `Time`, `FileSystem`, `Http` and `Socket` for
-every program it runs; an embedding application picks its own set. The
-stdlib module `lang/terminal.vel` only provides the conventional `term`
-global.
+every program it runs; an embedding application picks its own set. A program
+just constructs what it needs (`Terminal term = new Terminal();`) — native
+classes have no `include`.
 
 ## How It Works
 

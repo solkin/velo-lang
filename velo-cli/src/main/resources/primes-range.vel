@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # Функция для проверки, является ли число простым
 func isPrime(int n) bool {

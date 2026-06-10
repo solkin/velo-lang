@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 class Point(int x, int y) {
     func getX() int { x; };

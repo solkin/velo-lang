@@ -10,8 +10,8 @@ Pass the path to a `.vel` file (paths resolve from the repository root):
 ```
 
 `include` paths are resolved relative to the program's own directory, so a
-program that uses the standard library (`include "lang/terminal.vel"`) needs
-a `lang/` directory next to it — the bundled examples already have one.
+program that includes a standard library module (e.g. `include "lang/map.vel"`)
+needs a `lang/` directory next to it — the bundled examples already have one.
 
 ## Compiling to Bytecode
 

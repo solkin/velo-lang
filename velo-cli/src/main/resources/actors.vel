@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # An `actor class` lives on its own daemon thread. State is private —
 # accessible only by serialised method calls coming through the actor's

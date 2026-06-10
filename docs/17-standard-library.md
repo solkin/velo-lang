@@ -53,17 +53,14 @@ Both extensions enable roundtrip conversion: `text.bytes().str() == text`.
 
 The classes below — Terminal, Time, Http, FileSystem, Socket — are native
 classes provided by the runtime, so using them needs no `include`; the
-compiler knows their types from the registration. The `lang/terminal.vel`
-module shown next is only a convenience that defines the conventional `term`
-global.
+compiler knows their types from the registration. Just construct one. The
+examples use `term` as the conventional name for a `Terminal` instance.
 
 ## Terminal
 
 Class for terminal operations:
 
 ```velo
-include "lang/terminal.vel";
-
 Terminal term = new Terminal();
 term.print("Hello");           # Output without newline
 term.println("World");         # Output with newline

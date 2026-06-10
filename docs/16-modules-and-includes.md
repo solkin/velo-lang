@@ -5,10 +5,10 @@
 Use the `include` directive to include other files:
 
 ```velo
-include "lang/terminal.vel";   # the conventional `term` global
 include "lang/bool.vel";       # bool extension functions
 
-# Now you can use what the included modules provide
+# Now you can use what the included module provides
+Terminal term = new Terminal();
 term.println(true.str);        # "true"
 ```
 
@@ -23,12 +23,12 @@ include to use:
 - `array.vel` — Array extensions (`str`)
 - `map.vel` — Generic hash map
 - `base64.vel` — BASE64 encoding/decoding
-- `terminal.vel` — defines the conventional `term` global
 
 The native classes Terminal, Time, Http, FileSystem and Socket need **no**
 include: the runtime provides them and the compiler knows their types from
-the registration (see [Native Classes](15-native-classes.md)). `terminal.vel`
-is included above only because it defines the `term` global as a convenience.
+the registration (see [Native Classes](15-native-classes.md)). The example
+above includes `bool.vel` for its extension functions and constructs a
+`Terminal` directly.
 
 ---
 

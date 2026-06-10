@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 include "lang/bool.vel";
 
 # ============================================

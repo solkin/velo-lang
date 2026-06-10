@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 Socket sock = Socket();
 sock.connect("127.0.0.1", 9876);

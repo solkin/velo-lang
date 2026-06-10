@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 array[int] nums = new array[int]{1, 2, 3, 4, 5};
 term.println(nums.len.str);

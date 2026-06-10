@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # Actor class — like a regular class, but every instance lives on its own
 # daemon thread. Construction (`new Counter(0)`) and method calls

@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # Создаем экземпляр HTTP клиента
 Http http = new Http();

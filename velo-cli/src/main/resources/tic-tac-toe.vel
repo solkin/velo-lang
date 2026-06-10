@@ -1,4 +1,4 @@
-include "lang/terminal.vel";
+Terminal term = new Terminal();
 
 # 3x3 game board initialized with empty cells
 array[array[str]] board = new array[array[str]]{
