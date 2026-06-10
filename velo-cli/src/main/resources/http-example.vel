@@ -1,5 +1,4 @@
 include "lang/terminal.vel";
-include "lang/http.vel";
 
 # Создаем экземпляр HTTP клиента
 Http http = new Http();

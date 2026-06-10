@@ -1,6 +1,4 @@
 include "lang/terminal.vel";
-include "lang/filesystem.vel";
-include "lang/time.vel";
 
 # ======================================================
 # Velo Todo — simple but fully functional task manager

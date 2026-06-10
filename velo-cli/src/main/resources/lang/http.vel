@@ -1,4 +1,0 @@
-# Http is a host (native) class registered on the runtime; its type is
-# synthesized from the registration — no declaration needed.
-# Methods: get(str url) str, post(str url, str body, str contentType) str,
-# statusCode() int.

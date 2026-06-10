@@ -1,5 +1,0 @@
-# Socket is a host (native) class registered on the runtime; its type is
-# synthesized from the registration — no declaration needed.
-# Methods: connect, bind, accept, write, writeLine, writeBytes, readLine,
-# read, readBytes, available, connected, close, remoteAddress, remotePort,
-# setTimeout.

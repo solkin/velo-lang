@@ -1,5 +1,4 @@
 include "lang/terminal.vel";
-include "lang/filesystem.vel";
 
 # Создаем экземпляр FileSystem
 FileSystem fs = new FileSystem();

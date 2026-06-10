@@ -563,11 +563,11 @@ EXAMPLES = [
         "segments": [
             {
                 "docs": "Use <code>include</code> to load other <code>.vel</code> files. Paths are relative to the current file.",
-                "code": 'include "lang/terminal.vel";\ninclude "lang/filesystem.vel";\n\nTerminal term = new Terminal();\nFileSystem fs = new FileSystem();'
+                "code": 'include "lang/terminal.vel";   # the `term` global\ninclude "lang/bool.vel";       # bool extension functions\n\nterm.println(true.str);        # "true"'
             },
             {
-                "docs": "Standard library modules include:",
-                "code": '# I/O\ninclude "lang/terminal.vel";    # Terminal I/O\ninclude "lang/filesystem.vel";  # File operations\ninclude "lang/http.vel";        # HTTP client\ninclude "lang/socket.vel";      # TCP sockets\n\n# Types\ninclude "lang/bool.vel";        # Bool extensions\ninclude "lang/int.vel";         # Int extensions\ninclude "lang/str.vel";         # String extensions\ninclude "lang/array.vel";       # Array extensions\ninclude "lang/map.vel";         # Generic hash map\n\n# Utilities\ninclude "lang/time.vel";        # Time operations\ninclude "lang/base64.vel";      # Base64 encoding'
+                "docs": "Standard library modules are real Velo code you include to use. Native classes (Terminal, Time, Http, FileSystem, Socket) need no include — the runtime provides them.",
+                "code": '# Type extensions & utilities\ninclude "lang/bool.vel";        # Bool extensions\ninclude "lang/int.vel";         # Int extensions\ninclude "lang/str.vel";         # String extensions\ninclude "lang/array.vel";       # Array extensions\ninclude "lang/map.vel";         # Generic hash map\ninclude "lang/base64.vel";      # Base64 encoding\n\n# Convenience: the conventional `term` global\ninclude "lang/terminal.vel";'
             }
         ]
     },
@@ -638,8 +638,8 @@ EXAMPLES = [
         "intro": "The FileSystem module provides file and directory operations.",
         "segments": [
             {
-                "docs": "Include the filesystem module.",
-                "code": 'include "lang/filesystem.vel";\n\nFileSystem fs = new FileSystem();'
+                "docs": "Create a FileSystem instance — native classes need no include.",
+                "code": 'FileSystem fs = new FileSystem();'
             },
             {
                 "docs": "Read, write, and append to text files.",
@@ -661,8 +661,8 @@ EXAMPLES = [
         "intro": "The Http module provides a simple HTTP client for making GET and POST requests.",
         "segments": [
             {
-                "docs": "Include the HTTP module and create an instance.",
-                "code": 'include "lang/http.vel";\n\nHttp http = new Http();'
+                "docs": "Create an Http instance — native classes need no include.",
+                "code": 'Http http = new Http();'
             },
             {
                 "docs": "Make a GET request and check the status code.",
@@ -681,11 +681,11 @@ EXAMPLES = [
         "segments": [
             {
                 "docs": "A TCP client connects to a remote host and exchanges data.",
-                "code": 'include "lang/socket.vel";\n\nSocket sock = Socket();\nsock.connect("127.0.0.1", 9876);\n\nsock.writeLine("Hello!");\nstr reply = sock.readLine();\n\nsock.close();'
+                "code": 'Socket sock = Socket();\nsock.connect("127.0.0.1", 9876);\n\nsock.writeLine("Hello!");\nstr reply = sock.readLine();\n\nsock.close();'
             },
             {
                 "docs": "A TCP server binds to a port and accepts incoming connections.",
-                "code": 'include "lang/socket.vel";\n\nSocket srv = Socket();\nsrv.bind(9876);\n\nSocket client = srv.accept();\nstr msg = client.readLine();\nclient.writeLine("Echo: " + msg);\n\nclient.close();\nsrv.close();'
+                "code": 'Socket srv = Socket();\nsrv.bind(9876);\n\nSocket client = srv.accept();\nstr msg = client.readLine();\nclient.writeLine("Echo: " + msg);\n\nclient.close();\nsrv.close();'
             }
         ]
     },

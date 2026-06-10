@@ -1,4 +1,0 @@
-# FileSystem is a host (native) class registered on the runtime; its type is
-# synthesized from the registration — no declaration needed.
-# Methods: read, write, append, readBytes, writeBytes, appendBytes, exists,
-# isFile, isDir, mkdir, delete, size, list, move, copy.

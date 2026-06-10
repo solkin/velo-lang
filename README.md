@@ -293,8 +293,6 @@ term.println("Hello, ".con(name));
 ### Time Operations
 
 ```velo
-include "lang/time.vel";
-
 Time time = new Time();
 time.sleep(1000);          # Sleep for 1 second
 int unixTime = time.unix(); # Unix timestamp
@@ -303,8 +301,6 @@ int unixTime = time.unix(); # Unix timestamp
 ### HTTP Requests
 
 ```velo
-include "lang/http.vel";
-
 Http http = new Http();
 str response = http.get("https://api.example.com/data");
 int status = http.statusCode();
@@ -317,8 +313,6 @@ str postResponse = http.post("https://api.example.com/endpoint", jsonBody, "");
 ### File System
 
 ```velo
-include "lang/filesystem.vel";
-
 FileSystem fs = new FileSystem();
 fs.write("file.txt", "Content");
 str content = fs.read("file.txt");

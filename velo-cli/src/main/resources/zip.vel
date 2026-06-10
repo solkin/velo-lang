@@ -1,5 +1,4 @@
 include "lang/terminal.vel";
-include "lang/filesystem.vel";
 include "lang/zip.vel";
 
 FileSystem fs = new FileSystem();

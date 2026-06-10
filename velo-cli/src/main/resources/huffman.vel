@@ -1,6 +1,5 @@
 include "lang/terminal.vel";
 include "lang/map.vel";
-include "lang/filesystem.vel";
 include "lang/bool.vel";
 
 # === Huffman tree node ===

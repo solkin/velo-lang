@@ -16,9 +16,7 @@
             </tr>
             <tr>
                 <td class="docs"><p>A TCP client connects to a remote host and exchanges data.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/socket.vel&quot;</span>;
-
-<span class="ty">Socket</span> sock <span class="op">=</span> <span class="ty">Socket</span>();
+                <td class="code"><pre><code><span class="ty">Socket</span> sock <span class="op">=</span> <span class="ty">Socket</span>();
 sock.connect(<span class="st">&quot;127.0.0.1&quot;</span>, <span class="nu">9876</span>);
 
 sock.writeLine(<span class="st">&quot;Hello!&quot;</span>);
@@ -28,9 +26,7 @@ sock.close();</code></pre></td>
             </tr>
             <tr>
                 <td class="docs"><p>A TCP server binds to a port and accepts incoming connections.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/socket.vel&quot;</span>;
-
-<span class="ty">Socket</span> srv <span class="op">=</span> <span class="ty">Socket</span>();
+                <td class="code"><pre><code><span class="ty">Socket</span> srv <span class="op">=</span> <span class="ty">Socket</span>();
 srv.bind(<span class="nu">9876</span>);
 
 <span class="ty">Socket</span> client <span class="op">=</span> srv.accept();

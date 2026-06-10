@@ -16,30 +16,23 @@
             </tr>
             <tr>
                 <td class="docs"><p>Use <code>include</code> to load other <code>.vel</code> files. Paths are relative to the current file.</p></td>
-                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;
-<span class="kw">include</span> <span class="st">&quot;lang/filesystem.vel&quot;</span>;
+                <td class="code"><pre><code><span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;   <span class="cm"># the `term` global</span>
+<span class="kw">include</span> <span class="st">&quot;lang/bool.vel&quot;</span>;       <span class="cm"># bool extension functions</span>
 
-<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
-<span class="ty">FileSystem</span> fs <span class="op">=</span> <span class="kw">new</span> <span class="ty">FileSystem</span>();</code></pre></td>
+term.println(<span class="kw">true</span>.<span class="ty">str</span>);        <span class="cm"># &quot;true&quot;</span></code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p>Standard library modules include:</p></td>
-                <td class="code"><pre><code><span class="cm"># I/O</span>
-<span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;    <span class="cm"># Terminal I/O</span>
-<span class="kw">include</span> <span class="st">&quot;lang/filesystem.vel&quot;</span>;  <span class="cm"># File operations</span>
-<span class="kw">include</span> <span class="st">&quot;lang/http.vel&quot;</span>;        <span class="cm"># HTTP client</span>
-<span class="kw">include</span> <span class="st">&quot;lang/socket.vel&quot;</span>;      <span class="cm"># TCP sockets</span>
-
-<span class="cm"># Types</span>
+                <td class="docs"><p>Standard library modules are real Velo code you include to use. Native classes (Terminal, Time, Http, FileSystem, Socket) need no include — the runtime provides them.</p></td>
+                <td class="code"><pre><code><span class="cm"># Type extensions &amp; utilities</span>
 <span class="kw">include</span> <span class="st">&quot;lang/bool.vel&quot;</span>;        <span class="cm"># Bool extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/int.vel&quot;</span>;         <span class="cm"># Int extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/str.vel&quot;</span>;         <span class="cm"># String extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/array.vel&quot;</span>;       <span class="cm"># Array extensions</span>
 <span class="kw">include</span> <span class="st">&quot;lang/map.vel&quot;</span>;         <span class="cm"># Generic hash map</span>
+<span class="kw">include</span> <span class="st">&quot;lang/base64.vel&quot;</span>;      <span class="cm"># Base64 encoding</span>
 
-<span class="cm"># Utilities</span>
-<span class="kw">include</span> <span class="st">&quot;lang/time.vel&quot;</span>;        <span class="cm"># Time operations</span>
-<span class="kw">include</span> <span class="st">&quot;lang/base64.vel&quot;</span>;      <span class="cm"># Base64 encoding</span></code></pre></td>
+<span class="cm"># Convenience: the conventional `term` global</span>
+<span class="kw">include</span> <span class="st">&quot;lang/terminal.vel&quot;</span>;</code></pre></td>
             </tr>
             <tr>
                 <td class="docs nav-footer">

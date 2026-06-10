@@ -51,6 +51,12 @@ str text = bytes.str();              # "Hello"
 
 Both extensions enable roundtrip conversion: `text.bytes().str() == text`.
 
+The classes below — Terminal, Time, Http, FileSystem, Socket — are native
+classes provided by the runtime, so using them needs no `include`; the
+compiler knows their types from the registration. The `lang/terminal.vel`
+module shown next is only a convenience that defines the conventional `term`
+global.
+
 ## Terminal
 
 Class for terminal operations:
@@ -69,8 +75,6 @@ str input = term.input();      # Read string from console
 Class for time operations:
 
 ```velo
-include "lang/time.vel";
-
 Time time = new Time();
 time.sleep(1000);              # Sleep for 1000 milliseconds
 int unixTime = time.unix();     # Unix timestamp in seconds
@@ -81,8 +85,6 @@ int unixTime = time.unix();     # Unix timestamp in seconds
 Class for making HTTP requests:
 
 ```velo
-include "lang/http.vel";
-
 Http http = new Http();
 str response = http.get("https://example.com");
 int status = http.statusCode();
@@ -97,8 +99,6 @@ str postResponse = http.post("https://api.example.com/data", jsonBody, "");
 Class for file system operations:
 
 ```velo
-include "lang/filesystem.vel";
-
 FileSystem fs = new FileSystem();
 
 # Reading and writing strings
@@ -138,8 +138,6 @@ Class for TCP socket communication. Supports both client and server modes.
 ### Client
 
 ```velo
-include "lang/socket.vel";
-
 Socket sock = Socket();
 sock.connect("127.0.0.1", 9876);
 
@@ -152,8 +150,6 @@ sock.close();
 ### Server
 
 ```velo
-include "lang/socket.vel";
-
 Socket srv = Socket();
 srv.bind(9876);
 
