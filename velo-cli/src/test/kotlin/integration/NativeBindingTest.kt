@@ -41,6 +41,9 @@ class NativeBindingTest {
         .register(Terminal::class)
         .register(Box::class)
         .register(KotlinCallbacks::class)
+        .register(Geometry::class)
+        .registerData("Point", NativePoint::class)
+        .registerData("Segment", NativeSegment::class)
 
     // ---- introspection rules ----
 
@@ -142,6 +145,71 @@ class NativeBindingTest {
         assertTrue(ex.message!!.contains("explode"), "Unexpected: ${ex.message}")
     }
 
+    // ---- data class marshalling across the native boundary ----
+
+    @Test
+    fun `a data class is passed to and returned from a native method by value`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+
+            Geometry g = new Geometry();
+            Point moved = g.translate(new Point(3, 4), 10, 20);
+            term.println(moved.x.str);
+            term.println(moved.y.str);
+            """.trimIndent()
+        )
+        assertEquals("13\n24", output)
+    }
+
+    @Test
+    fun `a native method can build a data class from scratch`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+
+            Geometry g = new Geometry();
+            Point o = g.origin();
+            term.println(o.x.str);
+            term.println(o.y.str);
+            """.trimIndent()
+        )
+        assertEquals("0\n0", output)
+    }
+
+    @Test
+    fun `a data class is read by the host as a plain value`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+
+            Geometry g = new Geometry();
+            term.println(g.describe(new Point(7, 9)));
+            """.trimIndent()
+        )
+        assertEquals("(7, 9)", output)
+    }
+
+    @Test
+    fun `nested data classes marshal across the native boundary`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+            data class Segment(Point a, Point b) {};
+
+            Geometry g = new Geometry();
+            Point s = g.start(new Segment(new Point(1, 2), new Point(3, 4)));
+            term.println(s.x.str);
+            term.println(s.y.str);
+            """.trimIndent()
+        )
+        assertEquals("1\n2", output)
+    }
+
     // ---- linking ----
 
     @Test
@@ -203,6 +271,7 @@ class NativeBindingTest {
                         vars = it.vars.map { v -> v.value.index },
                     )
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             ex.printStackTrace()

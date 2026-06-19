@@ -177,6 +177,9 @@ class NativeClassDescriptor(
             List::class.java.isAssignableFrom(c) -> VmType.Array(genericArg(generic, 0, registry))
             c == VeloFunction::class.java -> VmType.Func(args = null, ret = VmType.Void)
             isKotlinFunction(c) -> mapKotlinFunction(generic, registry)
+            // A registered data-class counterpart resolves to its Velo name and
+            // is marshalled by value; a plain native class is an opaque handle.
+            registry.dataInfoByJvmClass(c) != null -> VmType.Class(registry.dataInfoByJvmClass(c)!!.veloName)
             else -> registry.getByJvmClass(c)?.let { VmType.Class(it.veloName) }
         }
 

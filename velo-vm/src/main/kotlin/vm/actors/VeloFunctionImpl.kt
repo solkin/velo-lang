@@ -106,10 +106,10 @@ class VeloFunctionImpl internal constructor(
         is ActorValue.Ref -> throw IllegalStateException(
             "actor[${value.className}] values cannot be materialised on the host side"
         )
-        // Marshalling data classes across the native boundary is a follow-up;
-        // for now they only travel actor-to-actor.
+        // Data classes marshal across native *method* calls (see NativeBridge);
+        // carrying one as a host *callback* argument is a follow-up.
         is ActorValue.Data -> throw IllegalStateException(
-            "data class values cannot yet cross the native boundary"
+            "data class values cannot yet be passed through a host callback"
         )
     }
 }

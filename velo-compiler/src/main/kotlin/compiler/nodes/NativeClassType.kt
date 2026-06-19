@@ -105,9 +105,15 @@ internal fun vmTypeToType(vmType: VmType, ctx: Context): Type = when (vmType) {
         args = vmType.args?.map { vmTypeToType(it, ctx) },
     )
     is VmType.Class -> {
-        val descriptor = ctx.shared.descriptor(vmType.name)
-            ?: throw IllegalArgumentException("Native class '${vmType.name}' is not registered")
-        NativeClassType(descriptor)
+        // A `VmType.Class` in a native signature is either a Velo `data class`
+        // (marshalled by value — resolve to its declared type) or a registered
+        // native class (an opaque handle).
+        val veloData = (ctx.opt(vmType.name)?.type as? ClassType)?.takeIf { it.isData }
+        veloData
+            ?: ctx.shared.descriptor(vmType.name)?.let { NativeClassType(it) }
+            ?: throw IllegalArgumentException(
+                "Class '${vmType.name}' is neither a data class nor a registered native class"
+            )
     }
     is VmType.Ptr -> PtrType(derived = vmTypeToType(vmType.derived, ctx))
 }

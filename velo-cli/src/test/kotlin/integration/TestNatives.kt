@@ -49,3 +49,25 @@ class TwoCtorsHost() {
 
     fun ok(): Int = 1
 }
+
+/**
+ * Host counterpart of a Velo `data class Point(int x, int y)` — registered via
+ * `registerData` and marshalled by value across the boundary. A Kotlin data
+ * class satisfies the binding contract for free (single constructor in field
+ * order; `getX()`/`getY()` accessors).
+ */
+data class NativePoint(val x: Int, val y: Int)
+
+/** Host counterpart of a nested Velo `data class Segment(Point a, Point b)`. */
+data class NativeSegment(val a: NativePoint, val b: NativePoint)
+
+/** Host API that takes and returns data classes by value. */
+class Geometry {
+    fun translate(p: NativePoint, dx: Int, dy: Int): NativePoint = NativePoint(p.x + dx, p.y + dy)
+
+    fun origin(): NativePoint = NativePoint(0, 0)
+
+    fun describe(p: NativePoint): String = "(${p.x}, ${p.y})"
+
+    fun start(s: NativeSegment): NativePoint = s.a
+}

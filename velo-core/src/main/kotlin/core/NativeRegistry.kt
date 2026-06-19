@@ -25,6 +25,11 @@ class NativeRegistry {
     private val byJvmClass = HashMap<Class<*>, NativeClassInfo>()
     private val descriptors = HashMap<String, NativeClassDescriptor>()
 
+    // Data-class counterparts: marshalled by value, not handed over as handles.
+    private val dataByVeloName = HashMap<String, NativeClassInfo>()
+    private val dataByJvmClass = HashMap<Class<*>, NativeClassInfo>()
+    private val dataBindings = HashMap<String, DataBinding>()
+
     /**
      * Register a native class with the same name in Velo and JVM
      */
@@ -55,6 +60,40 @@ class NativeRegistry {
     fun register(veloName: String, jvmClass: KClass<*>): NativeRegistry {
         return register(veloName, jvmClass.java)
     }
+
+    /**
+     * Register the host counterpart of a Velo `data class`, marshalled by
+     * value across the native boundary. The Velo name defaults to the JVM
+     * simple name; pass an explicit name when they differ.
+     */
+    fun registerData(jvmClass: Class<*>): NativeRegistry = registerData(jvmClass.simpleName, jvmClass)
+
+    fun registerData(jvmClass: KClass<*>): NativeRegistry = registerData(jvmClass.java)
+
+    fun registerData(veloName: String, jvmClass: Class<*>): NativeRegistry {
+        val info = NativeClassInfo(veloName, jvmClass)
+        dataByVeloName[veloName] = info
+        dataByJvmClass[jvmClass] = info
+        return this
+    }
+
+    fun registerData(veloName: String, jvmClass: KClass<*>): NativeRegistry = registerData(veloName, jvmClass.java)
+
+    /** Velo-name lookup for a registered data-class counterpart (compile time). */
+    fun dataInfoByJvmClass(jvmClass: Class<*>): NativeClassInfo? = dataByJvmClass[jvmClass]
+
+    /** Full data binding by Velo name, built (and cached) on first use. */
+    fun dataBindingByVeloName(veloName: String): DataBinding? {
+        dataBindings[veloName]?.let { return it }
+        val info = dataByVeloName[veloName] ?: return null
+        val binding = DataBinding.introspect(info.veloName, info.jvmClass)
+        dataBindings[veloName] = binding
+        return binding
+    }
+
+    /** Full data binding by host class, or null when that class isn't a data counterpart. */
+    fun dataBindingByJvmClass(jvmClass: Class<*>): DataBinding? =
+        dataByJvmClass[jvmClass]?.let { dataBindingByVeloName(it.veloName) }
 
     /**
      * Get native class info by Velo name
