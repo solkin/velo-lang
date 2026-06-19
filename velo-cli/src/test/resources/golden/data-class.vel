@@ -31,8 +31,9 @@ actor class Geometry() {
     };
 };
 
+# `await receiver.method(...)` is the synchronous-call sugar — `async` is implied.
 actor[Geometry] geo = new Geometry();
-Point moved = await async geo.translate(new Point(10, 20), 5, 6);
+Point moved = await geo.translate(new Point(10, 20), 5, 6);
 term.println(moved.x.str);
 term.println(moved.y.str);
 term.println(moved.sum().str);

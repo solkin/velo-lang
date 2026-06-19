@@ -36,7 +36,9 @@ actor class Geometry() {
     };
 };
 
+# `await receiver.method(...)` is the synchronous-call sugar: `async` is
+# implied. Use a bare `async` only when you want the `future[T]` for parallelism.
 actor[Geometry] geo = new Geometry();
-Point moved = await async geo.translate(p, 10, 20);
+Point moved = await geo.translate(p, 10, 20);
 term.println("moved = (".con(moved.x.str).con(", ").con(moved.y.str).con(")"));
 term.println("moved.sum() = ".con(moved.sum().str));

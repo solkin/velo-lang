@@ -635,6 +635,69 @@ class ActorsTest {
         assertTrue(!handle.isAlive(), "actor must finish after explicit shutdown")
     }
 
+    // ---- await sugar (`await receiver.method()` == `await async ...`) ----
+
+    @Test
+    fun `await sugar makes a synchronous actor call without async`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Counter() {
+                int n = 0;
+                func bump() int { n += 1; n; };
+                func value() int { n; };
+            };
+
+            actor[Counter] c = new Counter();
+            await c.bump();
+            await c.bump();
+            term.println((await c.value()).str);
+            """.trimIndent()
+        )
+        assertEquals("2", output)
+    }
+
+    @Test
+    fun `await sugar and explicit async produce the same result`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Echo() {
+                func id(int v) int { v; };
+            };
+
+            actor[Echo] e = new Echo();
+            term.println((await e.id(7)).str);
+            term.println((await async e.id(7)).str);
+            """.trimIndent()
+        )
+        assertEquals("7\n7", output)
+    }
+
+    @Test
+    fun `async without await still yields a future for parallelism`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Counter() {
+                int n = 0;
+                func bump() int { n += 1; n; };
+            };
+
+            actor[Counter] a = new Counter();
+            actor[Counter] b = new Counter();
+            future[int] fa = async a.bump();
+            future[int] fb = async b.bump();
+            term.println((await fa).str);
+            term.println((await fb).str);
+            """.trimIndent()
+        )
+        assertEquals("1\n1", output)
+    }
+
     // ---- helpers ----
 
     /**
