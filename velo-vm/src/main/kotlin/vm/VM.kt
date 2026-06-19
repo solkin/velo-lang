@@ -19,6 +19,7 @@ class VM(
 
     private var frameLoader: FrameLoader? = null
     private var natives: Array<BoundNative> = emptyArray()
+    private var dataClasses: Map<Int, core.DataClassInfo> = emptyMap()
 
     /**
      * Load a compiled program and link its native pool against the
@@ -28,6 +29,7 @@ class VM(
     fun load(program: SerializedProgram) {
         frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
         natives = NativeLinker.link(program.natives, nativeRegistry)
+        dataClasses = program.dataClasses.associateBy { it.frameNum }
     }
 
     /**
@@ -50,6 +52,7 @@ class VM(
             sharedFrameLoader = frameLoader,
             sharedNativeRegistry = nativeRegistry,
             sharedNatives = natives,
+            sharedDataClasses = dataClasses,
             dispatcher = pump,
             profiler = profiler,
         )

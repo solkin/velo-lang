@@ -12,6 +12,21 @@ data class BinaryNode(
     override fun compile(ctx: Context): Type {
         val leftType = left.compile(ctx)
         val rightType = right.compile(ctx)
+        // A `data class` has built-in by-value equality; `==`/`!=` lower to the
+        // deep [Op.Equals] comparison without needing an operator overload.
+        if (leftType is ClassType && leftType.isData && (operator == "==" || operator == "!=")) {
+            if (!leftType.sameAs(rightType)) {
+                throw IllegalArgumentException("Cannot compare '${leftType.name}' with '${rightType.log()}'")
+            }
+            ctx.add(Op.Equals)
+            if (operator == "!=") {
+                ctx.add(Op.If(elseSkip = 2))
+                ctx.add(Op.Push(value = false))
+                ctx.add(Op.Move(count = 1))
+                ctx.add(Op.Push(value = true))
+            }
+            return BoolType
+        }
         if (leftType is ClassType) {
             val opName = "op@$operator"
             val prop = ClassElementProp(opName)

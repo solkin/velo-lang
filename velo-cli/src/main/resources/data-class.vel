@@ -1,0 +1,42 @@
+# data class — an immutable value type.
+#
+# A `data class` holds exactly its constructor parameters as immutable fields.
+# Unlike a regular `class`, it compares by value and is copied (never aliased)
+# when it crosses an actor boundary — so it is the natural way to ship
+# structured data between actors.
+
+Terminal term = new Terminal();
+
+data class Point(int x, int y) {
+    func sum() int { x + y; };
+    func manhattan() int { x + y; };
+};
+
+# Construct and use like any object — fields are read-only.
+Point origin = new Point(0, 0);
+Point p = new Point(3, 4);
+term.println("p = (".con(p.x.str).con(", ").con(p.y.str).con(")"));
+term.println("p.sum() = ".con(p.sum().str));
+
+# Value equality: equal fields means equal value.
+Point q = new Point(3, 4);
+term.println(if (p == q) then "p == q (by value)" else "p != q");
+
+# Nested data classes copy and compare deeply.
+data class Line(Point from, Point to) {};
+Line a = new Line(new Point(0, 0), new Point(3, 4));
+Line b = new Line(new Point(0, 0), new Point(3, 4));
+term.println(if (a == b) then "lines equal" else "lines differ");
+
+# Data classes ride across actor boundaries by value: the worker receives a
+# private copy and returns a fresh one, with its methods intact on both sides.
+actor class Geometry() {
+    func translate(Point p, int dx, int dy) Point {
+        new Point(p.x + dx, p.y + dy);
+    };
+};
+
+actor[Geometry] geo = new Geometry();
+Point moved = await async geo.translate(p, 10, 20);
+term.println("moved = (".con(moved.x.str).con(", ").con(moved.y.str).con(")"));
+term.println("moved.sum() = ".con(moved.sum().str));

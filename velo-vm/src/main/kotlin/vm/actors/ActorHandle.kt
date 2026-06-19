@@ -55,6 +55,7 @@ class ActorHandle private constructor(
     sharedFrameLoader: FrameLoader,
     sharedNativeRegistry: NativeRegistry,
     sharedNatives: Array<core.BoundNative>,
+    sharedDataClasses: Map<Int, core.DataClassInfo>,
     private val dispatcher: Dispatcher,
     profiler: VMProfiler? = null,
 ) {
@@ -74,6 +75,7 @@ class ActorHandle private constructor(
         actorRuntime = runtime,
         currentActor = this,
         natives = sharedNatives,
+        dataClasses = sharedDataClasses,
     )
 
     private val executor = VMExecutor(ctx, profiler)
@@ -392,6 +394,7 @@ class ActorHandle private constructor(
             sharedFrameLoader: FrameLoader,
             sharedNativeRegistry: NativeRegistry,
             sharedNatives: Array<core.BoundNative> = emptyArray(),
+            sharedDataClasses: Map<Int, core.DataClassInfo> = emptyMap(),
             dispatcher: Dispatcher,
             profiler: VMProfiler? = null,
         ): ActorHandle {
@@ -402,6 +405,7 @@ class ActorHandle private constructor(
                 sharedFrameLoader = sharedFrameLoader,
                 sharedNativeRegistry = sharedNativeRegistry,
                 sharedNatives = sharedNatives,
+                sharedDataClasses = sharedDataClasses,
                 dispatcher = dispatcher,
                 profiler = profiler,
             )
@@ -425,6 +429,7 @@ class ActorHandle private constructor(
             sharedFrameLoader: FrameLoader,
             sharedNativeRegistry: NativeRegistry,
             sharedNatives: Array<core.BoundNative>,
+            sharedDataClasses: Map<Int, core.DataClassInfo>,
             classFrameNum: Int,
             className: String,
             args: List<ActorValue>,
@@ -437,6 +442,7 @@ class ActorHandle private constructor(
                 sharedFrameLoader = sharedFrameLoader,
                 sharedNativeRegistry = sharedNativeRegistry,
                 sharedNatives = sharedNatives,
+                sharedDataClasses = sharedDataClasses,
                 dispatcher = ThreadDispatcher(name = "velo-actor-$id-$className"),
             )
             runtime.register(handle)

@@ -12,6 +12,7 @@ import vm.actors.popAndEncodeArgs
 import vm.records.EmptyRecord
 import vm.records.FuncRecord
 import vm.records.PtrRecord
+import vm.records.RefKind
 import vm.records.RefRecord
 import vm.records.ValueRecord
 import kotlin.math.abs
@@ -180,7 +181,14 @@ object Interpreter {
             val frame = ctx.currentFrame()
             val val1 = frame.subs.pop()
             val val2 = frame.subs.pop()
-            frame.subs.push(ValueRecord(val1 == val2))
+            // `data class` instances compare by value (field-by-field, deep);
+            // every other value keeps its existing identity/primitive equality.
+            val equal = if (isDataInstance(val1, ctx) && isDataInstance(val2, ctx)) {
+                deepEquals(val1, val2, ctx)
+            } else {
+                val1 == val2
+            }
+            frame.subs.push(ValueRecord(equal))
             pc + 1
         }
 
@@ -487,6 +495,7 @@ object Interpreter {
                 sharedFrameLoader = ctx.frameLoader,
                 sharedNativeRegistry = ctx.nativeRegistry,
                 sharedNatives = ctx.natives,
+                sharedDataClasses = ctx.dataClasses,
                 classFrameNum = op.classFrameNum,
                 className = op.className,
                 args = cloned,
@@ -517,5 +526,39 @@ object Interpreter {
             frame.subs.push(StructuredClone.decode(response, ctx))
             pc + 1
         }
+    }
+
+    /** True when [record] is a `data class` instance (per the program's metadata). */
+    private fun isDataInstance(record: Record, ctx: VMContext): Boolean =
+        record is RefRecord && record.kind == RefKind.CLASS &&
+            ctx.dataClasses.containsKey(record.get<Frame>(ctx).num)
+
+    /**
+     * Deep value equality for `data class` instances: same class and every
+     * field equal, recursing through nested data classes and arrays. Used only
+     * once both operands are known to be data instances; other reference kinds
+     * fall back to identity equality.
+     */
+    private fun deepEquals(a: Record, b: Record, ctx: VMContext): Boolean {
+        if (a === b) return true
+        if (a is RefRecord && b is RefRecord) {
+            if (a.kind != b.kind) return false
+            return when (a.kind) {
+                RefKind.CLASS -> {
+                    val fa = a.get<Frame>(ctx)
+                    val fb = b.get<Frame>(ctx)
+                    if (fa.num != fb.num) return false
+                    val info = ctx.dataClasses[fa.num] ?: return a == b
+                    info.fields.all { deepEquals(fa.vars.get(it.index), fb.vars.get(it.index), ctx) }
+                }
+                RefKind.ARRAY -> {
+                    val aa = a.get<Array<Record>>(ctx)
+                    val ba = b.get<Array<Record>>(ctx)
+                    aa.size == ba.size && aa.indices.all { deepEquals(aa[it], ba[it], ctx) }
+                }
+                RefKind.NATIVE -> a == b
+            }
+        }
+        return a == b
     }
 }

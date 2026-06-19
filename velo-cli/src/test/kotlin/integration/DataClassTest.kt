@@ -120,6 +120,109 @@ class DataClassTest {
         assertNotNull(program, "data class should be accepted in an actor signature")
     }
 
+    @Test
+    fun `a data class round-trips through an actor and keeps its methods`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            data class Point(int x, int y) {
+                func sum() int { x + y; };
+            };
+
+            actor class Echo() {
+                func bounce(Point p) Point { p; };
+            };
+
+            actor[Echo] e = new Echo();
+            Point r = await async e.bounce(new Point(3, 4));
+            term.println(r.x.str);
+            term.println(r.y.str);
+            term.println(r.sum().str);
+            """.trimIndent()
+        )
+        assertEquals("3\n4\n7", output)
+    }
+
+    @Test
+    fun `an actor can build and return a data class`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            data class Pair(int a, int b) {};
+
+            actor class Maker() {
+                func make(int a, int b) Pair { new Pair(a, b); };
+            };
+
+            actor[Maker] m = new Maker();
+            Pair p = await async m.make(10, 20);
+            term.println(p.a.str);
+            term.println(p.b.str);
+            """.trimIndent()
+        )
+        assertEquals("10\n20", output)
+    }
+
+    @Test
+    fun `nested data classes transfer recursively`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            data class Inner(int v) {};
+            data class Outer(Inner inner, int k) {};
+
+            actor class Echo() {
+                func bounce(Outer o) Outer { o; };
+            };
+
+            actor[Echo] e = new Echo();
+            Outer o = await async e.bounce(new Outer(new Inner(7), 9));
+            term.println(o.inner.v.str);
+            term.println(o.k.str);
+            """.trimIndent()
+        )
+        assertEquals("7\n9", output)
+    }
+
+    @Test
+    fun `data classes compare by value`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            data class Point(int x, int y) {};
+
+            Point a = new Point(1, 2);
+            Point b = new Point(1, 2);
+            Point c = new Point(1, 9);
+            term.println(if (a == b) then "eq" else "ne");
+            term.println(if (a == c) then "eq" else "ne");
+            """.trimIndent()
+        )
+        assertEquals("eq\nne", output)
+    }
+
+    @Test
+    fun `value equality recurses through array fields`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            data class Vec(array[int] xs) {};
+
+            Vec a = new Vec(new array[int]{1, 2, 3});
+            Vec b = new Vec(new array[int]{1, 2, 3});
+            Vec c = new Vec(new array[int]{1, 2, 4});
+            term.println(if (a == b) then "eq" else "ne");
+            term.println(if (a == c) then "eq" else "ne");
+            """.trimIndent()
+        )
+        assertEquals("eq\nne", output)
+    }
+
     private val testRegistry = NativeRegistry()
         .register(Terminal::class)
         .register(Time::class)
@@ -145,6 +248,7 @@ class DataClassTest {
                 frames = ctx.frames().map {
                     SerializedFrame(num = it.num, ops = it.ops, vars = it.vars.map { v -> v.value.index })
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             ex.printStackTrace()

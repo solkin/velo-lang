@@ -1,7 +1,11 @@
 package vm.actors
 
+import vm.Frame
+import vm.LifoStack
 import vm.Record
 import vm.VMContext
+import vm.VMExecutor
+import vm.createVars
 import vm.records.EmptyRecord
 import vm.records.FuncRecord
 import vm.records.RefKind
@@ -64,10 +68,18 @@ object StructuredClone {
                     val array: Array<Record> = record.get(source)
                     ActorValue.Array(array.map { encode(it, source) })
                 }
-                RefKind.CLASS -> throw ActorMarshallingException(
-                    "Cannot transfer non-actor class instance across actors; " +
-                        "wrap the type as `actor[T]` to share by reference."
-                )
+                // A `data class` instance is an immutable value type: copy it
+                // field-by-field. Any other class instance would alias mutable
+                // state across threads and is rejected.
+                RefKind.CLASS -> {
+                    val frame: Frame = record.get(source)
+                    val info = source.dataClasses[frame.num]
+                        ?: throw ActorMarshallingException(
+                            "Cannot transfer non-actor class instance across actors; " +
+                                "make it a `data class` to copy by value, or wrap it as `actor[T]`."
+                        )
+                    ActorValue.Data(frame.num, info.fields.map { encode(frame.vars.get(it.index), source) })
+                }
                 RefKind.NATIVE -> throw ActorMarshallingException(
                     "Cannot transfer native objects across actors."
                 )
@@ -97,7 +109,33 @@ object StructuredClone {
                 val arr: Array<Record> = Array(value.items.size) { idx -> decode(value.items[idx], target) }
                 RefRecord.array(arr, target)
             }
+            // Rebuild a fresh instance in the receiver's memory by re-running
+            // the class constructor with the decoded field values.
+            is ActorValue.Data -> reconstruct(value.classFrameNum, value.fields.map { decode(it, target) }, target)
         }
+    }
+
+    /**
+     * Materialise a `data class` value by re-running its constructor on the
+     * target context. The fields are pushed as constructor arguments and the
+     * class frame is run to completion under a zero-op sentinel (the same
+     * mechanism [vm.actors.ActorHandle.runFrame] uses for method dispatch),
+     * leaving the freshly built instance on the sentinel's operand stack.
+     *
+     * Re-running the constructor is safe precisely because a data class body
+     * may only declare methods — construction has no observable side effects.
+     */
+    private fun reconstruct(classFrameNum: Int, fields: List<Record>, target: VMContext): Record {
+        val classFrame = target.loadFrame(classFrameNum, parentVars = null)
+            ?: throw ActorMarshallingException("Data class frame $classFrameNum not found")
+        val sentinel = Frame(pc = 0, subs = LifoStack(), vars = createVars(emptyList(), null), ops = emptyList())
+        target.pushFrame(sentinel)
+        fields.forEach { classFrame.subs.push(it) }
+        target.pushFrame(classFrame)
+        VMExecutor(target).run()
+        val tail = target.popFrame()
+        check(tail === sentinel) { "Data class reconstruction: stack out of sync" }
+        return if (tail.subs.empty()) EmptyRecord else tail.subs.pop()
     }
 }
 

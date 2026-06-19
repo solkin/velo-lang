@@ -20,6 +20,15 @@ sealed class ActorValue {
     data class Array(val items: List<ActorValue>) : ActorValue()
 
     /**
+     * Cross-thread description of a `data class` value: the class it was built
+     * from plus its field values in declaration order. The receiver rebuilds a
+     * fresh, independent instance by re-running the class constructor with the
+     * decoded fields — a deep copy, so no mutable state is aliased across the
+     * boundary.
+     */
+    data class Data(val classFrameNum: Int, val fields: List<ActorValue>) : ActorValue()
+
+    /**
      * Cross-thread description of an `actor[T]` value. Carries only what's
      * needed to reconstruct an [ActorRefRecord] on the receiving side; never
      * the record itself, so the wire format does not incidentally inflate

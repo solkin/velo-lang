@@ -109,6 +109,7 @@ class VeloCompiler(
                         vars = it.vars.map { i -> i.value.index }
                     )
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             println("!! Compilation failed: ${ex.message}")

@@ -18,6 +18,13 @@ data class CallNode(
             if (resolved != null && resolved.isActor) {
                 return compileActorSpawn(resolved, ctx)
             }
+            // `new DataClass(args)` embeds the class frame number (like
+            // ActorSpawn) instead of loading the class-name variable, so a data
+            // class can be constructed from any scope — including inside an
+            // actor, whose thread does not share the declaring frame's vars.
+            if (resolved != null && resolved.isData) {
+                return compileDataNew(resolved, ctx)
+            }
             // `new RegisteredHostClass(args)` — no Velo declaration exists;
             // the type is synthesized from the registry and the construction
             // is a single NativeCall over the program's native pool. A local
@@ -118,6 +125,30 @@ data class CallNode(
         val index = ctx.shared.intern(descriptor.constructorRef())
         ctx.add(Op.NativeCall(poolIndex = index, args = callSiteVmTypes(descriptor.ctorParams, actual)))
         return NativeClassType(descriptor)
+    }
+
+    private fun compileDataNew(classType: ClassType, ctx: Context): Type {
+        val frameNum = classType.num
+            ?: throw IllegalStateException("Data class '${classType.name}' has no frame number")
+        val expected = classType.args
+        if (expected != null && expected.size != args.size) {
+            throw IllegalArgumentException(
+                "Data class '${classType.name}' constructor expects ${expected.size} args, got ${args.size}"
+            )
+        }
+        val argTypes = args.map { it.compile(ctx) }
+        expected?.forEachIndexed { i, def ->
+            val actual = argTypes[i]
+            if (!actual.sameAs(def)) {
+                throw IllegalArgumentException(
+                    "Data class '${classType.name}' constructor arg #${i + 1}: " +
+                        "expected ${def.log()}, got ${actual.log()}"
+                )
+            }
+        }
+        ctx.add(Op.Frame(num = frameNum))
+        ctx.add(Op.Call(args.size))
+        return classType
     }
 
     private fun compileActorSpawn(classType: ClassType, ctx: Context): Type {

@@ -22,6 +22,9 @@ class CompilerShared(
 ) {
     val nativePool = mutableListOf<NativeRef>()
 
+    /** Marshalling metadata for every `data class` the program declares. */
+    val dataClasses = mutableListOf<core.DataClassInfo>()
+
     fun intern(ref: NativeRef): Int {
         val existing = nativePool.indexOf(ref)
         if (existing >= 0) return existing

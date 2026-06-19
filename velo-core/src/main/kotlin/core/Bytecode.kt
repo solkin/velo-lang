@@ -17,7 +17,7 @@ import java.io.File
 object Bytecode {
 
     const val MAGIC = 0x5e10
-    const val VERSION_MAJOR = 0x0a
+    const val VERSION_MAJOR = 0x0b
     const val VERSION_MINOR = 0x00
 
     // Tags for inline values and serialized VmTypes.
@@ -49,8 +49,23 @@ object Bytecode {
         out.writeByte(VERSION_MAJOR)
         out.writeByte(VERSION_MINOR)
         writeNatives(program.natives, out)
+        writeDataClasses(program.dataClasses, out)
         out.writeShort(program.frames.size)
         program.frames.forEach { writeFrame(it, out) }
+    }
+
+    private fun writeDataClasses(dataClasses: List<DataClassInfo>, out: DataOutputStream) {
+        out.writeShort(dataClasses.size)
+        dataClasses.forEach { info ->
+            out.writeInt(info.frameNum)
+            out.writeUTF(info.name)
+            out.writeByte(info.fields.size)
+            info.fields.forEach { field ->
+                out.writeUTF(field.name)
+                out.writeInt(field.index)
+                writeType(field.type, out)
+            }
+        }
     }
 
     private fun writeNatives(natives: List<NativeRef>, out: DataOutputStream) {
@@ -196,8 +211,20 @@ object Bytecode {
             throw IllegalArgumentException("Unsupported bytecode version: $versionMajor.$versionMinor")
         }
         val natives = readNatives(inp)
+        val dataClasses = readDataClasses(inp)
         val frames = List(inp.readShort().toInt()) { readFrame(inp) }
-        return SerializedProgram(natives = natives, frames = frames)
+        return SerializedProgram(natives = natives, frames = frames, dataClasses = dataClasses)
+    }
+
+    private fun readDataClasses(inp: DataInputStream): List<DataClassInfo> {
+        return List(inp.readShort().toInt()) {
+            val frameNum = inp.readInt()
+            val name = inp.readUTF()
+            val fields = List(inp.readByte().toInt()) {
+                DataField(name = inp.readUTF(), index = inp.readInt(), type = readType(inp))
+            }
+            DataClassInfo(frameNum = frameNum, name = name, fields = fields)
+        }
     }
 
     private fun readNatives(inp: DataInputStream): List<NativeRef> {

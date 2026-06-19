@@ -1,5 +1,7 @@
 package compiler.nodes
 
+import core.DataClassInfo
+import core.DataField
 import core.Op
 
 import compiler.Context
@@ -59,6 +61,15 @@ data class ClassNode(
         }
         if (isData) {
             validateDataClass(classOps)
+            ctx.shared.dataClasses.add(
+                DataClassInfo(
+                    frameNum = classOps.frame.num,
+                    name = name,
+                    fields = defs.mapIndexed { i, def ->
+                        DataField(name = def.name, index = args[i].index, type = def.type.vmType())
+                    },
+                )
+            )
         }
 
         // Add class operations to the real context

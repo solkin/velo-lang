@@ -10,4 +10,5 @@ package core
 data class SerializedProgram(
     val natives: List<NativeRef>,
     val frames: List<SerializedFrame>,
+    val dataClasses: List<DataClassInfo> = emptyList(),
 )

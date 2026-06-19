@@ -106,5 +106,10 @@ class VeloFunctionImpl internal constructor(
         is ActorValue.Ref -> throw IllegalStateException(
             "actor[${value.className}] values cannot be materialised on the host side"
         )
+        // Marshalling data classes across the native boundary is a follow-up;
+        // for now they only travel actor-to-actor.
+        is ActorValue.Data -> throw IllegalStateException(
+            "data class values cannot yet cross the native boundary"
+        )
     }
 }

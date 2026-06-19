@@ -30,7 +30,8 @@ class GeneralFrameLoader : FrameLoader {
                 pc = 0,
                 subs = LifoStack(),
                 vars = createVars(vars = frame.vars, parent = parentVars),
-                ops = frame.ops
+                ops = frame.ops,
+                num = num,
             )
         }
     }

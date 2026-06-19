@@ -1,6 +1,7 @@
 package vm
 
 import core.BoundNative
+import core.DataClassInfo
 import core.NativeRegistry
 
 import vm.actors.ActorHandle
@@ -26,6 +27,8 @@ class VMContext(
     val actorRuntime: ActorRuntime = ActorRuntime(),
     val currentActor: ActorHandle? = null,
     val natives: Array<BoundNative> = emptyArray(),
+    /** Marshalling metadata for `data class` values, keyed by class frame number. */
+    val dataClasses: Map<Int, DataClassInfo> = emptyMap(),
 ) {
     /**
      * Get current frame from stack

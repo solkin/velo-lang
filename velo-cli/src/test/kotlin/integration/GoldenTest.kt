@@ -93,6 +93,7 @@ class GoldenTest {
                         vars = it.vars.map { v -> v.value.index }
                     )
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             System.err.println("Compilation error: ${ex.message}")
@@ -265,6 +266,11 @@ class GoldenTest {
     @Test
     fun `golden - actors`() {
         runGoldenTest("actors")
+    }
+
+    @Test
+    fun `golden - data class`() {
+        runGoldenTest("data-class")
     }
 
     // ========== Utility Methods ==========

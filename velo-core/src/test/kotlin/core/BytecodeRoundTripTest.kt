@@ -115,6 +115,24 @@ class BytecodeRoundTripTest {
                 SerializedFrame(num = 0, ops = samples, vars = listOf(0, 1, 2)),
                 SerializedFrame(num = 1, ops = listOf(Op.Ret), vars = emptyList()),
             ),
+            dataClasses = listOf(
+                DataClassInfo(
+                    frameNum = 1,
+                    name = "Point",
+                    fields = listOf(
+                        DataField(name = "x", index = 2, type = VmType.Int),
+                        DataField(name = "y", index = 3, type = VmType.Int),
+                    ),
+                ),
+                DataClassInfo(
+                    frameNum = 5,
+                    name = "Segment",
+                    fields = listOf(
+                        DataField(name = "label", index = 0, type = VmType.Str),
+                        DataField(name = "points", index = 1, type = VmType.Array(VmType.Class("Point"))),
+                    ),
+                ),
+            ),
         )
 
         val bytes = ByteArrayOutputStream().use { baos ->

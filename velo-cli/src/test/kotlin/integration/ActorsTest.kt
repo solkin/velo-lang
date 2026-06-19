@@ -699,6 +699,7 @@ class ActorsTest {
                         vars = it.vars.map { v -> v.value.index },
                     )
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             ex.printStackTrace()
