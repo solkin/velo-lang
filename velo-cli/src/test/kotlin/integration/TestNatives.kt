@@ -2,6 +2,7 @@ package integration
 
 import core.NativeMappingException
 import core.NativeRegistry
+import core.VeloFunction
 import core.VmType
 import vm.VM
 import vm.VMContext
@@ -70,4 +71,21 @@ class Geometry {
     fun describe(p: NativePoint): String = "(${p.x}, ${p.y})"
 
     fun start(s: NativeSegment): NativePoint = s.a
+}
+
+/**
+ * Host API that delivers and receives data classes through Velo *callbacks*.
+ * The callbacks are passed per call and not retained, so the program still
+ * terminates (a stored subscription would keep the owning actor alive).
+ *
+ * `emit` posts a data class into a void callback; `mapPoint` invokes a
+ * value-returning callback and reads the data class it hands back.
+ */
+class PointBus {
+    fun emit(p: NativePoint, cb: VeloFunction) {
+        cb.post(p)
+    }
+
+    fun mapPoint(p: NativePoint, cb: VeloFunction): NativePoint =
+        cb.call(p).get() as NativePoint
 }

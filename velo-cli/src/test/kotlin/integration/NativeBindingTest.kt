@@ -42,6 +42,7 @@ class NativeBindingTest {
         .register(Box::class)
         .register(KotlinCallbacks::class)
         .register(Geometry::class)
+        .register(PointBus::class)
         .registerData("Point", NativePoint::class)
         .registerData("Segment", NativeSegment::class)
 
@@ -208,6 +209,43 @@ class NativeBindingTest {
             """.trimIndent()
         )
         assertEquals("1\n2", output)
+    }
+
+    // ---- data classes through host callbacks ----
+
+    @Test
+    fun `the host delivers a data class into a void callback`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+
+            PointBus bus = new PointBus();
+            bus.emit(new Point(7, 8), func(Point p) void {
+                term.println("got ".con(p.x.str).con(",").con(p.y.str));
+                void
+            });
+            term.println("main done");
+            """.trimIndent()
+        )
+        // post() is fire-and-forget, so the callback runs after the main frame.
+        assertEquals("main done\ngot 7,8", output)
+    }
+
+    @Test
+    fun `the host reads a data class returned from a callback`() {
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+            data class Point(int x, int y) {};
+
+            PointBus bus = new PointBus();
+            Point r = bus.mapPoint(new Point(3, 4), func(Point p) Point { new Point(p.x * 10, p.y * 10); });
+            term.println(r.x.str);
+            term.println(r.y.str);
+            """.trimIndent()
+        )
+        assertEquals("30\n40", output)
     }
 
     // ---- linking ----

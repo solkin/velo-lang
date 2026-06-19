@@ -1,5 +1,6 @@
 package vm.actors
 
+import core.DataBinding
 import core.VeloFunction
 import core.VmType
 import vm.records.FuncRecord
@@ -75,10 +76,27 @@ class VeloFunctionImpl internal constructor(
             ActorValue.Array(value.map { encodeHost(it, elementType, where) })
         }
         is VeloFunctionImpl -> ActorValue.Callback(value.handle, value.func)
-        else -> throw IllegalArgumentException(
-            "Callback $where: unsupported host type ${value::class.qualifiedName}; " +
-                "use Int/Float/Boolean/Byte/String, List or VeloFunction"
-        )
+        else -> {
+            // A host value whose class is a registered data-class counterpart
+            // is marshalled by value into the Velo `data class`.
+            val binding = handle.ctx.nativeRegistry.dataBindingByJvmClass(value.javaClass)
+                ?: throw IllegalArgumentException(
+                    "Callback $where: unsupported host type ${value::class.qualifiedName}; " +
+                        "use Int/Float/Boolean/Byte/String, List, a registered data class, or VeloFunction"
+                )
+            if (expected is VmType.Class && expected.name != binding.veloName) {
+                throw IllegalArgumentException("Callback $where: expected ${expected.name}, got ${binding.veloName}")
+            }
+            encodeHostData(value, binding, where)
+        }
+    }
+
+    /** Encode a host data-class counterpart into an [ActorValue.Data], field by field. */
+    private fun encodeHostData(value: Any, binding: DataBinding, where: String): ActorValue {
+        val info = handle.ctx.dataClasses.values.find { it.name == binding.veloName }
+            ?: throw IllegalArgumentException("Callback $where: program has no data class '${binding.veloName}'")
+        val fields = info.fields.map { field -> encodeHost(binding.read(value, field.name), field.type, where) }
+        return ActorValue.Data(info.frameNum, fields)
     }
 
     private fun checkPrimitive(value: Any, expected: VmType?, where: String) {
@@ -106,10 +124,13 @@ class VeloFunctionImpl internal constructor(
         is ActorValue.Ref -> throw IllegalStateException(
             "actor[${value.className}] values cannot be materialised on the host side"
         )
-        // Data classes marshal across native *method* calls (see NativeBridge);
-        // carrying one as a host *callback* argument is a follow-up.
-        is ActorValue.Data -> throw IllegalStateException(
-            "data class values cannot yet be passed through a host callback"
-        )
+        // Rebuild the host counterpart of a `data class` value, field by field.
+        is ActorValue.Data -> {
+            val info = handle.ctx.dataClasses[value.classFrameNum]
+                ?: throw IllegalStateException("Unknown data class (frame ${value.classFrameNum})")
+            val binding = handle.ctx.nativeRegistry.dataBindingByVeloName(info.name)
+                ?: throw IllegalStateException("No host data binding registered for data class '${info.name}'")
+            binding.ctorHandle.invokeWithArguments(value.fields.map { toHost(it) })
+        }
     }
 }

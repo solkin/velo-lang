@@ -56,14 +56,17 @@ data class FuncType(
     val typeParams: List<String> = emptyList(),
 ) : Callable {
     /**
-     * Return types must always agree. Argument lists are compared only when
-     * both sides declare them: the loose form `func[T]` (args unknown) stays
-     * assignment-compatible with any function returning `T`, preserving the
-     * untyped higher-order style. The full form `func[(T1, T2) T]` is strict —
-     * that's what actor signatures and native callbacks rely on.
+     * Return types must agree, unless the expected return is `any` — the fully
+     * loose form a raw host `VeloFunction` maps to, which accepts a callback of
+     * any return type. Argument lists are compared only when both sides declare
+     * them: the loose form `func[T]` (args unknown) stays assignment-compatible
+     * with any function returning `T`, preserving the untyped higher-order
+     * style. The full form `func[(T1, T2) T]` is strict — that's what actor
+     * signatures and native callbacks rely on.
      */
     override fun sameAs(type: Type): Boolean {
-        if (type !is FuncType || !type.derived.sameAs(derived)) return false
+        if (type !is FuncType) return false
+        if (derived !is AnyType && !type.derived.sameAs(derived)) return false
         val expected = args ?: return true
         val actual = type.args ?: return true
         return expected.size == actual.size &&
