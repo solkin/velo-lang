@@ -69,6 +69,7 @@ class BytecodeRoundTripTest {
         Op.Instance,
         Op.Call(args = 2, classParent = true),
         Op.Call(args = -1, classParent = false),
+        Op.Call(args = 1, classParent = false, callbackResult = true),
         Op.PtrNew,
         Op.PtrLoad,
         Op.PtrStore,

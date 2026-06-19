@@ -83,7 +83,18 @@ object Interpreter {
                 val argsArray = Array(size = abs(op.args), init = { thisFrame.subs.pop() })
                     .let { arr -> if (op.args > 0) arr.reversedArray() else arr }
                 val encoded = argsArray.map { StructuredClone.encode(it, ctx) }
-                callable.handle.postInvoke(callable.func, encoded)
+                if (op.callbackResult) {
+                    // Value-returning callback: block for the owner's reply and
+                    // push the decoded result. May deadlock if the owner is in
+                    // turn awaiting this actor — inherent to a synchronous call.
+                    val response = callable.handle.unwrapResponse(
+                        callable.handle.requestInvokeAsync(callable.func, encoded).join()
+                    )
+                    thisFrame.subs.push(StructuredClone.decode(response, ctx))
+                } else {
+                    // Void callback: fire-and-forget notification.
+                    callable.handle.postInvoke(callable.func, encoded)
+                }
             } else {
                 val frameNum: Int
                 val capturedVars: Vars?

@@ -272,11 +272,15 @@ sealed interface Op {
      * arguments; iff [classParent] — the receiver instance whose variables
      * become the new frame's parent scope (`instance.method(...)` dispatch).
      * Otherwise the function's captured (definition-site) scope is used,
-     * which is what makes escaping closures work. A callback owned by
-     * another actor is not entered locally: its arguments are structurally
-     * cloned and posted to the owner's dispatcher, fire-and-forget.
+     * which is what makes escaping closures work.
+     *
+     * A callback owned by another actor is not entered locally; its arguments
+     * are structurally cloned and delivered to the owner's dispatcher. When
+     * [callbackResult] is false (a `void` callback) the delivery is
+     * fire-and-forget; when true (a value-returning callback) the caller
+     * blocks for the owner's reply and the decoded result is pushed.
      */
-    data class Call(val args: Int, val classParent: Boolean = false) : Op {
+    data class Call(val args: Int, val classParent: Boolean = false, val callbackResult: Boolean = false) : Op {
         override val opcode get() = 0x09
     }
 

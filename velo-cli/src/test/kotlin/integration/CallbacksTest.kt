@@ -171,19 +171,30 @@ class CallbacksTest {
     // ---- compile-time transferability rules ----
 
     @Test
-    fun `actor signature rejects callback returning a value`() {
+    fun `actor signature accepts a value-returning callback`() {
+        // A non-void callback is transferable as long as its return type is.
+        compileOrThrow(
+            """
+            actor class A() {
+                func m(func[(int) int] cb) void { void };
+            };
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `actor signature rejects callback with non-transferable return`() {
         val ex = assertFails {
             compileOrThrow(
                 """
                 actor class A() {
-                    func m(func[(int) int] cb) void { void };
+                    func m(func[(int) ptr[int]] cb) void { void };
                 };
                 """.trimIndent()
             )
         }
         val msg = ex.message ?: ""
         assertTrue(msg.contains("not transferable"), "Unexpected error: $msg")
-        assertTrue(msg.contains("return void"), "Hint missing: $msg")
     }
 
     @Test
@@ -371,6 +382,77 @@ class CallbacksTest {
         assertEquals("main done\nroundtrip: 42", output)
     }
 
+    // ---- value-returning (non-void) callbacks ----
+
+    @Test
+    fun `a non-void callback owned by an actor returns a value to the caller`() {
+        // The callback runs on its owner (an idle actor), so the blocking
+        // cross-actor invocation completes instead of deadlocking.
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Doubler() {
+                func make() func[(int) int] { func(int v) int { v * 2; }; };
+            };
+
+            actor[Doubler] d = new Doubler();
+            func[(int) int] cb = await d.make();
+            term.println(cb(21).str);
+            """.trimIndent()
+        )
+        assertEquals("42", output)
+    }
+
+    @Test
+    fun `a value-returning callback bridges two actors`() {
+        // main awaits Worker; Worker invokes a callback owned by Doubler (a
+        // third, idle actor) — the value flows back without deadlock.
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Doubler() {
+                func make() func[(int) int] { func(int v) int { v * 2; }; };
+            };
+            actor class Worker() {
+                func apply(func[(int) int] f, int x) int { f(x); };
+            };
+
+            actor[Doubler] d = new Doubler();
+            actor[Worker] w = new Worker();
+            func[(int) int] cb = await d.make();
+            term.println((await w.apply(cb, 50)).str);
+            """.trimIndent()
+        )
+        assertEquals("100", output)
+    }
+
+    @Test
+    fun `a void callback remains fire-and-forget`() {
+        // Regression: the void path still posts (runs after the main frame).
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Worker() {
+                func process(int value, func[(int) void] done) void {
+                    done(value * 2);
+                    void
+                };
+            };
+
+            actor[Worker] w = new Worker();
+            await w.process(21, func(int v) void {
+                term.println("callback got: ".con(v.str));
+                void
+            });
+            term.println("main frame done");
+            """.trimIndent()
+        )
+        assertEquals("main frame done\ncallback got: 42", output)
+    }
+
     // ---- helpers ----
 
     private val testRegistry = NativeRegistry()
@@ -405,6 +487,7 @@ class CallbacksTest {
                         vars = it.vars.map { v -> v.value.index },
                     )
                 },
+                dataClasses = shared.dataClasses.toList(),
             )
         } catch (ex: Throwable) {
             ex.printStackTrace()

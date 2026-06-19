@@ -109,7 +109,10 @@ fun Type.isTransferable(): Boolean = when (this) {
     is TupleType -> types.all { it.isTransferable() }
     is ActorBoundType -> true
     is FutureType -> false   // pinned to the actor that completes it; see [FutureType] kdoc
-    is FuncType -> derived.sameAs(VoidType) && args?.all { it.isTransferable() } == true
+    // A callback needs a full argument signature, both its arguments and its
+    // return transferable. A `void` return is fire-and-forget; a value return
+    // makes the invocation a blocking cross-actor call (see Op.Call).
+    is FuncType -> args?.all { it.isTransferable() } == true && derived.isTransferable()
     // A `data class` is an immutable value type, copied across the boundary.
     // Its fields are checked transferable at its own declaration, so the
     // type itself is always transferable.
@@ -125,8 +128,8 @@ fun Type.isTransferable(): Boolean = when (this) {
 fun requireTransferable(type: Type, where: String) {
     if (type.isTransferable()) return
     val hint = if (type is FuncType) {
-        "callbacks must declare a full signature with transferable arguments and return void, " +
-            "e.g. func[(int, str) void]"
+        "callbacks must declare a full signature with transferable arguments and a transferable " +
+            "return type, e.g. func[(int, str) void] or func[(int) str]"
     } else {
         "use a primitive, a container of transferable values, or wrap as actor[T]"
     }

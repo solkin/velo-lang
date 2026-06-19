@@ -1,0 +1,15 @@
+Terminal term = new Terminal();
+
+# A value-returning callback: `func[(int) int]`. The closure runs on its owner
+# (the Doubler actor) and the result flows back to the caller. A `void`
+# callback would instead be a fire-and-forget notification.
+actor class Doubler() {
+    func make() func[(int) int] {
+        func(int v) int { v * 2; };
+    };
+};
+
+actor[Doubler] d = new Doubler();
+func[(int) int] twice = await d.make();
+term.println(twice(21).str);
+term.println(twice(50).str);

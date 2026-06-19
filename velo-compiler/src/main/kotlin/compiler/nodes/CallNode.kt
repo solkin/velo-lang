@@ -83,7 +83,11 @@ data class CallNode(
             is ClassType -> returnType
             else -> throw IllegalArgumentException("Call on non-function type")
         }
-        ctx.add(Op.Call(args.size))
+        // A value-returning callable, when it turns out to be a foreign actor
+        // callback at runtime, must be invoked as a blocking cross-actor call
+        // rather than fire-and-forget (see Op.Call). Harmless for local calls.
+        val callbackResult = returnType is FuncType && !returnType.derived.sameAs(VoidType)
+        ctx.add(Op.Call(args.size, callbackResult = callbackResult))
         return type
     }
 

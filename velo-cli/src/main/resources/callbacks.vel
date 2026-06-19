@@ -16,10 +16,24 @@ actor class Worker() {
 
 actor[Worker] w = new Worker();
 
-await async w.process(21, func(int v) void {
+await w.process(21, func(int v) void {
     # Runs on the main thread, after the main frame completes.
     term.println("callback got: ".con(v.str));
     void
 });
 
 term.println("main frame done");
+
+# A callback may also return a value — func[(args) result]. The closure still
+# runs on its owner, but the caller blocks for the result instead of firing and
+# forgetting. Here `twice` is owned by the Doubler actor; invoking it from the
+# main context runs it on Doubler and hands the value back.
+actor class Doubler() {
+    func make() func[(int) int] {
+        func(int v) int { v * 2; };
+    };
+};
+
+actor[Doubler] d = new Doubler();
+func[(int) int] twice = await d.make();
+term.println("twice(21) = ".con(twice(21).str));

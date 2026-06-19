@@ -273,6 +273,11 @@ class GoldenTest {
         runGoldenTest("data-class")
     }
 
+    @Test
+    fun `golden - value-returning callback`() {
+        runGoldenTest("callbacks-result")
+    }
+
     // ========== Utility Methods ==========
 
     /**

@@ -101,6 +101,7 @@ object Bytecode {
             is Op.Call -> {
                 out.writeInt(op.args)
                 out.writeBoolean(op.classParent)
+                out.writeBoolean(op.callbackResult)
             }
             is Op.NativeCall -> {
                 out.writeShort(op.poolIndex)
@@ -252,7 +253,11 @@ object Bytecode {
             0x04 -> Op.ArrLoad
             0x05 -> Op.ArrLen
             0x08 -> Op.ArrStore
-            0x09 -> Op.Call(args = inp.readInt(), classParent = inp.readBoolean())
+            0x09 -> Op.Call(
+                args = inp.readInt(),
+                classParent = inp.readBoolean(),
+                callbackResult = inp.readBoolean(),
+            )
             0x0b -> Op.Div
             0x0c -> Op.Pop
             0x0d -> Op.Dup
