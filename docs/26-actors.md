@@ -6,10 +6,10 @@ The model is small and explicit:
 
 - Declare an actor with `actor class`.
 - Instantiate with `new ActorClass(args)`. The result is typed `actor[T]`.
-- Start a method with `async receiver.method(args)`. The result is typed `future[T]`.
-- Block on a future with `await futureExpr`.
+- Call it synchronously with `await receiver.method(args)`.
+- For parallelism, start a call with `async receiver.method(args)` (typed `future[T]`) and `await` the future later.
 
-The synchronous shorthand is `await async receiver.method(args)`. There is no other "synchronous call" syntax — `await` always means "drain a future", `async` always means "start one", and the two compose.
+The synchronous form `await receiver.method(args)` is sugar for `await async receiver.method(args)`: `async` starts a call and yields a `future[T]`, `await` drains a future, and the sugar simply implies the `async` when you want the result right away.
 
 ## Declaring an Actor
 
@@ -46,30 +46,42 @@ term.println((await async counter.value()).str); # 2
 
 The matching `await` then blocks the caller's thread until that future resolves and decodes the response into a fresh value in the caller's memory area.
 
-`async` is mandatory. Naked `counter.bump()` doesn't compile, because the type `actor[Counter]` exposes no properties — only `async` resolves them. `await` on its own doesn't compile either, because it only consumes futures.
+A naked `counter.bump()` doesn't compile, because the type `actor[Counter]` exposes no properties — the call has to be marked as crossing the boundary.
 
-### Why two keywords?
+### The synchronous shortcut: `await receiver.method(args)`
 
-The pair is a deliberate visual marker that *this call crosses a thread boundary*. Velo does not have user-level coroutines, so `await` is synchronous: it suspends the calling thread until the actor replies. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice". Splitting it into `async` (start) and `await` (wait) keeps the cost visible *and* unlocks parallelism — see [Parallel Work](#parallel-work-with-async) below.
+The common case — start a call and immediately wait for it — has a one-keyword form: `await` accepts an actor method call directly, and `async` is implied.
+
+```velo
+term.println((await counter.bump()).str);        # sugar
+term.println((await async counter.bump()).str);  # the same thing, spelled out
+```
+
+`await` still does just one thing — produce the result of a cross-thread operation. Reach for a bare `async` (without `await`) only when you want the `future[T]` itself, to overlap work — see [Parallel Work](#parallel-work-with-async).
+
+### Why a visible marker?
+
+`await` is a deliberate signal that *this call crosses a thread boundary*. Velo does not have user-level coroutines, so it is synchronous: it suspends the calling thread until the actor replies. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice."
 
 ## What Crosses the Boundary
 
 The compiler enforces a static notion of **transferable** types — anything that can either be structurally copied or shipped as a typed handle:
 
 - primitives (`int`, `float`, `byte`, `bool`, `str`)
-- `array[T]`, `tuple[…]`, `dict[K:V]` whose element types are themselves transferable
+- `array[T]`, `tuple[…]` whose element types are themselves transferable
+- [`data class`](28-data-classes.md) values — immutable structs, copied by value
 - another actor's `actor[T]` handle
-- fully-signed void functions — `func[(args…) void]` — shipped as **callbacks**:
-  the closure stays with its owner, the receiver gets a handle, and invoking it
-  posts the call back to the owner's thread (see [Callbacks](27-callbacks.md))
+- callbacks — a fully-signed `func[(args…) ret]`: the closure stays with its
+  owner, the receiver gets a handle, and invoking it runs on the owner's
+  thread. A `void` return is a fire-and-forget notification; a value return is
+  a blocking call back to the owner (see [Callbacks](27-callbacks.md))
 - `void`
 
 Everything else is non-transferable and rejected **at the point of declaration** — not at the call site:
 
-- non-actor `class` instances — they live in a single `MemoryArea` and would race
-- loose function values (`func[T]`, no argument signature) and functions returning
-  a value — a callback is a one-way notification; results flow back through
-  ordinary `async`/`await`
+- non-actor `class` instances (including `dict`/`Map`) — they live in a single
+  `MemoryArea` and would race if shared
+- loose function values (`func[T]`, no argument signature)
 - pointers (`ptr[T]`) — refer to specific var slots
 - `any`, generics, native (JVM) objects — no defined wire format
 
@@ -83,7 +95,7 @@ actor class Bad() {
 };
 ```
 
-To share structured data, use a tuple/dict; to share an object identity, wrap it as another `actor class`.
+To share structured data, make it a [`data class`](28-data-classes.md) (copied by value) or a tuple; to share an object *identity*, wrap it as another `actor class`.
 
 ## Parallel Work with `async`
 
@@ -195,10 +207,10 @@ Two actors, two threads, two private `n`s — no `mutex`, no race.
 - `actor class` cannot be `native` — there's nothing on the JVM side to dispatch to.
 - `actor class` is not generic. Wrap your generic logic in plain classes and let the actor hold them.
 - `async` parses tightly: `async receiver.method(args)`. Use parentheses around the receiver (`async (foo()).method()`) or around the result (`(await async x.foo()).str`) when chaining.
-- `await` parses any expression but only accepts `future[T]` types. `await someInt` is a compile error.
+- `await receiver.method(args)` is the synchronous sugar (`async` implied). When the awaited value is a plain `future[T]`, `await` accepts any expression but only that type — `await someInt` is a compile error.
 - `await` shares precedence with `.` / `[]` / `()`, so `await arr[i]` parses as `(await arr)[i]`. When the future comes from indexing, calling, or any other postfix, wrap it: `await (arr[i])`, `await (someFunc())`.
 - `future[T]` is pinned to its producing actor. It cannot appear in another `actor class`'s method signatures (param or return).
-- Loose function values (`func[T]`) and pointers cannot cross the boundary. Functions with a full void signature — `func[(int) void]` — *can*: they travel as callbacks executed on their owner's thread (see [Callbacks](27-callbacks.md)).
+- Loose function values (`func[T]`) and pointers cannot cross the boundary. A fully-signed `func[(int) str]` *can*: it travels as a callback run on its owner's thread — `void`-returning ones are fire-and-forget, value-returning ones block for the result (see [Callbacks](27-callbacks.md)).
 
 ### Errors in unawaited futures are silently dropped
 
@@ -218,4 +230,4 @@ If a future does need to be discarded knowingly (e.g. you're broadcasting to man
 
 ---
 
-[Previous: Closures ←](25-closures.md)
+[Previous: Closures ←](25-closures.md) | [Next: Callbacks →](27-callbacks.md)

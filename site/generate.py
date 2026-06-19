@@ -293,20 +293,43 @@ EXAMPLES = [
                 "code": "actor class Counter() {\n    int n = 0;\n    func bump() int {\n        n += 1;\n        n;\n    };\n};\n\nactor[Counter] c = new Counter();"
             },
             {
-                "docs": "<code>async</code> dispatches a method call and returns a <code>future[T]</code> immediately. <code>await</code> blocks until the future is ready and unwraps the value. The two are orthogonal — combine them when you need the result right away.",
-                "code": "future[int] f = async c.bump();\nint n = await f;                # 1\n\n# Most calls inline both:\nint m = await async c.bump();   # 2"
+                "docs": "Call synchronously with <code>await receiver.method(args)</code> — <code>async</code> is implied. Reach for a bare <code>async</code> only when you want the <code>future[T]</code> itself, to overlap work, and <code>await</code> it later.",
+                "code": "int n = await c.bump();         # 1 — synchronous call\n\nfuture[int] f = async c.bump();  # start without waiting\nint m = await f;                 # 2 — collect later"
             },
             {
                 "docs": "Each actor owns its data — two actors mean two threads, two private <code>n</code>s, no shared memory, no locks.",
-                "code": "actor[Counter] a = new Counter();\nactor[Counter] b = new Counter();\n\nawait async a.bump();   # 1\nawait async b.bump();   # 1 — independent\nawait async a.bump();   # 2"
+                "code": "actor[Counter] a = new Counter();\nactor[Counter] b = new Counter();\n\nawait a.bump();   # 1\nawait b.bump();   # 1 — independent\nawait a.bump();   # 2"
             },
             {
                 "docs": "Because <code>async</code> returns immediately, two calls on two actors run in parallel. Wait time is the slower one, not the sum.",
                 "code": "future[int] fa = async a.bump();   # both dispatched\nfuture[int] fb = async b.bump();   # before either blocks\nint x = await fa;\nint y = await fb;"
             },
             {
-                "docs": "Arguments and return values are deep-copied across the boundary (primitives, arrays, dicts, tuples). Other <code>actor[T]</code> values cross by reference. Plain class instances, function values, and pointers can't — wrap them in their own <code>actor</code> if you need shared access.",
-                "code": "actor class Bag() {\n    array[int] held = new array[int]{};\n    func put(array[int] xs) void { held = xs; };\n};\n\nactor[Bag] b = new Bag();\narray[int] xs = new array[int]{1, 2, 3};\nawait async b.put(xs);\nxs[0] = 99;             # local mutation —\n                        # the actor's copy is unaffected"
+                "docs": "Arguments and return values are deep-copied across the boundary (primitives, arrays, tuples, and <code>data class</code> values). Other <code>actor[T]</code> values cross by reference. Plain class instances, function values, and pointers can't — make them a <code>data class</code> or wrap them in their own <code>actor</code>.",
+                "code": "actor class Bag() {\n    array[int] held = new array[int]{};\n    func put(array[int] xs) void { held = xs; };\n};\n\nactor[Bag] b = new Bag();\narray[int] xs = new array[int]{1, 2, 3};\nawait b.put(xs);\nxs[0] = 99;             # local mutation —\n                        # the actor's copy is unaffected"
+            }
+        ]
+    },
+    {
+        "id": "data-classes",
+        "title": "Data Classes",
+        "intro": "A <code>data class</code> is an immutable value type: compared by value and copied — never aliased — across actor and native boundaries. It is how you move structured data between threads.",
+        "segments": [
+            {
+                "docs": "State is exactly the constructor parameters; the body may add methods but no fields. Fields are immutable — reassigning one is a compile error.",
+                "code": "data class Point(int x, int y) {\n    func sum() int { x + y; };\n};\n\nPoint p = new Point(3, 4);\nint s = p.sum();   # 7"
+            },
+            {
+                "docs": "Equality is by value — same class, all fields equal (deeply). No operator overload needed.",
+                "code": "Point a = new Point(1, 2);\nPoint b = new Point(1, 2);\nbool same = a == b;   # true"
+            },
+            {
+                "docs": "A data class crosses an actor boundary as an independent copy, methods intact — the natural way to return structured results.",
+                "code": "actor class Geometry() {\n    func translate(Point p, int dx, int dy) Point {\n        new Point(p.x + dx, p.y + dy);\n    };\n};\n\nactor[Geometry] geo = new Geometry();\nPoint moved = await geo.translate(p, 10, 20);   # (13, 24)"
+            },
+            {
+                "docs": "Across the native boundary it is marshalled by value: the host registers a matching JVM type with <code>registerData</code>, and a Kotlin <code>data class</code> fits with no annotations.",
+                "code": "// Kotlin host\ndata class NativePoint(val x: Int, val y: Int)\n\nval natives = NativeRegistry()\n    .registerData(\"Point\", NativePoint::class)\n    .register(Geometry::class)"
             }
         ]
     },

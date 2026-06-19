@@ -27,21 +27,20 @@
 <span class="kw">actor</span>[<span class="ty">Counter</span>] c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();</code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p><code>async</code> dispatches a method call and returns a <code>future[T]</code> immediately. <code>await</code> blocks until the future is ready and unwraps the value. The two are orthogonal — combine them when you need the result right away.</p></td>
-                <td class="code"><pre><code><span class="ty">future</span>[<span class="ty">int</span>] f <span class="op">=</span> <span class="kw">async</span> c.bump();
-<span class="ty">int</span> n <span class="op">=</span> <span class="kw">await</span> f;                <span class="cm"># 1</span>
+                <td class="docs"><p>Call synchronously with <code>await receiver.method(args)</code> — <code>async</code> is implied. Reach for a bare <code>async</code> only when you want the <code>future[T]</code> itself, to overlap work, and <code>await</code> it later.</p></td>
+                <td class="code"><pre><code><span class="ty">int</span> n <span class="op">=</span> <span class="kw">await</span> c.bump();         <span class="cm"># 1 — synchronous call</span>
 
-<span class="cm"># Most calls inline both:</span>
-<span class="ty">int</span> m <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> c.bump();   <span class="cm"># 2</span></code></pre></td>
+<span class="ty">future</span>[<span class="ty">int</span>] f <span class="op">=</span> <span class="kw">async</span> c.bump();  <span class="cm"># start without waiting</span>
+<span class="ty">int</span> m <span class="op">=</span> <span class="kw">await</span> f;                 <span class="cm"># 2 — collect later</span></code></pre></td>
             </tr>
             <tr>
                 <td class="docs"><p>Each actor owns its data — two actors mean two threads, two private <code>n</code>s, no shared memory, no locks.</p></td>
                 <td class="code"><pre><code><span class="kw">actor</span>[<span class="ty">Counter</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();
 <span class="kw">actor</span>[<span class="ty">Counter</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();
 
-<span class="kw">await</span> <span class="kw">async</span> a.bump();   <span class="cm"># 1</span>
-<span class="kw">await</span> <span class="kw">async</span> b.bump();   <span class="cm"># 1 — independent</span>
-<span class="kw">await</span> <span class="kw">async</span> a.bump();   <span class="cm"># 2</span></code></pre></td>
+<span class="kw">await</span> a.bump();   <span class="cm"># 1</span>
+<span class="kw">await</span> b.bump();   <span class="cm"># 1 — independent</span>
+<span class="kw">await</span> a.bump();   <span class="cm"># 2</span></code></pre></td>
             </tr>
             <tr>
                 <td class="docs"><p>Because <code>async</code> returns immediately, two calls on two actors run in parallel. Wait time is the slower one, not the sum.</p></td>
@@ -51,7 +50,7 @@
 <span class="ty">int</span> y <span class="op">=</span> <span class="kw">await</span> fb;</code></pre></td>
             </tr>
             <tr>
-                <td class="docs"><p>Arguments and return values are deep-copied across the boundary (primitives, arrays, dicts, tuples). Other <code>actor[T]</code> values cross by reference. Plain class instances, function values, and pointers can't — wrap them in their own <code>actor</code> if you need shared access.</p></td>
+                <td class="docs"><p>Arguments and return values are deep-copied across the boundary (primitives, arrays, tuples, and <code>data class</code> values). Other <code>actor[T]</code> values cross by reference. Plain class instances, function values, and pointers can't — make them a <code>data class</code> or wrap them in their own <code>actor</code>.</p></td>
                 <td class="code"><pre><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Bag</span>() {
     <span class="ty">array</span>[<span class="ty">int</span>] held <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{};
     <span class="kw">func</span> put(<span class="ty">array</span>[<span class="ty">int</span>] xs) <span class="kw">void</span> { held <span class="op">=</span> xs; };
@@ -59,7 +58,7 @@
 
 <span class="kw">actor</span>[<span class="ty">Bag</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Bag</span>();
 <span class="ty">array</span>[<span class="ty">int</span>] xs <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>};
-<span class="kw">await</span> <span class="kw">async</span> b.put(xs);
+<span class="kw">await</span> b.put(xs);
 xs[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">99</span>;             <span class="cm"># local mutation —</span>
                         <span class="cm"># the actor&#x27;s copy is unaffected</span></code></pre></td>
             </tr>
@@ -71,7 +70,7 @@ xs[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">99</spa
                 </td>
                 <td class="code nav-footer">
                     <div class="nav-links">
-                        <span class="nav-next"><a href="arrays.html">Arrays &rarr;</a></span>
+                        <span class="nav-next"><a href="data-classes.html">Data Classes &rarr;</a></span>
                     </div>
                 </td>
             </tr>

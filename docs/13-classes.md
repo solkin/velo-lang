@@ -171,6 +171,10 @@ int first = a[0];            # 1
 
 For the full list of overloadable operators and detailed usage, see [Operator Overloading](24-operator-overloading.md).
 
+## Data classes
+
+The classes above are mutable objects shared by reference. For an **immutable value type** — compared by value and copied across actor and native boundaries — use a [`data class`](28-data-classes.md) instead.
+
 ---
 
 [Previous: Tuples ←](12-tuples.md) | [Next: Extension Functions →](14-extension-functions.md)
