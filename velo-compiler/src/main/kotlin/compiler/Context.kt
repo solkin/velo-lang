@@ -136,8 +136,8 @@ data class Context(
         lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name on retype")
     }
 
-    fun def(name: String, type: Type): Var {
-        return frame.def(name, type)
+    fun def(name: String, type: Type, immutable: Boolean = false): Var {
+        return frame.def(name, type, immutable)
     }
 
 }

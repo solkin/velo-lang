@@ -22,13 +22,14 @@ import compiler.parser.parselets.TypeParser
 class ClassParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val isActor = token.value == "actor"
+        val isData = token.value == "data"
         val className = TypeParser.parseVarname(parser)
         val typeParams = parseTypeParams(parser)
         val savedGenerics = parser.context.saveGenericTypes()
         typeParams.forEach { parser.context.registerGenericType(it) }
         parser.context.registerClass(
             className,
-            ClassType(name = className, isActor = isActor, typeParams = typeParams),
+            ClassType(name = className, isActor = isActor, isData = isData, typeParams = typeParams),
         )
         val defsNodes = parser.parseDelimited('(', ')', ',') {
             TypeParser.parseDef(parser)
@@ -46,6 +47,7 @@ class ClassParselet : PrefixParselet {
         return ClassNode(
             name = className,
             isActor = isActor,
+            isData = isData,
             typeParams = typeParams,
             defs = defs,
             body = body,

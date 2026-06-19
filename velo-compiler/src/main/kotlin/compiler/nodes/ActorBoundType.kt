@@ -110,6 +110,10 @@ fun Type.isTransferable(): Boolean = when (this) {
     is ActorBoundType -> true
     is FutureType -> false   // pinned to the actor that completes it; see [FutureType] kdoc
     is FuncType -> derived.sameAs(VoidType) && args?.all { it.isTransferable() } == true
+    // A `data class` is an immutable value type, copied across the boundary.
+    // Its fields are checked transferable at its own declaration, so the
+    // type itself is always transferable.
+    is ClassType -> isData
     else -> false
 }
 

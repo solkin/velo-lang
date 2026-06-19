@@ -10,6 +10,7 @@ class TokenStream(private val input: Input) {
         "while",
         "new",
         "actor",
+        "data",
         "async",
         "await",
         "ext",
@@ -287,6 +288,7 @@ const val VOID = "void"
 const val ANY = "any"
 const val PTR = "ptr"
 const val ACTOR = "actor"
+const val DATA = "data"
 const val FUTURE = "future"
 
 val stdTypesSet = setOf(

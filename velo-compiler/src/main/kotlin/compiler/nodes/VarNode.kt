@@ -19,6 +19,9 @@ data class VarNode(
 
     override fun compileAssignment(type: Type, ctx: Context) {
         val v = ctx.get(name)
+        if (v.immutable) {
+            throw IllegalArgumentException("Cannot reassign immutable '$name' (data class fields are immutable)")
+        }
         if (!v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal var assign type $type != ${v.type}")
         }

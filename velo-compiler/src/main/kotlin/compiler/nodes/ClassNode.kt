@@ -7,6 +7,7 @@ import compiler.Context
 data class ClassNode(
     val name: String,
     val isActor: Boolean = false,
+    val isData: Boolean = false,
     val typeParams: List<String> = emptyList(),
     val defs: List<DefNode>,
     val body: Node,
@@ -14,6 +15,9 @@ data class ClassNode(
     override fun compile(ctx: Context): Type {
         if (isActor && typeParams.isNotEmpty()) {
             throw IllegalStateException("Generic 'actor class' is not supported (class '$name')")
+        }
+        if (isData && typeParams.isNotEmpty()) {
+            throw IllegalStateException("Generic 'data class' is not supported (class '$name')")
         }
         // Reserve the class name index before extending, so class body vars don't shadow it
         val nameVar = ctx.def(name, VoidType)
@@ -24,6 +28,7 @@ data class ClassNode(
         val classType: Type = ClassType(
             name = name,
             isActor = isActor,
+            isData = isData,
             typeParams = typeParams,
             num = classOps.frame.num,
             parent = classOps,
@@ -35,9 +40,11 @@ data class ClassNode(
         ctx.add(Op.Frame(num = classOps.frame.num))
         ctx.add(Op.Store(index = nameVar.index))
 
-        // Compile class body
+        // Compile class body. A `data class` is an immutable value type: its
+        // fields (the constructor parameters) cannot be reassigned, so their
+        // var slots are marked immutable.
         val args = defs.reversed().map { def ->
-            val v = classOps.def(def.name, def.type)
+            val v = classOps.def(def.name, def.type, immutable = isData)
             classOps.add(Op.Store(v.index))
             v
         }.reversed()
@@ -49,6 +56,9 @@ data class ClassNode(
 
         if (isActor) {
             validateActorSignatures(classOps)
+        }
+        if (isData) {
+            validateDataClass(classOps)
         }
 
         // Add class operations to the real context
@@ -80,11 +90,39 @@ data class ClassNode(
             requireTransferable(funcType.derived, "Actor method '$name.$memberName' return type")
         }
     }
+
+    /**
+     * Enforce the value-type contract of a `data class`:
+     *
+     *   - state is exactly the constructor parameters — the body may only
+     *     declare methods, never additional fields;
+     *   - every field is itself transferable, so a data class is always safe
+     *     to copy across actor and native boundaries (see [isTransferable]).
+     *
+     * Immutability of the fields is handled separately by marking their var
+     * slots immutable at definition time.
+     */
+    private fun validateDataClass(classCtx: Context) {
+        defs.forEach { def ->
+            requireTransferable(def.type, "Data class '$name' field '${def.name}'")
+        }
+        val fieldNames = defs.map { it.name }.toSet()
+        classCtx.frame.vars.forEach { (memberName, v) ->
+            if (memberName in fieldNames) return@forEach
+            if (v.type !is FuncType) {
+                throw IllegalStateException(
+                    "Data class '$name' may only declare methods in its body; " +
+                        "member '$memberName' is a field — make it a constructor parameter"
+                )
+            }
+        }
+    }
 }
 
 data class ClassType(
     val name: String,
     val isActor: Boolean = false,
+    val isData: Boolean = false,
     val typeParams: List<String> = emptyList(),
     val typeArgs: List<Type> = emptyList(),
     val num: Int? = null,

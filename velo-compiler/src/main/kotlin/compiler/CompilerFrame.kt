@@ -12,18 +12,18 @@ data class CompilerFrame(
     val varCounter: AtomicInteger,
 ) {
 
-    fun def(name: String, type: Type): Var {
+    fun def(name: String, type: Type, immutable: Boolean = false): Var {
         if (vars.containsKey(name)) {
             throw IllegalArgumentException("Variable $name is already defined")
         }
-        val v = Var(index = varCounter.getAndIncrement(), type = type)
+        val v = Var(index = varCounter.getAndIncrement(), type = type, immutable = immutable)
         vars[name] = v
         return v
     }
 
     fun retype(name: String, type: Type): Var {
         val e = vars[name] ?: throw IllegalArgumentException("Variable $name is not defined")
-        val v = Var(index = e.index, type = type)
+        val v = Var(index = e.index, type = type, immutable = e.immutable)
         vars[name] = v
         return v
     }
