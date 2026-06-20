@@ -139,4 +139,4 @@ For richer behaviour with multiple operations, prefer a class. For one-off callb
 
 ---
 
-[Previous: Operator Overloading ←](24-operator-overloading.md)
+[Previous: Operator Overloading ←](24-operator-overloading.md) | [Next: Actors →](26-actors.md)
