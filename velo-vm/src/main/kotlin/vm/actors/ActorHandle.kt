@@ -7,6 +7,7 @@ import vm.LifoStack
 import vm.MemoryAreaImpl
 import core.NativeRegistry
 import vm.Record
+import vm.RunResult
 import vm.VMContext
 import vm.VMExecutor
 import vm.VMProfiler
@@ -88,6 +89,29 @@ class ActorHandle private constructor(
     private var activeThread: Thread? = null
 
     /**
+     * Fibers parked on an `await` (VEL-11), waiting for their awaited future.
+     * Touched only on this handle's dispatcher thread (the [drive] / resume /
+     * shutdown paths all run there), so a plain set is safe. Keeps the CLI
+     * pump from going idle while a suspended computation is still outstanding.
+     */
+    private val parkedFibers = HashSet<Fiber>()
+
+    /**
+     * A suspended computation: its sentinel base frame (the stack marker used
+     * to detect completion), the response to fail on shutdown, and how to
+     * deliver its result / route its failure once it finishes.
+     */
+    private class Fiber(
+        val sentinel: Frame,
+        val response: CompletableFuture<ActorResponse>?,
+        val deliver: (Record) -> Unit,
+        val fail: (Throwable) -> Unit,
+    )
+
+    /** Whether any fiber is parked — keeps the CLI pump alive across an await. */
+    fun hasParkedFibers(): Boolean = parkedFibers.isNotEmpty()
+
+    /**
      * True when the calling thread is right now executing this handle's
      * task — i.e. it is safe to touch this handle's frames directly instead
      * of going through the mailbox. Used for inline callback invocation.
@@ -120,6 +144,7 @@ class ActorHandle private constructor(
             is ActorRequest.Construct -> handleConstruct(req)
             is ActorRequest.Call -> handleCall(req)
             is ActorRequest.InvokeFunc -> handleInvoke(req)
+            is ActorRequest.Resume -> req.run()
             ActorRequest.Shutdown -> handleShutdown()
         }
     }
@@ -130,134 +155,232 @@ class ActorHandle private constructor(
             is ActorRequest.Construct -> req.response.complete(ActorResponse.Failure(message))
             is ActorRequest.Call -> req.response.complete(ActorResponse.Failure(message))
             is ActorRequest.InvokeFunc -> req.response?.complete(ActorResponse.Failure(message))
+            is ActorRequest.Resume -> Unit // parked fibers are failed by handleShutdown
             is ActorRequest.Main, ActorRequest.Shutdown -> Unit
         }
     }
 
     /**
-     * Run a whole program frame. Failures are routed to the request's
-     * `onFailure` when provided (embedded hosts), otherwise they propagate
-     * into the dispatcher — for [PumpDispatcher] that surfaces them on the
-     * thread blocked in [vm.VM.run], exactly like the pre-actor main loop.
+     * Run the program's whole main frame as a fiber. Failures route to the
+     * request's `onFailure` when provided (embedded hosts), otherwise they
+     * propagate into the dispatcher — for [PumpDispatcher] that surfaces them on
+     * the thread blocked in [vm.VM.run], exactly like the pre-actor main loop,
+     * with the call stack left intact for the error dump.
      */
-    private fun handleMain(req: ActorRequest.Main) {
-        try {
-            val frame = ctx.loadFrame(num = req.frameNum, parentVars = null)
+    private fun handleMain(req: ActorRequest.Main) = runFiber(
+        args = emptyList(),
+        response = null,
+        prepareTarget = {
+            ctx.loadFrame(num = req.frameNum, parentVars = null)
                 ?: throw IllegalStateException("No main frame")
-            ctx.pushFrame(frame)
-            executor.run()
-        } catch (ex: Throwable) {
+        },
+        deliver = { /* the main frame finished; nothing to hand back */ },
+        fail = { ex ->
             val onFailure = req.onFailure ?: throw ex
             unwindStack()
             onFailure(ex)
-        }
-    }
+        },
+    )
 
     private fun handleShutdown() {
         shuttingDown = true
+        // Fail any fiber still parked on an await so its awaiter doesn't hang.
+        for (fiber in parkedFibers) {
+            fiber.response?.complete(ActorResponse.Failure("[actor $name] is shut down"))
+        }
+        parkedFibers.clear()
         runtime.unregister(id)
         dispatcher.close()
     }
 
-    private fun handleConstruct(req: ActorRequest.Construct) = respond(req.response) {
-        val classFrame = ctx.loadFrame(req.classFrameNum, parentVars = null)
-            ?: error("Class frame ${req.classFrameNum} not found")
-        val produced = runFrame(classFrame, req.args)
-        val ref = produced as? RefRecord
-            ?: error("Actor constructor must produce a class instance, got ${produced::class.simpleName}")
-        require(ref.kind == RefKind.CLASS) {
-            "Actor constructor must produce a class instance, got ${ref.kind}"
-        }
-        ActorResponse.Constructed(registerObject(ref.get(ctx)))
-    }
+    private fun handleConstruct(req: ActorRequest.Construct) = runFiber(
+        args = req.args,
+        response = req.response,
+        prepareTarget = {
+            ctx.loadFrame(req.classFrameNum, parentVars = null)
+                ?: error("Class frame ${req.classFrameNum} not found")
+        },
+        deliver = { produced ->
+            val ref = produced as? RefRecord
+                ?: error("Actor constructor must produce a class instance, got ${produced::class.simpleName}")
+            require(ref.kind == RefKind.CLASS) {
+                "Actor constructor must produce a class instance, got ${ref.kind}"
+            }
+            req.response.complete(ActorResponse.Constructed(registerObject(ref.get(ctx))))
+        },
+        fail = { unwindStack(); req.response.complete(ActorResponse.Failure(it.message ?: it.toString())) },
+    )
 
     /**
-     * Run a function value owned by this actor — callback delivery.
+     * Run a function value owned by this actor — callback delivery — as a fiber.
      *
-     * With a response future (host-side `VeloFunction.call`) failures follow
-     * the normal respond protocol. Fire-and-forget posts have nobody to
-     * report to, so failures are program-fatal: Velo has no exception
-     * handling, every runtime error stops the program loudly, and a silently
-     * swallowed callback error would be the one inconsistent exception to
-     * that rule. [vm.HaltException] passes through the same channel and is
+     * With a response future (host-side `VeloFunction.call`) failures follow the
+     * normal respond protocol. Fire-and-forget posts have nobody to report to,
+     * so failures are program-fatal via [ActorRuntime.raiseFatal]: Velo has no
+     * exception handling, every runtime error stops the program loudly, and a
+     * silently swallowed callback error would be the one inconsistent exception
+     * to that rule. [vm.HaltException] flows through the same channel and is
      * recognised by the top-level handlers as a user-requested stop.
      */
     private fun handleInvoke(req: ActorRequest.InvokeFunc) {
         val response = req.response
-        if (response != null) {
-            respond(response) {
-                ActorResponse.Returned(invokeFunc(req.func, req.args))
-            }
-        } else {
-            try {
-                invokeFunc(req.func, req.args)
-            } catch (ex: Throwable) {
+        runFiber(
+            args = req.args,
+            response = response,
+            prepareTarget = {
+                ctx.loadFrame(num = req.func.frameNum, parentVars = req.func.capturedVars)
+                    ?: error("Callback frame ${req.func.frameNum} not found")
+            },
+            deliver = { result ->
+                response?.complete(ActorResponse.Returned(StructuredClone.encode(result, ctx)))
+            },
+            fail = { ex ->
                 unwindStack()
-                runtime.raiseFatal(ex)
-            }
-        }
+                if (response != null) response.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
+                else runtime.raiseFatal(ex)
+            },
+        )
     }
 
+    private fun handleCall(req: ActorRequest.Call) = runFiber(
+        args = req.args,
+        response = req.response,
+        prepareTarget = {
+            val instance = idToFrame[req.objectId]
+                ?: error("Actor object #${req.objectId} no longer alive")
+            val callable = instance.vars.get(req.methodVarIndex)
+            val funcRec = callable as? FuncRecord
+                ?: error("Actor method index ${req.methodVarIndex} is not callable: $callable")
+            ctx.loadFrame(funcRec.frameNum, parentVars = instance.vars)
+                ?: error("Method frame ${funcRec.frameNum} not found")
+        },
+        deliver = { req.response.complete(ActorResponse.Returned(StructuredClone.encode(it, ctx))) },
+        fail = { unwindStack(); req.response.complete(ActorResponse.Failure(it.message ?: it.toString())) },
+    )
+
+    /**
+     * Synchronously run a function value owned by this actor to completion —
+     * the inline-invocation path ([invokeInline]), where a native called from
+     * Velo code invokes its callback before returning. Inline calls run nested
+     * inside an op on the JVM stack, which cannot be parked, so an `await`
+     * inside blocks rather than suspends (see [runFrameBlocking]).
+     */
     private fun invokeFunc(func: FuncRecord, args: List<ActorValue>): ActorValue {
         val target = ctx.loadFrame(num = func.frameNum, parentVars = func.capturedVars)
             ?: error("Callback frame ${func.frameNum} not found")
-        val returned = runFrame(target, args)
+        val returned = runFrameBlocking(target, args)
         return StructuredClone.encode(returned, ctx)
     }
 
-    private fun handleCall(req: ActorRequest.Call) = respond(req.response) {
-        val instance = idToFrame[req.objectId]
-            ?: error("Actor object #${req.objectId} no longer alive")
-        val callable = instance.vars.get(req.methodVarIndex)
-        val funcRec = callable as? FuncRecord
-            ?: error("Actor method index ${req.methodVarIndex} is not callable: $callable")
-        val methodFrame = ctx.loadFrame(funcRec.frameNum, parentVars = instance.vars)
-            ?: error("Method frame ${funcRec.frameNum} not found")
-        val returned = runFrame(methodFrame, req.args)
-        ActorResponse.Returned(StructuredClone.encode(returned, ctx))
+    /**
+     * Set up a top-level dispatcher task as a fiber and drive it to completion,
+     * possibly across one or more `await` suspensions (VEL-11).
+     *
+     * The sentinel trick still applies: a zero-op frame is pushed underneath the
+     * target as a "stop here" marker for [VMExecutor] — when the call stack
+     * walks back to it the executor returns and the sentinel's operand stack
+     * holds the target frame's result. Arguments are decoded into this context's
+     * memory and pushed onto the target in declaration order before execution.
+     * [prepareTarget] resolves the frame to run; throwing from it (or from
+     * [deliver]) routes through [fail].
+     */
+    private fun runFiber(
+        args: List<ActorValue>,
+        response: CompletableFuture<ActorResponse>?,
+        prepareTarget: () -> Frame,
+        deliver: (Record) -> Unit,
+        fail: (Throwable) -> Unit,
+    ) {
+        ctx.suspensionEnabled = true
+        val sentinel = sentinelFrame()
+        val fiber = Fiber(sentinel, response, deliver, fail)
+        try {
+            val target = prepareTarget()
+            val decoded = args.map { StructuredClone.decode(it, ctx) }
+            ctx.pushFrame(sentinel)
+            decoded.forEach { target.subs.push(it) }
+            ctx.pushFrame(target)
+        } catch (ex: Throwable) {
+            unwindStack()
+            fail(ex)
+            return
+        }
+        drive(fiber)
     }
 
     /**
-     * Run [build] and complete [future] with its result, translating any
-     * thrown exception into [ActorResponse.Failure] after fully unwinding the
-     * actor's call stack. Centralises the error-handling protocol so
-     * individual handlers can read top-down without try/catch noise.
+     * Advance a fiber until it either finishes (deliver its result) or parks on
+     * an `await` (lift its frames off and arrange a resume). Always runs on this
+     * handle's dispatcher thread.
      */
-    private inline fun respond(
-        future: CompletableFuture<ActorResponse>,
-        build: () -> ActorResponse,
-    ) {
+    private fun drive(fiber: Fiber) {
         try {
-            future.complete(build())
+            when (executor.run()) {
+                RunResult.SUSPENDED -> {
+                    val awaited = ctx.takePendingSuspend()
+                        ?: error("Fiber suspended without a pending future")
+                    val saved = ctx.detachStack()
+                    parkedFibers.add(fiber)
+                    awaited.whenComplete { _, _ -> resume(saved, fiber) }
+                }
+                RunResult.COMPLETED -> {
+                    // The target may end in `Ret` (sentinel now on top, result
+                    // on its operand stack) or simply run off the end without
+                    // returning — the program (main) frame does the latter,
+                    // leaving itself above the sentinel. Drain any such finished
+                    // frame down to our marker; the sentinel's operand stack
+                    // holds the result for Ret-terminated targets, EmptyRecord
+                    // otherwise (main's result is discarded anyway).
+                    var tail = ctx.popFrame()
+                    while (tail !== fiber.sentinel && !ctx.isStackEmpty()) tail = ctx.popFrame()
+                    check(tail === fiber.sentinel) { "Actor fiber execution: stack out of sync" }
+                    fiber.deliver(if (tail.subs.empty()) EmptyRecord else tail.subs.pop())
+                }
+            }
         } catch (ex: Throwable) {
-            unwindStack()
-            future.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
+            fiber.fail(ex)
         }
     }
 
     /**
-     * Run one Velo frame to completion on this handle's dispatcher thread.
-     *
-     * A zero-op sentinel frame is pushed underneath as a "stop here" marker
-     * for [VMExecutor]: the executor returns the moment the call stack
-     * walks back to the sentinel. The sentinel's operand stack therefore
-     * holds the topmost value left by the target frame's `Ret`, which we
-     * pop and return to the caller (or [EmptyRecord] for void methods).
-     *
-     * Arguments are decoded into this context's [vm.MemoryArea] and pushed
-     * onto the target frame in declaration order before execution starts,
-     * matching the convention used by ordinary `Call` opcodes elsewhere.
+     * Re-enter a parked fiber on this handle's own dispatcher once its awaited
+     * future completes. Runs on the completing thread, so it only enqueues — the
+     * restore + interpretation happens as a dispatcher task, preserving strict
+     * serial execution. The parked `FutureAwait` op then re-runs and, with the
+     * future now done, takes the fast (non-suspending) path.
      */
-    private fun runFrame(target: Frame, args: List<ActorValue>): Record {
-        val decoded = args.map { StructuredClone.decode(it, ctx) }
-        val sentinel = sentinelFrame()
-        ctx.pushFrame(sentinel)
-        decoded.forEach { target.subs.push(it) }
-        ctx.pushFrame(target)
-        executor.run()
-        val tail = ctx.popFrame()
-        check(tail === sentinel) { "Actor frame execution: stack out of sync" }
-        return if (tail.subs.empty()) EmptyRecord else tail.subs.pop()
+    private fun resume(saved: List<Frame>, fiber: Fiber) {
+        post(ActorRequest.Resume {
+            if (!shuttingDown) {
+                parkedFibers.remove(fiber)
+                ctx.restoreStack(saved)
+                drive(fiber)
+            }
+        })
+    }
+
+    /**
+     * Run one Velo frame to completion synchronously — the nested-invocation
+     * path. Suspension is disabled for the duration: a nested call lives on the
+     * JVM stack and cannot be parked, so an `await` inside blocks (as it did
+     * before VEL-11). Same sentinel mechanism as [runFiber].
+     */
+    private fun runFrameBlocking(target: Frame, args: List<ActorValue>): Record {
+        val previousSuspension = ctx.suspensionEnabled
+        ctx.suspensionEnabled = false
+        try {
+            val decoded = args.map { StructuredClone.decode(it, ctx) }
+            val sentinel = sentinelFrame()
+            ctx.pushFrame(sentinel)
+            decoded.forEach { target.subs.push(it) }
+            ctx.pushFrame(target)
+            executor.run()
+            val tail = ctx.popFrame()
+            check(tail === sentinel) { "Actor frame execution: stack out of sync" }
+            return if (tail.subs.empty()) EmptyRecord else tail.subs.pop()
+        } finally {
+            ctx.suspensionEnabled = previousSuspension
+        }
     }
 
     private fun registerObject(frame: Frame): Int {

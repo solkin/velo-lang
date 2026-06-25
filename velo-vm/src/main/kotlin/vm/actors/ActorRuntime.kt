@@ -64,8 +64,14 @@ class ActorRuntime {
      * exit to ensure pending requests drain before the JVM shuts down.
      */
     fun shutdownAll() {
-        for (handle in handles.values.toList()) {
-            handle.requestShutdown()
-        }
+        // Snapshot via the weakly-consistent iterator rather than a pre-sized
+        // copy (`toList`): actors unregister themselves concurrently as they
+        // finish shutting down, and a pre-sized copy can throw
+        // NoSuchElementException when the map shrinks mid-iteration. A plain
+        // for-each over a ConcurrentHashMap view never throws under concurrent
+        // modification.
+        val live = ArrayList<ActorHandle>()
+        for (handle in handles.values) live.add(handle)
+        for (handle in live) handle.requestShutdown()
     }
 }

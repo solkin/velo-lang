@@ -44,7 +44,7 @@ term.println((await async counter.value()).str); # 2
 - posts a `Call` message to the actor's mailbox;
 - pushes a `future[T]` value (no waiting yet — the call site stays running).
 
-The matching `await` then blocks the caller's thread until that future resolves and decodes the response into a fresh value in the caller's memory area.
+The matching `await` then suspends the caller until that future resolves, and decodes the response into a fresh value in the caller's memory area. A not-yet-ready `await` parks the current fiber and frees the thread rather than blocking it (VEL-11), so the actor — or the main context on a UI thread — keeps servicing its mailbox while parked.
 
 A naked `counter.bump()` doesn't compile, because the type `actor[Counter]` exposes no properties — the call has to be marked as crossing the boundary.
 
@@ -61,7 +61,7 @@ term.println((await async counter.bump()).str);  # the same thing, spelled out
 
 ### Why a visible marker?
 
-`await` is a deliberate signal that *this call crosses a thread boundary*. Velo does not have user-level coroutines, so it is synchronous: it suspends the calling thread until the actor replies. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice."
+`await` is a deliberate signal that *this call crosses a thread boundary* — and a **yield point**. A not-yet-ready `await` suspends the current fiber and lets the actor (or main context) service other messages until the reply arrives (VEL-11, "coroutines without threads"), rather than blocking the thread. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice" — including that the actor's own state may have advanced while you were parked, since another message can run at the yield point.
 
 ## What Crosses the Boundary
 

@@ -17,7 +17,8 @@ actor class Worker() {
 actor[Worker] w = new Worker();
 
 await async w.process(21, func(int v) void {
-    # Runs on the main thread, after the main frame completes.
+    # Runs on the main thread while it is parked at the `await` (a yield
+    # point), so it prints before the main frame finishes.
     term.println("callback got: ".con(v.str));
     void
 });

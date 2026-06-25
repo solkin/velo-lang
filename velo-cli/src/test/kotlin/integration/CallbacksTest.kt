@@ -53,7 +53,7 @@ class CallbacksTest {
     // ---- Velo-side: callbacks between main and actors ----
 
     @Test
-    fun `callback handed to actor runs on main after the main frame`() {
+    fun `callback handed to actor runs on main while parked at await`() {
         val output = compileAndRun(
             """
             Terminal term = new Terminal();
@@ -73,9 +73,10 @@ class CallbacksTest {
             term.println("main frame done");
             """.trimIndent()
         )
-        // The callback is only *posted* during the actor call; the main
-        // context executes it after its own frame completes.
-        assertEquals("main frame done\ncallback got: 42", output)
+        // `await` is a yield point (VEL-11): while main is parked awaiting
+        // the call, it drains its mailbox, so the callback posted during the
+        // call runs before main resumes and finishes its frame.
+        assertEquals("callback got: 42\nmain frame done", output)
     }
 
     @Test
@@ -102,8 +103,9 @@ class CallbacksTest {
             term.println("done");
             """.trimIndent()
         )
-        // Both invocations execute serially on main, in posting order.
-        assertEquals("done\nsum: 5\nsum: 12", output)
+        // Both invocations execute serially on main, in posting order, while
+        // main is parked at the `await` (a yield point); "done" prints after.
+        assertEquals("sum: 5\nsum: 12\ndone", output)
     }
 
     @Test
@@ -379,7 +381,7 @@ class CallbacksTest {
         assertEquals(compiled.frames.size, reread.frames.size)
         assertEquals(compiled.natives, reread.natives)
         val output = runProgram(reread)
-        assertEquals("main done\nroundtrip: 42", output)
+        assertEquals("roundtrip: 42\nmain done", output)
     }
 
     // ---- value-returning (non-void) callbacks ----
@@ -429,8 +431,37 @@ class CallbacksTest {
     }
 
     @Test
+    fun `value-returning callback into main resolves while main is parked at await`() {
+        // VEL-11 regression: main awaits Worker, and Worker invokes a
+        // value-returning callback owned by *main itself*. Under the old
+        // blocking `await` this deadlocked — main blocked its dispatcher on the
+        // await and could never service the callback Worker was blocked on.
+        // Now `await` parks main's fiber and frees the thread, so the pump
+        // services the callback, Worker unblocks, and the value flows back.
+        val output = compileAndRun(
+            """
+            Terminal term = new Terminal();
+
+            actor class Worker() {
+                func run(func[() int] ask) int {
+                    ask() * 2;
+                };
+            };
+
+            int base = 21;
+            actor[Worker] w = new Worker();
+            int r = await async w.run(func() int { base; });
+            term.println(r.str);
+            """.trimIndent()
+        )
+        assertEquals("42", output)
+    }
+
+    @Test
     fun `a void callback remains fire-and-forget`() {
-        // Regression: the void path still posts (runs after the main frame).
+        // Regression: the void path stays fire-and-forget. `await` is a yield
+        // point (VEL-11), so the posted callback runs while main is parked,
+        // before main resumes and finishes its frame.
         val output = compileAndRun(
             """
             Terminal term = new Terminal();
@@ -450,7 +481,7 @@ class CallbacksTest {
             term.println("main frame done");
             """.trimIndent()
         )
-        assertEquals("main frame done\ncallback got: 42", output)
+        assertEquals("callback got: 42\nmain frame done", output)
     }
 
     // ---- helpers ----

@@ -1,6 +1,13 @@
 package vm
 
 /**
+ * Outcome of one [VMExecutor.run] turn: either the call stack ran to the end,
+ * or a fiber parked on an `await` whose future was not ready (VEL-11) and its
+ * frames remain on the stack for the driver to lift off and restore on resume.
+ */
+enum class RunResult { COMPLETED, SUSPENDED }
+
+/**
  * Single-threaded interpreter loop, decoupled from [VM].
  *
  * `VM` uses it to run the program's main frame; [vm.actors.ActorHandle]
@@ -30,16 +37,21 @@ class VMExecutor(
      * Throws whatever the underlying operations throw — the caller is
      * responsible for rewinding the stack/state on failure.
      */
-    fun run() {
-        if (ctx.isStackEmpty()) return
+    fun run(): RunResult {
+        if (ctx.isStackEmpty()) return RunResult.COMPLETED
         var frame = ctx.currentFrame()
         while (frame.pc < frame.ops.size) {
             val cmd = frame.ops[frame.pc]
             profiler?.beforeOp(cmd)
             frame.pc = Interpreter.exec(cmd, pc = frame.pc, ctx)
             profiler?.afterOp()
-            if (ctx.isStackEmpty()) return
+            // VEL-11: an `await` on a not-yet-ready future parks the fiber here
+            // instead of blocking the thread. The frames are left on the stack
+            // for the driver to lift off and restore when the future completes.
+            if (ctx.hasPendingSuspend()) return RunResult.SUSPENDED
+            if (ctx.isStackEmpty()) return RunResult.COMPLETED
             frame = ctx.currentFrame()
         }
+        return RunResult.COMPLETED
     }
 }

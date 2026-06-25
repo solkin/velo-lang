@@ -36,10 +36,10 @@ await async w.process(21, func(int v) void {
     term.println("got: ".con(v.str));   # runs on the main thread
     void
 });
-term.println("main frame done");        # prints BEFORE "got: 42"
+term.println("main frame done");        # prints AFTER "got: 42"
 ```
 
-The main context is itself an actor ("actor #0"): after its frame completes, the program keeps draining the main mailbox while any callbacks are still held by someone. The example prints `main frame done` first, then `got: 42`, and exits once the callback handle is dropped.
+The main context is itself an actor ("actor #0"). `await` is a *yield point* (VEL-11): while the main frame is parked awaiting `w.process`, the main context keeps draining its mailbox, so the callback `w` posts during that call runs *before* `await` returns. The example prints `got: 42` first, then `main frame done`, and exits once the callback handle is dropped.
 
 Invocations of one callback are serialised in posting order. A callback that travels back to its owner (`A → B → A`) unwraps into the original closure — invoking it there is a plain, immediate local call.
 
@@ -110,7 +110,7 @@ val program = runtime.start(Bytecode.read(File("app.vbc")), Dispatcher.from { ma
 program.stop()
 ```
 
-One caveat inherited from synchronous `await`: an `await` in the main context blocks its dispatcher — on a UI thread that means blocking the UI. Embedded scripts should prefer callbacks and fire-and-forget `async` over blocking `await` chains.
+A not-yet-ready `await` in the main context no longer blocks its dispatcher (VEL-11): it suspends the current fiber and frees the thread, so a UI thread stays responsive and the main context keeps servicing callbacks and events while parked. The awaited code resumes on the same thread once its future completes. (One yield-point consequence: state may have advanced while you were parked — see [Actors — `await` is a yield point](26-actors.md#why-a-visible-marker).)
 
 ---
 

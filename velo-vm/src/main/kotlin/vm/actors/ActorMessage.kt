@@ -108,6 +108,14 @@ sealed class ActorRequest {
         val response: CompletableFuture<ActorResponse>?,
     ) : ActorRequest()
 
+    /**
+     * Re-enter a fiber that previously parked on an `await` (VEL-11). Posted by
+     * the actor to its own dispatcher once the awaited future completes; [run]
+     * restores the saved call stack and re-drives the interpreter. Carried as an
+     * opaque continuation so this message stays decoupled from frame internals.
+     */
+    class Resume(val run: () -> Unit) : ActorRequest()
+
     object Shutdown : ActorRequest()
 }
 

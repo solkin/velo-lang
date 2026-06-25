@@ -529,13 +529,25 @@ object Interpreter {
 
         is Op.FutureAwait -> {
             val frame = ctx.currentFrame()
-            val rec = frame.subs.pop()
+            val rec = frame.subs.peek()
             require(rec is FutureRecord) {
                 "FutureAwait expected future[T] value, got ${rec::class.simpleName}"
             }
-            val response = rec.handle.unwrapResponse(rec.future.join())
-            frame.subs.push(StructuredClone.decode(response, ctx))
-            pc + 1
+            // VEL-11: at the top level of a dispatcher task, a not-yet-ready
+            // future yields the fiber rather than blocking the thread. The op
+            // stays at this pc (the future is left on the operand stack) and
+            // re-runs on resume, when the future is done and the fast path
+            // below applies. Nested/inline calls keep blocking semantics —
+            // their JVM frames cannot be parked.
+            if (!rec.future.isDone && ctx.suspensionEnabled) {
+                ctx.requestSuspend(rec.future)
+                pc
+            } else {
+                frame.subs.pop()
+                val response = rec.handle.unwrapResponse(rec.future.join())
+                frame.subs.push(StructuredClone.decode(response, ctx))
+                pc + 1
+            }
         }
     }
 
