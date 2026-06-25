@@ -190,6 +190,17 @@ Actor threads are JVM **daemon** threads, so they never block program shutdown. 
 
 There is no built-in `join`/`done`/`terminate` API — actors don't have a "finished" state in the same sense as threads. If you need explicit shutdown for application reasons, expose a `close()` method on your actor and have callers `await` it before dropping their references.
 
+### Thread placement (host option)
+
+By default each actor gets its own dedicated daemon thread. The host can instead multiplex all actors onto a shared bounded pool (VEL-17) — useful on memory-constrained platforms, where a program with dozens of actors would otherwise mean dozens of OS threads:
+
+```kotlin
+val runtime = VeloRuntime()
+    .pooledActors(parallelism = Runtime.getRuntime().availableProcessors())
+```
+
+This changes only *where* actor code runs, never its semantics: each actor keeps strict serial execution and its own private state. It is safe precisely because a parked `await` releases its pool thread (see [Reentrancy](#reentrancy-await-is-a-yield-point)); size the pool with headroom for actors that genuinely *block* (a blocking native, `Time.sleep`, an inline value-returning callback), since those hold a pool thread for their duration.
+
 ## Identity and Equality
 
 Two `actor[T]` values compare equal when they refer to the same internal object on the same actor:

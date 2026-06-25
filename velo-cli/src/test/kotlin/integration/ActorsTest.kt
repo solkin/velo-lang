@@ -12,6 +12,8 @@ import vm.VMExecutor
 import vm.VMProfiler
 import vm.VeloProgram
 import vm.VeloRuntime
+import vm.actors.DispatcherFactory
+import vm.actors.PooledDispatcherFactory
 
 import FileSystem
 import Http
@@ -730,6 +732,101 @@ class ActorsTest {
         }
         val (vmCtx, executor) = startProgram(frames)
         return Triple(vmCtx, executor, methodVar.index)
+    }
+
+    // ---- VEL-17: pooled actor dispatch ----
+
+    @Test
+    fun `pooled dispatch runs actors and callbacks with the same result`() {
+        // Functional parity on a shared pool instead of a thread per actor:
+        // spawn + method dispatch + a callback posted back to main. The output
+        // (and the VEL-11 reentrant ordering) must match thread-per-actor.
+        val src = """
+            Terminal term = new Terminal();
+            actor class Worker() {
+                func process(int value, func[(int) void] done) void {
+                    done(value * 2);
+                    void
+                };
+            };
+            actor[Worker] w = new Worker();
+            await async w.process(21, func(int v) void {
+                term.println("callback got: ".con(v.str));
+                void
+            });
+            term.println("main frame done");
+        """.trimIndent()
+        assertEquals("callback got: 42\nmain frame done", compileAndRunPooled(src, parallelism = 2))
+    }
+
+    @Test
+    fun `pooled dispatch with parallelism 2 runs two actors concurrently`() {
+        // Two actors each occupy a pool thread for SLEEP_MS via Time.sleep.
+        // With two pool threads they overlap, so wall time stays near SLEEP_MS:
+        // the pool delivers real parallelism (and a parked await frees its
+        // thread for the other actor).
+        val sleepMs = 200
+        val elapsed = timeProgram(twoSleepers(sleepMs), PooledDispatcherFactory(parallelism = 2))
+        val cap = (sleepMs * 1.5).toLong()
+        assertTrue(elapsed < cap, "expected parallel (<${cap}ms) but took ${elapsed}ms")
+    }
+
+    @Test
+    fun `pooled dispatch with parallelism 1 serializes blocking actors`() {
+        // Same program on a single-thread pool: the two blocking naps cannot
+        // overlap, so wall time is ~2 * SLEEP_MS. Proves the pool bounds
+        // concurrency to its size — seriality across actors, not just within one.
+        val sleepMs = 200
+        val elapsed = timeProgram(twoSleepers(sleepMs), PooledDispatcherFactory(parallelism = 1))
+        val floor = (sleepMs * 1.8).toLong()
+        assertTrue(elapsed >= floor, "expected serialized (>=${floor}ms) but took ${elapsed}ms")
+    }
+
+    private fun twoSleepers(sleepMs: Int): String = """
+        actor class Sleeper() {
+            Time t = new Time();
+            func nap(int ms) int {
+                t.sleep(ms);
+                ms;
+            };
+        };
+        actor[Sleeper] a = new Sleeper();
+        actor[Sleeper] b = new Sleeper();
+        future[int] fa = async a.nap($sleepMs);
+        future[int] fb = async b.nap($sleepMs);
+        int x = await fa;
+        int y = await fb;
+    """.trimIndent()
+
+    private fun compileAndRunPooled(src: String, parallelism: Int): String {
+        val program = assertNotNull(compileProgram(src), "compilation failed")
+        val baos = ByteArrayOutputStream()
+        val oldOut = System.out
+        System.setOut(PrintStream(baos))
+        try {
+            val vm = VM(testRegistry, VMProfiler(), PooledDispatcherFactory(parallelism))
+            vm.load(program)
+            vm.run()
+        } finally {
+            System.setOut(oldOut)
+        }
+        return extractProgramOutput(baos.toString())
+    }
+
+    private fun timeProgram(src: String, dispatcherFactory: DispatcherFactory): Long {
+        val program = assertNotNull(compileProgram(src), "compilation failed")
+        val baos = ByteArrayOutputStream()
+        val oldOut = System.out
+        System.setOut(PrintStream(baos))
+        val started = System.currentTimeMillis()
+        try {
+            val vm = VM(testRegistry, VMProfiler(), dispatcherFactory)
+            vm.load(program)
+            vm.run()
+        } finally {
+            System.setOut(oldOut)
+        }
+        return System.currentTimeMillis() - started
     }
 
     private val testRegistry = NativeRegistry()

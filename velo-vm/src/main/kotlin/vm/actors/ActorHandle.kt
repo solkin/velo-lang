@@ -575,7 +575,7 @@ class ActorHandle private constructor(
                 sharedNativeRegistry = sharedNativeRegistry,
                 sharedNatives = sharedNatives,
                 sharedDataClasses = sharedDataClasses,
-                dispatcher = ThreadDispatcher(name = "velo-actor-$id-$className"),
+                dispatcher = runtime.newActorDispatcher("velo-actor-$id-$className"),
             )
             runtime.register(handle)
 

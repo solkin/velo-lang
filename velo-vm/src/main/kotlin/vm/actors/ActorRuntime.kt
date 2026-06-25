@@ -22,7 +22,11 @@ import java.util.concurrent.ConcurrentHashMap
  * The worker drains, exits, and calls [unregister] from its `finally`
  * block, releasing the registry's last reference.
  */
-class ActorRuntime {
+class ActorRuntime(
+    /** Placement strategy for spawned actors — thread-per-actor by default,
+     *  or a shared bounded pool ([PooledDispatcherFactory], VEL-17). */
+    private val dispatcherFactory: DispatcherFactory = ThreadPerActorFactory,
+) {
 
     private val nextId = java.util.concurrent.atomic.AtomicInteger(0)
     private val handles = ConcurrentHashMap<Int, ActorHandle>()
@@ -37,6 +41,13 @@ class ActorRuntime {
     var onFatal: ((Throwable) -> Unit)? = null
 
     fun nextActorId(): Int = nextId.getAndIncrement()
+
+    /**
+     * Create the [Dispatcher] for a freshly spawned actor, per the configured
+     * placement strategy. The main context does not use this — its dispatcher
+     * is supplied by the host.
+     */
+    fun newActorDispatcher(name: String): Dispatcher = dispatcherFactory.create(name)
 
     /**
      * Record an unrecoverable failure that has no awaiting future to surface
@@ -73,5 +84,8 @@ class ActorRuntime {
         val live = ArrayList<ActorHandle>()
         for (handle in handles.values) live.add(handle)
         for (handle in live) handle.requestShutdown()
+        // Release the shared actor pool, if any (no-op for thread-per-actor).
+        // Graceful: the Shutdown tasks just posted drain first.
+        dispatcherFactory.shutdown()
     }
 }

@@ -6,6 +6,9 @@ import core.SerializedProgram
 import vm.actors.ActorHandle
 import vm.actors.ActorRuntime
 import vm.actors.Dispatcher
+import vm.actors.DispatcherFactory
+import vm.actors.PooledDispatcherFactory
+import vm.actors.ThreadPerActorFactory
 import kotlin.reflect.KClass
 
 /**
@@ -31,6 +34,12 @@ class VeloRuntime(
 ) {
 
     private var profilingEnabled = System.getProperty("velo.profile")?.toBoolean() ?: false
+
+    /**
+     * Produces a fresh actor-placement strategy per program run, so each run /
+     * start owns its own pool. Thread-per-actor by default; see [pooledActors].
+     */
+    private var actorDispatcherFactory: () -> DispatcherFactory = { ThreadPerActorFactory }
 
     /**
      * Register a native class; the Velo name is the JVM simple class name.
@@ -73,6 +82,19 @@ class VeloRuntime(
     }
 
     /**
+     * Run spawned actors on a shared bounded thread pool of [parallelism]
+     * threads instead of a dedicated daemon thread each (VEL-17) — preferable
+     * on memory-constrained hosts where many actors would otherwise mean many
+     * OS threads. Each [run] / [start] gets its own pool, torn down when the
+     * program stops. Safe because a parked `await` (VEL-11) frees its pool
+     * thread; size [parallelism] with headroom for actors that genuinely block.
+     */
+    fun pooledActors(parallelism: Int = Runtime.getRuntime().availableProcessors()): VeloRuntime {
+        actorDispatcherFactory = { PooledDispatcherFactory(parallelism) }
+        return this
+    }
+
+    /**
      * The registry programs are linked against — for advanced usage.
      */
     fun getNativeRegistry(): NativeRegistry = nativeRegistry
@@ -82,7 +104,7 @@ class VeloRuntime(
      */
     fun run(program: SerializedProgram) {
         val profiler = VMProfiler(enabled = profilingEnabled)
-        val vm = VM(nativeRegistry, profiler)
+        val vm = VM(nativeRegistry, profiler, actorDispatcherFactory())
         vm.load(program)
         vm.run()
     }
@@ -109,7 +131,7 @@ class VeloRuntime(
     fun start(program: SerializedProgram, dispatcher: Dispatcher): VeloProgram {
         val frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
         val natives = NativeLinker.link(program.natives, nativeRegistry)
-        val actorRuntime = ActorRuntime()
+        val actorRuntime = ActorRuntime(actorDispatcherFactory())
         val main = ActorHandle.main(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,
