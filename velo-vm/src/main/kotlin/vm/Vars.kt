@@ -2,39 +2,60 @@ package vm
 
 import vm.records.EmptyRecord
 
-data class Vars(
-    val vars: MutableMap<Int, Record>,
+/**
+ * A lexical scope's variables, backed by a flat slot array indexed by a dense
+ * per-frame range `[base, base + slots.size)`. Variables of enclosing scopes
+ * (closures, class fields seen from a method) live in [parent] and are reached
+ * by walking the chain — the same resolution as before, but each level is now a
+ * single subtract-and-bounds-check into an array instead of a `HashMap` lookup
+ * with a boxed `Int` key.
+ *
+ * This works because the compiler numbers each frame's variables contiguously
+ * (`CompilerFrame.varCounter`, with child frames continuing from the parent's
+ * count), so a frame's indices are exactly `base .. base + count - 1`. Numeric
+ * collisions between a parent and a nested scope are resolved by the same
+ * innermost-scope-wins walk as the old map chain.
+ */
+class Vars(
+    private val base: Int,
+    private val slots: Array<Record>,
     val parent: Vars?,
 ) {
-    private fun lookup(index: Int): Vars? {
-        var vars: Vars? = this
-        while (vars != null) {
-            if (vars.vars.contains(index)) {
-                return vars
-            }
-            vars = vars.parent
-        }
-        return null
-    }
-
     fun get(index: Int): Record {
-        val scope = lookup(index)
-        return scope?.vars?.get(index) ?: throw IllegalArgumentException("Undefined variable $index on var get")
+        var scope: Vars? = this
+        while (scope != null) {
+            val i = index - scope.base
+            if (i >= 0 && i < scope.slots.size) return scope.slots[i]
+            scope = scope.parent
+        }
+        throw IllegalArgumentException("Undefined variable $index on var get")
     }
 
     fun set(index: Int, value: Record): Record {
-        val scope = lookup(index) ?: throw IllegalArgumentException("Undefined variable $index on var set")
-        scope.vars[index] = value
-        return value
+        var scope: Vars? = this
+        while (scope != null) {
+            val i = index - scope.base
+            if (i >= 0 && i < scope.slots.size) {
+                scope.slots[i] = value
+                return value
+            }
+            scope = scope.parent
+        }
+        throw IllegalArgumentException("Undefined variable $index on var set")
     }
 
-    fun empty(): Boolean = vars.isEmpty()
+    fun empty(): Boolean = slots.isEmpty()
 
+    /** This scope's own slots (not the parent chain) — for GC tracing and error dumps. */
+    fun localRecords(): Array<Record> = slots
 }
 
-fun createVars(vars: List<Int>, parent: Vars? = null) = Vars(
-    vars = HashMap<Int, Record>().apply {
-        putAll(vars.map { it to EmptyRecord })
-    },
-    parent = parent
-)
+/**
+ * Build a scope from a frame's variable indices (ascending and contiguous, as
+ * emitted by the compiler). The slots start uninitialised ([EmptyRecord]); the
+ * base is the frame's first index, so a raw variable index maps to `index - base`.
+ */
+fun createVars(vars: List<Int>, parent: Vars? = null): Vars {
+    if (vars.isEmpty()) return Vars(base = 0, slots = emptyArray(), parent = parent)
+    return Vars(base = vars.first(), slots = Array(vars.size) { EmptyRecord }, parent = parent)
+}

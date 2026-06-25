@@ -71,7 +71,7 @@ internal object HeapCollector {
     private fun addVars(vars: Vars?, work: ArrayDeque<Record>, seenVars: MutableSet<Vars>) {
         var scope = vars
         while (scope != null && seenVars.add(scope)) {
-            for (record in scope.vars.values) work.addLast(record)
+            for (record in scope.localRecords()) work.addLast(record)
             scope = scope.parent
         }
     }

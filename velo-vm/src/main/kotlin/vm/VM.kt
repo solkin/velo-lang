@@ -130,14 +130,13 @@ private fun printFrameInfo(frame: Frame, depth: Int, out: PrintStream) {
     
     // Variables (show up to 5)
     if (!frame.vars.empty()) {
-        val vars = frame.vars.vars.entries.take(5)
+        val records = frame.vars.localRecords()
         out.print("$indent  vars: ")
-        out.println(vars.joinToString(", ") { (idx, rec) ->
-            val short = renderValue(rec, 20)
-            "[$idx]=$short"
-        })
-        if (frame.vars.vars.size > 5) {
-            out.println("$indent        ... and ${frame.vars.vars.size - 5} more")
+        out.println(records.take(5).mapIndexed { idx, rec ->
+            "[$idx]=${renderValue(rec, 20)}"
+        }.joinToString(", "))
+        if (records.size > 5) {
+            out.println("$indent        ... and ${records.size - 5} more")
         }
     }
     
