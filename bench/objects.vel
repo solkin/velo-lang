@@ -1,0 +1,21 @@
+Terminal term = new Terminal();
+
+# Object churn + CLASS get: many short-lived instances, each method call
+# resolves the receiver through the heap.
+class Point(int x, int y) {
+    func sum() int { x + y; };
+};
+
+func run() int {
+    int reps = 250000;
+    int acc = 0;
+    int i = 0;
+    while (i < reps) {
+        Point p = new Point(i, i + 1);
+        acc = (acc + p.sum()) % 1000000007;
+        i += 1;
+    };
+    acc;
+};
+
+term.println(run().str);

@@ -1,0 +1,30 @@
+Terminal term = new Terminal();
+
+# Hot ARR get/store: one array, many read/write passes, tiny allocation.
+# Isolates the cost of RefRecord.get (heap slot lookup) on the hot path.
+func run() int {
+    int n = 2048;
+    array[int] a = new array[int](n);
+    int i = 0;
+    while (i < n) {
+        a[i] = i;
+        i += 1;
+    };
+    int passes = 150;
+    int sum = 0;
+    int p = 0;
+    while (p < passes) {
+        int j = 0;
+        while (j < n) {
+            int k = j + 1;
+            if (k == n) { k = 0; };
+            a[j] = (a[j] + a[k]) % 65536;
+            sum = (sum + a[j]) % 1000000007;
+            j += 1;
+        };
+        p += 1;
+    };
+    sum;
+};
+
+term.println(run().str);

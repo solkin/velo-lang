@@ -1,0 +1,25 @@
+Terminal term = new Terminal();
+
+# Compute-bound control: trial-division prime count, almost no heap traffic.
+# Expect ~no difference across C0/C1/C2 — confirms we measure heap get, not arithmetic.
+func countPrimes(int limit) int {
+    int count = 0;
+    int i = 2;
+    while (i < limit) {
+        bool isPrime = true;
+        int d = 2;
+        while (d * d <= i) {
+            if (i % d == 0) {
+                isPrime = false;
+                d = i;
+            } else {
+                d += 1;
+            };
+        };
+        if (isPrime) { count += 1; };
+        i += 1;
+    };
+    count;
+};
+
+term.println(countPrimes(20000).str);

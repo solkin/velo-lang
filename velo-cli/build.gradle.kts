@@ -20,3 +20,13 @@ tasks.named<JavaExec>("run") {
     // user invokes `./gradlew run --args="..."` from.
     workingDir = rootDir
 }
+
+// VM heap stress benchmark (see Bench.kt). Kernels live in <root>/bench.
+tasks.register<JavaExec>("bench") {
+    group = "verification"
+    description = "Run the VM heap stress benchmark"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("BenchKt")
+    workingDir = rootDir
+    jvmArgs = listOf("-Xms512m", "-Xmx2g")
+}

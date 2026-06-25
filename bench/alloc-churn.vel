@@ -1,0 +1,22 @@
+Terminal term = new Terminal();
+
+# Allocation churn: many short-lived arrays. Under the current heap nothing is
+# ever freed, so peakLive == allocs (unbounded). A collector keeps peakLive
+# bounded to the working set while allocs keeps climbing.
+func run() int {
+    int reps = 250000;
+    int sum = 0;
+    int i = 0;
+    while (i < reps) {
+        array[int] t = new array[int](4);
+        t[0] = i;
+        t[1] = i + 1;
+        t[2] = i + 2;
+        t[3] = i + 3;
+        sum = (sum + t[0] + t[3]) % 1000000007;
+        i += 1;
+    };
+    sum;
+};
+
+term.println(run().str);
