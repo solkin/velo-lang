@@ -45,6 +45,10 @@ class VMExecutor(
             profiler?.beforeOp(cmd)
             frame.pc = Interpreter.exec(cmd, pc = frame.pc, ctx)
             profiler?.afterOp()
+            // Reclaim unreachable heap slots between ops, where the operand
+            // stacks hold every live value (so roots are precise). Cheap when
+            // the heap is below threshold — a field compare.
+            ctx.collectIfNeeded()
             // VEL-11: an `await` on a not-yet-ready future parks the fiber here
             // instead of blocking the thread. The frames are left on the stack
             // for the driver to lift off and restore when the future completes.

@@ -23,6 +23,13 @@ sealed class PtrRecord : Record {
      */
     abstract fun isNull(): Boolean
 
+    /**
+     * The record this pointer currently refers to, or null — a non-throwing
+     * variant of [deref] used by the garbage collector to follow pointers
+     * while tracing reachable values.
+     */
+    internal open fun pointee(): Record? = null
+
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(): T = deref() as T
 
@@ -37,6 +44,7 @@ sealed class PtrRecord : Record {
         override fun deref(): Record = vars.get(index)
         override fun assign(value: Record) { vars.set(index, value) }
         override fun isNull(): Boolean = false
+        override fun pointee(): Record? = vars.get(index)
         override fun toString(): String = "ptr -> var[$index]"
     }
 
@@ -63,6 +71,7 @@ sealed class PtrRecord : Record {
         }
 
         override fun isNull(): Boolean = false
+        override fun pointee(): Record? = array.getOrNull(index)
         override fun toString(): String = "ptr -> array[$index]"
 
         override fun equals(other: Any?): Boolean {
@@ -92,6 +101,7 @@ sealed class PtrRecord : Record {
         }
 
         override fun isNull(): Boolean = value == null
+        override fun pointee(): Record? = value
         override fun toString(): String = "ptr -> ${value ?: "null"}"
     }
 

@@ -117,4 +117,16 @@ class VMContext(
      * Release a value from the memory area
      */
     fun memoryRelease(id: Int) = memory.release(id)
+
+    /**
+     * Run a mark-sweep collection if the heap has grown past its threshold.
+     * Called by [VMExecutor] at op boundaries, where the operand stacks hold
+     * every live value so the root set is precise. Roots are this context's
+     * call stack plus, for an actor context, its parked fibers and root
+     * objects ([ActorHandle.gcRoots]).
+     */
+    fun collectIfNeeded() {
+        if (!memory.shouldCollect()) return
+        HeapCollector.collect(this, currentActor?.gcRoots() ?: emptyList())
+    }
 }

@@ -106,10 +106,27 @@ class ActorHandle private constructor(
         val response: CompletableFuture<ActorResponse>?,
         val deliver: (Record) -> Unit,
         val fail: (Throwable) -> Unit,
-    )
+    ) {
+        /** This fiber's call stack while parked (detached from the context). */
+        var saved: List<Frame> = emptyList()
+    }
 
     /** Whether any fiber is parked — keeps the CLI pump alive across an await. */
     fun hasParkedFibers(): Boolean = parkedFibers.isNotEmpty()
+
+    /**
+     * Extra GC roots beyond the live call stack: the frames of fibers parked on
+     * an `await` (detached from [ctx]) and the actor's registered root objects,
+     * which hold state between messages. Read only on this handle's dispatcher
+     * thread — the same thread the collector runs on.
+     */
+    internal fun gcRoots(): List<Frame> {
+        if (parkedFibers.isEmpty() && idToFrame.isEmpty()) return emptyList()
+        val roots = ArrayList<Frame>()
+        for (fiber in parkedFibers) roots.addAll(fiber.saved)
+        roots.addAll(idToFrame.values)
+        return roots
+    }
 
     /**
      * True when the calling thread is right now executing this handle's
@@ -319,9 +336,9 @@ class ActorHandle private constructor(
                 RunResult.SUSPENDED -> {
                     val awaited = ctx.takePendingSuspend()
                         ?: error("Fiber suspended without a pending future")
-                    val saved = ctx.detachStack()
+                    fiber.saved = ctx.detachStack()
                     parkedFibers.add(fiber)
-                    awaited.whenComplete { _, _ -> resume(saved, fiber) }
+                    awaited.whenComplete { _, _ -> resume(fiber) }
                 }
                 RunResult.COMPLETED -> {
                     // The target may end in `Ret` (sentinel now on top, result
@@ -349,12 +366,13 @@ class ActorHandle private constructor(
      * serial execution. The parked `FutureAwait` op then re-runs and, with the
      * future now done, takes the fast (non-suspending) path.
      */
-    private fun resume(saved: List<Frame>, fiber: Fiber) {
+    private fun resume(fiber: Fiber) {
         try {
             post(ActorRequest.Resume {
                 if (!shuttingDown) {
                     parkedFibers.remove(fiber)
-                    ctx.restoreStack(saved)
+                    ctx.restoreStack(fiber.saved)
+                    fiber.saved = emptyList()
                     drive(fiber)
                 }
             })
