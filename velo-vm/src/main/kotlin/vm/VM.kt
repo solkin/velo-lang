@@ -18,7 +18,7 @@ class VM(
     private val nativeRegistry: NativeRegistry = NativeRegistry(),
     private val profiler: VMProfiler = VMProfiler(),
     /** Placement strategy for spawned actors (VEL-17). Defaults to a daemon
-     *  thread per actor; pass [vm.actors.PooledDispatcherFactory] to pool. */
+     *  thread per actor; pass a host pooled DispatcherFactory to multiplex. */
     private val dispatcherFactory: DispatcherFactory = ThreadPerActorFactory,
 ) {
 

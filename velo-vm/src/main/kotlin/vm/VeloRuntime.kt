@@ -7,7 +7,6 @@ import vm.actors.ActorHandle
 import vm.actors.ActorRuntime
 import vm.actors.Dispatcher
 import vm.actors.DispatcherFactory
-import vm.actors.PooledDispatcherFactory
 import vm.actors.ThreadPerActorFactory
 import kotlin.reflect.KClass
 
@@ -37,7 +36,7 @@ class VeloRuntime(
 
     /**
      * Produces a fresh actor-placement strategy per program run, so each run /
-     * start owns its own pool. Thread-per-actor by default; see [pooledActors].
+     * start owns its own backend. Thread-per-actor by default; see [actorPlacement].
      */
     private var actorDispatcherFactory: () -> DispatcherFactory = { ThreadPerActorFactory }
 
@@ -82,15 +81,15 @@ class VeloRuntime(
     }
 
     /**
-     * Run spawned actors on a shared bounded thread pool of [parallelism]
-     * threads instead of a dedicated daemon thread each (VEL-17) — preferable
-     * on memory-constrained hosts where many actors would otherwise mean many
-     * OS threads. Each [run] / [start] gets its own pool, torn down when the
-     * program stops. Safe because a parked `await` (VEL-11) frees its pool
-     * thread; size [parallelism] with headroom for actors that genuinely block.
+     * Inject a host actor-placement backend instead of the default
+     * thread-per-actor — the threading SPI. [factory] is a provider so each
+     * [run] / [start] gets its own backend (e.g. a fresh pool), torn down when
+     * the program stops. The concrete JVM pool lives in the CLI host
+     * (`host.PooledDispatcherFactory`); the VM core stays thread-agnostic. Safe
+     * to pool because a parked `await` (VEL-11) frees the backing thread.
      */
-    fun pooledActors(parallelism: Int = Runtime.getRuntime().availableProcessors()): VeloRuntime {
-        actorDispatcherFactory = { PooledDispatcherFactory(parallelism) }
+    fun actorPlacement(factory: () -> DispatcherFactory): VeloRuntime {
+        actorDispatcherFactory = factory
         return this
     }
 

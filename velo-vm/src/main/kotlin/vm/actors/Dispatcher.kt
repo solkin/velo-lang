@@ -1,12 +1,7 @@
 package vm.actors
 
-import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Serial execution domain an actor runs on.
@@ -161,14 +156,16 @@ class PumpDispatcher : Dispatcher {
 }
 
 /**
- * Strategy for giving each *spawned* actor its [Dispatcher] (VEL-17). The
- * default dedicates a daemon thread per actor ([ThreadPerActorFactory]);
- * [PooledDispatcherFactory] multiplexes every actor onto one shared bounded
- * pool. The program's main context never goes through a factory — its
- * dispatcher is supplied by the host ([PumpDispatcher] or [Dispatcher.from]).
+ * Host SPI for giving each *spawned* actor its [Dispatcher] (VEL-17). The
+ * default dedicates a daemon thread per actor ([ThreadPerActorFactory]); a host
+ * may instead inject a backend that multiplexes every actor onto a shared
+ * bounded pool (the JVM `PooledDispatcherFactory` lives in the CLI host, not
+ * here — the VM stays thread-agnostic). The program's main context never goes
+ * through a factory — its dispatcher is supplied by the host ([PumpDispatcher]
+ * or [Dispatcher.from]).
  *
  * One factory backs one program run: [shutdown] is called from
- * [ActorRuntime.shutdownAll] to release shared resources (the pool).
+ * [ActorRuntime.shutdownAll] to release shared resources (e.g. a pool).
  */
 interface DispatcherFactory {
     fun create(name: String): Dispatcher
@@ -183,119 +180,4 @@ interface DispatcherFactory {
  */
 object ThreadPerActorFactory : DispatcherFactory {
     override fun create(name: String): Dispatcher = ThreadDispatcher(name)
-}
-
-/**
- * Multiplexes every spawned actor onto one shared, bounded daemon thread pool
- * instead of a thread per actor (VEL-17). Suited to memory-constrained hosts
- * (mobile), where a program with dozens of actors would otherwise mean dozens
- * of OS threads — each ~0.5–1 MB of stack plus scheduler load.
- *
- * Correctness rests on VEL-11: a parked `await` releases its pool thread, so a
- * suspended actor costs nothing here. A *blocking* call inside an actor (a
- * blocking native, `Time.sleep`, an inline value-returning callback) still
- * occupies a pool thread for its duration, so size [parallelism] with enough
- * headroom that simultaneously-blocked actors cannot starve the pool.
- */
-class PooledDispatcherFactory(
-    parallelism: Int = Runtime.getRuntime().availableProcessors(),
-) : DispatcherFactory {
-
-    private val threadCounter = AtomicInteger(0)
-
-    private val pool: ExecutorService =
-        Executors.newFixedThreadPool(parallelism.coerceAtLeast(1)) { runnable ->
-            Thread(runnable, "velo-actor-pool-${threadCounter.getAndIncrement()}").apply {
-                isDaemon = true
-            }
-        }
-
-    override fun create(name: String): Dispatcher = PooledDispatcher(pool)
-
-    override fun shutdown() {
-        // Graceful: let already-queued teardown tasks finish; daemon threads
-        // then exit. New submissions after this are rejected (handled by
-        // PooledDispatcher.scheduleLocked).
-        pool.shutdown()
-    }
-}
-
-/**
- * A per-actor serial execution domain layered over a shared [pool] (VEL-17).
- *
- * Honours the full [Dispatcher] contract — tasks run one at a time, in
- * submission order, with a happens-before edge between them, and never inline —
- * but borrows a thread from [pool] for each task instead of owning one. Each
- * task runs as its own pool job and the next is submitted only after it
- * finishes, so a backlog on one actor cannot monopolise a pool thread while
- * other actors wait.
- */
-internal class PooledDispatcher(private val pool: Executor) : Dispatcher {
-
-    private val lock = Object()
-    private val tasks = ArrayDeque<Runnable>()  // guarded by `lock`
-    private var scheduled = false               // a drain job is queued/running — guarded by `lock`
-    private var closed = false                  // guarded by `lock`
-
-    override fun execute(task: Runnable) {
-        synchronized(lock) {
-            if (closed) return
-            tasks.addLast(task)
-            scheduleLocked()
-        }
-    }
-
-    /** Submit a drain job unless one is already pending. Caller holds [lock]. */
-    private fun scheduleLocked() {
-        if (scheduled || tasks.isEmpty()) return
-        scheduled = true
-        try {
-            pool.execute(::runNext)
-        } catch (ex: RejectedExecutionException) {
-            // Pool already shut down (program exiting): drop the backlog and
-            // wake any joiner rather than leaving it blocked forever.
-            scheduled = false
-            tasks.clear()
-            lock.notifyAll()
-        }
-    }
-
-    private fun runNext() {
-        val task = synchronized(lock) { tasks.removeFirstOrNull() }
-        if (task != null) {
-            try {
-                task.run()
-            } catch (ex: Throwable) {
-                ex.printStackTrace()
-            }
-        }
-        synchronized(lock) {
-            scheduled = false
-            // Drain whatever is left (including tasks enqueued during this one);
-            // `closed` only blocks *new* submissions, matching ThreadDispatcher's
-            // drain-then-stop. When nothing remains, release any joiner.
-            scheduleLocked()
-            if (!scheduled) lock.notifyAll()
-        }
-    }
-
-    override fun close() {
-        synchronized(lock) {
-            closed = true
-            if (!scheduled) lock.notifyAll()
-        }
-    }
-
-    override fun isAlive(): Boolean = synchronized(lock) { !closed }
-
-    override fun joinFor(timeoutMs: Long) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        synchronized(lock) {
-            while (scheduled || tasks.isNotEmpty()) {
-                val remaining = deadline - System.currentTimeMillis()
-                if (remaining <= 0L) return
-                lock.wait(remaining)
-            }
-        }
-    }
 }

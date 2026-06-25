@@ -13,7 +13,7 @@ import vm.VMProfiler
 import vm.VeloProgram
 import vm.VeloRuntime
 import vm.actors.DispatcherFactory
-import vm.actors.PooledDispatcherFactory
+import host.PooledDispatcherFactory
 
 import FileSystem
 import Http

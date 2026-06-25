@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class ActorRuntime(
     /** Placement strategy for spawned actors — thread-per-actor by default,
-     *  or a shared bounded pool ([PooledDispatcherFactory], VEL-17). */
+     *  or a host-injected pooled backend (VEL-17). */
     private val dispatcherFactory: DispatcherFactory = ThreadPerActorFactory,
 ) {
 
