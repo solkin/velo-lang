@@ -63,6 +63,37 @@ term.println((await async counter.bump()).str);  # the same thing, spelled out
 
 `await` is a deliberate signal that *this call crosses a thread boundary* — and a **yield point**. A not-yet-ready `await` suspends the current fiber and lets the actor (or main context) service other messages until the reply arrives (VEL-11, "coroutines without threads"), rather than blocking the thread. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice" — including that the actor's own state may have advanced while you were parked, since another message can run at the yield point.
 
+### Reentrancy: `await` is a yield point
+
+Because a not-yet-ready `await` suspends the current fiber instead of blocking the thread, the actor (or main context) is free to run **other** mailbox messages while one call is parked. An actor still does exactly one thing at a time — but an `await` is a point where it may switch to another message and resume this one later. The practical consequence: **actor state can change across an `await`.**
+
+```velo
+actor class Account() {
+    int balance = 100;
+
+    func withdraw(actor[Bank] bank, int amount) bool {
+        bool ok = await bank.authorize(amount);   # ← yield point
+        # Another message may have run while we were parked here, so re-read
+        # state rather than trusting a value captured before the await.
+        if (ok && balance >= amount) {
+            balance = balance - amount;
+            true;
+        } else {
+            false;
+        };
+    };
+};
+```
+
+This is the same model as a JavaScript event loop or coroutines on a single dispatcher. Two habits keep it manageable:
+
+- **Read after the await, not before.** Don't cache actor state across an `await` and assume it is still current — read it again once the await resolves.
+- **Keep an invariant on one side of an `await`.** If two field updates must be atomic with respect to other messages, don't put an `await` between them.
+
+The flip side is the same coin: a `void` callback or an un-awaited `async` posted to an actor runs at the next yield point or after the current message finishes — never in the middle of straight-line code.
+
+What does **not** yield: an `await` reached inside a synchronously-invoked callback (a value-returning callback running inline on its owner) still blocks the thread, because that call lives on the JVM stack and cannot be parked. Likewise, constructing an actor whose constructor `await`s blocks the spawning code until construction finishes.
+
 ## What Crosses the Boundary
 
 The compiler enforces a static notion of **transferable** types — anything that can either be structurally copied or shipped as a typed handle:

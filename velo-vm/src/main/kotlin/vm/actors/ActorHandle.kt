@@ -350,13 +350,22 @@ class ActorHandle private constructor(
      * future now done, takes the fast (non-suspending) path.
      */
     private fun resume(saved: List<Frame>, fiber: Fiber) {
-        post(ActorRequest.Resume {
-            if (!shuttingDown) {
-                parkedFibers.remove(fiber)
-                ctx.restoreStack(saved)
-                drive(fiber)
-            }
-        })
+        try {
+            post(ActorRequest.Resume {
+                if (!shuttingDown) {
+                    parkedFibers.remove(fiber)
+                    ctx.restoreStack(saved)
+                    drive(fiber)
+                }
+            })
+        } catch (ex: Throwable) {
+            // The dispatcher rejected the resume — e.g. an embedded host tore
+            // down its executor without going through VeloProgram.stop(). Fail
+            // the awaiter rather than leave it hanging. Completing the response
+            // is thread-safe; we must not touch ctx from this (foreign,
+            // future-completing) thread.
+            fiber.response?.complete(ActorResponse.Failure("[actor $name] could not resume: ${ex.message ?: ex}"))
+        }
     }
 
     /**
