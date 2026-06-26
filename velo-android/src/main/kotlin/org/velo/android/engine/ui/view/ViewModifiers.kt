@@ -1,11 +1,14 @@
 package org.velo.android.engine.ui.view
 
+import android.content.res.ColorStateList
 import android.graphics.Outline
 import android.view.Gravity
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 /**
  * Common visual modifiers usable on any [ViewState], regardless of kind: background fill,
@@ -17,9 +20,13 @@ import com.google.android.material.card.MaterialCardView
 internal fun ViewState.background(spec: String) {
     ui {
         val v = av ?: return@ui
+        val color = resolveColor(v, spec)
         // A card/surface paints through its own background setter, not the view's.
-        if (v is MaterialCardView) v.setCardBackgroundColor(resolveColor(v, spec))
-        else v.setBackgroundColor(resolveColor(v, spec))
+        when (v) {
+            is MaterialCardView -> v.setCardBackgroundColor(color)
+            is FloatingActionButton -> v.backgroundTintList = ColorStateList.valueOf(color)
+            else -> v.setBackgroundColor(color)
+        }
     }
 }
 
@@ -28,6 +35,7 @@ internal fun ViewState.corner(dp: Int) {
     val r = px(dp).toFloat()
     ui {
         val v = av ?: return@ui
+        if (v is MaterialCardView) v.radius = r
         v.outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
                 outline.setRoundRect(0, 0, view.width, view.height, r)
@@ -47,7 +55,21 @@ internal fun ViewState.paddingXY(h: Int, v: Int) {
 /** Align this container's children: start / center / end / top / bottom (or combos like "topEnd"). */
 internal fun ViewState.align(spec: String) {
     val g = gravityOf(spec)
-    ui { (content as? LinearLayout)?.gravity = g }
+    gravity = g
+    ui {
+        when (val group = content) {
+            is LinearLayout -> group.gravity = g
+            is FrameLayout -> {
+                for (i in 0 until group.childCount) {
+                    (group.getChildAt(i).layoutParams as? FrameLayout.LayoutParams)?.let { lp ->
+                        lp.gravity = g
+                        group.getChildAt(i).layoutParams = lp
+                    }
+                }
+            }
+        }
+    }
+    applyLayoutNow()
 }
 
 private fun gravityOf(spec: String): Int = when (spec) {

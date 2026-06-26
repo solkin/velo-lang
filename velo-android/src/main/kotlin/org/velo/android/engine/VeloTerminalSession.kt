@@ -65,10 +65,12 @@ class VeloTerminalSession(
                 .register("Colors", org.velo.android.engine.ui.Colors::class)
                 .register("Icons", org.velo.android.engine.ui.Icons::class)
                 .register("TextStyles", org.velo.android.engine.ui.TextStyles::class)
-            stats = VeloRuntime(natives).run(program) { loop ->
-                // Let the UI host keep this loop alive while screens are shown.
-                uiHost?.attachLoop(loop)
-            }
+            stats = VeloRuntime(natives)
+                .actorPlacement { AndroidActorDispatcherFactory() }
+                .run(program) { loop ->
+                    // Let the UI host keep this loop alive while screens are shown.
+                    uiHost?.attachLoop(loop)
+                }
         } catch (e: InterruptedException) {
             // Stopped by the user — not a failure.
         } catch (e: Throwable) {

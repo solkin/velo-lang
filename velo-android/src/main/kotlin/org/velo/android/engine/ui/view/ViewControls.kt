@@ -2,6 +2,7 @@ package org.velo.android.engine.ui.view
 
 import android.widget.CompoundButton
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.chip.Chip
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -25,22 +26,24 @@ internal fun ViewState.onLongClick(cb: VeloFunction) {
     ui { av?.setOnLongClickListener { cb.post(); true } }
 }
 
-/** Set the on/off state of a switch or checkbox. */
+/** Set the on/off state of a switch, checkbox or (filter/choice) chip. */
 internal fun ViewState.checked(on: Boolean) {
     ui {
         when (val v = av) {
             is MaterialSwitch -> v.isChecked = on
             is MaterialCheckBox -> v.isChecked = on
+            is Chip -> v.isChecked = on
             else -> {}
         }
     }
 }
 
-/** Current on/off state of a switch or checkbox. */
+/** Current on/off state of a switch, checkbox or chip. */
 internal fun ViewState.isChecked(): Boolean = ui {
     when (val v = av) {
         is MaterialSwitch -> v.isChecked
         is MaterialCheckBox -> v.isChecked
+        is Chip -> v.isChecked
         else -> false
     }
 }

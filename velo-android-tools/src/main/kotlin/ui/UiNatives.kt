@@ -111,6 +111,7 @@ class View {
 
     // app bar
     fun onNav(cb: VeloFunction): View = nope()
+    fun action(title: String, icon: String, cb: VeloFunction): View = nope()
 
     // canvas (drawing)
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int): Shape = nope()
@@ -173,6 +174,7 @@ class Ui {
     fun icon(name: String): View = nope()
     fun iconButton(name: String): View = nope()
     fun fab(name: String): View = nope()
+    fun smallFab(name: String): View = nope()
     fun extendedFab(label: String, name: String): View = nope()
     fun chip(label: String): View = nope()
     fun divider(): View = nope()

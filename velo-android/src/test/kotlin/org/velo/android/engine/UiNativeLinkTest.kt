@@ -36,6 +36,10 @@ class UiNativeLinkTest {
 
     private fun registry() = NativeRegistry()
         .register("Terminal", AndroidTerminal::class)
+        .register("Time", VeloTime::class)
+        .register("FileSystem", VeloFileSystem::class)
+        .register("Http", VeloHttp::class)
+        .register("Socket", VeloSocket::class)
         .register("Ui", VeloUi::class)
         .register("View", VeloView::class)
         .register("Shape", Shape::class)

@@ -249,6 +249,11 @@ class GoldenTest {
     }
 
     @Test
+    fun `golden - random`() {
+        runGoldenTest("random")
+    }
+
+    @Test
     fun `golden - dict`() {
         runGoldenTest("dict")
     }

@@ -18,8 +18,8 @@ import org.velo.android.engine.ui.view.strokeJoinOf
  * Shapes are deliberately a separate native type from [VeloView]: a shape is never added to
  * a layout container (only ever drawn onto a canvas), so it doesn't need to share `View`'s
  * type, and keeping it apart stops the canvas paint API from crowding every widget handle.
- * Each method mutates the underlying [DrawOp]'s paint on the main thread and re-renders, so
- * styling can be chained fluently after the shape is drawn.
+ * Each method mutates the underlying [DrawOp]'s paint on the worker thread and requests a
+ * coalesced re-render, so styling can be chained fluently after the shape is drawn.
  *
  * Programs never construct this directly — the public no-arg constructor exists only for the
  * native binder; real instances come from a canvas via [make].
@@ -67,13 +67,12 @@ class Shape {
     }
 
     private fun mutate(block: (Paint, View) -> Unit) {
-        val s = state ?: return
         val o = op ?: return
-        val v = s.av ?: return
-        s.ui {
-            block(o.paint, v)
-            (v as? VeloCanvasView)?.refresh()
-        }
+        val v = state?.av ?: return
+        // Runs on the Velo worker thread: the paint is the op's own, mutated before the
+        // frame's coalesced repaint fires, so no main-thread hop is needed to restyle.
+        block(o.paint, v)
+        (v as? VeloCanvasView)?.refresh()
     }
 
     @JvmSynthetic

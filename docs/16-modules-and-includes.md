@@ -23,6 +23,7 @@ include to use:
 - `array.vel` — Array extensions (`str`)
 - `map.vel` — Generic hash map
 - `base64.vel` — BASE64 encoding/decoding
+- `random.vel` — `Random`, a bit-for-bit reimplementation of `java.util.Random`
 
 The native classes Terminal, Time, Http, FileSystem and Socket need **no**
 include: the runtime provides them and the compiler knows their types from

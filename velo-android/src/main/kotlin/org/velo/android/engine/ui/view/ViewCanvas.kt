@@ -12,12 +12,16 @@ import org.velo.android.engine.ui.Shape
  * they no-op into an inert shape, like every other kind-specific operation.
  */
 
-/** Build an op on the canvas (on the main thread) and return a [Shape] over it. */
-private fun ViewState.canvasOp(build: (VeloCanvasView) -> DrawOp): Shape = ui {
-    val cv = av as? VeloCanvasView ?: return@ui Shape.make(this, null)
+/**
+ * Build an op on the canvas and return a [Shape] over it. Runs on the Velo worker thread:
+ * a [DrawOp] is plain data (geometry already in px, a [Paint] to mutate), so there is no
+ * main-thread hop here — [VeloCanvasView.add] guards the list and coalesces the repaint.
+ */
+private fun ViewState.canvasOp(build: (VeloCanvasView) -> DrawOp): Shape {
+    val cv = av as? VeloCanvasView ?: return Shape.make(this, null)
     val op = build(cv)
     cv.add(op)
-    Shape.make(this, op)
+    return Shape.make(this, op)
 }
 
 /** A line from ([x1],[y1]) to ([x2],[y2]); stroked by default. */
@@ -108,7 +112,7 @@ internal fun ViewState.drawText(x: Int, y: Int, s: String, size: Int): Shape = c
 
 /** Remove every shape from the canvas. */
 internal fun ViewState.clearCanvas() {
-    ui { (av as? VeloCanvasView)?.clearOps() }
+    (av as? VeloCanvasView)?.clearOps()
 }
 
 /** Fire [cb] with the dp tap point when the canvas is tapped. */

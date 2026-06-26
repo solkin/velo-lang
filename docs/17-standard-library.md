@@ -287,6 +287,39 @@ while (n < 100) {
 | `empty` | `() bool` | Check if map has no entries |
 | `len` | `int` (field) | Number of entries |
 
+## Random
+
+`Random` is a pure-Velo reimplementation of `java.util.Random` — the same 48-bit
+linear congruential generator (multiplier `0x5DEECE66D`, addend `0xB`, modulus
+`2^48`), so a given seed produces **exactly** the same sequence as the JVM.
+
+```velo
+include "lang/random.vel";
+
+Random r = new Random(42);          # seed it like java.util.Random(long)
+r.nextInt();                        # -1170105035 (same as the JVM)
+r.nextIntBound(100);                # uniform in [0, 100)
+r.nextBoolean();                    # true / false
+r.nextFloat();                      # float in [0, 1)
+r.setSeed(12345);                   # reseed in place
+```
+
+Velo has no `long` or `double`, so the `nextLong`, `nextDouble` and
+`nextGaussian` parts of `java.util.Random` are intentionally omitted. Because
+Velo has no method overloading, the bounded draw is named `nextIntBound`
+rather than overloading `nextInt`.
+
+### Full API Reference
+
+| Method | Signature | Description |
+|---|---|---|
+| constructor | `(int seed)` | Seed the generator (like `java.util.Random(long)`) |
+| `setSeed` | `(int seed) void` | Reseed in place |
+| `nextInt` | `() int` | Next pseudorandom 32-bit `int` (full range) |
+| `nextIntBound` | `(int bound) int` | Uniform `int` in `[0, bound)` |
+| `nextBoolean` | `() bool` | Next pseudorandom `bool` |
+| `nextFloat` | `() float` | Uniform `float` in `[0, 1)` |
+
 ---
 
 [Previous: Modules and Includes ←](16-modules-and-includes.md) | [Next: Running Programs →](18-running-programs.md)

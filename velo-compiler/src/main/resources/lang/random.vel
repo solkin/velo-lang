@@ -1,0 +1,125 @@
+# java.util.Random reimplemented in pure Velo.
+#
+# Bit-for-bit compatible with java.util.Random: it runs the same 48-bit linear
+# congruential generator (multiplier 0x5DEECE66D, addend 0xB, modulus 2^48), so
+# a given seed yields exactly the same sequence as the JVM. The 48-bit seed is
+# kept as six 8-bit limbs because Velo `int` is a 32-bit signed value — a 16-bit
+# limb would overflow when multiplied.
+#
+# Velo has no `long` or `double`, so the long/double/Gaussian parts of
+# java.util.Random are intentionally left out; the int/boolean/float surface is
+# reproduced exactly.
+class Random(int seed) {
+    # 48-bit seed as 6 bytes, least-significant first (each 0..255).
+    array[int] state = new array[int](6);
+    # Multiplier 0x5DEECE66D as 6 bytes, least-significant first.
+    array[int] mult = new array[int]{109, 230, 236, 222, 5, 0};
+
+    func ushr1(int value) int {
+        if (value < 0) {
+            ((value & 2147483647) / 2) + 1073741824;
+        } else {
+            value / 2;
+        };
+    };
+
+    func ushr(int value, int count) int {
+        int result = value;
+        int i = 0;
+        while (i < count) {
+            result = ushr1(result);
+            i = i + 1;
+        };
+        result;
+    };
+
+    # this.seed = (seed ^ 0x5DEECE66D) & ((1 << 48) - 1)
+    func setSeed(int newSeed) void {
+        int fill = 0;
+        if (newSeed < 0) {
+            fill = 255;
+        };
+        state[0] = (newSeed & 255) ^ mult[0];
+        state[1] = (ushr(newSeed, 8) & 255) ^ mult[1];
+        state[2] = (ushr(newSeed, 16) & 255) ^ mult[2];
+        state[3] = (ushr(newSeed, 24) & 255) ^ mult[3];
+        state[4] = fill ^ mult[4];
+        state[5] = fill ^ mult[5];
+    };
+
+    setSeed(seed);
+
+    # seed = (seed * 0x5DEECE66D + 0xB) & ((1 << 48) - 1), via schoolbook
+    # multiply over the 8-bit limbs, keeping the low 48 bits.
+    func advance() void {
+        array[int] product = new array[int](6);
+        int carry = 0;
+        int k = 0;
+        while (k < 6) {
+            int acc = carry;
+            int i = 0;
+            while (i <= k) {
+                acc = acc + state[i] * mult[k - i];
+                i = i + 1;
+            };
+            product[k] = acc & 255;
+            carry = ushr(acc, 8);
+            k = k + 1;
+        };
+        # add the 0xB addend, propagating the carry through the limbs
+        int c = 11;
+        int j = 0;
+        while (j < 6) {
+            int sum = product[j] + c;
+            state[j] = sum & 255;
+            c = ushr(sum, 8);
+            j = j + 1;
+        };
+    };
+
+    # java.util.Random.next(bits): advance, then take the top `bits` bits.
+    func next(int bits) int {
+        advance();
+        # high = (seed >>> 16) as a signed 32-bit int, i.e. next(32)
+        int high = state[2] | state[3].shl(8) | state[4].shl(16) | state[5].shl(24);
+        if (bits == 32) then high else ushr(high, 32 - bits);
+    };
+
+    func nextInt() int {
+        next(32);
+    };
+
+    func nextBoolean() bool {
+        next(1) != 0;
+    };
+
+    # java.util.Random.nextInt(bound): uniform in [0, bound).
+    func nextIntBound(int bound) int {
+        int r = next(31);
+        int m = bound - 1;
+        int result = 0;
+        if ((bound & m) == 0) {
+            # bound is a power of two: take that many high bits of next(31)
+            int shift = 0;
+            int b = bound;
+            while (b > 1) {
+                b = ushr(b, 1);
+                shift = shift + 1;
+            };
+            result = ushr(r, 31 - shift);
+        } else {
+            int u = r;
+            result = u % bound;
+            while (u - result + m < 0) {
+                u = next(31);
+                result = u % bound;
+            };
+        };
+        result;
+    };
+
+    # java.util.Random.nextFloat(): next(24) / 2^24, in [0, 1).
+    func nextFloat() float {
+        (1.0 * next(24)) / 16777216.0;
+    };
+};

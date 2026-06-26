@@ -1,0 +1,15 @@
+seed 42
+nextInt: -1170105035 234785527 -1360544799 205897768 1325939940
+nextInt(100): 30 63 48 84 70 25 5 18
+nextInt(64): 46 3 43 3 19 60 17 45
+nextBoolean: true false true false false true false true
+seed -1
+nextInt: 1155099827 1887904451 52699159 -1941176418 -1451336087
+nextInt(100): 13 25 79 39 4 38 77 78
+nextInt(64): 17 28 0 35 42 38 26 25
+nextBoolean: false false false true true true false false
+seed 12345
+nextInt: 1553932502 -2090749135 -287790814 -355989640 -716867186
+nextInt(100): 51 80 41 28 55 84 75 2
+nextInt(64): 23 32 59 58 53 2 20 7
+nextBoolean: false true true true true false false false

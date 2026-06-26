@@ -2,6 +2,7 @@ package org.velo.android.engine.ui.view
 
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
@@ -40,6 +41,7 @@ internal class ViewState {
     var heightDp: Int? = null
     var grow = 0
     var gapDp = 0
+    var gravity: Int? = null
 
     /** Run [block] on the Android main thread and return its result, blocking the worker. */
     fun <T> ui(block: () -> T): T =
@@ -104,6 +106,11 @@ internal class ViewState {
                 }
             }
             return LinearLayout.LayoutParams(w, h, grow.toFloat())
+        }
+        if (parent is FrameLayout) {
+            return FrameLayout.LayoutParams(w, h).apply {
+                gravity = this@ViewState.gravity ?: (android.view.Gravity.TOP or android.view.Gravity.START)
+            }
         }
         return ViewGroup.LayoutParams(w, h)
     }

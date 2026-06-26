@@ -146,6 +146,7 @@ class VeloView {
     // --- app bar ---
 
     fun onNav(cb: VeloFunction): VeloView = apply { state.onNav(cb) }
+    fun action(title: String, icon: String, cb: VeloFunction): VeloView = apply { state.appBarAction(title, icon, cb) }
 
     // --- canvas (drawing) ---
 

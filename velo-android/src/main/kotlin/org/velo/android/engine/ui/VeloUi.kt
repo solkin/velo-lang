@@ -141,19 +141,32 @@ class VeloUi {
 
     /** A vertical container. */
     fun column(): VeloView = build(Kind.COLUMN) { ctx ->
-        val ll = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        val ll = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            // Don't clip children to our bounds/padding, so an elevated child (a FAB, an
+            // elevated card) can cast its shadow outside its own box without it being cut off.
+            clipChildren = false
+            clipToPadding = false
+        }
         ll to ll
     }
 
     /** A horizontal container. */
     fun row(): VeloView = build(Kind.ROW) { ctx ->
-        val ll = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
+        val ll = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            clipChildren = false
+            clipToPadding = false
+        }
         ll to ll
     }
 
     /** A stacking (frame) container; children overlap. */
     fun box(): VeloView = build(Kind.BOX) { ctx ->
-        val fl = FrameLayout(ctx)
+        val fl = FrameLayout(ctx).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
         fl to fl
     }
 
@@ -237,6 +250,14 @@ class VeloUi {
     /** A circular floating action button carrying an icon. */
     fun fab(name: String): VeloView = build(Kind.FAB) { ctx ->
         FloatingActionButton(ctx).apply { setImageDrawable(loadIcon(ctx, name)) } to null
+    }
+
+    /** A smaller circular floating action button for secondary stacked actions. */
+    fun smallFab(name: String): VeloView = build(Kind.FAB) { ctx ->
+        FloatingActionButton(ctx).apply {
+            setSize(FloatingActionButton.SIZE_MINI)
+            setImageDrawable(loadIcon(ctx, name))
+        } to null
     }
 
     /** An extended floating action button: a pill with [label] and an icon. */

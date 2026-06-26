@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.os.SystemClock
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
@@ -18,7 +19,16 @@ import android.view.View
  */
 internal class VeloCanvasView(context: Context) : View(context) {
 
+    // The retained display list. Draw ops are plain data, so they are built on the Velo
+    // worker thread (no main-thread hop per primitive) and read on the main thread in
+    // [onDraw]; every access is guarded by [opsLock]. Mutations request a single coalesced
+    // frame via postInvalidateOnAnimation instead of invalidating per op, so a whole render()
+    // pass (hundreds of ops) costs one redraw on the next vsync, not one redraw per primitive.
+    private val opsLock = Any()
     private val ops = ArrayList<DrawOp>()
+    private var stagedOps: ArrayList<DrawOp>? = null
+    private var lastStagedMutationMs = 0L
+    private var commitScheduled = false
 
     // Pointer callbacks (dp coordinates), installed by the canvas onTap/onPointer* ops.
     var onTap: ((Int, Int) -> Unit)? = null
@@ -38,36 +48,115 @@ internal class VeloCanvasView(context: Context) : View(context) {
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value.toFloat(), resources.displayMetrics)
 
     fun add(op: DrawOp) {
-        ops.add(op)
-        invalidate()
+        var repaintNow = false
+        synchronized(opsLock) {
+            val staging = stagedOps
+            if (staging != null) {
+                staging.add(op)
+                markStagedMutationLocked()
+                scheduleStagedCommitLocked()
+            } else {
+                ops.add(op)
+                repaintNow = true
+            }
+        }
+        if (repaintNow) postInvalidateOnAnimation()
     }
 
     fun clearOps() {
-        ops.clear()
-        invalidate()
+        synchronized(opsLock) {
+            stagedOps = ArrayList()
+            markStagedMutationLocked()
+            scheduleStagedCommitLocked()
+        }
     }
 
-    /** Re-render after a [Shape] mutated an op's paint. */
-    fun refresh() = invalidate()
+    /** Re-render after a [Shape] mutated an op's paint (coalesced to one frame). */
+    fun refresh() {
+        var repaintNow = false
+        synchronized(opsLock) {
+            if (stagedOps != null) {
+                markStagedMutationLocked()
+                scheduleStagedCommitLocked()
+            } else {
+                repaintNow = true
+            }
+        }
+        if (repaintNow) postInvalidateOnAnimation()
+    }
+
+    private fun markStagedMutationLocked() {
+        lastStagedMutationMs = SystemClock.uptimeMillis()
+    }
+
+    private fun scheduleStagedCommitLocked() {
+        if (commitScheduled) return
+        commitScheduled = true
+        postDelayed(::commitStagedFrameIfQuiet, STAGED_COMMIT_DELAY_MS)
+    }
+
+    private fun commitStagedFrameIfQuiet() {
+        var repaintNow = false
+        var rescheduleDelay = 0L
+        synchronized(opsLock) {
+            val staging = stagedOps
+            if (staging == null) {
+                commitScheduled = false
+                return
+            }
+            val quietForMs = SystemClock.uptimeMillis() - lastStagedMutationMs
+            if (quietForMs < STAGED_COMMIT_DELAY_MS) {
+                rescheduleDelay = STAGED_COMMIT_DELAY_MS - quietForMs
+            } else {
+                ops.clear()
+                ops.addAll(staging)
+                stagedOps = null
+                commitScheduled = false
+                repaintNow = true
+            }
+        }
+        if (rescheduleDelay > 0) postDelayed(::commitStagedFrameIfQuiet, rescheduleDelay)
+        if (repaintNow) postInvalidateOnAnimation()
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        for (op in ops) op.draw(canvas)
+        // Snapshot the op references under the lock, then rasterise outside it so the worker
+        // can keep building the next frame without contending on the whole draw pass.
+        val frame = synchronized(opsLock) { ops.toList() }
+        for (op in frame) op.draw(canvas)
     }
+
+    /** True once the program has wired any pointer/tap callback — i.e. the canvas wants gestures. */
+    private fun wantsGestures(): Boolean =
+        onTap != null || onDown != null || onMove != null || onUp != null
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val x = (event.x / density).toInt()
         val y = (event.y / density).toInt()
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> onDown?.invoke(x, y)
+            MotionEvent.ACTION_DOWN -> {
+                // Claim the gesture from any enclosing scroll view so a vertical drag draws on
+                // the canvas instead of scrolling the screen. Only when the canvas actually
+                // listens — a passive canvas still lets the page scroll over it. The request
+                // propagates up the whole ancestor chain, so it reaches an outer NestedScrollView.
+                if (wantsGestures()) parent?.requestDisallowInterceptTouchEvent(true)
+                onDown?.invoke(x, y)
+            }
             MotionEvent.ACTION_MOVE -> onMove?.invoke(x, y)
             MotionEvent.ACTION_UP -> {
                 onUp?.invoke(x, y)
                 onTap?.invoke(x, y)
+                parent?.requestDisallowInterceptTouchEvent(false)
             }
+            MotionEvent.ACTION_CANCEL -> parent?.requestDisallowInterceptTouchEvent(false)
         }
         return true
+    }
+
+    private companion object {
+        const val STAGED_COMMIT_DELAY_MS = 4L
     }
 }
 
