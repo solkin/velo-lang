@@ -1,6 +1,0 @@
-{
-  "id": "ui-demo",
-  "name": "Material3 UI",
-  "description": "Opens a Material3 screen with buttons, a field, switch, slider, navigation, and a dialog.",
-  "interactive": true
-}

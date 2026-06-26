@@ -1,0 +1,6 @@
+{
+  "id": "gallery",
+  "name": "Material3 Gallery",
+  "description": "A complete Material3 app: top app bar, bottom navigation, and three screens — a Home dashboard, a components catalogue, and a validated profile form — exercising every View-based widget.",
+  "interactive": true
+}

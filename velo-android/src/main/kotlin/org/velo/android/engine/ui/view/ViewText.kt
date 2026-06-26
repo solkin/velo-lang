@@ -5,6 +5,7 @@ import android.graphics.Typeface
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.View
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputLayout
 import core.VeloFunction
@@ -94,6 +95,11 @@ internal fun ViewState.strikethrough() {
 /** Enable or disable interaction with this widget. */
 internal fun ViewState.enabled(on: Boolean) {
     ui { av?.isEnabled = on }
+}
+
+/** Show or hide this view; hidden views take no layout space (View.GONE). */
+internal fun ViewState.visible(on: Boolean) {
+    ui { av?.visibility = if (on) View.VISIBLE else View.GONE }
 }
 
 /** Fire [cb] with the new text whenever a field changes. */

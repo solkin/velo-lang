@@ -51,6 +51,7 @@ class View {
     fun maxLines(n: Int): View = nope()
     fun strikethrough(): View = nope()
     fun enabled(on: Boolean): View = nope()
+    fun visible(on: Boolean): View = nope()
 
     // text field extras
     fun placeholder(s: String): View = nope()

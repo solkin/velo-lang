@@ -132,6 +132,8 @@ class VeloUi {
         val card = MaterialCardView(ctx)
         val inner = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
+            clipChildren = false
+            clipToPadding = false
             val p = (16 * ctx.resources.displayMetrics.density).toInt()
             setPadding(p, p, p, p)
         }
@@ -173,7 +175,13 @@ class VeloUi {
     /** A vertically scrolling container. */
     fun scroll(): VeloView = build(Kind.SCROLL) { ctx ->
         val sv = NestedScrollView(ctx)
-        val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        val inner = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            // Let an elevated child (a card, a FAB) cast its shadow into the gaps between rows
+            // instead of having it sliced off at this container's bounds.
+            clipChildren = false
+            clipToPadding = false
+        }
         sv.addView(
             inner,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT),
@@ -302,7 +310,11 @@ class VeloUi {
             radius = 0f
             cardElevation = 0f
         }
-        val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
+        val inner = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            clipChildren = false
+            clipToPadding = false
+        }
         card.addView(inner)
         card to inner
     }

@@ -25,7 +25,7 @@ import java.io.File
  * real [VeloUi]/[VeloView]. If those signatures ever drift apart, the `.vbc` would fail
  * to link on the phone. This test catches that here:
  *
- *  - compiling the actual `ui-demo` source against the **real** natives proves the
+ *  - compiling the actual `gallery` source against the **real** natives proves the
  *    program type-checks against what runs on device;
  *  - linking the **stub-compiled** `.vbc` (if the sample task has run) against the real
  *    registry proves the stub and the implementation agree signature-for-signature.
@@ -49,12 +49,12 @@ class UiNativeLinkTest {
 
     @Test
     fun uiSampleCompilesAndLinksAgainstRealNatives() {
-        val source = File("samples/ui-demo/program.vel")
-        assumeTrue("ui-demo sample source present", source.exists())
+        val source = File("samples/gallery/program.vel")
+        assumeTrue("gallery sample source present", source.exists())
 
         val registry = registry()
         val program = VeloCompiler(registry).compile(source.absolutePath)
-            ?: error("ui-demo failed to compile against the real Ui/View natives")
+            ?: error("gallery failed to compile against the real Ui/View natives")
 
         // Links every native ref in the program against the real host classes.
         NativeLinker.link(program.natives, registry)

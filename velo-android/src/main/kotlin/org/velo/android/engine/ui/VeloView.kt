@@ -75,6 +75,7 @@ class VeloView {
     fun maxLines(n: Int): VeloView = apply { state.maxLines(n) }
     fun strikethrough(): VeloView = apply { state.strikethrough() }
     fun enabled(on: Boolean): VeloView = apply { state.enabled(on) }
+    fun visible(on: Boolean): VeloView = apply { state.visible(on) }
 
     // --- text field extras ---
 

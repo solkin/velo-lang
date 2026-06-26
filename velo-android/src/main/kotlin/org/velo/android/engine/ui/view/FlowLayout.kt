@@ -31,7 +31,23 @@ internal class FlowLayout(context: Context, private val vertical: Boolean) : Vie
             hSize, if (hMode == MeasureSpec.UNSPECIFIED) MeasureSpec.UNSPECIFIED else MeasureSpec.AT_MOST,
         )
         val kids = laidOutChildren()
-        for (c in kids) c.measure(childWSpec, childHSpec)
+        // Honour a child's explicit dp size (LayoutParams width/height >= 0) with an EXACTLY
+        // spec; otherwise let it size itself within the line. Without this a fixed-size child
+        // (e.g. a 40dp colour swatch) collapses to its intrinsic minimum.
+        for (c in kids) {
+            val lp = c.layoutParams
+            val cw = if (lp != null && lp.width >= 0) {
+                MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY)
+            } else {
+                childWSpec
+            }
+            val ch = if (lp != null && lp.height >= 0) {
+                MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY)
+            } else {
+                childHSpec
+            }
+            c.measure(cw, ch)
+        }
 
         var contentW = 0
         var contentH = 0

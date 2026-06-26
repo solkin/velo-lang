@@ -1,0 +1,198 @@
+# Sketch — a small native-style finger-painting app on a Velo canvas. A bottom tool bar holds
+# a live brush preview, a palette of round colour swatches with an eraser, and a brush-size
+# slider; the rest of the screen is the drawing surface. Each touch lays down a dot and drags
+# connect into a smooth stroke. The app bar's back arrow (or the Clear action) returns to the
+# terminal.
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
+
+# Paper colour: the canvas background, and what the eraser paints with — theme-aware, so it
+# stays correct in light or dark mode.
+str PAPER = colors.surface();
+
+# The swatch palette.
+array[str] PALETTE = new array[str]{
+    "#F44336", "#E91E63", "#9C27B0", "#3F51B5", "#2196F3",
+    "#009688", "#4CAF50", "#FFC107", "#FF9800", "#000000"
+};
+int PALETTE_LEN = 10;
+
+# ---- brush state -------------------------------------------------------------------------
+str brushColor = "#F44336";
+int brushSize = 8;
+bool eraser = false;
+int selectedIndex = 0;
+
+# Swatch handles (so the selection ring can move between them) plus the live brush preview.
+array[View] swatches = new array[View](PALETTE_LEN);
+View eraserSwatch = ui.surface();
+View preview = ui.surface();
+
+# ---- selection helpers -------------------------------------------------------------------
+
+# Mirror the current brush colour into the preview dot.
+func updatePreview() void {
+    preview.background(if (eraser) then PAPER else brushColor);
+    void
+};
+
+# Give a swatch the faint resting ring shared by all unselected swatches.
+func restRing(View s) void {
+    s.border(1, colors.outlineVariant());
+    void
+};
+
+# Give a swatch the bold selected ring.
+func selectRing(View s) void {
+    s.border(3, colors.onSurface());
+    void
+};
+
+# Drop the bold ring from whatever is currently selected.
+func clearSelection() void {
+    restRing(swatches[selectedIndex]);
+    restRing(eraserSwatch);
+    void
+};
+
+# Pick colour [i]: ring its swatch and arm the brush with that colour.
+func selectColor(int i) void {
+    clearSelection();
+    selectedIndex = i;
+    brushColor = PALETTE[i];
+    eraser = false;
+    selectRing(swatches[i]);
+    updatePreview();
+    void
+};
+
+# Switch to the eraser: paint with the paper colour.
+func selectEraser() void {
+    clearSelection();
+    eraser = true;
+    selectRing(eraserSwatch);
+    updatePreview();
+    void
+};
+
+# Build one 40dp round colour swatch. The index is a parameter (fresh per call) so each
+# swatch's click closure captures its own colour, not the loop's final value.
+func makeSwatch(int i) View {
+    View s = ui.surface().width(40).height(40);
+    s.corner(20);
+    s.elevation(2);
+    s.background(PALETTE[i]);
+    restRing(s);
+    s.onClick(func() void { selectColor(i); void });
+    s;
+};
+
+# ---- screen scaffold ---------------------------------------------------------------------
+
+View root = ui.column().fillWidth();
+
+View bar = ui.appBar("Sketch");
+bar.onNav(func() void { ui.close(); void });
+
+# The drawing surface fills everything between the app bar and the tool bar.
+View c = ui.canvas().fillWidth().weight(1);
+c.background(PAPER);
+
+bar.action("Clear", icons.delete(), func() void {
+    c.clear();
+    void
+});
+root.add(bar);
+root.add(c);
+
+# A faint hint, cleared the moment the user taps Clear.
+c.drawText(16, 36, "Draw with your finger", 14).color(colors.onSurfaceVariant()).alpha(55);
+
+# ---- painting ----------------------------------------------------------------------------
+
+int lastX = 0;
+int lastY = 0;
+
+# The colour to paint with right now (the brush, or the paper for the eraser).
+func inkColor() str {
+    if (eraser) then PAPER else brushColor;
+};
+
+c.onPointerDown(func(int x, int y) void {
+    lastX = x;
+    lastY = y;
+    # A dot, so a tap leaves a mark even without dragging.
+    c.drawCircle(x, y, brushSize / 2).color(inkColor());
+    void
+});
+c.onPointerMove(func(int x, int y) void {
+    c.drawLine(lastX, lastY, x, y).color(inkColor()).stroke(brushSize).cap("round");
+    lastX = x;
+    lastY = y;
+    void
+});
+
+# ---- bottom tool bar ---------------------------------------------------------------------
+
+# A flat elevated surface acts as a bottom app bar (no rounded corners, so the swatch shadows
+# inside it aren't clipped).
+View tools = ui.surface().padding(16).fillWidth();
+tools.background(colors.surfaceContainer());
+tools.elevation(8);
+View toolCol = ui.column().gap(14).fillWidth();
+tools.add(toolCol);
+
+# Header: the live brush preview next to a label.
+View header = ui.row().gap(12).fillWidth().center();
+preview.width(28).height(28).corner(14);
+preview.elevation(2);
+preview.border(1, colors.outlineVariant());
+preview.background(brushColor);
+header.add(preview);
+header.add(ui.text("Brush").style(styles.titleSmall()));
+toolCol.add(header);
+
+# Palette: every colour swatch, then the eraser, wrapping onto new rows as needed.
+View palette = ui.flowRow().gap(10).fillWidth();
+int i = 0;
+while (i < PALETTE_LEN) {
+    swatches[i] = makeSwatch(i);
+    palette.add(swatches[i]);
+    i += 1;
+};
+eraserSwatch.width(40).height(40).center();
+eraserSwatch.corner(20);
+eraserSwatch.elevation(2);
+eraserSwatch.background(colors.surfaceVariant());
+eraserSwatch.add(ui.icon(icons.clear()).tint(colors.onSurfaceVariant()));
+restRing(eraserSwatch);
+eraserSwatch.onClick(func() void { selectEraser(); void });
+palette.add(eraserSwatch);
+toolCol.add(palette);
+
+# Brush-size slider with a live caption.
+View sizeRow = ui.row().gap(12).fillWidth().center();
+View sizeLabel = ui.text("Size ".con(brushSize.str));
+sizeRow.add(sizeLabel);
+View sizeSlider = ui.slider(1, 24).weight(1);
+sizeSlider.slide(brushSize);
+sizeSlider.onSlide(func(int v) void {
+    brushSize = v;
+    sizeLabel.text("Size ".con(v.str));
+    void
+});
+sizeRow.add(sizeSlider);
+toolCol.add(sizeRow);
+
+root.add(tools);
+
+# Highlight the starting colour.
+selectColor(0);
+
+term.println("Opening Sketch...");
+ui.open(root);
+term.println("Sketch opened — pick a colour and draw. Back or Clear returns here.");
