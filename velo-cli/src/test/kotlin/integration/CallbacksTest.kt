@@ -22,7 +22,7 @@ import compiler.parser.TokenStream
 import core.Bytecode
 import core.SerializedFrame
 import core.SerializedProgram
-import vm.actors.ThreadDispatcher
+import host.ThreadDispatcher
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream

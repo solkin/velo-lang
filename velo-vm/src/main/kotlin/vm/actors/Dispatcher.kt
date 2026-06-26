@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit
  *   - tasks run one at a time, in submission order;
  *   - there is a happens-before edge between consecutive tasks.
  *
- * The default implementation is [ThreadDispatcher] — a dedicated daemon
- * thread per actor, preserving the original worker-thread semantics. The
- * program's main context runs on a dispatcher too: [PumpDispatcher] when the
- * host blocks in [vm.VM.run], or any host-provided serial executor (Android
- * main-looper Handler, Swing EDT, a single-threaded pool) when the program
- * is embedded via `VeloRuntime.start`. That choice is what pins Velo
- * callbacks to the host's main thread.
+ * The VM core provides only the cooperative [PumpDispatcher] (the program's
+ * event loop) and the [CooperativeDispatcherFactory] that runs every actor on
+ * it — no threads. A host may supply real-thread dispatchers (the CLI's
+ * thread-per-actor or pooled backends) for parallelism, and the program's main
+ * context can run on any host serial executor (Android main-looper Handler,
+ * Swing EDT) adapted via [from]. That choice is what pins Velo callbacks to the
+ * host's main thread.
  */
 interface Dispatcher {
 
@@ -50,58 +50,10 @@ interface Dispatcher {
 }
 
 /**
- * Default actor dispatcher: one dedicated daemon thread draining an
- * unbounded task queue — the direct successor of the original per-actor
- * worker loop.
- *
- * [close] lets the thread drain everything already queued and then exit,
- * matching the old "process remaining mailbox, then return" shutdown
- * behaviour. Uncaught task failures are printed but do not kill the thread:
- * actor request handlers translate their own failures into responses, so a
- * throw here is a VM bug, and a half-dead silent actor would be worse than
- * a noisy one.
- */
-class ThreadDispatcher(name: String) : Dispatcher {
-
-    private val tasks = LinkedBlockingQueue<Runnable>()
-
-    @Volatile
-    private var closed = false
-
-    private val thread: Thread = Thread({ loop() }, name).apply {
-        isDaemon = true
-        start()
-    }
-
-    private fun loop() {
-        while (true) {
-            val task = if (closed) tasks.poll() ?: return else tasks.take()
-            try {
-                task.run()
-            } catch (ex: Throwable) {
-                ex.printStackTrace()
-            }
-        }
-    }
-
-    override fun execute(task: Runnable) {
-        tasks.put(task)
-    }
-
-    override fun close() {
-        closed = true
-        tasks.put(Runnable {}) // wake the thread so it can observe `closed`
-    }
-
-    override fun joinFor(timeoutMs: Long) = thread.join(timeoutMs)
-
-    override fun isAlive(): Boolean = thread.isAlive
-}
-
-/**
  * Dispatcher for the main context in CLI mode: tasks are queued by anyone,
  * executed only by the single thread that called [pump] — the thread that
- * entered [vm.VM.run]. This is the program's event loop.
+ * entered [vm.VM.run]. This is the program's event loop, and (with the
+ * cooperative default) the one every spawned actor runs on too.
  *
  * [pump] returns when the queue is empty and [idle] reports there is nothing
  * left to wait for (no parked fibers on any actor, no host-retained callbacks).
@@ -143,13 +95,14 @@ class PumpDispatcher : Dispatcher {
 }
 
 /**
- * Host SPI for giving each *spawned* actor its [Dispatcher] (VEL-17). The
- * default dedicates a daemon thread per actor ([ThreadPerActorFactory]); a host
- * may instead inject a backend that multiplexes every actor onto a shared
- * bounded pool (the JVM `PooledDispatcherFactory` lives in the CLI host, not
- * here — the VM stays thread-agnostic). The program's main context never goes
- * through a factory — its dispatcher is supplied by the host ([PumpDispatcher]
- * or [Dispatcher.from]).
+ * Strategy for giving each *spawned* actor its [Dispatcher].
+ *
+ * The VM core's default is cooperative ([CooperativeDispatcherFactory]: every
+ * actor runs on the program's single event loop, no threads). A host injects a
+ * thread backend — the CLI's thread-per-actor or pooled factory — for real
+ * multicore parallelism; those live in the host, so the VM core stays
+ * thread-agnostic. The program's main context never goes through a factory: its
+ * dispatcher is supplied directly (a [PumpDispatcher] or [Dispatcher.from]).
  *
  * One factory backs one program run: [shutdown] is called from
  * [ActorRuntime.shutdownAll] to release shared resources (e.g. a pool).
@@ -162,11 +115,14 @@ interface DispatcherFactory {
 }
 
 /**
- * Default placement: a dedicated [ThreadDispatcher] (daemon thread) per actor.
- * Stateless, so a single shared instance is reused.
+ * Placement for a runtime that has not been wired for actor execution — a bare
+ * [ActorRuntime] built outside [vm.VM.run] / [vm.VeloRuntime] (e.g. a unit-test
+ * context that never spawns). Spawning an actor through it is a configuration
+ * error rather than a silent wrong default.
  */
-object ThreadPerActorFactory : DispatcherFactory {
-    override fun create(name: String): Dispatcher = ThreadDispatcher(name)
+object UnconfiguredPlacement : DispatcherFactory {
+    override fun create(name: String): Dispatcher =
+        error("actor placement not configured — run the program via VM.run or VeloRuntime")
 }
 
 /**

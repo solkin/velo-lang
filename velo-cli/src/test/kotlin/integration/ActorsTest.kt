@@ -12,8 +12,10 @@ import vm.VMExecutor
 import vm.VMProfiler
 import vm.VeloProgram
 import vm.VeloRuntime
+import vm.actors.ActorRuntime
 import vm.actors.DispatcherFactory
 import host.PooledDispatcherFactory
+import host.ThreadPerActorFactory
 
 import FileSystem
 import Http
@@ -895,6 +897,7 @@ class ActorsTest {
             frameLoader = frameLoader,
             memory = MemoryAreaImpl(),
             nativeRegistry = NativeRegistry(),
+            actorRuntime = ActorRuntime(ThreadPerActorFactory), // direct-context tests use real threads
         )
         val main = ctx.loadFrame(0, parentVars = null) ?: error("No main frame")
         ctx.pushFrame(main)

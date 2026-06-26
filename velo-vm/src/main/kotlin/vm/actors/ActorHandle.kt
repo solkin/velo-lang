@@ -17,18 +17,17 @@ import vm.records.FuncRecord
 import vm.records.RefKind
 import vm.records.RefRecord
 import java.util.IdentityHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * One live execution domain: an isolated [VMContext] plus a [Dispatcher]
  * that runs its requests serially.
  *
  * Both spawned actors and the program's main context are `ActorHandle`s —
- * "everything is an actor". The only difference is the dispatcher:
- * spawned actors get a dedicated [ThreadDispatcher]; the main context runs
- * on a [PumpDispatcher] (CLI) or a host-provided serial executor (embedded,
- * e.g. an Android main-looper Handler). That uniformity is what lets a
- * Velo callback always execute on the thread that owns its closure.
+ * "everything is an actor". They differ only in dispatcher: by default every
+ * actor (and main) shares the one [PumpDispatcher] event loop (cooperative, no
+ * threads); a host may instead place spawned actors on real threads, and the
+ * main context can run on a host serial executor. That uniformity is what lets
+ * a Velo callback always execute on the thread that owns its closure.
  *
  * Lifetime: explicit, not GC-finalization. An actor lives until shut down by
  * [ActorRuntime.shutdownAll] (called from [vm.VM.run]'s `finally`, or from
@@ -57,7 +56,7 @@ class ActorHandle private constructor(
     profiler: VMProfiler? = null,
 ) {
 
-    private val nextObjectId = AtomicInteger(0)
+    private var nextObjectId = 0 // touched only during construction (single thread)
     private val idToFrame = HashMap<Int, Frame>()
     private val frameToId = IdentityHashMap<Frame, Int>()
 
@@ -413,7 +412,7 @@ class ActorHandle private constructor(
 
     private fun registerObject(frame: Frame): Int {
         frameToId[frame]?.let { return it }
-        val id = nextObjectId.getAndIncrement()
+        val id = nextObjectId++
         idToFrame[id] = frame
         frameToId[frame] = id
         return id

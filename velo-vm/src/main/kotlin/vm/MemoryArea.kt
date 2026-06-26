@@ -1,7 +1,5 @@
 package vm
 
-import java.util.concurrent.atomic.AtomicLong
-
 /**
  * Unified memory area for all reference types in the VM.
  *
@@ -57,16 +55,16 @@ class MemoryAreaImpl : MemoryArea {
     private var freeCount = 0
     private var gcThreshold = THRESHOLD
 
-    // Statistics
-    private val allocations = AtomicLong(0)
-    private val deallocations = AtomicLong(0)
+    // Statistics (this area is owned by one actor, touched on one thread).
+    private var allocations = 0L
+    private var deallocations = 0L
     private var peakCount: Long = 0
 
     override fun put(value: Any): Int {
         val id = if (freeCount > 0) freeIds[--freeCount] else top++
         if (id >= slots.size) grow(id)
         slots[id] = value
-        allocations.incrementAndGet()
+        allocations++
         val live = (top - freeCount).toLong()
         if (live > peakCount) peakCount = live
         return id
@@ -88,7 +86,7 @@ class MemoryAreaImpl : MemoryArea {
             slots[id] = null
             if (freeCount >= freeIds.size) freeIds = freeIds.copyOf(freeIds.size shl 1)
             freeIds[freeCount++] = id
-            deallocations.incrementAndGet()
+            deallocations++
         }
     }
 
@@ -113,8 +111,8 @@ class MemoryAreaImpl : MemoryArea {
     }
 
     override fun getStats(): MemoryStats = MemoryStats(
-        allocations = allocations.get(),
-        deallocations = deallocations.get(),
+        allocations = allocations,
+        deallocations = deallocations,
         activeCount = (top - freeCount).toLong(),
         peakCount = peakCount,
     )

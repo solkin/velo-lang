@@ -5,27 +5,26 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Process-wide registry of live actors.
  *
- * Owned by the host [vm.VMContext]; shared by reference with every actor
- * thread spawned from that context, so different actors can hold each
- * other's handles. The registry exists to:
+ * Owned by the program's [vm.VMContext] and shared by reference with every
+ * actor, so actors can hold each other's handles. It exists to:
  *
  *  - hand out monotonically-increasing actor ids for diagnostics;
- *  - enable a deterministic "shut everything down" hook on program exit
- *    (used by [vm.VM.run]'s `finally`), independent of the JVM's `Cleaner`
- *    which is best-effort.
+ *  - drive a deterministic "shut everything down" on program exit
+ *    ([shutdownAll], from [vm.VM.run]'s `finally` / [vm.VeloProgram.stop]);
+ *  - track the liveness signals the cooperative loop needs
+ *    ([anyParkedFibers], [hasHostCallbacks]).
  *
- * Lifetime model: the registry holds a strong reference to each live
- * [ActorHandle] until its worker thread exits. GC-driven shutdown still
- * works because no Velo code retains a reference: when the last
- * [ActorRefRecord] becomes unreachable, the handle's [Cleaner] action
- * decrements its refcount, which posts `Shutdown` to the worker mailbox.
- * The worker drains, exits, and calls [unregister] from its `finally`
- * block, releasing the registry's last reference.
+ * Lifetime model: explicit, not GC-finalization. The registry holds each
+ * [ActorHandle] until it is shut down; actors are not auto-collected when no
+ * Velo code references them — they live until [shutdownAll] (or an app-level
+ * `close()`). On the host thread backend the ids/registry/fatal/host-callback
+ * state is touched from several threads, hence the atomics here.
  */
 class ActorRuntime(
-    /** Placement strategy for spawned actors — thread-per-actor by default,
-     *  or a host-injected pooled backend (VEL-17). */
-    private val dispatcherFactory: DispatcherFactory = ThreadPerActorFactory,
+    /** Placement strategy for spawned actors. Defaults to [UnconfiguredPlacement]
+     *  (a bare runtime that never spawns); VM.run / VeloRuntime supply the real
+     *  one — cooperative by default, or a host thread backend. */
+    private val dispatcherFactory: DispatcherFactory = UnconfiguredPlacement,
 ) {
 
     private val nextId = java.util.concurrent.atomic.AtomicInteger(0)
