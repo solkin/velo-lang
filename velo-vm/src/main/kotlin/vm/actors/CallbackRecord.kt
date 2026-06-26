@@ -16,20 +16,15 @@ import vm.records.FuncRecord
  * (enforced by the compiler's transferability rules), which keeps
  * `A await B → B calls back into A` free of deadlocks.
  *
- * Lifetime: pins the owning actor via [ActorHandle.refCount] + [Pins], the
- * same model as [ActorRefRecord] — "someone may still call me" keeps the
- * owner's dispatcher serviceable. For the main context this is exactly what
- * keeps the program's pump loop alive after the main frame completes.
+ * Lifetime: pins nothing — actors live until explicit shutdown or program exit.
+ * (Keeping the event loop alive for a callback that fires from *outside* the VM
+ * is the host's job via [core.VeloFunction.retain]/release, not this
+ * Velo-internal handle.)
  */
 class CallbackRecord(
     val handle: ActorHandle,
     val func: FuncRecord,
 ) : Record {
-
-    init {
-        handle.refCount.incrementAndGet()
-        Pins.cleaner.register(this, Pins.Release(handle))
-    }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(): T = this as T

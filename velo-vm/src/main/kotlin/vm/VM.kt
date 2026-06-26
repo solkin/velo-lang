@@ -68,7 +68,7 @@ class VM(
             main.requestMain(frameNum = 0)
             pump.pump(
                 fatal = { actorRuntime.fatalOrNull() },
-                idle = { main.refCount.get() <= 0 && !actorRuntime.anyParkedFibers() },
+                idle = { !actorRuntime.hasHostCallbacks() && !actorRuntime.anyParkedFibers() },
             )
             println("\n✓ Program finished successfully")
         } catch (_: HaltException) {

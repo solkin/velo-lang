@@ -10,12 +10,10 @@ import vm.Record
  * the still-pending [Promise] together with a strong reference to
  * the [ActorHandle] that is responsible for completing it.
  *
- * Lifetime: the constructor increments [ActorHandle.refCount] and registers
- * a [Cleaner] action that decrements it when this record becomes
- * unreachable. The actor therefore stays alive for as long as any future
- * pointing into it is reachable, even if no [ActorRefRecord] for that actor
- * is reachable any more — otherwise the worker could shut down between
- * `async` and `await`, leaving the future to hang forever.
+ * Lifetime: holding the [ActorHandle] keeps the producing actor reachable so
+ * the future can still be completed. Actors are not auto-collected when
+ * unreferenced (they shut down explicitly or at program exit), so a future is
+ * never orphaned between `async` and `await`.
  *
  * Not exposed as a Velo property surface — the type [compiler.nodes.FutureType]
  * returns `null` from `prop`, so the only operation on a future is `await`.
@@ -24,11 +22,6 @@ class FutureRecord(
     val handle: ActorHandle,
     val future: Promise<ActorResponse>,
 ) : Record {
-
-    init {
-        handle.refCount.incrementAndGet()
-        Pins.cleaner.register(this, Pins.Release(handle))
-    }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(): T = this as T

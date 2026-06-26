@@ -11,26 +11,18 @@ import vm.Record
  * lightweight tuple `(handle, objectId, className)` plus serialised arguments
  * and return values.
  *
- * Lifetime: each [ActorRefRecord] increments [ActorHandle.refCount] in its
- * constructor and registers a [Cleaner] action that decrements it when the
- * record is collected. When the count drops to zero the actor cooperatively
- * shuts down. The [Cleaner] action deliberately holds only [ActorHandle], not
- * `this`, so the record itself stays GC-eligible.
+ * Lifetime: this record pins nothing — actors are not auto-collected when
+ * unreferenced; they shut down explicitly or at program exit. It simply holds
+ * the [ActorHandle] so calls can be routed to it.
  *
  * [equals]/[hashCode] use logical identity (`handle` + `objectId`) so multiple
- * Velo references to the same internal object compare equal, even though each
- * JVM instance has its own cleaner registration.
+ * Velo references to the same internal object compare equal.
  */
 class ActorRefRecord(
     val handle: ActorHandle,
     val objectId: Int,
     val className: String,
 ) : Record {
-
-    init {
-        handle.refCount.incrementAndGet()
-        Pins.cleaner.register(this, Pins.Release(handle))
-    }
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> get(): T = this as T

@@ -22,6 +22,7 @@ import core.VeloFunction
 class TestBridge {
 
     fun register(cb: VeloFunction) {
+        cb.retain() // held for later async firing — keep the event loop alive
         captured = cb
     }
 
@@ -47,6 +48,7 @@ class TestBridge {
 
     /** Drop the static capture so the program's main context can shut down. */
     fun release() {
+        captured?.release()
         captured = null
     }
 
@@ -58,6 +60,7 @@ class TestBridge {
         var invokeThread: String? = null
 
         fun reset() {
+            captured?.release()
             captured = null
             invokeThread = null
         }

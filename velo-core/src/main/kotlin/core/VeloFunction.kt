@@ -17,9 +17,9 @@ import java.util.concurrent.CompletableFuture
  * and other VeloFunction handles. Arguments are validated against the
  * function's declared Velo signature when it is known.
  *
- * Lifetime: each handle pins the owning actor, keeping its dispatcher
- * serviceable — including the main pump loop in CLI mode — until the host
- * drops the reference.
+ * Lifetime: a host that retains the handle to invoke it *later* must [retain]
+ * it (and [release] when done), which keeps the program's event loop alive in
+ * the meantime; a host that only invokes it inline needs neither.
  */
 interface VeloFunction {
 
@@ -40,4 +40,15 @@ interface VeloFunction {
      * block the owner's thread on the returned future from itself.
      */
     fun call(vararg args: Any?): CompletableFuture<Any?>
+
+    /**
+     * Mark that the host is retaining this callback to fire it later. While any
+     * callback is retained the CLI event loop stays alive even with an empty
+     * mailbox, so the eventual invocation is delivered. Pair with [release];
+     * a callback only ever fired inline needs neither. Idempotent.
+     */
+    fun retain()
+
+    /** Drop a prior [retain]; once nothing is retained the loop may exit. Idempotent. */
+    fun release()
 }

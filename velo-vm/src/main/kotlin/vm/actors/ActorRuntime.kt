@@ -33,6 +33,19 @@ class ActorRuntime(
     private val fatalRef = java.util.concurrent.atomic.AtomicReference<Throwable?>(null)
 
     /**
+     * Count of Velo callbacks a host has retained to fire later. A native that
+     * keeps a [VeloFunctionImpl] for async firing retains it (and releases when
+     * done); while any are outstanding the CLI event loop ([vm.VM.run]) stays
+     * alive even with an empty mailbox, so the eventual callback is delivered.
+     * Touched from arbitrary host threads, hence atomic.
+     */
+    private val hostCallbacks = java.util.concurrent.atomic.AtomicInteger(0)
+
+    fun retainCallback() { hostCallbacks.incrementAndGet() }
+    fun releaseCallback() { hostCallbacks.decrementAndGet() }
+    fun hasHostCallbacks(): Boolean = hostCallbacks.get() > 0
+
+    /**
      * Invoked once when the first fatal failure is raised. Used by embedded
      * hosts (`VeloRuntime.start`) to report and stop the program; in CLI mode
      * the main pump polls [fatalOrNull] instead and rethrows on its own thread.

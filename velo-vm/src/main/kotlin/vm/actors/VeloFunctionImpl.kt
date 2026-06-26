@@ -12,11 +12,13 @@ import java.util.concurrent.CompletableFuture
  * native parameter declared as `VeloFunction` (or a Kotlin function type).
  *
  * Invocation encodes the host arguments and posts them to the dispatcher of
- * the actor that owns the closure; [argTypes] is the call-site Velo
- * signature when known, used to validate arguments before they cross into
- * Velo. Each instance pins the owning actor ([ActorHandle.refCount] +
- * [Pins]), which keeps the owner's dispatcher serviceable — including the
- * main pump loop in CLI mode — until the host drops the reference.
+ * the actor that owns the closure; [argTypes] is the call-site Velo signature
+ * when known, used to validate arguments before they cross into Velo.
+ *
+ * A host that retains this handle to fire it *later* (asynchronously) must
+ * [retain] it and [release] it when done, so the CLI event loop stays alive in
+ * the meantime; a native that only fires inline and forgets does neither. The
+ * retained state is tracked here so the calls stay balanced (idempotent).
  */
 class VeloFunctionImpl internal constructor(
     internal val handle: ActorHandle,
@@ -24,9 +26,20 @@ class VeloFunctionImpl internal constructor(
     private val argTypes: List<VmType>?,
 ) : VeloFunction {
 
-    init {
-        handle.refCount.incrementAndGet()
-        Pins.cleaner.register(this, Pins.Release(handle))
+    private var retained = false
+
+    override fun retain() {
+        if (!retained) {
+            retained = true
+            handle.retainHostCallback()
+        }
+    }
+
+    override fun release() {
+        if (retained) {
+            retained = false
+            handle.releaseHostCallback()
+        }
     }
 
     override fun post(vararg args: Any?) {

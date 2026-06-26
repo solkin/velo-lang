@@ -28,9 +28,8 @@ sealed class ActorValue {
 
     /**
      * Cross-thread description of an `actor[T]` value. Carries only what's
-     * needed to reconstruct an [ActorRefRecord] on the receiving side; never
-     * the record itself, so the wire format does not incidentally inflate
-     * [ActorHandle.refCount].
+     * needed to reconstruct an [ActorRefRecord] on the receiving side, never
+     * the record itself.
      */
     data class Ref(
         val handle: ActorHandle,
@@ -40,27 +39,15 @@ sealed class ActorValue {
 
     /**
      * Cross-thread description of a `func[(args) void]` value: the owning
-     * handle plus the owner's [FuncRecord]. The record's captured `Vars`
-     * are only ever touched by the owner's dispatcher, so carrying the
-     * reference itself is safe.
-     *
-     * Unlike [Ref], this *does* pin the owner while in flight: the whole
-     * point of handing out a callback is that the owner stays serviceable
-     * until it is delivered. Without the pin, a main context could finish
-     * its frame and stop pumping in the gap between `async` encoding the
-     * callback and the receiving actor materialising a [CallbackRecord].
-     * The pin is dropped by GC ([Pins]) once the payload itself is dropped;
-     * the decoded record carries its own pin from construction.
+     * handle plus the owner's [FuncRecord]. The record's captured `Vars` are
+     * only ever touched by the owner's dispatcher, so carrying the reference
+     * itself is safe. It pins nothing — actors live until explicit shutdown or
+     * program exit, so the owner is still around when the callback is delivered.
      */
     class Callback(
         val handle: ActorHandle,
         val func: vm.records.FuncRecord,
-    ) : ActorValue() {
-        init {
-            handle.refCount.incrementAndGet()
-            Pins.cleaner.register(this, Pins.Release(handle))
-        }
-    }
+    ) : ActorValue()
 }
 
 /**

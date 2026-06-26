@@ -104,10 +104,9 @@ class ThreadDispatcher(name: String) : Dispatcher {
  * entered [vm.VM.run]. This is the program's event loop.
  *
  * [pump] returns when the queue is empty and [idle] reports there is nothing
- * left to wait for (no live callback pins). While waiting on pins it
- * periodically nudges the GC so `Cleaner`-driven pin releases (dropped
- * callbacks, dead actors) are observed promptly instead of hanging the
- * program until an arbitrary future collection.
+ * left to wait for (no parked fibers on any actor, no host-retained callbacks).
+ * While not idle but momentarily empty it waits briefly for the next post — a
+ * host callback fired from another thread, or a fiber resumed by one.
  *
  * Task failures propagate out of [pump] to the caller — for the main
  * context that is exactly the old `VM.run` behaviour where the main frame's
@@ -124,34 +123,22 @@ class PumpDispatcher : Dispatcher {
     }
 
     fun pump(fatal: () -> Throwable?, idle: () -> Boolean) {
-        var idlePolls = 0
         while (true) {
             fatal()?.let { throw it }
             var task = tasks.poll()
             if (task == null) {
                 if (idle()) return
-                task = tasks.poll(IDLE_POLL_MS, TimeUnit.MILLISECONDS)
-                if (task == null) {
-                    idlePolls++
-                    // Stale pins (dropped callbacks awaiting collection) are
-                    // the common reason to be idle, so nudge early once, then
-                    // back off to a slow heartbeat for genuinely-waiting
-                    // programs (a host that will fire a callback eventually).
-                    if (idlePolls == FIRST_GC_NUDGE_POLLS || idlePolls % GC_NUDGE_POLLS == 0) {
-                        System.gc()
-                    }
-                    continue
-                }
+                // Not idle but nothing queued: a parked fiber or a host-retained
+                // callback may still produce work. Wait briefly for the next
+                // post, then re-check fatal/idle.
+                task = tasks.poll(IDLE_POLL_MS, TimeUnit.MILLISECONDS) ?: continue
             }
-            idlePolls = 0
             task.run()
         }
     }
 
     private companion object {
         const val IDLE_POLL_MS = 50L
-        const val FIRST_GC_NUDGE_POLLS = 3
-        const val GC_NUDGE_POLLS = 20
     }
 }
 

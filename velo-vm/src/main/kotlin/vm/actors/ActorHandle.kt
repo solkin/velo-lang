@@ -30,15 +30,12 @@ import java.util.concurrent.atomic.AtomicInteger
  * e.g. an Android main-looper Handler). That uniformity is what lets a
  * Velo callback always execute on the thread that owns its closure.
  *
- * Lifetime:
- *   - Dedicated dispatcher threads are JVM daemons — actor code never
- *     blocks JVM exit.
- *   - GC-driven shutdown: every [ActorRefRecord] / [FutureRecord] increments
- *     [refCount] in its constructor and decrements it from a
- *     [java.lang.ref.Cleaner] action when the record is collected. When the
- *     count drops to zero the dispatcher is asked to drain and stop.
- *   - On program exit [vm.VM.run]'s `finally` calls
- *     [ActorRuntime.shutdownAll] for deterministic teardown.
+ * Lifetime: explicit, not GC-finalization. An actor lives until shut down by
+ * [ActorRuntime.shutdownAll] (called from [vm.VM.run]'s `finally`, or from
+ * [vm.VeloProgram.stop]) or by an application-level `close()` it exposes.
+ * Velo-internal handles (`actor[T]`/`future[T]`/callbacks between actors) pin
+ * nothing — in the cooperative model a dropped-but-unclosed actor holds only
+ * memory, reclaimed at exit, not a thread.
  *
  * Thread affinity:
  *   - Every [Frame] living in this handle's [VMContext] is owned by the
@@ -59,9 +56,6 @@ class ActorHandle private constructor(
     private val dispatcher: Dispatcher,
     profiler: VMProfiler? = null,
 ) {
-
-    /** Live `actor[T]`/`future[T]`/callback reference count — see class kdoc. */
-    val refCount = AtomicInteger(0)
 
     private val nextObjectId = AtomicInteger(0)
     private val idToFrame = HashMap<Int, Frame>()
@@ -518,15 +512,13 @@ class ActorHandle private constructor(
     }
 
     /**
-     * Decrement the live-ref counter; if it hits zero, ask the dispatcher to
-     * drain and stop. Called by the [java.lang.ref.Cleaner] action attached
-     * to each [ActorRefRecord] / [FutureRecord].
+     * Host-held-callback liveness, delegated to the shared runtime: a native
+     * that retains a [VeloFunctionImpl] to fire later keeps the CLI event loop
+     * ([vm.VM.run]) alive until it releases. VeloFunctionImpl tracks its own
+     * retained state so retain/release stay balanced.
      */
-    fun releaseRef() {
-        if (refCount.decrementAndGet() <= 0) {
-            requestShutdown()
-        }
-    }
+    internal fun retainHostCallback() = runtime.retainCallback()
+    internal fun releaseHostCallback() = runtime.releaseCallback()
 
     /**
      * Wait at most [timeoutMs] for the dispatcher to finish. Used by tests
