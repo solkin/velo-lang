@@ -18,8 +18,24 @@ android {
     }
 
     buildTypes {
+        // Both variants ship minified + resource-shrunk. R8 is whole-program, so
+        // the Velo VM's reflection-based native linking must be protected by the
+        // keep rules in proguard-rules.pro.
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+        debug {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 
