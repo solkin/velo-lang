@@ -25,6 +25,16 @@ data class CallNode(
             if (resolved != null && resolved.isData) {
                 return compileDataNew(resolved, ctx)
             }
+            // `new RegularClass(args)` — embed the class frame number (like the
+            // data-class and actor cases above) instead of loading the class-name
+            // variable. A bare `Op.Load` of that var is unreachable from inside an
+            // actor, whose thread does not share the declaring frame's vars, so
+            // `new SomeClass(...)` in an actor method would otherwise fail at
+            // runtime with "Undefined variable". Native classes have no Velo var
+            // (handled below); only user-declared classes reach here.
+            if (resolved != null) {
+                return compileClassNew(resolved, func.typeArgs, ctx)
+            }
             // `new RegisteredHostClass(args)` — no Velo declaration exists;
             // the type is synthesized from the registry and the construction
             // is a single NativeCall over the program's native pool. A local
@@ -153,6 +163,35 @@ data class CallNode(
         ctx.add(Op.Frame(num = frameNum))
         ctx.add(Op.Call(args.size))
         return classType
+    }
+
+    /**
+     * `new Class(args)` for a regular (non-actor, non-data) class. Mirrors the
+     * fall-through path's behaviour — only generic constructor calls are arg-checked
+     * (a plain [ClassType] is not [Callable]) — but emits the class frame number
+     * directly so the construction is position-independent and works from any scope,
+     * including an actor body. See the call site for why the var-load path can't.
+     */
+    private fun compileClassNew(classType: ClassType, typeArgs: List<Type>, ctx: Context): Type {
+        val frameNum = classType.num
+            ?: throw IllegalStateException("Class '${classType.name}' has no frame number")
+        val returnType = if (typeArgs.isNotEmpty()) classType.copy(typeArgs = typeArgs) else classType
+        val argTypes = args.map { it.compile(ctx) }
+        if (returnType.typeArgs.isNotEmpty()) {
+            val classArgTypes = returnType.args ?: emptyList()
+            val resolvedArgTypes = classArgTypes.map { returnType.resolveGeneric(it) }
+            resolvedArgTypes.forEachIndexed { i, def ->
+                if (i < argTypes.size) {
+                    val argType = argTypes[i]
+                    if (!argType.sameAs(def)) {
+                        throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
+                    }
+                }
+            }
+        }
+        ctx.add(Op.Frame(num = frameNum))
+        ctx.add(Op.Call(args.size))
+        return returnType
     }
 
     private fun compileActorSpawn(classType: ClassType, ctx: Context): Type {
