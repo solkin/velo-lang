@@ -1,0 +1,155 @@
+# Material3 UI demo — the program starts in the terminal and then opens a screen,
+# Java-Swing style. It keeps running on its event loop while the screen is shown;
+# closing the last screen returns here.
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+
+term.println("Building a Material3 screen...");
+
+int count = 0;
+
+# --- main screen ---------------------------------------------------------------
+
+# A screen is blank by default — we build our own app bar and content, native-style.
+View root = ui.column().fillWidth();
+root.add(ui.appBar("Velo UI Demo"));
+
+View scroller = ui.scroll().weight(1);
+root.add(scroller);
+
+View col = ui.column().padding(16).gap(12).fillWidth();
+scroller.add(col);
+
+View title = ui.text("Material3 + Velo").textSize(22).bold();
+col.add(title);
+
+View counter = ui.text("Count: 0");
+col.add(counter);
+
+# A row of buttons in the three common Material3 emphases.
+View buttons = ui.row().gap(8);
+View inc = ui.button("Increment");
+inc.onClick(func() void {
+    count += 1;
+    counter.text("Count: ".con(count.str));
+    void
+});
+View reset = ui.tonalButton("Reset");
+reset.onClick(func() void {
+    count = 0;
+    counter.text("Count: 0");
+    ui.snackbar("Counter reset");
+    void
+});
+buttons.add(inc);
+buttons.add(reset);
+col.add(buttons);
+
+# Text field — live-updates the title as you type.
+View name = ui.field("Your name");
+name.onChange(func(str s) void {
+    title.text("Hello, ".con(s));
+    void
+});
+col.add(name);
+
+# Switch — toggles whether the counter label is enabled.
+View feature = ui.toggle("Enable counter");
+feature.onToggle(func(bool on) void {
+    counter.enabled(on);
+    void
+});
+col.add(feature);
+
+# Slider — reflects its value into a label live.
+View sliderLabel = ui.text("Value: 0");
+col.add(sliderLabel);
+View slider = ui.slider(0, 100);
+slider.onSlide(func(int v) void {
+    sliderLabel.text("Value: ".con(v.str));
+    void
+});
+col.add(slider);
+
+# Open a second screen on the navigation stack.
+View details = ui.outlinedButton("Open details screen");
+details.onClick(func() void {
+    View second = ui.column().fillWidth();
+    # App bar with a working back arrow, built by the program.
+    View bar = ui.appBar("Details");
+    bar.onNav(func() void {
+        ui.close();
+        void
+    });
+    second.add(bar);
+
+    View body = ui.column().padding(16).gap(12).fillWidth();
+    body.add(ui.text("This is a second screen.").textSize(18).bold());
+    body.add(ui.text("Use the back arrow, the system back gesture, or the button."));
+    View back = ui.button("Go back");
+    back.onClick(func() void {
+        ui.close();
+        void
+    });
+    body.add(back);
+    second.add(body);
+
+    ui.open(second);
+    void
+});
+col.add(details);
+
+# A dialog.
+View dialog = ui.textButton("Show dialog");
+dialog.onClick(func() void {
+    ui.dialog("Material3 dialog", "Rendered by the Android host from Velo bytecode.", "Got it", func() void {
+        ui.snackbar("Dialog dismissed");
+        void
+    });
+    void
+});
+col.add(dialog);
+
+# Tabs — selection updates a label.
+View tabs = ui.tabs();
+tabs.tab("One");
+tabs.tab("Two");
+tabs.tab("Three");
+View tabState = ui.text("Selected tab: 0");
+tabs.onSelect(func(int i) void {
+    tabState.text("Selected tab: ".con(i.str));
+    void
+});
+col.add(tabs);
+col.add(tabState);
+
+# A recycling list of text rows.
+View list = ui.list().height(220);
+list.items(new array[str]{"Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"});
+list.onItemClick(func(int i) void {
+    ui.snackbar("Tapped row ".con(i.str));
+    void
+});
+col.add(list);
+
+# A modal bottom sheet built from Velo.
+View sheetButton = ui.tonalButton("Open bottom sheet");
+sheetButton.onClick(func() void {
+    View sheet = ui.column().padding(20).gap(10).fillWidth();
+    sheet.add(ui.text("Bottom sheet").textSize(18).bold());
+    sheet.add(ui.text("Built from Velo, dismiss by swipe or button."));
+    View closeSheet = ui.button("Close");
+    closeSheet.onClick(func() void {
+        ui.dismissSheet();
+        void
+    });
+    sheet.add(closeSheet);
+    ui.sheet(sheet);
+    void
+});
+col.add(sheetButton);
+
+ui.open(root);
+
+term.println("Screen opened — interact on the display. Close it to return here.");

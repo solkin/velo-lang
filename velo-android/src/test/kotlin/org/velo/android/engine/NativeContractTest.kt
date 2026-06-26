@@ -3,6 +3,8 @@ package org.velo.android.engine
 import core.NativeRegistry
 import org.junit.Assert.assertNotNull
 import org.junit.Test
+import org.velo.android.engine.ui.VeloUi
+import org.velo.android.engine.ui.VeloView
 
 /**
  * Validates that the app's host natives map cleanly onto the Velo native contract —
@@ -20,11 +22,13 @@ class NativeContractTest {
         .register("FileSystem", VeloFileSystem::class)
         .register("Http", VeloHttp::class)
         .register("Socket", VeloSocket::class)
+        .register("Ui", VeloUi::class)
+        .register("View", VeloView::class)
 
     @Test
     fun allDefaultNativesAreMappable() {
         val registry = registry()
-        for (name in listOf("Terminal", "Time", "FileSystem", "Http", "Socket")) {
+        for (name in listOf("Terminal", "Time", "FileSystem", "Http", "Socket", "Ui", "View")) {
             assertNotNull("native '$name' must build a descriptor", registry.descriptor(name))
         }
     }

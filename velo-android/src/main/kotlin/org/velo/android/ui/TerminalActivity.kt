@@ -25,6 +25,7 @@ import org.velo.android.R
 import org.velo.android.databinding.ActivityTerminalBinding
 import org.velo.android.engine.SampleCatalog
 import org.velo.android.engine.VeloTerminalSession
+import org.velo.android.engine.ui.UiScreenController
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class TerminalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTerminalBinding
+    private lateinit var ui: UiScreenController
     private var session: VeloTerminalSession? = null
     private var bytecode: ByteArray? = null
 
@@ -67,6 +69,8 @@ class TerminalActivity : AppCompatActivity() {
         binding = ActivityTerminalBinding.inflate(layoutInflater)
         setContentView(binding.root)
         applyInsets()
+        // Hosts any Material3 screens the program opens, laid over the terminal.
+        ui = UiScreenController(this)
 
         binding.toolbar.title = intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.app_name)
         binding.toolbar.setNavigationOnClickListener { finish() }
@@ -112,6 +116,7 @@ class TerminalActivity : AppCompatActivity() {
     private fun launch() {
         val code = bytecode ?: return
         session?.stop()
+        ui.reset() // clear any screens left by a previous run
         userStopped = false
         clearBuffer()
         render()
@@ -132,9 +137,15 @@ class TerminalActivity : AppCompatActivity() {
                     }
                 }
             },
+            uiHost = ui,
         )
         session = s
         s.start(code)
+    }
+
+    @Deprecated("Back is routed to the UI screen stack first, then the terminal.")
+    override fun onBackPressed() {
+        if (!ui.onBackPressed()) @Suppress("DEPRECATION") super.onBackPressed()
     }
 
     private fun requestStop() {

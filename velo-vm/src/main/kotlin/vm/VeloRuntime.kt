@@ -105,12 +105,12 @@ class VeloRuntime(
      * @return run statistics (instructions executed, wall-clock time) — useful
      *   for an embedder's status line; ignore the value for plain CLI-style runs.
      */
-    fun run(program: SerializedProgram): RunStats {
+    fun run(program: SerializedProgram, onStart: ((LoopHandle) -> Unit)? = null): RunStats {
         val profiler = VMProfiler(enabled = profilingEnabled)
         val vm = VM(nativeRegistry, profiler, actorDispatcherFactory?.invoke())
         vm.load(program)
         val startNs = System.nanoTime()
-        vm.run()
+        vm.run(onStart)
         val wallClockMillis = (System.nanoTime() - startNs) / 1_000_000
         return RunStats(instructions = vm.instructionCount(), wallClockMillis = wallClockMillis)
     }

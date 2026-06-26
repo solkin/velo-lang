@@ -38,12 +38,12 @@ android {
 }
 
 // Classpath used to compile the bundled .vel samples into .vbc at build time. The
-// CLI host (`MainKt <in.vel> <out.vbc>`) registers the default native pool — exactly
-// the set the samples are written against — and writes bytecode without running.
+// :velo-android-tools host (`CompileMainKt <in.vel> <out.vbc>`) registers the standard
+// native pool plus the Ui/View signature stubs, and writes bytecode without running.
 val veloCompiler: Configuration by configurations.creating
 
 dependencies {
-    veloCompiler(project(":velo-cli"))
+    veloCompiler(project(":velo-android-tools"))
 
     // The Velo VM — pure-JVM modules consumed as ordinary libraries. The compiler
     // is NOT shipped in the app: .vbc is produced at build time, loaded at runtime.
@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.google.material)
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     testImplementation("junit:junit:4.13.2")
     // Host-only: lets the end-to-end test compile a .vel snippet against the app's
@@ -70,7 +71,9 @@ val compileVeloSamples = tasks.register<CompileVeloSamplesTask>("compileVeloSamp
     samplesDir.set(layout.projectDirectory.dir("samples"))
     outputDir.set(layout.buildDirectory.dir("generated/veloSamples"))
     compilerClasspath.from(veloCompiler)
-    mainClass.set("MainKt")
+    // UI-aware compile entry point: registers the Android Ui/View native signatures so
+    // samples that drive Material3 screens type-check (MainKt omits them).
+    mainClass.set("CompileMainKt")
     javaLauncher.set(
         javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(17)) },
     )

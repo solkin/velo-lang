@@ -49,10 +49,13 @@ class VM(
      * other actors). For programs that never share a callback the pump
      * exits immediately after the main frame, exactly like the old loop.
      */
-    fun run() {
+    fun run(onStart: ((LoopHandle) -> Unit)? = null) {
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
         val pump = PumpDispatcher()
         val actorRuntime = ActorRuntime(dispatcherFactory ?: CooperativeDispatcherFactory(pump))
+        // Hand the host a keepalive before any program code runs, so it can pin the loop
+        // from another thread the moment the run begins.
+        onStart?.invoke(LoopHandle(actorRuntime))
         val main = ActorHandle.main(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,

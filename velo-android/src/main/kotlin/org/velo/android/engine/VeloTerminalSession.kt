@@ -3,6 +3,10 @@ package org.velo.android.engine
 import core.Bytecode
 import core.NativeRegistry
 import core.SerializedProgram
+import org.velo.android.engine.ui.UiBinding
+import org.velo.android.engine.ui.UiHost
+import org.velo.android.engine.ui.VeloUi
+import org.velo.android.engine.ui.VeloView
 import vm.RunStats
 import vm.VeloRuntime
 import java.io.ByteArrayInputStream
@@ -21,6 +25,7 @@ import java.io.DataInputStream
 class VeloTerminalSession(
     private val onOutput: (String) -> Unit,
     private val onFinished: (Throwable?, RunStats?) -> Unit,
+    private val uiHost: UiHost? = null,
 ) {
     val stdin = HostStdin()
 
@@ -38,25 +43,34 @@ class VeloTerminalSession(
 
     private fun run(program: SerializedProgram) {
         AndroidTerminal.current.set(binding)
+        uiHost?.let { UiBinding.current.set(UiBinding(it)) }
         var failure: Throwable? = null
         var stats: RunStats? = null
         try {
             // The default native pool, matching the names the CLI registers so any
             // .vbc written against the standard natives links here. The compiler is
-            // never on the device — only these runtime implementations.
+            // never on the device — only these runtime implementations. `Ui`/`View`
+            // are extra Android-only natives for Material3 screens (a no-op for
+            // programs that never touch them).
             val natives = NativeRegistry()
                 .register("Terminal", AndroidTerminal::class)
                 .register("Time", VeloTime::class)
                 .register("FileSystem", VeloFileSystem::class)
                 .register("Http", VeloHttp::class)
                 .register("Socket", VeloSocket::class)
-            stats = VeloRuntime(natives).run(program)
+                .register("Ui", VeloUi::class)
+                .register("View", VeloView::class)
+            stats = VeloRuntime(natives).run(program) { loop ->
+                // Let the UI host keep this loop alive while screens are shown.
+                uiHost?.attachLoop(loop)
+            }
         } catch (e: InterruptedException) {
             // Stopped by the user — not a failure.
         } catch (e: Throwable) {
             if (!stopped) failure = e
         } finally {
             AndroidTerminal.current.remove()
+            UiBinding.current.remove()
             onFinished(failure, stats)
         }
     }
