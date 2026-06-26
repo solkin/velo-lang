@@ -8,6 +8,10 @@ import core.NativeRegistry
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import org.velo.android.engine.ui.Colors
+import org.velo.android.engine.ui.Icons
+import org.velo.android.engine.ui.Shape
+import org.velo.android.engine.ui.TextStyles
 import org.velo.android.engine.ui.VeloUi
 import org.velo.android.engine.ui.VeloView
 import java.io.DataInputStream
@@ -34,6 +38,10 @@ class UiNativeLinkTest {
         .register("Terminal", AndroidTerminal::class)
         .register("Ui", VeloUi::class)
         .register("View", VeloView::class)
+        .register("Shape", Shape::class)
+        .register("Colors", Colors::class)
+        .register("Icons", Icons::class)
+        .register("TextStyles", TextStyles::class)
 
     @Test
     fun uiSampleCompilesAndLinksAgainstRealNatives() {
@@ -53,11 +61,17 @@ class UiNativeLinkTest {
 
     @Test
     fun stubCompiledBytecodeLinksAgainstRealNatives() {
-        val vbc = File("build/generated/veloSamples/samples/ui-demo/program.vbc")
-        assumeTrue("stub-compiled ui-demo .vbc present (run :compileVeloSamples)", vbc.exists())
+        val samplesRoot = File("build/generated/veloSamples/samples")
+        val vbcs = samplesRoot.listFiles()?.mapNotNull { dir ->
+            dir.resolve("program.vbc").takeIf { it.exists() }
+        }.orEmpty()
+        assumeTrue("stub-compiled sample .vbc present (run :compileVeloSamples)", vbcs.isNotEmpty())
 
-        val program = DataInputStream(vbc.inputStream().buffered()).use { Bytecode.read(it) }
-        // Throws NativeMappingException on any stub-vs-implementation signature drift.
-        NativeLinker.link(program.natives, registry())
+        // Every bundled sample's stub-compiled bytecode must link against the real natives —
+        // catches any stub-vs-implementation signature drift (Ui/View/Shape) for all samples.
+        for (vbc in vbcs) {
+            val program = DataInputStream(vbc.inputStream().buffered()).use { Bytecode.read(it) }
+            NativeLinker.link(program.natives, registry())
+        }
     }
 }

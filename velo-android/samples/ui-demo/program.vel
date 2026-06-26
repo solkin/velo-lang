@@ -68,6 +68,7 @@ col.add(sliderLabel);
 View slider = ui.slider(0, 100);
 slider.onSlide(func(int v) void {
     sliderLabel.text("Value: ".con(v.str));
+    term.println("Slider value changed to: ".con(v.str));
     void
 });
 col.add(slider);

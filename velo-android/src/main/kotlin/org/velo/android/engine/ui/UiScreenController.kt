@@ -4,14 +4,18 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ScrollView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.widget.NestedScrollView
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.R as M
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.navigation.NavigationBarView
 import com.google.android.material.snackbar.Snackbar
 import vm.LoopHandle
 
@@ -145,19 +149,58 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
     }
 
     private fun applyInsets(screen: View) {
-        // Edge-to-edge: the window draws behind the system bars; we inset the whole screen
-        // so its content (app bar included) clears the status bar, navigation bar, cutouts,
-        // and the keyboard. Applied uniformly at the container so every screen is consistent.
+        // Edge-to-edge: the window draws behind the system bars. System-bar insets pad the
+        // screen so content (app bar included) clears the status bar, cutouts and navigation.
+        // If the program's root ends in a bottom navigation bar, that bar spans under the
+        // system navigation (Material style) and pads its own content up instead.
+        //
+        // The keyboard is handled the native soft-input way: its inset is applied only to the
+        // scrollable region, so the focused field scrolls up above the keyboard while the app
+        // bar and bottom bar stay put — the screen is never compressed.
         ViewCompat.setOnApplyWindowInsetsListener(screen) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            screen.updatePadding(
-                top = bars.top,
-                left = bars.left,
-                right = bars.right,
-                bottom = maxOf(bars.bottom, ime.bottom),
-            )
+            val bottomBar = bottomBarOf(screen)
+            val screenBottom = if (bottomBar != null) {
+                bottomBar.updatePadding(bottom = bars.bottom)
+                0
+            } else {
+                bars.bottom
+            }
+            val scroller = scrollableOf(screen)
+            if (scroller != null) {
+                scroller.clipToPadding = false
+                scroller.updatePadding(bottom = ime.bottom)
+                screen.updatePadding(top = bars.top, left = bars.left, right = bars.right, bottom = screenBottom)
+            } else {
+                // No scrollable region to absorb the keyboard — keep the field visible by
+                // insetting the screen itself.
+                screen.updatePadding(
+                    top = bars.top,
+                    left = bars.left,
+                    right = bars.right,
+                    bottom = maxOf(screenBottom, ime.bottom),
+                )
+            }
             insets
         }
+    }
+
+    /** The screen's bottom navigation bar, if the program placed one as the last root child. */
+    private fun bottomBarOf(screen: View): View? {
+        val root = (screen as? ViewGroup)?.getChildAt(0) as? ViewGroup ?: return null
+        val last = root.getChildAt(root.childCount - 1)
+        return if (last is NavigationBarView) last else null
+    }
+
+    /** The first scrollable container in the screen tree (where the keyboard inset is applied). */
+    private fun scrollableOf(view: View): ViewGroup? {
+        if (view is NestedScrollView || view is ScrollView || view is RecyclerView) return view as ViewGroup
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                scrollableOf(view.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 }

@@ -22,6 +22,10 @@ fun main(args: Array<String>) {
         .registerDefaults()
         .register(ui.Ui::class)
         .register(ui.View::class)
+        .register(ui.Shape::class)
+        .register(ui.Colors::class)
+        .register(ui.Icons::class)
+        .register(ui.TextStyles::class)
 
     val program = VeloCompiler(natives).compile(input)
         ?: error("compilation failed for $input")

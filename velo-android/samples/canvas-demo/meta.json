@@ -1,0 +1,6 @@
+{
+  "id": "canvas-demo",
+  "name": "Canvas",
+  "description": "Draws shapes, paths, gradients and text on a canvas, then lets you finger-paint on it.",
+  "interactive": true
+}

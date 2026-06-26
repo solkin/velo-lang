@@ -33,13 +33,52 @@ class View {
     fun height(dp: Int): View = nope()
     fun weight(w: Int): View = nope()
 
+    // common visual modifiers (any kind)
+    fun background(color: String): View = nope()
+    fun corner(dp: Int): View = nope()
+    fun paddingXY(h: Int, v: Int): View = nope()
+    fun align(spec: String): View = nope()
+
     // content / text
     fun text(s: String): View = nope()
+    fun color(spec: String): View = nope()
     fun hint(s: String): View = nope()
     fun value(): String = nope()
     fun textSize(sp: Int): View = nope()
     fun bold(): View = nope()
+    fun style(token: String): View = nope()
+    fun textAlign(spec: String): View = nope()
+    fun maxLines(n: Int): View = nope()
+    fun strikethrough(): View = nope()
     fun enabled(on: Boolean): View = nope()
+
+    // text field extras
+    fun placeholder(s: String): View = nope()
+    fun error(message: String): View = nope()
+    fun keyboardType(type: String): View = nope()
+    fun onSubmit(cb: VeloFunction): View = nope()
+    fun onFocusChange(cb: VeloFunction): View = nope()
+
+    // icons & small widgets
+    fun icon(name: String): View = nope()
+    fun tint(color: String): View = nope()
+    fun checkable(on: Boolean): View = nope()
+    fun thickness(dp: Int): View = nope()
+
+    // surface & list item
+    fun elevation(dp: Int): View = nope()
+    fun border(width: Int, color: String): View = nope()
+    fun supporting(s: String): View = nope()
+    fun leading(name: String): View = nope()
+    fun trailing(name: String): View = nope()
+
+    // navigation components
+    fun item(label: String, icon: String): View = nope()
+    fun drawerContent(panel: View): View = nope()
+    fun openDrawer(on: Boolean): View = nope()
+    fun isDrawerOpen(): Boolean = nope()
+    fun badge(text: String): View = nope()
+    fun badgeDot(): View = nope()
 
     // toggles
     fun checked(on: Boolean): View = nope()
@@ -56,6 +95,7 @@ class View {
 
     // events
     fun onClick(cb: VeloFunction): View = nope()
+    fun onLongClick(cb: VeloFunction): View = nope()
     fun onChange(cb: VeloFunction): View = nope()
     fun onToggle(cb: VeloFunction): View = nope()
     fun onSlide(cb: VeloFunction): View = nope()
@@ -71,6 +111,38 @@ class View {
 
     // app bar
     fun onNav(cb: VeloFunction): View = nope()
+
+    // canvas (drawing)
+    fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int): Shape = nope()
+    fun drawRect(x: Int, y: Int, w: Int, h: Int): Shape = nope()
+    fun drawRoundRect(x: Int, y: Int, w: Int, h: Int, r: Int): Shape = nope()
+    fun drawCircle(cx: Int, cy: Int, r: Int): Shape = nope()
+    fun drawOval(x: Int, y: Int, w: Int, h: Int): Shape = nope()
+    fun drawArc(x: Int, y: Int, w: Int, h: Int, start: Int, sweep: Int): Shape = nope()
+    fun drawPie(x: Int, y: Int, w: Int, h: Int, start: Int, sweep: Int): Shape = nope()
+    fun drawPath(spec: String): Shape = nope()
+    fun drawPoints(spec: String, mode: String): Shape = nope()
+    fun drawText(x: Int, y: Int, s: String, size: Int): Shape = nope()
+    fun clear(): View = nope()
+    fun onTap(cb: VeloFunction): View = nope()
+    fun onPointerDown(cb: VeloFunction): View = nope()
+    fun onPointerMove(cb: VeloFunction): View = nope()
+    fun onPointerUp(cb: VeloFunction): View = nope()
+}
+
+/**
+ * Compile-time mirror of the Android `Shape` native (`org.velo.android.engine.ui.Shape`) —
+ * the handle a canvas `draw*` call returns, for styling that primitive's paint.
+ */
+@Suppress("unused")
+class Shape {
+    fun color(spec: String): Shape = nope()
+    fun fill(): Shape = nope()
+    fun stroke(widthDp: Int): Shape = nope()
+    fun alpha(percent: Int): Shape = nope()
+    fun cap(spec: String): Shape = nope()
+    fun join(spec: String): Shape = nope()
+    fun gradient(x0: Int, y0: Int, x1: Int, y1: Int, from: String, to: String): Shape = nope()
 }
 
 @Suppress("unused")
@@ -93,8 +165,33 @@ class Ui {
     fun progress(): View = nope()
     fun spinner(): View = nope()
     fun list(): View = nope()
+    fun canvas(): View = nope()
     fun tabs(): View = nope()
     fun appBar(title: String): View = nope()
+
+    // icons & small widgets
+    fun icon(name: String): View = nope()
+    fun iconButton(name: String): View = nope()
+    fun fab(name: String): View = nope()
+    fun extendedFab(label: String, name: String): View = nope()
+    fun chip(label: String): View = nope()
+    fun divider(): View = nope()
+    fun spacer(): View = nope()
+    fun radio(label: String): View = nope()
+    fun radioGroup(): View = nope()
+
+    // containers
+    fun surface(): View = nope()
+    fun flowRow(): View = nope()
+    fun flowColumn(): View = nope()
+    fun lazyRow(): View = nope()
+    fun listItem(headline: String): View = nope()
+
+    // navigation components
+    fun navBar(): View = nope()
+    fun navRail(): View = nope()
+    fun drawer(): View = nope()
+    fun menu(anchor: View, items: List<String>, onSelect: VeloFunction) { nope() }
 
     // navigation
     fun open(root: View): View = nope()

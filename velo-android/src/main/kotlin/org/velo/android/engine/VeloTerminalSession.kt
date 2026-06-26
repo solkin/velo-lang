@@ -4,6 +4,7 @@ import core.Bytecode
 import core.NativeRegistry
 import core.SerializedProgram
 import org.velo.android.engine.ui.UiBinding
+import org.velo.android.engine.ui.Shape
 import org.velo.android.engine.ui.UiHost
 import org.velo.android.engine.ui.VeloUi
 import org.velo.android.engine.ui.VeloView
@@ -60,6 +61,10 @@ class VeloTerminalSession(
                 .register("Socket", VeloSocket::class)
                 .register("Ui", VeloUi::class)
                 .register("View", VeloView::class)
+                .register("Shape", Shape::class)
+                .register("Colors", org.velo.android.engine.ui.Colors::class)
+                .register("Icons", org.velo.android.engine.ui.Icons::class)
+                .register("TextStyles", org.velo.android.engine.ui.TextStyles::class)
             stats = VeloRuntime(natives).run(program) { loop ->
                 // Let the UI host keep this loop alive while screens are shown.
                 uiHost?.attachLoop(loop)
