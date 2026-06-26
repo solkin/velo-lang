@@ -1,0 +1,731 @@
+# Minesweeper — the classic Windows-XP game, reproduced on a Canvas so it keeps the original's
+# look: silver cells with 3D bevels (white top-left, gray bottom-right), the sunken red-LED mine
+# counter and timer, the yellow smiley reset button (surprised while you press, sunglasses on a
+# win, dead on a loss) and the eight classic number colors. Tap to open a cell; long-press to
+# cycle a flag → question mark → clear. The first click is always safe and opens a region;
+# revealing a 0 floods its neighbours. Beginner and Intermediate boards; the smiley starts a new
+# game. The countdown timer runs on its own actor, and long-press detection on another — both
+# repaint off the event loop, the Velo way of animating without blocking input.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
+
+# ---- palette (literal XP shades, not theme roles) -----------------------------------------
+str SILVER = "#C0C0C0";
+str WHITE = "#FFFFFF";
+str GRAY = "#808080";
+str BLACK = "#000000";
+str RED = "#FF0000";
+str YELLOW = "#FFD23B";       # the smiley's warm yellow
+str LED_ON = "#FF2A2A";
+str LED_DIM = "#5A0E0E";
+
+# ---- fixed metrics (dp) -------------------------------------------------------------------
+int GRID_BORDER = 4;          # sunken bevel around the minefield
+int PANEL_H = 40;             # status panel height
+int MARGIN = 6;               # inset of the counters within the panel
+int DIGIT_W = 13;
+int DIGIT_H = 23;
+int LED_W = 47;               # 3 * DIGIT_W + gaps + padding
+int LED_H = 29;
+int SM = 30;                  # smiley button size
+int LONGPRESS_MS = 250;       # press-and-hold threshold for flagging
+
+# Lit segments (a,b,c,d,e,f,g) for each digit 0..9 — a 7-segment LED font.
+array[int] SEGON = new array[int]{
+    1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 0, 0, 0, 0,
+    1, 1, 0, 1, 1, 0, 1,
+    1, 1, 1, 1, 0, 0, 1,
+    0, 1, 1, 0, 0, 1, 1,
+    1, 0, 1, 1, 0, 1, 1,
+    1, 0, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 0, 1, 1
+};
+
+# ---- difficulty + geometry ----------------------------------------------------------------
+int cols = 9;
+int rows = 9;
+int mines = 10;
+int CELL = 26;
+int BW = cols * CELL + 2 * GRID_BORDER;
+int BH = rows * CELL + 2 * GRID_BORDER;
+
+# ---- game state ---------------------------------------------------------------------------
+array[int] mine = new array[int](cols * rows);
+array[int] revealed = new array[int](cols * rows);
+array[int] flag = new array[int](cols * rows);   # 0 none, 1 flag, 2 question
+array[int] adj = new array[int](cols * rows);
+bool minesPlaced = false;
+int flagsCount = 0;
+int revealedCount = 0;
+bool gameOver = false;
+bool win = false;
+int explodedIdx = 0 - 1;
+int timeElapsed = 0;
+int faceState = 0;            # 0 normal, 1 surprised, 2 won, 3 lost
+Random rng = new Random(7);
+
+# press tracking (long-press = flag, short tap = reveal)
+bool pressActive = false;
+int pressCell = 0;
+int pressToken = 0;
+bool pressHandled = false;
+
+# clock
+int clockToken = 0;
+bool clockRunning = false;
+
+# smiley hit-box (recomputed on every panel paint)
+int smileyX = 0;
+int smileyY = 0;
+
+# ---- timers (each its own actor; fire the callback back on the main actor) -----------------
+actor class Timer() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+
+actor[Timer] clock = new Timer();
+actor[Timer] presser = new Timer();
+
+# ---- widgets ------------------------------------------------------------------------------
+View panel = ui.canvas().width(BW).height(PANEL_H);
+View board = ui.canvas().width(BW).height(BH);
+
+View window = ui.column().center().padding(8).gap(8).background(SILVER);
+window.add(panel);
+window.add(board);
+
+View page = ui.column().fillWidth().fillHeight();
+View bar = ui.appBar("Minesweeper");
+page.add(bar);
+View scroller = ui.scroll().weight(1);
+page.add(scroller);
+View content = ui.column().fillWidth().center().padding(12);
+scroller.add(content);
+content.add(window);
+View root = page;
+
+# ---- geometry helpers ---------------------------------------------------------------------
+
+func idx(int c, int r) int {
+    r * cols + c;
+};
+
+func cellAt(int px, int py) int {
+    if (px < GRID_BORDER | py < GRID_BORDER) then 0 - 1
+    else {
+        int c = (px - GRID_BORDER) / CELL;
+        int r = (py - GRID_BORDER) / CELL;
+        if (c >= 0 & c < cols & r >= 0 & r < rows) then idx(c, r) else 0 - 1;
+    };
+};
+
+# True if [k] is the safe cell [safe] or one of its eight neighbours (kept mine-free).
+func isSafe(int k, int safe) bool {
+    int dc = (k % cols) - (safe % cols);
+    if (dc < 0) { dc = 0 - dc; };
+    int dr = (k / cols) - (safe / cols);
+    if (dr < 0) { dr = 0 - dr; };
+    dc <= 1 & dr <= 1;
+};
+
+func placeMines(int safe) void {
+    int placed = 0;
+    while (placed < mines) {
+        int k = rng.nextIntBound(cols * rows);
+        if (mine[k] == 0 & isSafe(k, safe) == false) {
+            mine[k] = 1;
+            placed = placed + 1;
+        };
+    };
+    void
+};
+
+func countAdj() void {
+    int r = 0;
+    while (r < rows) {
+        int c = 0;
+        while (c < cols) {
+            int n = 0;
+            int dr = 0 - 1;
+            while (dr <= 1) {
+                int dc = 0 - 1;
+                while (dc <= 1) {
+                    int nc = c + dc;
+                    int nr = r + dr;
+                    if (nc >= 0 & nc < cols & nr >= 0 & nr < rows) {
+                        if (mine[idx(nc, nr)] == 1) { n = n + 1; };
+                    };
+                    dc = dc + 1;
+                };
+                dr = dr + 1;
+            };
+            adj[idx(c, r)] = n;
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    void
+};
+
+# Reveal [start] and, BFS-style, flood every empty (0-adjacent) region it touches. Each cell is
+# marked the moment it is queued, so it is enqueued exactly once — the stack can't overflow.
+func floodReveal(int start) void {
+    array[int] stack = new array[int](cols * rows);
+    int sp = 0;
+    revealed[start] = 1;
+    revealedCount = revealedCount + 1;
+    stack[sp] = start;
+    sp = sp + 1;
+    while (sp > 0) {
+        sp = sp - 1;
+        int j = stack[sp];
+        if (adj[j] == 0) {
+            int jc = j % cols;
+            int jr = j / cols;
+            int dr = 0 - 1;
+            while (dr <= 1) {
+                int dc = 0 - 1;
+                while (dc <= 1) {
+                    int nc = jc + dc;
+                    int nr = jr + dr;
+                    if (nc >= 0 & nc < cols & nr >= 0 & nr < rows) {
+                        int nk = nr * cols + nc;
+                        if (revealed[nk] == 0 & flag[nk] != 1 & mine[nk] == 0) {
+                            revealed[nk] = 1;
+                            revealedCount = revealedCount + 1;
+                            stack[sp] = nk;
+                            sp = sp + 1;
+                        };
+                    };
+                    dc = dc + 1;
+                };
+                dr = dr + 1;
+            };
+        };
+    };
+    void
+};
+
+# ---- drawing: bevels ----------------------------------------------------------------------
+
+func bevelRaised(View cv, int x, int y, int w, int h, int t, str face) void {
+    cv.drawRect(x, y, w, h).color(face).fill();
+    cv.drawRect(x, y, w, t).color(WHITE).fill();
+    cv.drawRect(x, y, t, h).color(WHITE).fill();
+    cv.drawRect(x, y + h - t, w, t).color(GRAY).fill();
+    cv.drawRect(x + w - t, y, t, h).color(GRAY).fill();
+    void
+};
+
+func bevelSunken(View cv, int x, int y, int w, int h, int t, str face) void {
+    cv.drawRect(x, y, w, h).color(face).fill();
+    cv.drawRect(x, y, w, t).color(GRAY).fill();
+    cv.drawRect(x, y, t, h).color(GRAY).fill();
+    cv.drawRect(x, y + h - t, w, t).color(WHITE).fill();
+    cv.drawRect(x + w - t, y, t, h).color(WHITE).fill();
+    void
+};
+
+# ---- drawing: board cells -----------------------------------------------------------------
+
+func numberColor(int n) str {
+    if (n == 1) then "#0000FF"
+    else if (n == 2) then "#008000"
+    else if (n == 3) then "#FF0000"
+    else if (n == 4) then "#000080"
+    else if (n == 5) then "#800000"
+    else if (n == 6) then "#008080"
+    else if (n == 7) then "#000000"
+    else "#808080";
+};
+
+func drawFlat(int x, int y) void {
+    board.drawRect(x, y, CELL, CELL).color(SILVER).fill();
+    board.drawLine(x, y, x + CELL, y).color(GRAY).stroke(1);
+    board.drawLine(x, y, x, y + CELL).color(GRAY).stroke(1);
+    void
+};
+
+func drawRaised(int x, int y) void {
+    bevelRaised(board, x, y, CELL, CELL, 2, SILVER);
+    void
+};
+
+func drawMine(int x, int y, bool exploded) void {
+    if (exploded) {
+        board.drawRect(x, y, CELL, CELL).color(RED).fill();
+        board.drawLine(x, y, x + CELL, y).color(GRAY).stroke(1);
+        board.drawLine(x, y, x, y + CELL).color(GRAY).stroke(1);
+    };
+    int cx = x + CELL / 2;
+    int cy = y + CELL / 2;
+    int r = CELL / 4;
+    int dr = (r * 3) / 4 + 1;
+    board.drawLine(cx, cy - r - 2, cx, cy + r + 2).color(BLACK).stroke(1);
+    board.drawLine(cx - r - 2, cy, cx + r + 2, cy).color(BLACK).stroke(1);
+    board.drawLine(cx - dr, cy - dr, cx + dr, cy + dr).color(BLACK).stroke(1);
+    board.drawLine(cx - dr, cy + dr, cx + dr, cy - dr).color(BLACK).stroke(1);
+    board.drawCircle(cx, cy, r).color(BLACK).fill();
+    board.drawRect(cx - r / 2, cy - r / 2, r / 2, r / 2).color(WHITE).fill();
+    void
+};
+
+func drawNumber(int x, int y, int n) void {
+    int size = (CELL * 6) / 10;
+    board.drawText(x + CELL / 2 - size / 4, y + CELL / 2 + (size * 4) / 10, n.str, size).color(numberColor(n));
+    void
+};
+
+func drawQuestion(int x, int y) void {
+    int size = (CELL * 6) / 10;
+    board.drawText(x + CELL / 2 - size / 4, y + CELL / 2 + (size * 4) / 10, "?", size).color(BLACK);
+    void
+};
+
+func drawFlag(int x, int y) void {
+    int px = x + CELL / 2;
+    int topY = y + (CELL * 22) / 100;
+    int botY = y + (CELL * 66) / 100;
+    int fMid = y + (CELL * 38) / 100;
+    int fLeft = px - (CELL * 30) / 100;
+    int fBot = fMid + (fMid - topY);
+    board.drawPath("M ".con(px.str).con(" ").con(topY.str)
+        .con(" L ").con(fLeft.str).con(" ").con(fMid.str)
+        .con(" L ").con(px.str).con(" ").con(fBot.str).con(" Z")).color(RED).fill();
+    board.drawRect(px, topY, 2, botY - topY).color(BLACK).fill();
+    board.drawRect(x + (CELL * 26) / 100, y + (CELL * 72) / 100, (CELL * 48) / 100, 3).color(BLACK).fill();
+    void
+};
+
+func drawRedX(int x, int y) void {
+    board.drawLine(x + 4, y + 4, x + CELL - 4, y + CELL - 4).color(RED).stroke(2);
+    board.drawLine(x + 4, y + CELL - 4, x + CELL - 4, y + 4).color(RED).stroke(2);
+    void
+};
+
+func drawCell(int c, int r) void {
+    int i = idx(c, r);
+    int x = GRID_BORDER + c * CELL;
+    int y = GRID_BORDER + r * CELL;
+    int fl = flag[i];
+    bool lost = gameOver & win == false;
+
+    if (revealed[i] == 1) {
+        drawFlat(x, y);
+        if (mine[i] == 1) {
+            drawMine(x, y, i == explodedIdx);
+        } else {
+            if (adj[i] > 0) { drawNumber(x, y, adj[i]); };
+        };
+    } else {
+        if (lost & mine[i] == 1 & fl != 1) {
+            drawFlat(x, y);
+            drawMine(x, y, false);
+        } else {
+            if (lost & fl == 1 & mine[i] == 0) {
+                drawFlat(x, y);
+                drawMine(x, y, false);
+                drawRedX(x, y);
+            } else {
+                drawRaised(x, y);
+                if (fl == 1) { drawFlag(x, y); };
+                if (fl == 2) { drawQuestion(x, y); };
+            };
+        };
+    };
+    void
+};
+
+func drawBoard() void {
+    board.clear();
+    board.drawRect(0, 0, BW, BH).color(SILVER).fill();
+    # sunken bevel framing the field
+    board.drawRect(0, 0, BW, GRID_BORDER).color(GRAY).fill();
+    board.drawRect(0, 0, GRID_BORDER, BH).color(GRAY).fill();
+    board.drawRect(0, BH - GRID_BORDER, BW, GRID_BORDER).color(WHITE).fill();
+    board.drawRect(BW - GRID_BORDER, 0, GRID_BORDER, BH).color(WHITE).fill();
+    int r = 0;
+    while (r < rows) {
+        int c = 0;
+        while (c < cols) {
+            drawCell(c, r);
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    void
+};
+
+# ---- drawing: status panel (LED counters + smiley) ----------------------------------------
+
+func drawSeg(View cv, int X, int Y, int seg, bool on) void {
+    str col = if (on) then LED_ON else LED_DIM;
+    if (seg == 0) { cv.drawRect(X + 3, Y, 7, 3).color(col).fill(); }
+    else if (seg == 1) { cv.drawRect(X + 10, Y + 3, 3, 8).color(col).fill(); }
+    else if (seg == 2) { cv.drawRect(X + 10, Y + 12, 3, 8).color(col).fill(); }
+    else if (seg == 3) { cv.drawRect(X + 3, Y + 20, 7, 3).color(col).fill(); }
+    else if (seg == 4) { cv.drawRect(X, Y + 12, 3, 8).color(col).fill(); }
+    else if (seg == 5) { cv.drawRect(X, Y + 3, 3, 8).color(col).fill(); }
+    else { cv.drawRect(X + 3, Y + 10, 7, 3).color(col).fill(); };
+    void
+};
+
+# d in 0..9 lights its font pattern; -1 draws a minus; -2 is blank.
+func drawDigit(View cv, int X, int Y, int d) void {
+    int seg = 0;
+    while (seg < 7) {
+        bool on = false;
+        if (d == 0 - 1) {
+            on = seg == 6;
+        } else {
+            if (d >= 0) { on = SEGON[d * 7 + seg] == 1; };
+        };
+        drawSeg(cv, X, Y, seg, on);
+        seg = seg + 1;
+    };
+    void
+};
+
+func drawLed(View cv, int X, int Y, int value) void {
+    bevelSunken(cv, X, Y, LED_W, LED_H, 2, BLACK);
+    int d0 = 0;
+    int d1 = 0;
+    int d2 = 0;
+    if (value < 0) {
+        int a = 0 - value;
+        if (a > 99) { a = 99; };
+        d0 = 0 - 1;
+        d1 = a / 10;
+        d2 = a % 10;
+    } else {
+        int v = value;
+        if (v > 999) { v = 999; };
+        d0 = v / 100;
+        d1 = (v / 10) % 10;
+        d2 = v % 10;
+    };
+    int dy = Y + 3;
+    drawDigit(cv, X + 3, dy, d0);
+    drawDigit(cv, X + 3 + (DIGIT_W + 1), dy, d1);
+    drawDigit(cv, X + 3 + 2 * (DIGIT_W + 1), dy, d2);
+    void
+};
+
+func drawXeye(View cv, int ex, int ey) void {
+    cv.drawLine(ex - 2, ey - 2, ex + 2, ey + 2).color(BLACK).stroke(1);
+    cv.drawLine(ex - 2, ey + 2, ex + 2, ey - 2).color(BLACK).stroke(1);
+    void
+};
+
+func drawFace(View cv, int X, int Y, int S, int state) void {
+    bevelRaised(cv, X, Y, S, S, 2, SILVER);
+    int cx = X + S / 2;
+    int cy = Y + S / 2;
+    int r = (S * 7) / 20;
+    cv.drawCircle(cx, cy, r).color(YELLOW).fill();
+    cv.drawCircle(cx, cy, r).color(BLACK).stroke(1);
+    int ey = cy - r / 4;
+    int ex = r / 2;
+    int er = if (S > 26) then 2 else 1;
+    if (state == 2) {
+        # cool: a sunglasses bar over a smile
+        cv.drawRect(cx - ex - 3, ey - 2, (ex + 3) * 2, 3).color(BLACK).fill();
+        cv.drawArc(cx - r / 2, cy - r / 6, r, (r * 2) / 3, 20, 140).color(BLACK).stroke(2);
+    } else {
+        if (state == 3) {
+            # dead: X eyes and a frown
+            drawXeye(cv, cx - ex, ey);
+            drawXeye(cv, cx + ex, ey);
+            cv.drawArc(cx - r / 2, cy + r / 6, r, (r * 2) / 3, 200, 140).color(BLACK).stroke(2);
+        } else {
+            cv.drawCircle(cx - ex, ey, er).color(BLACK).fill();
+            cv.drawCircle(cx + ex, ey, er).color(BLACK).fill();
+            if (state == 1) {
+                # surprised "O" mouth while a cell is pressed
+                cv.drawCircle(cx, cy + r / 3, r / 4).color(BLACK).stroke(2);
+            } else {
+                cv.drawArc(cx - r / 2, cy - r / 6, r, (r * 2) / 3, 20, 140).color(BLACK).stroke(2);
+            };
+        };
+    };
+    void
+};
+
+func drawPanel() void {
+    panel.clear();
+    panel.drawRect(0, 0, BW, PANEL_H).color(SILVER).fill();
+    int ly = (PANEL_H - LED_H) / 2;
+    drawLed(panel, MARGIN, ly, mines - flagsCount);
+    drawLed(panel, BW - MARGIN - LED_W, ly, timeElapsed);
+    smileyX = (BW - SM) / 2;
+    smileyY = (PANEL_H - SM) / 2;
+    drawFace(panel, smileyX, smileyY, SM, faceState);
+    void
+};
+
+# ---- clock --------------------------------------------------------------------------------
+
+func clockTick(int t) void {
+    if (t == clockToken & clockRunning) {
+        if (timeElapsed < 999) { timeElapsed = timeElapsed + 1; };
+        drawPanel();
+        async clock.after(1000, t, func(int x) void {
+            clockTick(x);
+            void
+        });
+    };
+    void
+};
+
+func startClock() void {
+    clockRunning = true;
+    clockToken = clockToken + 1;
+    int t = clockToken;
+    async clock.after(1000, t, func(int x) void {
+        clockTick(x);
+        void
+    });
+    void
+};
+
+func stopClock() void {
+    clockRunning = false;
+    clockToken = clockToken + 1;
+    void
+};
+
+# ---- game logic ---------------------------------------------------------------------------
+
+func checkWin() void {
+    if (gameOver == false & revealedCount == cols * rows - mines) {
+        gameOver = true;
+        win = true;
+        faceState = 2;
+        stopClock();
+        int k = 0;
+        while (k < cols * rows) {
+            if (mine[k] == 1 & flag[k] != 1) {
+                flag[k] = 1;
+                flagsCount = flagsCount + 1;
+            };
+            k = k + 1;
+        };
+        drawBoard();
+        drawPanel();
+        term.println("[mines] cleared — time ".con(timeElapsed.str));
+    };
+    void
+};
+
+func revealCell(int i) void {
+    if (gameOver == false & revealed[i] == 0 & flag[i] != 1) {
+        if (minesPlaced == false) {
+            placeMines(i);
+            countAdj();
+            minesPlaced = true;
+            startClock();
+        };
+        if (mine[i] == 1) {
+            gameOver = true;
+            win = false;
+            explodedIdx = i;
+            faceState = 3;
+            stopClock();
+            drawBoard();
+            drawPanel();
+            term.println("[mines] boom — game over");
+        } else {
+            floodReveal(i);
+            drawBoard();
+            checkWin();
+        };
+    };
+    void
+};
+
+func toggleFlag(int i) void {
+    if (gameOver == false & revealed[i] == 0) {
+        int f = flag[i];
+        if (f == 0) {
+            flag[i] = 1;
+            flagsCount = flagsCount + 1;
+        } else {
+            if (f == 1) {
+                flag[i] = 2;
+                flagsCount = flagsCount - 1;
+            } else {
+                flag[i] = 0;
+            };
+        };
+        drawBoard();
+        drawPanel();
+    };
+    void
+};
+
+func newGame() void {
+    int n = cols * rows;
+    int i = 0;
+    while (i < n) {
+        mine[i] = 0;
+        revealed[i] = 0;
+        flag[i] = 0;
+        adj[i] = 0;
+        i = i + 1;
+    };
+    minesPlaced = false;
+    flagsCount = 0;
+    revealedCount = 0;
+    gameOver = false;
+    win = false;
+    explodedIdx = 0 - 1;
+    timeElapsed = 0;
+    faceState = 0;
+    stopClock();
+    drawBoard();
+    drawPanel();
+    void
+};
+
+func applyDifficulty(int c, int r, int m, int cl) void {
+    cols = c;
+    rows = r;
+    mines = m;
+    CELL = cl;
+    BW = cols * CELL + 2 * GRID_BORDER;
+    BH = rows * CELL + 2 * GRID_BORDER;
+    mine = new array[int](cols * rows);
+    revealed = new array[int](cols * rows);
+    flag = new array[int](cols * rows);
+    adj = new array[int](cols * rows);
+    panel.width(BW).height(PANEL_H);
+    board.width(BW).height(BH);
+    newGame();
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+
+func onLongPress(int t) void {
+    if (pressActive & t == pressToken & pressHandled == false & gameOver == false) {
+        pressHandled = true;
+        toggleFlag(pressCell);
+        faceState = 0;
+        drawPanel();
+    };
+    void
+};
+
+func onBoardDown(int px, int py) void {
+    if (gameOver == false) {
+        int i = cellAt(px, py);
+        if (i >= 0) {
+            pressActive = true;
+            pressHandled = false;
+            pressCell = i;
+            pressToken = pressToken + 1;
+            faceState = 1;
+            drawPanel();
+            int t = pressToken;
+            async presser.after(LONGPRESS_MS, t, func(int x) void {
+                onLongPress(x);
+                void
+            });
+        };
+    };
+    void
+};
+
+func onBoardUp(int px, int py) void {
+    if (pressActive) {
+        if (pressHandled == false) {
+            pressHandled = true;
+            pressToken = pressToken + 1;   # invalidate the pending long-press
+            revealCell(pressCell);
+        };
+        pressActive = false;
+    };
+    if (gameOver == false) {
+        faceState = 0;
+        drawPanel();
+    };
+    void
+};
+
+func onPanelTap(int tx, int ty) void {
+    if (tx >= smileyX & tx <= smileyX + SM & ty >= smileyY & ty <= smileyY + SM) {
+        newGame();
+    };
+    void
+};
+
+func openDifficulty() void {
+    View sheet = ui.column().padding(20).gap(12).fillWidth();
+    sheet.add(ui.text("New game").style(styles.titleMedium()).bold());
+
+    View b1 = ui.button("Beginner — 9 × 9, 10 mines").fillWidth();
+    b1.onClick(func() void {
+        applyDifficulty(9, 9, 10, 26);
+        ui.dismissSheet();
+        void
+    });
+    View b2 = ui.tonalButton("Intermediate — 16 × 16, 40 mines").fillWidth();
+    b2.onClick(func() void {
+        applyDifficulty(16, 16, 40, 18);
+        ui.dismissSheet();
+        void
+    });
+    sheet.add(b1);
+    sheet.add(b2);
+    sheet.add(ui.text("Tap a cell to open it · long-press to flag (flag → ? → clear) · tap the face for a new game.")
+        .style(styles.bodySmall()).color(colors.onSurfaceVariant()));
+    ui.sheet(sheet);
+    void
+};
+
+# ---- wiring -------------------------------------------------------------------------------
+
+board.onPointerDown(func(int px, int py) void {
+    onBoardDown(px, py);
+    void
+});
+
+board.onPointerUp(func(int px, int py) void {
+    onBoardUp(px, py);
+    void
+});
+
+panel.onTap(func(int tx, int ty) void {
+    onPanelTap(tx, ty);
+    void
+});
+
+bar.action("New game", icons.more(), func() void {
+    openDifficulty();
+    void
+});
+
+bar.onNav(func() void {
+    stopClock();
+    ui.close();
+    void
+});
+
+newGame();
+ui.open(root);
+
+term.println("Minesweeper opened — tap to open, hold to flag.");
