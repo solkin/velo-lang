@@ -24,10 +24,7 @@ object TestUtils {
         val frame = Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = Vars(
-                vars = HashMap(),
-                parent = null
-            ),
+            vars = createVars(emptyList(), null),
             ops = emptyList()
         )
         stack.push(frame)
@@ -50,10 +47,7 @@ object TestUtils {
         return Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = Vars(
-                vars = HashMap(),
-                parent = parentVars
-            ),
+            vars = createVars(emptyList(), parentVars),
             ops = ops
         )
     }

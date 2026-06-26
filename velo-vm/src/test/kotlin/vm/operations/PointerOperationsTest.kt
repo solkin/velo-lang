@@ -21,7 +21,7 @@ class PointerOperationsTest {
         return Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = Vars(HashMap(), null),
+            vars = vm.createVars(listOf(0, 1, 2, 3), null),
             ops = emptyList()
         )
     }
@@ -119,7 +119,7 @@ class PointerOperationsTest {
         val ctx = createTestContext()
         
         // Set up variable
-        frame.vars.vars[0] = ValueRecord(200)
+        frame.vars.set(0, ValueRecord(200))
         
         // Create pointer to variable
         Op.PtrRef(0).exec(frame, ctx)
@@ -194,7 +194,7 @@ class PointerOperationsTest {
         val ctx = createTestContext()
         
         // Set up variable
-        frame.vars.vars[0] = ValueRecord(100)
+        frame.vars.set(0, ValueRecord(100))
         
         // Create pointer to variable
         Op.PtrRef(0).exec(frame, ctx)
@@ -257,7 +257,7 @@ class PointerOperationsTest {
         val frame = createTestFrame()
         val ctx = createTestContext()
         
-        frame.vars.vars[0] = ValueRecord(42)
+        frame.vars.set(0, ValueRecord(42))
         Op.PtrRef(0).exec(frame, ctx)
         
         val ptr = frame.subs.pop()
@@ -271,7 +271,7 @@ class PointerOperationsTest {
         val frame = createTestFrame()
         val ctx = createTestContext()
         
-        frame.vars.vars[0] = ValueRecord(100)
+        frame.vars.set(0, ValueRecord(100))
         Op.PtrRef(0).exec(frame, ctx)
         val ptr = frame.subs.pop() as PtrRecord.Var
         
@@ -287,7 +287,7 @@ class PointerOperationsTest {
         val frame = createTestFrame()
         val ctx = createTestContext()
         
-        frame.vars.vars[0] = ValueRecord(50)
+        frame.vars.set(0, ValueRecord(50))
         
         Op.PtrRef(0).exec(frame, ctx)
         val ptr1 = frame.subs.pop() as PtrRecord.Var
@@ -310,17 +310,13 @@ class PointerOperationsTest {
 
     @Test
     fun `PtrRef - pointer to variable in parent scope`() {
-        val parentVars = Vars(
-            vars = HashMap<Int, vm.Record>().apply {
-                put(0, ValueRecord(500))
-            },
-            parent = null
-        )
-        
+        val parentVars = vm.createVars(listOf(0), null)
+        parentVars.set(0, ValueRecord(500))
+
         val frame = Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = Vars(HashMap(), parent = parentVars),
+            vars = vm.createVars(emptyList(), parent = parentVars),
             ops = emptyList()
         )
         
@@ -519,7 +515,7 @@ class PointerOperationsTest {
         val ctx = createTestContext()
         
         // Set up variable
-        frame.vars.vars[0] = ValueRecord(100)
+        frame.vars.set(0, ValueRecord(100))
         
         // Create pointer
         Op.PtrRef(0).exec(frame, ctx)
@@ -595,7 +591,7 @@ class PointerOperationsTest {
         val ctx = createTestContext()
         
         // Create variable
-        frame.vars.vars[0] = ValueRecord(1000)
+        frame.vars.set(0, ValueRecord(1000))
         
         // Create pointer to variable
         Op.PtrRef(0).exec(frame, ctx)

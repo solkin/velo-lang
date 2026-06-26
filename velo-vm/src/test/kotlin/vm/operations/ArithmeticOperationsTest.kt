@@ -16,7 +16,7 @@ class ArithmeticOperationsTest {
         return Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = vm.Vars(HashMap(), null),
+            vars = vm.createVars(emptyList(), null),
             ops = emptyList()
         )
     }

@@ -12,48 +12,25 @@ class VarsTest {
 
     @Test
     fun `get and set variable in same scope`() {
-        val vars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, EmptyRecord)
-            },
-            parent = null
-        )
-        
+        val vars = createVars(listOf(0))
         vars.set(0, ValueRecord(42))
         assertEquals(42, vars.get(0).getInt())
     }
 
     @Test
     fun `get variable from parent scope`() {
-        val parentVars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(100))
-            },
-            parent = null
-        )
-        
-        val childVars = Vars(
-            vars = HashMap(),
-            parent = parentVars
-        )
-        
+        val parentVars = createVars(listOf(0))
+        parentVars.set(0, ValueRecord(100))
+        val childVars = createVars(emptyList(), parent = parentVars)
         assertEquals(100, childVars.get(0).getInt())
     }
 
     @Test
     fun `set variable in parent scope`() {
-        val parentVars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(100))
-            },
-            parent = null
-        )
-        
-        val childVars = Vars(
-            vars = HashMap(),
-            parent = parentVars
-        )
-        
+        val parentVars = createVars(listOf(0))
+        parentVars.set(0, ValueRecord(100))
+        val childVars = createVars(emptyList(), parent = parentVars)
+
         childVars.set(0, ValueRecord(200))
         assertEquals(200, parentVars.get(0).getInt())
         assertEquals(200, childVars.get(0).getInt())
@@ -61,31 +38,18 @@ class VarsTest {
 
     @Test
     fun `child scope shadows parent variable`() {
-        val parentVars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(100))
-            },
-            parent = null
-        )
-        
-        val childVars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(200))
-            },
-            parent = parentVars
-        )
-        
+        val parentVars = createVars(listOf(0))
+        parentVars.set(0, ValueRecord(100))
+        val childVars = createVars(listOf(0), parent = parentVars)
+        childVars.set(0, ValueRecord(200))
+
         assertEquals(200, childVars.get(0).getInt())
         assertEquals(100, parentVars.get(0).getInt())
     }
 
     @Test
     fun `get undefined variable throws exception`() {
-        val vars = Vars(
-            vars = HashMap(),
-            parent = null
-        )
-        
+        val vars = createVars(emptyList())
         assertFailsWith<IllegalArgumentException> {
             vars.get(999)
         }
@@ -93,11 +57,7 @@ class VarsTest {
 
     @Test
     fun `set undefined variable throws exception`() {
-        val vars = Vars(
-            vars = HashMap(),
-            parent = null
-        )
-        
+        val vars = createVars(emptyList())
         assertFailsWith<IllegalArgumentException> {
             vars.set(999, ValueRecord(42))
         }
@@ -105,64 +65,30 @@ class VarsTest {
 
     @Test
     fun `empty returns true for empty vars`() {
-        val vars = Vars(
-            vars = HashMap(),
-            parent = null
-        )
-        assertTrue(vars.empty())
+        assertTrue(createVars(emptyList()).empty())
     }
 
     @Test
     fun `empty returns false for non-empty vars`() {
-        val vars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(42))
-            },
-            parent = null
-        )
-        assertFalse(vars.empty())
+        assertFalse(createVars(listOf(0)).empty())
     }
 
     @Test
     fun `empty returns true when only parent has vars`() {
-        val parentVars = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(100))
-            },
-            parent = null
-        )
-        
-        val childVars = Vars(
-            vars = HashMap(),
-            parent = parentVars
-        )
-        
+        val parentVars = createVars(listOf(0))
+        parentVars.set(0, ValueRecord(100))
+        val childVars = createVars(emptyList(), parent = parentVars)
         assertTrue(childVars.empty())
     }
 
     @Test
     fun `multiple level scope lookup`() {
-        val level1 = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(1))
-            },
-            parent = null
-        )
-        
-        val level2 = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(1, ValueRecord(2))
-            },
-            parent = level1
-        )
-        
-        val level3 = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(2, ValueRecord(3))
-            },
-            parent = level2
-        )
-        
+        // Each scope owns one contiguous index, continuing from its parent —
+        // exactly how the compiler numbers nested frames.
+        val level1 = createVars(listOf(0)).apply { set(0, ValueRecord(1)) }
+        val level2 = createVars(listOf(1), parent = level1).apply { set(1, ValueRecord(2)) }
+        val level3 = createVars(listOf(2), parent = level2).apply { set(2, ValueRecord(3)) }
+
         assertEquals(1, level3.get(0).getInt())
         assertEquals(2, level3.get(1).getInt())
         assertEquals(3, level3.get(2).getInt())
@@ -171,7 +97,7 @@ class VarsTest {
     @Test
     fun `createVars helper function`() {
         val vars = createVars(listOf(0, 1, 2))
-        
+
         assertFalse(vars.empty())
         assertEquals(EmptyRecord, vars.get(0))
         assertEquals(EmptyRecord, vars.get(1))
@@ -180,18 +106,13 @@ class VarsTest {
 
     @Test
     fun `createVars with parent`() {
-        val parent = Vars(
-            vars = HashMap<Int, Record>().apply {
-                put(0, ValueRecord(100))
-            },
-            parent = null
-        )
-        
+        val parent = createVars(listOf(0))
+        parent.set(0, ValueRecord(100))
+
         val child = createVars(listOf(1, 2), parent = parent)
-        
+
         assertEquals(100, child.get(0).getInt())
         assertEquals(EmptyRecord, child.get(1))
         assertEquals(EmptyRecord, child.get(2))
     }
 }
-

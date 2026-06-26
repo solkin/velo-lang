@@ -19,7 +19,7 @@ class StackOperationsTest {
         return Frame(
             pc = 0,
             subs = LifoStack(),
-            vars = Vars(HashMap(), null),
+            vars = vm.createVars(emptyList(), null),
             ops = emptyList()
         )
     }
