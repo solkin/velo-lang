@@ -1,0 +1,6 @@
+{
+  "id": "primes",
+  "name": "Primes",
+  "description": "Prints the first 303 prime numbers, 20 per line.",
+  "interactive": false
+}

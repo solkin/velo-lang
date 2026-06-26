@@ -11,7 +11,18 @@ import core.Op
 class VMProfiler(
     val enabled: Boolean = System.getProperty("velo.profile")?.toBoolean() ?: false
 ) {
-    
+
+    // Always-on instruction counter (independent of [enabled]): a single
+    // increment per op, cheap enough to leave running so embedders can report
+    // "N instructions" without paying the full timed-profiling overhead.
+    var instructions: Long = 0
+        private set
+
+    /** Count one executed op. Always on — unlike the timed [beforeOp]/[afterOp]. */
+    fun countOp() {
+        instructions++
+    }
+
     // Timing
     private var startTimeNs: Long = 0
     private var endTimeNs: Long = 0

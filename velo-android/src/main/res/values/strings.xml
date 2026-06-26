@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Velo</string>
+
+    <string name="open_file_title">Open a .vbc file</string>
+    <string name="open_file_subtitle">Run your own compiled bytecode</string>
+    <string name="samples_header">Samples</string>
+    <string name="no_samples">No samples bundled.</string>
+
+    <string name="action_run">Run</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_more">More</string>
+
+    <string name="action_keyboard">Keyboard</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_run_again">Run again</string>
+
+    <string name="menu_send_eof">Send EOF (Ctrl-D)</string>
+    <string name="menu_share">Share output</string>
+    <string name="menu_clear">Clear</string>
+    <string name="share_chooser">Share output</string>
+
+    <string name="status_running">Running</string>
+    <string name="status_finished">Finished</string>
+    <!-- e.g. "Finished · 1234 instr · 5 ms" -->
+    <string name="status_finished_stats">Finished · %1$d instr · %2$d ms</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_failed">Failed: %1$s</string>
+
+    <string name="cd_keyboard_show">Show keyboard</string>
+    <string name="cd_keyboard_hide">Hide keyboard</string>
+</resources>

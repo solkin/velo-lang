@@ -42,6 +42,7 @@ class VMExecutor(
         var frame = ctx.currentFrame()
         while (frame.pc < frame.ops.size) {
             val cmd = frame.ops[frame.pc]
+            profiler?.countOp()
             profiler?.beforeOp(cmd)
             frame.pc = Interpreter.exec(cmd, pc = frame.pc, ctx)
             profiler?.afterOp()

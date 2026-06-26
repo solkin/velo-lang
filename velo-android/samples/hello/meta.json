@@ -1,0 +1,6 @@
+{
+  "id": "hello",
+  "name": "Hello, World",
+  "description": "The smallest Velo program — prints a greeting to the terminal.",
+  "interactive": false
+}

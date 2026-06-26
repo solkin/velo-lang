@@ -1,0 +1,108 @@
+Terminal term = new Terminal();
+
+# 3x3 game board initialized with empty cells
+array[array[str]] board = new array[array[str]]{
+    new array[str]{" ", " ", " "},
+    new array[str]{" ", " ", " "},
+    new array[str]{" ", " ", " "}
+};
+
+# Print the current state of the board
+func printBoard() void {
+    term.println("  0   1   2");
+    term.println("0  ".con(board[0][0]).con(" | ").con(board[0][1]).con(" | ").con(board[0][2]));
+    term.println("  ---+---+---");
+    term.println("1  ".con(board[1][0]).con(" | ").con(board[1][1]).con(" | ").con(board[1][2]));
+    term.println("  ---+---+---");
+    term.println("2  ".con(board[2][0]).con(" | ").con(board[2][1]).con(" | ").con(board[2][2]));
+    void;
+};
+
+# Check if three cells contain the same non-empty mark
+func checkLine(str a, str b, str c) bool {
+    a != " " & a == b & b == c;
+};
+
+# Check all winning combinations for the given player
+func checkWinner(str player) bool {
+    bool win = false;
+    # Rows
+    if (checkLine(board[0][0], board[0][1], board[0][2])) { win = true; };
+    if (checkLine(board[1][0], board[1][1], board[1][2])) { win = true; };
+    if (checkLine(board[2][0], board[2][1], board[2][2])) { win = true; };
+    # Columns
+    if (checkLine(board[0][0], board[1][0], board[2][0])) { win = true; };
+    if (checkLine(board[0][1], board[1][1], board[2][1])) { win = true; };
+    if (checkLine(board[0][2], board[1][2], board[2][2])) { win = true; };
+    # Diagonals
+    if (checkLine(board[0][0], board[1][1], board[2][2])) { win = true; };
+    if (checkLine(board[0][2], board[1][1], board[2][0])) { win = true; };
+    win;
+};
+
+# Check if the board is completely filled (draw condition)
+func isDraw() bool {
+    int i = 0;
+    bool full = true;
+    while (i < 3) {
+        int j = 0;
+        while (j < 3) {
+            if (board[i][j] == " ") {
+                full = false;
+            };
+            j += 1;
+        };
+        i += 1;
+    };
+    full;
+};
+
+str currentPlayer = "X";
+bool gameOver = false;
+
+term.println("Welcome to Tic-Tac-Toe!");
+term.println("Enter row and column numbers (0-2).");
+
+while (gameOver == false) {
+    printBoard();
+
+    bool validMove = false;
+    int row = 0;
+    int col = 0;
+
+    # Ask for input until a valid move is provided
+    while (validMove == false) {
+        term.print("Player ".con(currentPlayer).con(", enter row (0-2): "));
+        row = term.input().int;
+        term.print("Enter col (0-2): ");
+        col = term.input().int;
+
+        if (row >= 0 & row <= 2 & col >= 0 & col <= 2) {
+            if (board[row][col] == " ") {
+                board[row][col] = currentPlayer;
+                validMove = true;
+            } else {
+                term.println("Cell already taken! Try again.");
+            };
+        } else {
+            term.println("Invalid coordinates! Try again.");
+        };
+    };
+
+    # Check for winner or draw; otherwise switch player
+    if (checkWinner(currentPlayer)) {
+        printBoard();
+        term.println("Player ".con(currentPlayer).con(" wins!"));
+        gameOver = true;
+    } else if (isDraw()) {
+        printBoard();
+        term.println("It's a draw!");
+        gameOver = true;
+    } else {
+        if (currentPlayer == "X") {
+            currentPlayer = "O";
+        } else {
+            currentPlayer = "X";
+        };
+    };
+};

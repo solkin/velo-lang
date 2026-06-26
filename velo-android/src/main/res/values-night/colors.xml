@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark brand scheme. -->
+    <color name="brand_primary">#8CD6AD</color>
+    <color name="brand_on_primary">#00391F</color>
+    <color name="brand_primary_container">#055230</color>
+    <color name="brand_on_primary_container">#A8F2C8</color>
+    <color name="brand_secondary">#B6CCBA</color>
+    <color name="brand_on_secondary">#223528</color>
+    <color name="brand_secondary_container">#374B3E</color>
+    <color name="brand_on_secondary_container">#D2E8D6</color>
+    <color name="brand_tertiary">#A4CDDD</color>
+    <color name="brand_on_tertiary">#06363F</color>
+    <color name="brand_background">#101412</color>
+    <color name="brand_on_background">#E1E3DE</color>
+    <color name="brand_surface">#101412</color>
+    <color name="brand_on_surface">#E1E3DE</color>
+    <color name="brand_surface_variant">#404943</color>
+    <color name="brand_on_surface_variant">#C0C9C0</color>
+    <color name="brand_outline">#8A938B</color>
+    <color name="brand_outline_variant">#404943</color>
+    <color name="brand_error">#FFB4AB</color>
+    <color name="brand_on_error">#690005</color>
+    <color name="brand_surface_container_lowest">#0B0F0D</color>
+    <color name="brand_surface_container_low">#1A1F1C</color>
+    <color name="brand_surface_container">#1E2320</color>
+    <color name="brand_surface_container_high">#282D2A</color>
+    <color name="brand_surface_container_highest">#333835</color>
+</resources>

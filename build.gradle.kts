@@ -1,16 +1,16 @@
 plugins {
-    kotlin("jvm") version "1.8.0" apply false
+    kotlin("jvm") version "1.9.24" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.android) apply false
 }
 
-subprojects {
+// The Android demo (:velo-android) brings its own AGP/Kotlin-Android plugins and
+// SDK toolchain; only the pure-JVM modules get the shared kotlin-jvm config below.
+configure(subprojects.filter { it.name != "velo-android" }) {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     group = "org.velo.lang"
     version = "1.0-SNAPSHOT"
-
-    repositories {
-        mavenCentral()
-    }
 
     dependencies {
         "testImplementation"(kotlin("test"))

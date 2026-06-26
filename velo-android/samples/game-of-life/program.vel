@@ -1,0 +1,83 @@
+Terminal term = new Terminal();
+
+class GameOfLife(Terminal term) {
+
+    any w = new array[array[int]]{
+        new array[int]{0, 1, 0, 0, 0, 0},
+        new array[int]{0, 0, 1, 0, 0, 0},
+        new array[int]{1, 1, 1, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0},
+        new array[int]{0, 0, 0, 0, 0, 0}
+    };
+
+    func calc(array[array[int]] matrix, int x, int y) int {
+         func window(int a) int {
+            if (a >= 0) {
+                if (a < matrix.len) then a else a - matrix.len;
+            } else {
+                matrix.len + a;
+            }
+        };
+
+        any cells =
+                matrix[window(y - 1)][window(x - 1)] +
+                matrix[window(y - 1)][x] +
+                matrix[window(y - 1)][window(x + 1)] +
+                matrix[y][window(x - 1)] +
+                matrix[y][window(x + 1)] +
+                matrix[window(y + 1)][window(x - 1)] +
+                matrix[window(y + 1)][x] +
+                matrix[window(y + 1)][window(x + 1)];
+
+        if cells == 2 then {
+            matrix[y][x]
+        } else if cells == 3 then {
+            1
+        } else {
+            0
+        }
+    };
+
+    func printWorld() void {
+        w.map(
+            func(int index, array[int] row) array[int] {
+                row.map(
+                    func(int index, int col) int {
+                        term.print(col.str);
+                        term.print(" ");
+                        col;
+                    }
+                );
+                term.println("");
+                row
+            }
+        );
+        void
+    };
+
+    func nextGeneration() void {
+        w = w.map(
+            func(int y, array[int] row) array[int] {
+                row.map(
+                    func(int x, int col) int {
+                        calc(w, x, y);
+                    }
+                );
+            }
+        );
+    };
+
+};
+
+GameOfLife g = new GameOfLife(term);
+term.print("Enter generations count: ");
+int count = term.input().int;
+term.println("");
+int idx = 0;
+while (idx <= count) {
+    g.printWorld();
+    term.println("--");
+    g.nextGeneration();
+    idx += 1;
+};

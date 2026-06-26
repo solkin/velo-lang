@@ -1,0 +1,30 @@
+Terminal term = new Terminal();
+
+func primes(int n) void {
+    int k = 0;
+    int i = 2;
+    while (k < n) {
+        bool isPrime = true;
+        int divisor = 2;
+        while (divisor <= i / 2) {
+            if (i % divisor == 0) {
+                isPrime = false;
+                divisor = i;
+            } else {
+                divisor += 1;
+            };
+        };
+        if (isPrime) {
+            term.print(i.str);
+            term.print(" ");
+            if ((k + 1) % 20 == 0) {
+                term.println("");
+            };
+            k += 1;
+        };
+        i += 1;
+    };
+};
+
+primes(303);
+term.println("");

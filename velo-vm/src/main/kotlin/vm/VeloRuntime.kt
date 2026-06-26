@@ -101,12 +101,18 @@ class VeloRuntime(
 
     /**
      * Run a compiled program to completion on the calling thread.
+     *
+     * @return run statistics (instructions executed, wall-clock time) — useful
+     *   for an embedder's status line; ignore the value for plain CLI-style runs.
      */
-    fun run(program: SerializedProgram) {
+    fun run(program: SerializedProgram): RunStats {
         val profiler = VMProfiler(enabled = profilingEnabled)
         val vm = VM(nativeRegistry, profiler, actorDispatcherFactory?.invoke())
         vm.load(program)
+        val startNs = System.nanoTime()
         vm.run()
+        val wallClockMillis = (System.nanoTime() - startNs) / 1_000_000
+        return RunStats(instructions = vm.instructionCount(), wallClockMillis = wallClockMillis)
     }
 
     /**
@@ -152,6 +158,17 @@ class VeloRuntime(
         return VeloProgram(actorRuntime)
     }
 }
+
+/**
+ * Statistics for a completed [VeloRuntime.run].
+ *
+ * @property instructions total VM operations executed
+ * @property wallClockMillis wall-clock duration of the run, in milliseconds
+ */
+data class RunStats(
+    val instructions: Long,
+    val wallClockMillis: Long,
+)
 
 /**
  * Handle to a program started via [VeloRuntime.start].

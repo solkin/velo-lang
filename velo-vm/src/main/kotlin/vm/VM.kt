@@ -90,6 +90,9 @@ class VM(
         profiler.printReport()
     }
 
+    /** Total VM operations executed so far (always counted; see [VMProfiler.instructions]). */
+    fun instructionCount(): Long = profiler.instructions
+
 }
 
 private fun printError(ex: Throwable, op: Op, frame: Frame, stack: Stack<Frame>, out: PrintStream = System.err) {

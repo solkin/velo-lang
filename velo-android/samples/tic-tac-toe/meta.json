@@ -1,0 +1,6 @@
+{
+  "id": "tic-tac-toe",
+  "name": "Tic-Tac-Toe",
+  "description": "Two-player tic-tac-toe. Enter row/column to place your mark.",
+  "interactive": true
+}
