@@ -130,6 +130,7 @@ class VeloView {
 
     fun onClick(cb: VeloFunction): VeloView = apply { state.onClick(cb) }
     fun onLongClick(cb: VeloFunction): VeloView = apply { state.onLongClick(cb) }
+    fun onPress(down: VeloFunction, up: VeloFunction): VeloView = apply { state.onPress(down, up) }
     fun onResize(cb: VeloFunction): VeloView = apply { state.onResize(cb) }
     fun onChange(cb: VeloFunction): VeloView = apply { state.onChange(cb) }
     fun onToggle(cb: VeloFunction): VeloView = apply { state.onToggle(cb) }

@@ -98,6 +98,7 @@ class View {
     // events
     fun onClick(cb: VeloFunction): View = nope()
     fun onLongClick(cb: VeloFunction): View = nope()
+    fun onPress(down: VeloFunction, up: VeloFunction): View = nope()
     fun onResize(cb: VeloFunction): View = nope()
     fun onChange(cb: VeloFunction): View = nope()
     fun onToggle(cb: VeloFunction): View = nope()

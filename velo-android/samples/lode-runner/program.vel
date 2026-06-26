@@ -1,0 +1,837 @@
+# Lode Runner — the 1983 Broderbund classic, on a Canvas in its original style: a black field of
+# brown brick and grey concrete, yellow ladders and ropes, gold chests to grab and two magenta
+# guards that hunt you down a recomputed distance field. The runner walks, climbs ladders, hangs
+# and slides along ropes, falls under gravity and DIGS holes in the brick to the lower-left/right
+# to trap the guards (run over their heads while they're stuck; the hole caves back in on them).
+# Collect every chest and the hidden escape ladders appear — climb to the very top to clear the
+# stage. Hold the D-pad to move, tap the dig buttons. Tile movement is interpolated in sub-steps;
+# the whole game advances on one actor that repaints off the event loop.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+
+# ---- level (28 x 16) ----------------------------------------------------------------------
+array[str] LV = new array[str]{
+    "##########S#######S#########",
+    "#   H $   S-------S   $H   #",
+    "####H#####S   H   S####H####",
+    "#   H     H   H   H    H   #",
+    "####H##  #H###H###H#  #H####",
+    "#   H     H   H   H    H   #",
+    "# $ H     HG  H   H   $H   #",
+    "####H  ###H###H  #H####H####",
+    "#   H-----H   H   H    H   #",
+    "#   H     HG  H $ H    H   #",
+    "####H#  ##H###H###H##  H####",
+    "#   H     H   H   H    H   #",
+    "#   H $   H   H   H   $H   #",
+    "####H#####H   H###H####H####",
+    "#   H     H   H   H   PH   #",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+};
+int COLS = 28;
+int ROWS = 16;
+
+int CH_BRICK = "#"[0];
+int CH_SOLID = "@"[0];
+int CH_LAD = "H"[0];
+int CH_ROPE = "-"[0];
+int CH_GOLD = "$"[0];
+int CH_HID = "S"[0];
+int CH_P = "P"[0];
+int CH_G = "G"[0];
+
+# tile codes
+int E = 0;
+int BRICK = 1;
+int SOLID = 2;
+int LAD = 3;
+int ROPE = 4;
+int HID = 5;        # hidden escape ladder: empty until all gold taken, then a ladder
+int HOLE = 6;       # a dug-out brick; refills after a while
+
+array[int] cell = new array[int](COLS * ROWS);
+array[int] gold = new array[int](COLS * ROWS);
+array[int] holeTimer = new array[int](COLS * ROWS);
+int goldLeft = 0;
+bool escapeOpen = false;
+
+# ---- metrics ------------------------------------------------------------------------------
+int HUD_ROWS = 2;
+int SPT = 8;
+int SPEED = 2;
+int TS = 14;
+int OX = 0;
+int HUD_TOP = HUD_ROWS * 14;
+int BW = COLS * 14;
+int BH = (ROWS + HUD_ROWS) * 14;
+
+# ---- timing -------------------------------------------------------------------------------
+int TICK_MS = 40;
+int READY_TICKS = 36;
+int DYING_TICKS = 40;
+int WIN_TICKS = 70;
+int HOLE_TICKS = 70;       # how long a dug hole stays open before caving in
+int FILL_WARN = 18;        # last ticks of a hole: it starts closing (visual)
+int STRUGGLE_TICKS = 90;   # a trapped guard climbs out after this (usually the hole caves first)
+int FIELD_EVERY = 6;
+
+# ---- palette ------------------------------------------------------------------------------
+str BLACK = "#000000";
+str BRICKC = "#B5651D";
+str BRICKD = "#5C2E0E";
+str SOLIDC = "#9E9E9E";
+str SOLIDD = "#5A5A5A";
+str LADC = "#D2D2D2";
+str ROPEC = "#C9A24B";
+str GOLDC = "#FFD11A";
+str GOLDD = "#A8780A";
+# runner: yellow face, red shirt, blue trousers; guard: white suit with a green vest
+str R_FACE = "#FFD24A";
+str R_SHIRT = "#E0301C";
+str R_PANTS = "#2A3FD0";
+str G_SUIT = "#F0F0F0";
+str G_VEST = "#2EA02E";
+str TEXTW = "#FFFFFF";
+str TEXTY = "#FFD11A";
+str TEXTR = "#FF5252";
+
+# ---- entity state -------------------------------------------------------------------------
+int px = 0;
+int py = 0;
+int pmvx = 0;
+int pmvy = 0;
+int pStartC = 1;
+int pStartR = 14;
+int pFace = 1;             # -1 left, 1 right (for drawing)
+bool inUp = false;
+bool inDown = false;
+bool inLeft = false;
+bool inRight = false;
+
+int GMAX = 4;
+array[int] gx = new array[int](GMAX);
+array[int] gy = new array[int](GMAX);
+array[int] gmvx = new array[int](GMAX);
+array[int] gmvy = new array[int](GMAX);
+array[int] gTrapped = new array[int](GMAX);
+array[int] gStruggle = new array[int](GMAX);
+array[int] gSpawnC = new array[int](GMAX);
+array[int] gSpawnR = new array[int](GMAX);
+int guardCount = 0;
+
+array[int] dist = new array[int](COLS * ROWS);
+
+# ---- game state ---------------------------------------------------------------------------
+int score = 0;
+int lives = 3;
+int state = 0;             # 0 ready, 1 playing, 2 dying, 3 game over, 4 win
+int stateTimer = 0;
+int frame = 0;
+bool paused = false;
+int loopToken = 0;
+Random rng = new Random(1);
+
+# ---- timer actor --------------------------------------------------------------------------
+actor class Ticker() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+actor[Ticker] ticker = new Ticker();
+
+# ---- widgets ------------------------------------------------------------------------------
+View board = ui.canvas().weight(1).fillWidth().background(BLACK);
+
+View digL = ui.tonalButton("◣").weight(1);
+View upBtn = ui.tonalButton("▲").weight(1);
+View digR = ui.tonalButton("◢").weight(1);
+View row1 = ui.row().fillWidth().gap(8);
+row1.add(digL);
+row1.add(upBtn);
+row1.add(digR);
+
+View leftBtn = ui.tonalButton("◀").weight(1);
+View downBtn = ui.tonalButton("▼").weight(1);
+View rightBtn = ui.tonalButton("▶").weight(1);
+View row2 = ui.row().fillWidth().gap(8);
+row2.add(leftBtn);
+row2.add(downBtn);
+row2.add(rightBtn);
+
+View pad = ui.column().fillWidth().gap(8).padding(12);
+pad.add(row1);
+pad.add(row2);
+
+View page = ui.column().fillWidth().fillHeight();
+View bar = ui.appBar("Lode Runner");
+page.add(bar);
+page.add(board);
+page.add(pad);
+View root = page;
+
+# ---- level build --------------------------------------------------------------------------
+
+func buildLevel() void {
+    goldLeft = 0;
+    guardCount = 0;
+    escapeOpen = false;
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            int ch = LV[r][c];
+            int code = E;
+            if (ch == CH_BRICK) { code = BRICK; };
+            if (ch == CH_SOLID) { code = SOLID; };
+            if (ch == CH_LAD) { code = LAD; };
+            if (ch == CH_ROPE) { code = ROPE; };
+            if (ch == CH_HID) { code = HID; };
+            int idx = r * COLS + c;
+            cell[idx] = code;
+            gold[idx] = 0;
+            holeTimer[idx] = 0;
+            if (ch == CH_GOLD) { gold[idx] = 1; goldLeft = goldLeft + 1; };
+            if (ch == CH_P) { pStartC = c; pStartR = r; };
+            if (ch == CH_G) {
+                if (guardCount < GMAX) {
+                    gSpawnC[guardCount] = c;
+                    gSpawnR[guardCount] = r;
+                    guardCount = guardCount + 1;
+                };
+            };
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    void
+};
+
+# ---- terrain helpers ----------------------------------------------------------------------
+
+func solid(int c, int r) bool {
+    if (r >= ROWS) then true
+    else {
+        if (c < 0 | c >= COLS | r < 0) then true
+        else {
+            int v = cell[r * COLS + c];
+            v == BRICK | v == SOLID;
+        };
+    };
+};
+
+func isLad(int c, int r) bool {
+    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    else {
+        int v = cell[r * COLS + c];
+        v == LAD | (v == HID & escapeOpen);
+    };
+};
+
+func isRope(int c, int r) bool {
+    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    else cell[r * COLS + c] == ROPE;
+};
+
+func isHole(int c, int r) bool {
+    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    else cell[r * COLS + c] == HOLE;
+};
+
+# A trapped guard's head is a floor you (and other guards) can stand on.
+func trappedGuardAt(int c, int r) bool {
+    bool hit = false;
+    int i = 0;
+    while (i < guardCount) {
+        if (gTrapped[i] == 1) {
+            int gc = (gx[i] + SPT / 2) / SPT;
+            int gr = (gy[i] + SPT / 2) / SPT;
+            if (gc == c & gr == r) { hit = true; };
+        };
+        i = i + 1;
+    };
+    hit;
+};
+
+func solidBelow(int c, int r) bool {
+    solid(c, r + 1) | isLad(c, r + 1) | trappedGuardAt(c, r + 1);
+};
+
+# A dug pit is NOT a floor for the runner — he drops straight through it (the Lode Runner way
+# to tunnel down). Guards, by contrast, get caught in it (handled in decideGuard).
+func supported(int c, int r) bool {
+    isLad(c, r) | isRope(c, r) | solidBelow(c, r);
+};
+
+func aligned(int sx, int sy) bool {
+    sx % SPT == 0 & sy % SPT == 0;
+};
+
+# ---- guard distance field (BFS of guard-steps from the runner) ----------------------------
+
+func buildGuardField() void {
+    int n = COLS * ROWS;
+    int i = 0;
+    while (i < n) { dist[i] = 9999; i = i + 1; };
+    array[int] q = new array[int](n);
+    int head = 0;
+    int tail = 0;
+    int pc = px / SPT;
+    int pr = py / SPT;
+    int s = pr * COLS + pc;
+    dist[s] = 0;
+    q[tail] = s;
+    tail = tail + 1;
+    while (head < tail) {
+        int j = q[head];
+        head = head + 1;
+        int c = j % COLS;
+        int r = j / COLS;
+        int nd = dist[j] + 1;
+        # predecessors: cells from which a guard steps into (c,r)
+        # from left (c-1,r) moving right
+        if (solid(c - 1, r) == false & supported(c - 1, r) & solid(c, r) == false) {
+            int k = r * COLS + (c - 1);
+            if (dist[k] > nd) { dist[k] = nd; q[tail] = k; tail = tail + 1; };
+        };
+        # from right (c+1,r) moving left
+        if (solid(c + 1, r) == false & supported(c + 1, r) & solid(c, r) == false) {
+            int k = r * COLS + (c + 1);
+            if (dist[k] > nd) { dist[k] = nd; q[tail] = k; tail = tail + 1; };
+        };
+        # from above (c,r-1) moving down/falling
+        if (r - 1 >= 0 & solid(c, r - 1) == false & solid(c, r) == false) {
+            int k = (r - 1) * COLS + c;
+            if (dist[k] > nd) { dist[k] = nd; q[tail] = k; tail = tail + 1; };
+        };
+        # from below (c,r+1) climbing up a ladder
+        if (isLad(c, r + 1) & solid(c, r) == false) {
+            int k = (r + 1) * COLS + c;
+            if (dist[k] > nd) { dist[k] = nd; q[tail] = k; tail = tail + 1; };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- runner -------------------------------------------------------------------------------
+
+func collectAt(int c, int r) void {
+    int idx = r * COLS + c;
+    if (gold[idx] == 1) {
+        gold[idx] = 0;
+        score = score + 100;
+        goldLeft = goldLeft - 1;
+        if (goldLeft <= 0) { escapeOpen = true; };
+    };
+    void
+};
+
+func movePlayer() void {
+    if (aligned(px, py)) {
+        int c = px / SPT;
+        int r = py / SPT;
+        collectAt(c, r);
+        if (escapeOpen & r == 0) {
+            state = 4;
+            stateTimer = WIN_TICKS;
+        };
+        pmvx = 0;
+        pmvy = 0;
+        if (supported(c, r) == false) {
+            if (solid(c, r + 1) == false) { pmvy = 1; };
+        } else {
+            if (inUp & isLad(c, r) & solid(c, r - 1) == false) {
+                pmvy = 0 - 1;
+            } else {
+                if (inDown & solid(c, r + 1) == false) {
+                    pmvy = 1;
+                } else {
+                    if (inLeft & solid(c - 1, r) == false) { pmvx = 0 - 1; pFace = 0 - 1; }
+                    else {
+                        if (inRight & solid(c + 1, r) == false) { pmvx = 1; pFace = 1; };
+                    };
+                };
+            };
+        };
+    };
+    px = px + pmvx * SPEED;
+    py = py + pmvy * SPEED;
+    void
+};
+
+func digAt(int side) void {
+    if (aligned(px, py)) {
+        int c = px / SPT;
+        int r = py / SPT;
+        if (supported(c, r)) {
+            int tc = c + side;
+            int tr = r + 1;
+            if (tc >= 0 & tc < COLS & tr < ROWS) {
+                if (cell[tr * COLS + tc] == BRICK & solid(c + side, r) == false) {
+                    int idx = tr * COLS + tc;
+                    cell[idx] = HOLE;
+                    holeTimer[idx] = HOLE_TICKS;
+                };
+            };
+        };
+    };
+    void
+};
+
+func playerDie() void {
+    lives = lives - 1;
+    state = 2;
+    stateTimer = DYING_TICKS;
+    void
+};
+
+func guardRespawn(int i) void {
+    gx[i] = gSpawnC[i] * SPT;
+    gy[i] = gSpawnR[i] * SPT;
+    gmvx[i] = 0;
+    gmvy[i] = 0;
+    gTrapped[i] = 0;
+    gStruggle[i] = 0;
+    void
+};
+
+# ---- holes (refill + crush) ---------------------------------------------------------------
+
+func updateHoles() void {
+    int n = COLS * ROWS;
+    int i = 0;
+    while (i < n) {
+        if (cell[i] == HOLE) {
+            holeTimer[i] = holeTimer[i] - 1;
+            if (holeTimer[i] <= 0) {
+                cell[i] = BRICK;
+                int hc = i % COLS;
+                int hr = i / COLS;
+                if ((px + SPT / 2) / SPT == hc & (py + SPT / 2) / SPT == hr) { playerDie(); };
+                int g = 0;
+                while (g < guardCount) {
+                    if ((gx[g] + SPT / 2) / SPT == hc & (gy[g] + SPT / 2) / SPT == hr) {
+                        guardRespawn(g);
+                    };
+                    g = g + 1;
+                };
+            };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- guards -------------------------------------------------------------------------------
+
+func guardStepAt(int c, int r, int ddx, int ddy) int {
+    # the field distance at the cell a guard would reach moving (ddx,ddy) from (c,r); -1 if illegal
+    int nc = c + ddx;
+    int nr = r + ddy;
+    if (ddy < 0) {
+        if (isLad(c, r) == false | solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
+    } else {
+        if (ddy > 0) {
+            if (solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
+        } else {
+            if (solid(nc, nr) | supported(c, r) == false) then 0 - 1 else dist[nr * COLS + nc];
+        };
+    };
+};
+
+func decideGuard(int i) void {
+    int c = gx[i] / SPT;
+    int r = gy[i] / SPT;
+
+    if (gTrapped[i] == 1) {
+        gStruggle[i] = gStruggle[i] + 1;
+        gmvx[i] = 0;
+        gmvy[i] = 0;
+        if (gStruggle[i] >= STRUGGLE_TICKS & solid(c, r - 1) == false) {
+            gmvy[i] = 0 - 1;
+            gTrapped[i] = 0;
+        };
+        void
+    } else {
+        if (isHole(c, r)) {
+            gTrapped[i] = 1;               # a pit holds a guard whatever is beneath it
+            gStruggle[i] = 0;
+            gmvx[i] = 0;
+            gmvy[i] = 0;
+            void
+        } else {
+            if (supported(c, r) == false) {
+                gmvx[i] = 0;
+                gmvy[i] = if (solid(c, r + 1) == false) then 1 else 0;
+                void
+            } else {
+                # pick the legal move that most reduces the distance field
+                int best = 9999;
+                int bdx = 0;
+                int bdy = 0;
+                int du = guardStepAt(c, r, 0, 0 - 1);
+                int dd = guardStepAt(c, r, 0, 1);
+                int dl = guardStepAt(c, r, 0 - 1, 0);
+                int dr = guardStepAt(c, r, 1, 0);
+                if (du >= 0 & du < best) { best = du; bdx = 0; bdy = 0 - 1; };
+                if (dl >= 0 & dl < best) { best = dl; bdx = 0 - 1; bdy = 0; };
+                if (dr >= 0 & dr < best) { best = dr; bdx = 1; bdy = 0; };
+                if (dd >= 0 & dd < best) { best = dd; bdx = 0; bdy = 1; };
+                gmvx[i] = bdx;
+                gmvy[i] = bdy;
+                void
+            };
+        };
+    };
+    void
+};
+
+func moveGuards() void {
+    int i = 0;
+    while (i < guardCount) {
+        # guards run a touch slower than the runner (skip one tick in three)
+        bool act = frame % 3 != 0;
+        if (gTrapped[i] == 1) { act = true; };
+        if (act) {
+            if (aligned(gx[i], gy[i])) { decideGuard(i); };
+            int spd = SPEED;
+            gx[i] = gx[i] + gmvx[i] * spd;
+            gy[i] = gy[i] + gmvy[i] * spd;
+        };
+        i = i + 1;
+    };
+    void
+};
+
+func checkCollisions() void {
+    int i = 0;
+    while (i < guardCount) {
+        if (gTrapped[i] == 0) {
+            int dx = px - gx[i];
+            int dy = py - gy[i];
+            int adx = if (dx < 0) then 0 - dx else dx;
+            int ady = if (dy < 0) then 0 - dy else dy;
+            if (adx < SPT & ady < SPT) { playerDie(); };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- positions ----------------------------------------------------------------------------
+
+func resetActors() void {
+    # clear any open holes
+    int i = 0;
+    while (i < COLS * ROWS) {
+        if (cell[i] == HOLE) { cell[i] = BRICK; };
+        holeTimer[i] = 0;
+        i = i + 1;
+    };
+    px = pStartC * SPT;
+    py = pStartR * SPT;
+    pmvx = 0;
+    pmvy = 0;
+    pFace = 1;
+    inUp = false;
+    inDown = false;
+    inLeft = false;
+    inRight = false;
+    int g = 0;
+    while (g < guardCount) {
+        guardRespawn(g);
+        g = g + 1;
+    };
+    void
+};
+
+func newGame() void {
+    buildLevel();
+    score = 0;
+    lives = 3;
+    resetActors();
+    buildGuardField();
+    state = 0;
+    stateTimer = READY_TICKS;
+    void
+};
+
+# ---- drawing ------------------------------------------------------------------------------
+
+func px0(int c) int { c * TS + OX; };
+func py0(int r) int { r * TS + HUD_TOP; };
+func cxs(int sx) int { (sx * TS) / SPT + TS / 2 + OX; };
+func cys(int sy) int { (sy * TS) / SPT + TS / 2 + HUD_TOP; };
+
+func drawBrick(int x, int y, bool closing) void {
+    int s = TS;
+    str face = if (closing) then BRICKD else BRICKC;
+    board.drawRect(x, y, s, s).color(face).fill();
+    # mortar: a horizontal seam and an offset vertical seam (running-bond look)
+    board.drawLine(x, y + s / 2, x + s, y + s / 2).color(BRICKD).stroke(1);
+    board.drawLine(x + s / 2, y, x + s / 2, y + s / 2).color(BRICKD).stroke(1);
+    board.drawLine(x, y + s / 2, x, y + s).color(BRICKD).stroke(1);
+    board.drawLine(x + s, y + s / 2, x + s, y + s).color(BRICKD).stroke(1);
+    void
+};
+
+func drawSolid(int x, int y) void {
+    int s = TS;
+    board.drawRect(x, y, s, s).color(SOLIDC).fill();
+    board.drawRect(x, y, s, 1).color(SOLIDD).fill();
+    board.drawRect(x, y + s - 1, s, 1).color(SOLIDD).fill();
+    void
+};
+
+func drawLadder(int x, int y) void {
+    int s = TS;
+    int railL = x + s / 4;
+    int railR = x + s - s / 4;
+    board.drawLine(railL, y, railL, y + s).color(LADC).stroke(2);
+    board.drawLine(railR, y, railR, y + s).color(LADC).stroke(2);
+    # rungs at 1/4 and 3/4 of every cell, so the spacing stays even all the way up the ladder
+    board.drawLine(railL, y + s / 4, railR, y + s / 4).color(LADC).stroke(2);
+    board.drawLine(railL, y + 3 * s / 4, railR, y + 3 * s / 4).color(LADC).stroke(2);
+    void
+};
+
+func drawRope(int x, int y) void {
+    int s = TS;
+    board.drawLine(x, y + 2, x + s, y + 2).color(ROPEC).stroke(2);
+    void
+};
+
+# A heap of gold — a rounded triangular mound with a couple of nugget bumps, like the original.
+func drawGold(int x, int y) void {
+    int s = TS;
+    int bL = x + 1;
+    int bR = x + s - 1;
+    int bY = y + s - 1;
+    int mid = x + s / 2;
+    int pk = y + s / 4;
+    board.drawPath("M ".con(bL.str).con(" ").con(bY.str)
+        .con(" L ").con(mid.str).con(" ").con(pk.str)
+        .con(" L ").con(bR.str).con(" ").con(bY.str).con(" Z")).color(GOLDC).fill();
+    board.drawCircle(x + s / 3, bY - s / 5, s / 7).color(GOLDC).fill();
+    board.drawCircle(x + 2 * s / 3, bY - s / 5, s / 7).color(GOLDC).fill();
+    board.drawCircle(mid, pk + s / 6, s / 7).color(GOLDC).fill();
+    board.drawLine(bL, bY, bR, bY).color(GOLDD).stroke(2);
+    void
+};
+
+# A little running figure: filled head and torso (with a vest stripe), arms and striding legs.
+func drawFigure(int ccx, int ccy, str headC, str bodyC, str legC, str vestC, int face, int phase) void {
+    int s = TS;
+    int r = s / 2;
+    int hd = r / 3;
+    # legs first (behind the torso), striding with the phase
+    int sp = if (phase == 0) then r / 2 else r / 5;
+    board.drawLine(ccx - r / 6, ccy + r / 4, ccx - sp, ccy + r).color(legC).stroke(2);
+    board.drawLine(ccx + r / 6, ccy + r / 4, ccx + sp, ccy + r).color(legC).stroke(2);
+    # arms swinging with the stride
+    int aw = if (phase == 0) then r / 2 else r / 4;
+    board.drawLine(ccx - r / 4, ccy - r / 6, ccx - aw, ccy + r / 6).color(bodyC).stroke(2);
+    board.drawLine(ccx + r / 4, ccy - r / 6, ccx + aw, ccy + r / 6).color(bodyC).stroke(2);
+    # torso, then a narrower vest stripe down its middle
+    board.drawRect(ccx - r / 3, ccy - r / 3, 2 * r / 3 + 1, r * 2 / 3).color(bodyC).fill();
+    board.drawRect(ccx - r / 6, ccy - r / 3, r / 3 + 1, r * 2 / 3).color(vestC).fill();
+    # head
+    board.drawCircle(ccx, ccy - r + hd, hd).color(headC).fill();
+    void
+};
+
+func drawCell(int c, int r) void {
+    int v = cell[r * COLS + c];
+    int x = px0(c);
+    int y = py0(r);
+    if (v == BRICK) { drawBrick(x, y, false); };
+    if (v == SOLID) { drawSolid(x, y); };
+    if (v == LAD) { drawLadder(x, y); };
+    if (v == HID & escapeOpen) { drawLadder(x, y); };
+    if (v == ROPE) { drawRope(x, y); };
+    if (v == HOLE) {
+        if (holeTimer[r * COLS + c] < FILL_WARN) { drawBrick(x, y, true); };
+    };
+    if (gold[r * COLS + c] == 1) { drawGold(x, y); };
+    void
+};
+
+func drawField() void {
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            drawCell(c, r);
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    void
+};
+
+func drawHud() void {
+    int size = TS;
+    int ty = HUD_TOP - TS / 3;
+    board.drawText(OX + TS / 2, ty, "SCORE ".con(score.str), size).color(TEXTW);
+    str gtxt = "GOLD ".con(goldLeft.str);
+    board.drawText(OX + COLS * TS / 2 - gtxt.len * size * 3 / 10, ty, gtxt, size).color(TEXTY);
+    str ltxt = "MEN ".con(lives.str);
+    board.drawText(OX + COLS * TS - ltxt.len * size * 6 / 10 - TS / 2, ty, ltxt, size).color(TEXTW);
+    void
+};
+
+func drawCenterText(str s, str col, int size) void {
+    int w = s.len * size * 6 / 10;
+    board.drawText(OX + COLS * TS / 2 - w / 2, HUD_TOP + ROWS * TS / 2, s, size).color(col);
+    void
+};
+
+func draw() void {
+    board.clear();
+    board.drawRect(0, 0, BW, BH).color(BLACK).fill();
+    drawHud();
+    drawField();
+    int phase = (frame / 3) % 2;
+    if (state != 2) {
+        drawFigure(cxs(px), cys(py), R_FACE, R_SHIRT, R_PANTS, R_SHIRT, pFace, phase);
+    };
+    int i = 0;
+    while (i < guardCount) {
+        int gp = if (gTrapped[i] == 1) then 0 else phase;
+        drawFigure(cxs(gx[i]), cys(gy[i]), G_SUIT, G_SUIT, G_SUIT, G_VEST, 1, gp);
+        i = i + 1;
+    };
+    if (paused) { drawCenterText("PAUSED", TEXTY, TS + 4); }
+    else {
+        if (state == 0) { drawCenterText("GET ALL THE GOLD", TEXTY, TS); };
+        if (state == 3) { drawCenterText("GAME OVER", TEXTR, TS + 4); };
+        if (state == 4) { drawCenterText("STAGE CLEAR", TEXTY, TS + 4); };
+    };
+    void
+};
+
+func onBoardResized(int w, int h) void {
+    if (w > 0 & h > 0) {
+        int fitW = w / COLS;
+        int fitH = h / (ROWS + HUD_ROWS);
+        TS = if (fitW < fitH) then fitW else fitH;
+        if (TS < 3) { TS = 3; };
+        BW = w;
+        BH = h;
+        OX = (w - COLS * TS) / 2;
+        int usedH = (ROWS + HUD_ROWS) * TS;
+        HUD_TOP = (h - usedH) / 2 + HUD_ROWS * TS;
+        draw();
+    };
+    void
+};
+
+# ---- loop ---------------------------------------------------------------------------------
+
+func step() void {
+    movePlayer();
+    moveGuards();
+    updateHoles();
+    if (state == 1) { checkCollisions(); };
+    if (frame % FIELD_EVERY == 0) { buildGuardField(); };
+    void
+};
+
+func tick(int token) void {
+    if (token == loopToken) {
+        if (paused == false) {
+            frame = frame + 1;
+            if (state == 1) {
+                step();
+            } else {
+                if (state == 0 | state == 2 | state == 4) {
+                    stateTimer = stateTimer - 1;
+                    if (stateTimer <= 0) {
+                        if (state == 0) { state = 1; };
+                        if (state == 2) {
+                            if (lives > 0) {
+                                resetActors();
+                                buildGuardField();
+                                state = 0;
+                                stateTimer = READY_TICKS;
+                            } else {
+                                state = 3;
+                                stateTimer = 0;
+                            };
+                        };
+                        if (state == 4) { newGame(); };
+                    };
+                };
+            };
+        };
+        draw();
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x);
+            void
+        });
+    };
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+
+func restartIfOver() bool {
+    if (state == 3) { newGame(); true; } else false;
+};
+
+digL.onClick(func() void { if (restartIfOver() == false) { digAt(0 - 1); }; void });
+digR.onClick(func() void { if (restartIfOver() == false) { digAt(1); }; void });
+
+upBtn.onPress(func() void { inUp = true; void }, func() void { inUp = false; void });
+downBtn.onPress(func() void { inDown = true; void }, func() void { inDown = false; void });
+leftBtn.onPress(func() void { inLeft = true; void }, func() void { inLeft = false; void });
+rightBtn.onPress(func() void { inRight = true; void }, func() void { inRight = false; void });
+
+board.onResize(func(int w, int h) void {
+    onBoardResized(w, h);
+    void
+});
+
+func togglePause() void {
+    if (state == 3) {
+        newGame();
+        paused = false;
+        bar.actionIcon("Pause", icons.pause());
+    } else {
+        paused = paused == false;
+        bar.actionIcon("Pause", if (paused) then icons.play() else icons.pause());
+    };
+    draw();
+    void
+};
+
+bar.action("Pause", icons.pause(), func() void { togglePause(); void });
+
+bar.onNav(func() void {
+    loopToken = loopToken + 1;
+    ui.close();
+    void
+});
+
+# ---- go -----------------------------------------------------------------------------------
+
+newGame();
+draw();
+ui.open(root);
+
+loopToken = loopToken + 1;
+async ticker.after(TICK_MS, loopToken, func(int x) void {
+    tick(x);
+    void
+});
+
+term.println("Lode Runner — hold the D-pad to move, tap ◣ / ◢ to dig.");

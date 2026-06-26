@@ -1,5 +1,7 @@
 package org.velo.android.engine.ui.view
 
+import android.annotation.SuppressLint
+import android.view.MotionEvent
 import android.widget.CompoundButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.chip.Chip
@@ -24,6 +26,26 @@ internal fun ViewState.onClick(cb: VeloFunction) {
 internal fun ViewState.onLongClick(cb: VeloFunction) {
     retain(cb)
     ui { av?.setOnLongClickListener { cb.post(); true } }
+}
+
+/**
+ * Fire [down] while the view is held and [up] when released — the hold-to-act hook a game's
+ * D-pad needs (press-and-hold to keep moving). A quick tap fires both in sequence.
+ */
+@SuppressLint("ClickableViewAccessibility")
+internal fun ViewState.onPress(down: VeloFunction, up: VeloFunction) {
+    retain(down)
+    retain(up)
+    ui {
+        av?.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { down.post(); true }
+                MotionEvent.ACTION_UP -> { up.post(); v.performClick(); true }
+                MotionEvent.ACTION_CANCEL -> { up.post(); true }
+                else -> false
+            }
+        }
+    }
 }
 
 /**
