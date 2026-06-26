@@ -52,6 +52,7 @@ int armed = 0;
 bool wrap = true;
 bool showGrid = true;
 int population = 0;
+int resizeSeq = 0;
 int fps = 0;
 int frameCount = 0;
 int fpsStamp = 0;
@@ -70,6 +71,20 @@ func recomputeGeometry() void {
 };
 
 recomputeGeometry();
+
+# A fresh random board, ~28% alive. Built here on the main actor because the
+# Random class (a top-level class) can only be instantiated outside an actor;
+# the resulting array is transferred into the engine via loadCells.
+func randomCells(int seed) array[int] {
+    Random rng = new Random(seed);
+    array[int] out = new array[int](cols * rows);
+    int i = 0;
+    while (i < out.len) {
+        out[i] = if (rng.nextIntBound(100) < 28) then 1 else 0;
+        i += 1;
+    };
+    out;
+};
 
 # ---- the simulation actor -----------------------------------------------------------------
 
@@ -125,12 +140,19 @@ actor class LifeEngine(int width, int height) {
         snapshot();
     };
 
-    func randomFill(int value) array[int] {
-        Random rng = new Random(value);
+    # The random pattern is generated on the caller's side (a top-level class
+    # such as Random can't be instantiated from inside an actor) and handed in
+    # as a plain transferable array; we just copy it over the board.
+    func loadCells(array[int] src) array[int] {
         generation = 0;
+        int n = if (src.len < cells.len) then src.len else cells.len;
         int i = 0;
+        while (i < n) {
+            cells[i] = src[i];
+            i += 1;
+        };
         while (i < cells.len) {
-            cells[i] = if (rng.nextIntBound(100) < 28) then 1 else 0;
+            cells[i] = 0;
             i += 1;
         };
         snapshot();
@@ -498,9 +520,18 @@ func applyResize(int newCols) void {
     if (nc != cols) {
         cols = nc;
         recomputeGeometry();
-        current = await async engine.resize(cols, rows);
-        render(current);
-        updateCaption();
+        # Dragging the slider fires many resizes that overlap on the await; each
+        # one updates the geometry up front, so a late reply from an earlier,
+        # smaller board would be rendered against the newer (larger) geometry and
+        # read past the end of its snapshot. Only the most recent resize renders.
+        resizeSeq += 1;
+        int mySeq = resizeSeq;
+        array[int] snap = await async engine.resize(cols, rows);
+        if (mySeq == resizeSeq) {
+            current = snap;
+            render(current);
+            updateCaption();
+        };
     };
     void
 };
@@ -612,7 +643,7 @@ random.onClick(func() void {
     playing = false;
     playToken += 1;
     playFab.icon(icons.play());
-    current = await async engine.randomFill(time.unix() + playToken);
+    current = await async engine.loadCells(randomCells(time.unix() + playToken));
     render(current);
     void
 });
