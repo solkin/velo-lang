@@ -5,9 +5,9 @@ import core.NativeRegistry
 import core.SerializedProgram
 import vm.actors.ActorHandle
 import vm.actors.ActorRuntime
+import vm.actors.CooperativeDispatcherFactory
 import vm.actors.Dispatcher
 import vm.actors.DispatcherFactory
-import vm.actors.ThreadPerActorFactory
 import kotlin.reflect.KClass
 
 /**
@@ -35,10 +35,11 @@ class VeloRuntime(
     private var profilingEnabled = System.getProperty("velo.profile")?.toBoolean() ?: false
 
     /**
-     * Produces a fresh actor-placement strategy per program run, so each run /
-     * start owns its own backend. Thread-per-actor by default; see [actorPlacement].
+     * Host actor-placement backend provider, or null for the cooperative default
+     * (all actors on the single event loop, no host threads). Set via
+     * [actorPlacement]; each run / start invokes it for a fresh backend.
      */
-    private var actorDispatcherFactory: () -> DispatcherFactory = { ThreadPerActorFactory }
+    private var actorDispatcherFactory: (() -> DispatcherFactory)? = null
 
     /**
      * Register a native class; the Velo name is the JVM simple class name.
@@ -103,7 +104,7 @@ class VeloRuntime(
      */
     fun run(program: SerializedProgram) {
         val profiler = VMProfiler(enabled = profilingEnabled)
-        val vm = VM(nativeRegistry, profiler, actorDispatcherFactory())
+        val vm = VM(nativeRegistry, profiler, actorDispatcherFactory?.invoke())
         vm.load(program)
         vm.run()
     }
@@ -130,7 +131,7 @@ class VeloRuntime(
     fun start(program: SerializedProgram, dispatcher: Dispatcher): VeloProgram {
         val frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
         val natives = NativeLinker.link(program.natives, nativeRegistry)
-        val actorRuntime = ActorRuntime(actorDispatcherFactory())
+        val actorRuntime = ActorRuntime(actorDispatcherFactory?.invoke() ?: CooperativeDispatcherFactory(dispatcher))
         val main = ActorHandle.main(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,

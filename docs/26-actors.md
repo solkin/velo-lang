@@ -1,6 +1,6 @@
 # Actors
 
-An **actor** in Velo is a class whose instances live on their own daemon thread. Their state is private — every interaction with an actor goes through serialised method calls. There is no way to read or write an actor's fields directly; the type system makes that mistake a compile-time error.
+An **actor** in Velo is a class with private state: every interaction goes through serialised method calls, and there is no way to read or write an actor's fields directly — the type system makes that mistake a compile-time error. By default all actors run cooperatively on a single event loop with **no host threads**; a host can opt into real multicore parallelism by plugging in a thread backend (see [Thread placement](#thread-placement-host-option)).
 
 The model is small and explicit:
 
@@ -183,7 +183,7 @@ Repeated `await async box.get()` yields handles that compare equal — same acto
 
 ## Lifetime
 
-Actor threads are JVM **daemon** threads, so they never block program shutdown. Beyond that, two mechanisms collect them:
+By default actors have no threads of their own — they run on the program's single event loop — so nothing blocks JVM exit. (With a host thread backend the workers are JVM **daemon** threads, same effect.) Beyond that, two mechanisms collect actors:
 
 1. **GC-driven shutdown.** Every `actor[T]` reference increments a refcount on the actor; a `Cleaner` decrements it when the reference is collected. When the count hits zero, the actor drains its mailbox and exits.
 2. **Program-exit hook.** When `vm.VM.run` finishes (or fails) it asks every live actor to shut down, so deterministic cleanup happens before the JVM exits.
@@ -192,14 +192,18 @@ There is no built-in `join`/`done`/`terminate` API — actors don't have a "fini
 
 ### Thread placement (host option)
 
-By default each actor gets its own dedicated daemon thread. The host can instead multiplex all actors onto a shared bounded pool (VEL-17) — useful on memory-constrained platforms, where a program with dozens of actors would otherwise mean dozens of OS threads:
+By default every actor runs cooperatively on the program's single event loop — no host threads at all. That is what runs everywhere, including single-threaded targets (web/WASM). Independent actors take turns rather than running in parallel, so a blocking call (a blocking native, `Time.sleep`, an inline value-returning callback) blocks the loop for its duration.
+
+For real multicore parallelism a host plugs in a thread backend, which multiplexes actors onto a shared bounded pool:
 
 ```kotlin
+import host.PooledDispatcherFactory
+
 val runtime = VeloRuntime()
-    .pooledActors(parallelism = Runtime.getRuntime().availableProcessors())
+    .actorPlacement { PooledDispatcherFactory(parallelism = Runtime.getRuntime().availableProcessors()) }
 ```
 
-This changes only *where* actor code runs, never its semantics: each actor keeps strict serial execution and its own private state. It is safe precisely because a parked `await` releases its pool thread (see [Reentrancy](#reentrancy-await-is-a-yield-point)); size the pool with headroom for actors that genuinely *block* (a blocking native, `Time.sleep`, an inline value-returning callback), since those hold a pool thread for their duration.
+This changes only *where* actor code runs, never its semantics: each actor keeps strict serial execution and its own private state. It is safe precisely because a parked `await` releases its thread (see [Reentrancy](#reentrancy-await-is-a-yield-point)); size the pool with headroom for actors that genuinely *block*, since those hold a thread for their duration. The backend is a host capability — the VM core stays thread-agnostic — so a host without threads simply runs cooperatively.
 
 ## Identity and Equality
 

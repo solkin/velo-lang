@@ -62,6 +62,16 @@ class ActorRuntime(
 
     fun fatalOrNull(): Throwable? = fatalRef.get()
 
+    /**
+     * True when any live actor has a fiber parked on an `await`. The cooperative
+     * event loop ([vm.VM.run]) stays alive while this holds, so a suspended
+     * computation on any actor — not just main — still gets resumed.
+     */
+    fun anyParkedFibers(): Boolean {
+        for (handle in handles.values) if (handle.hasParkedFibers()) return true
+        return false
+    }
+
     fun register(handle: ActorHandle) {
         handles[handle.id] = handle
     }

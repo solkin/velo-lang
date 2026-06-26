@@ -158,7 +158,6 @@ class ActorHandle private constructor(
     private fun dispatch(req: ActorRequest) {
         when (req) {
             is ActorRequest.Main -> handleMain(req)
-            is ActorRequest.Construct -> handleConstruct(req)
             is ActorRequest.Call -> handleCall(req)
             is ActorRequest.InvokeFunc -> handleInvoke(req)
             is ActorRequest.Resume -> req.run()
@@ -169,7 +168,6 @@ class ActorHandle private constructor(
     private fun failDead(req: ActorRequest) {
         val message = "[actor $name] is shut down"
         when (req) {
-            is ActorRequest.Construct -> req.response.complete(ActorResponse.Failure(message))
             is ActorRequest.Call -> req.response.complete(ActorResponse.Failure(message))
             is ActorRequest.InvokeFunc -> req.response?.complete(ActorResponse.Failure(message))
             is ActorRequest.Resume -> Unit // parked fibers are failed by handleShutdown
@@ -210,23 +208,33 @@ class ActorHandle private constructor(
         dispatcher.close()
     }
 
-    private fun handleConstruct(req: ActorRequest.Construct) = runFiber(
-        args = req.args,
-        response = req.response,
-        prepareTarget = {
-            ctx.loadFrame(req.classFrameNum, parentVars = null)
-                ?: error("Class frame ${req.classFrameNum} not found")
-        },
-        deliver = { produced ->
+    /**
+     * Synchronously construct this actor's root object on the *calling* thread,
+     * returning its objectId. Construction is inline (no mailbox round-trip) so
+     * `spawn` never posts to a dispatcher and then waits on it — which would
+     * deadlock when all actors share one cooperative loop (the loop can't run
+     * the construct task while the spawner is blocked on its result).
+     * Suspension is off, so an `await` in a constructor blocks (accepted: a
+     * spawn is synchronous by contract). The constructed state is published to
+     * the actor's later turns through the happens-before of its dispatcher.
+     */
+    private fun constructInline(classFrameNum: Int, args: List<ActorValue>): Int {
+        val target = ctx.loadFrame(classFrameNum, parentVars = null)
+            ?: error("Class frame $classFrameNum not found")
+        val previous = activeThread
+        activeThread = Thread.currentThread()
+        try {
+            val produced = runFrameBlocking(target, args)
             val ref = produced as? RefRecord
                 ?: error("Actor constructor must produce a class instance, got ${produced::class.simpleName}")
             require(ref.kind == RefKind.CLASS) {
                 "Actor constructor must produce a class instance, got ${ref.kind}"
             }
-            req.response.complete(ActorResponse.Constructed(registerObject(ref.get(ctx))))
-        },
-        fail = { unwindStack(); req.response.complete(ActorResponse.Failure(it.message ?: it.toString())) },
-    )
+            return registerObject(ref.get(ctx))
+        } finally {
+            activeThread = previous
+        }
+    }
 
     /**
      * Run a function value owned by this actor — callback delivery — as a fiber.
@@ -497,7 +505,6 @@ class ActorHandle private constructor(
     fun unwrapResponse(resp: ActorResponse): ActorValue = when (resp) {
         is ActorResponse.Returned -> resp.value
         is ActorResponse.Failure -> throw RuntimeException("[actor $name] ${resp.message}")
-        is ActorResponse.Constructed -> error("Unexpected Constructed response for Call request")
     }
 
     /** Synchronous shortcut: post + join + unwrap. Kept for tests; production
@@ -596,16 +603,11 @@ class ActorHandle private constructor(
                 dispatcher = runtime.newActorDispatcher("velo-actor-$id-$className"),
             )
             runtime.register(handle)
-
-            val future = CompletableFuture<ActorResponse>()
-            handle.post(ActorRequest.Construct(classFrameNum, args, future))
-            val rootObjectId = when (val resp = future.join()) {
-                is ActorResponse.Constructed -> resp.rootObjectId
-                is ActorResponse.Failure -> {
-                    handle.requestShutdown()
-                    throw RuntimeException("[actor $className] ${resp.message}")
-                }
-                is ActorResponse.Returned -> error("Unexpected Returned response for Construct request")
+            val rootObjectId = try {
+                handle.constructInline(classFrameNum, args)
+            } catch (ex: Throwable) {
+                handle.requestShutdown()
+                throw RuntimeException("[actor $className] ${ex.message ?: ex}")
             }
             return handle to rootObjectId
         }

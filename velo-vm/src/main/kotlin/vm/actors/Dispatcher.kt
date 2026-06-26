@@ -181,3 +181,17 @@ interface DispatcherFactory {
 object ThreadPerActorFactory : DispatcherFactory {
     override fun create(name: String): Dispatcher = ThreadDispatcher(name)
 }
+
+/**
+ * Cooperative placement — the portable default for [vm.VM.run]. Every spawned
+ * actor shares the program's single event loop ([dispatcher], the
+ * [PumpDispatcher] driving the run), instead of getting its own thread: all
+ * actors run as fibers multiplexed on one thread, with **no host threads at
+ * all**. VEL-11 makes this work — a parked `await` frees the loop for other
+ * actors. Real multicore parallelism is opt-in via a host backend (e.g. the
+ * CLI's pool); cooperative is what runs everywhere, including single-threaded
+ * web/WASM.
+ */
+class CooperativeDispatcherFactory(private val dispatcher: Dispatcher) : DispatcherFactory {
+    override fun create(name: String): Dispatcher = dispatcher
+}

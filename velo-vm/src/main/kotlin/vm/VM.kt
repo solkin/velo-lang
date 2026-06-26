@@ -9,17 +9,18 @@ import core.Op
 import core.SerializedProgram
 import vm.actors.ActorHandle
 import vm.actors.ActorRuntime
+import vm.actors.CooperativeDispatcherFactory
 import vm.actors.DispatcherFactory
 import vm.actors.PumpDispatcher
-import vm.actors.ThreadPerActorFactory
 import java.io.PrintStream
 
 class VM(
     private val nativeRegistry: NativeRegistry = NativeRegistry(),
     private val profiler: VMProfiler = VMProfiler(),
-    /** Placement strategy for spawned actors (VEL-17). Defaults to a daemon
-     *  thread per actor; pass a host pooled DispatcherFactory to multiplex. */
-    private val dispatcherFactory: DispatcherFactory = ThreadPerActorFactory,
+    /** Placement strategy for spawned actors. Defaults to cooperative (all
+     *  actors share the single event loop, no host threads); pass a host
+     *  DispatcherFactory (e.g. a thread pool) for real parallelism. */
+    private val dispatcherFactory: DispatcherFactory? = null,
 ) {
 
     private var frameLoader: FrameLoader? = null
@@ -50,8 +51,8 @@ class VM(
      */
     fun run() {
         val frameLoader = frameLoader ?: throw Exception("FrameLoader is not initialized")
-        val actorRuntime = ActorRuntime(dispatcherFactory)
         val pump = PumpDispatcher()
+        val actorRuntime = ActorRuntime(dispatcherFactory ?: CooperativeDispatcherFactory(pump))
         val main = ActorHandle.main(
             runtime = actorRuntime,
             sharedFrameLoader = frameLoader,
@@ -67,7 +68,7 @@ class VM(
             main.requestMain(frameNum = 0)
             pump.pump(
                 fatal = { actorRuntime.fatalOrNull() },
-                idle = { main.refCount.get() <= 0 && !main.hasParkedFibers() },
+                idle = { main.refCount.get() <= 0 && !actorRuntime.anyParkedFibers() },
             )
             println("\n✓ Program finished successfully")
         } catch (_: HaltException) {

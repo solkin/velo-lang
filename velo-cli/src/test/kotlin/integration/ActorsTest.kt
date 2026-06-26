@@ -392,12 +392,12 @@ class ActorsTest {
     }
 
     @Test
-    fun `async dispatches both actors before either await blocks`() {
-        // Real parallelism check: each actor sleeps for SLEEP_MS via the
-        // native Time.sleep binding. Sequential awaits would take ~2 *
-        // SLEEP_MS wall time; parallel async + later awaits must finish
-        // close to SLEEP_MS. The cap (1.5x) leaves slack for test machine
-        // variance and JVM startup.
+    fun `cooperative default serializes blocking actors`() {
+        // On the cooperative default (one event loop, no host threads) two
+        // actors that each block in the native Time.sleep cannot overlap:
+        // `async` dispatches both before the first await, but they run one at a
+        // time, so wall time is ~2 * SLEEP_MS. Real parallelism needs a host
+        // thread backend — see `pooled dispatch with parallelism 2`.
         val sleepMs = 200
         val src = """
             actor class Sleeper() {
@@ -429,10 +429,10 @@ class ActorsTest {
             System.setOut(oldOut)
         }
         val elapsed = System.currentTimeMillis() - started
-        val cap = (sleepMs * 1.5).toLong()
+        val floor = (sleepMs * 1.8).toLong()
         assertTrue(
-            elapsed < cap,
-            "expected parallel async to finish under ${cap}ms but took ${elapsed}ms",
+            elapsed >= floor,
+            "expected cooperative serialization (>=${floor}ms) but took ${elapsed}ms",
         )
     }
 
@@ -917,9 +917,9 @@ class ActorsTest {
     }
 
     private fun findActorRef(ctx: VMContext): vm.actors.ActorRefRecord {
-        val vars = ctx.currentFrame().vars.vars
-        return vars.values.filterIsInstance<vm.actors.ActorRefRecord>().firstOrNull()
-            ?: error("No ActorRefRecord found in main frame vars (vars=${vars.values})")
+        val records = ctx.currentFrame().vars.localRecords()
+        return records.filterIsInstance<vm.actors.ActorRefRecord>().firstOrNull()
+            ?: error("No ActorRefRecord found in main frame vars (vars=${records.toList()})")
     }
 
     private fun extractProgramOutput(fullOutput: String): String {

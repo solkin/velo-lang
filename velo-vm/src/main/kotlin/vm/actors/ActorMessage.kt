@@ -70,22 +70,17 @@ sealed class ActorValue {
  *
  * [Main] runs a whole program frame and is used only by the main context
  * (the program itself is "actor #0"); its failures either propagate to the
- * pumping thread (CLI) or go to [onFailure] (embedded hosts). [Construct] is
- * sent exactly once at spawn time. [Call] is the typed remote method
- * invocation. [Shutdown] is the cooperative termination signal injected by
- * the runtime when an [ActorHandle] becomes unreachable; it carries no
- * payload because the sender does not wait for confirmation.
+ * pumping thread (CLI) or go to [onFailure] (embedded hosts). [Call] is the
+ * typed remote method invocation. [Shutdown] is the cooperative termination
+ * signal injected by the runtime when an [ActorHandle] becomes unreachable;
+ * it carries no payload because the sender does not wait for confirmation.
+ * (Construction is synchronous and inline — see [ActorHandle.spawn] — so it
+ * is not a request type.)
  */
 sealed class ActorRequest {
     data class Main(
         val frameNum: Int,
         val onFailure: ((Throwable) -> Unit)?,
-    ) : ActorRequest()
-
-    data class Construct(
-        val classFrameNum: Int,
-        val args: List<ActorValue>,
-        val response: CompletableFuture<ActorResponse>,
     ) : ActorRequest()
 
     data class Call(
@@ -122,13 +117,11 @@ sealed class ActorRequest {
 /**
  * Reply to an [ActorRequest], delivered via the request's [CompletableFuture].
  *
- * For [Construct], a successful response carries the freshly assigned root
- * objectId. For [Call], it carries the method's return value (already
- * marshalled into [ActorValue]) — or [Failure] with a host-side message
- * describing the runtime/compile-time issue that prevented the call.
+ * For [Call] (and callback invocations) it carries the method's return value
+ * (already marshalled into [ActorValue]) — or [Failure] with a host-side
+ * message describing the runtime issue that prevented the call.
  */
 sealed class ActorResponse {
-    data class Constructed(val rootObjectId: Int) : ActorResponse()
     data class Returned(val value: ActorValue) : ActorResponse()
     data class Failure(val message: String) : ActorResponse()
 }
