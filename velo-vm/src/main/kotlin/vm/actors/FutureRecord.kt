@@ -1,14 +1,13 @@
 package vm.actors
 
 import vm.Record
-import java.util.concurrent.CompletableFuture
 
 /**
  * In-flight result of an asynchronous cross-actor call.
  *
  * Created by `ActorCall` (the opcode emitted from `async receiver.method()`)
  * and consumed by `FutureAwait` (emitted from `await futureExpr`). Holds
- * the still-pending [CompletableFuture] together with a strong reference to
+ * the still-pending [Promise] together with a strong reference to
  * the [ActorHandle] that is responsible for completing it.
  *
  * Lifetime: the constructor increments [ActorHandle.refCount] and registers
@@ -23,7 +22,7 @@ import java.util.concurrent.CompletableFuture
  */
 class FutureRecord(
     val handle: ActorHandle,
-    val future: CompletableFuture<ActorResponse>,
+    val future: Promise<ActorResponse>,
 ) : Record {
 
     init {
@@ -35,5 +34,5 @@ class FutureRecord(
     override fun <T> get(): T = this as T
 
     override fun toString(): String =
-        "future@${handle.id}${if (future.isDone) "[done]" else "[pending]"}"
+        "future@${handle.id}${if (future.isDone()) "[done]" else "[pending]"}"
 }

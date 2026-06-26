@@ -42,9 +42,16 @@ class VeloFunctionImpl internal constructor(
                 CompletableFuture<Any?>().apply { completeExceptionally(ex) }
             }
         }
-        return handle.requestInvokeAsync(func, encoded).thenApply { resp ->
-            toHost(handle.unwrapResponse(resp))
+        // Bridge the internal VM Promise to the host-facing CompletableFuture.
+        val result = CompletableFuture<Any?>()
+        handle.requestInvokeAsync(func, encoded).onComplete { resp ->
+            try {
+                result.complete(toHost(handle.unwrapResponse(resp)))
+            } catch (ex: Throwable) {
+                result.completeExceptionally(ex)
+            }
         }
+        return result
     }
 
     override fun toString(): String = "VeloFunction(actor=${handle.id}, frame=${func.frameNum})"

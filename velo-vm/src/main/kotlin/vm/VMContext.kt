@@ -8,7 +8,7 @@ import vm.actors.ActorHandle
 import vm.actors.ActorResponse
 import vm.actors.ActorRuntime
 import vm.records.RefRecord
-import java.util.concurrent.CompletableFuture
+import vm.actors.Promise
 
 /**
  * Context for VM execution.
@@ -65,10 +65,10 @@ class VMContext(
     /** When true, an `await` on a not-yet-ready future suspends instead of blocking. */
     var suspensionEnabled: Boolean = false
 
-    private var pendingSuspend: CompletableFuture<ActorResponse>? = null
+    private var pendingSuspend: Promise<ActorResponse>? = null
 
     /** Mark that the current op wants to park on [future]; observed by [VMExecutor]. */
-    fun requestSuspend(future: CompletableFuture<ActorResponse>) {
+    fun requestSuspend(future: Promise<ActorResponse>) {
         pendingSuspend = future
     }
 
@@ -76,7 +76,7 @@ class VMContext(
     fun hasPendingSuspend(): Boolean = pendingSuspend != null
 
     /** Take and clear the future the fiber is parking on. */
-    fun takePendingSuspend(): CompletableFuture<ActorResponse>? =
+    fun takePendingSuspend(): Promise<ActorResponse>? =
         pendingSuspend.also { pendingSuspend = null }
 
     /**

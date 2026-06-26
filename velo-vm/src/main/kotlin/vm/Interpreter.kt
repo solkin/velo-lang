@@ -85,7 +85,7 @@ object Interpreter {
             // `callbackResult` so ordinary calls don't pay for it.
             if (op.callbackResult && thisFrame.subs.peek() is FutureRecord) {
                 val marker = thisFrame.subs.pop() as FutureRecord
-                val response = marker.handle.unwrapResponse(marker.future.join())
+                val response = marker.handle.unwrapResponse(marker.future.await())
                 thisFrame.subs.push(StructuredClone.decode(response, ctx))
                 pc + 1
             } else {
@@ -103,12 +103,12 @@ object Interpreter {
                         // calls (suspension off) still block — their JVM frames
                         // cannot be parked.
                         val future = callable.handle.requestInvokeAsync(callable.func, encoded)
-                        if (!future.isDone && ctx.suspensionEnabled) {
+                        if (!future.isDone() && ctx.suspensionEnabled) {
                             thisFrame.subs.push(FutureRecord(callable.handle, future))
                             ctx.requestSuspend(future)
                             pc
                         } else {
-                            val response = callable.handle.unwrapResponse(future.join())
+                            val response = callable.handle.unwrapResponse(future.await())
                             thisFrame.subs.push(StructuredClone.decode(response, ctx))
                             pc + 1
                         }
@@ -562,12 +562,12 @@ object Interpreter {
             // re-runs on resume, when the future is done and the fast path
             // below applies. Nested/inline calls keep blocking semantics —
             // their JVM frames cannot be parked.
-            if (!rec.future.isDone && ctx.suspensionEnabled) {
+            if (!rec.future.isDone() && ctx.suspensionEnabled) {
                 ctx.requestSuspend(rec.future)
                 pc
             } else {
                 frame.subs.pop()
-                val response = rec.handle.unwrapResponse(rec.future.join())
+                val response = rec.handle.unwrapResponse(rec.future.await())
                 frame.subs.push(StructuredClone.decode(response, ctx))
                 pc + 1
             }

@@ -17,7 +17,6 @@ import vm.records.FuncRecord
 import vm.records.RefKind
 import vm.records.RefRecord
 import java.util.IdentityHashMap
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -103,7 +102,7 @@ class ActorHandle private constructor(
      */
     private class Fiber(
         val sentinel: Frame,
-        val response: CompletableFuture<ActorResponse>?,
+        val response: Promise<ActorResponse>?,
         val deliver: (Record) -> Unit,
         val fail: (Throwable) -> Unit,
     ) {
@@ -168,8 +167,8 @@ class ActorHandle private constructor(
     private fun failDead(req: ActorRequest) {
         val message = "[actor $name] is shut down"
         when (req) {
-            is ActorRequest.Call -> req.response.complete(ActorResponse.Failure(message))
-            is ActorRequest.InvokeFunc -> req.response?.complete(ActorResponse.Failure(message))
+            is ActorRequest.Call -> req.response.resolve(ActorResponse.Failure(message))
+            is ActorRequest.InvokeFunc -> req.response?.resolve(ActorResponse.Failure(message))
             is ActorRequest.Resume -> Unit // parked fibers are failed by handleShutdown
             is ActorRequest.Main, ActorRequest.Shutdown -> Unit
         }
@@ -201,7 +200,7 @@ class ActorHandle private constructor(
         shuttingDown = true
         // Fail any fiber still parked on an await so its awaiter doesn't hang.
         for (fiber in parkedFibers) {
-            fiber.response?.complete(ActorResponse.Failure("[actor $name] is shut down"))
+            fiber.response?.resolve(ActorResponse.Failure("[actor $name] is shut down"))
         }
         parkedFibers.clear()
         runtime.unregister(id)
@@ -257,11 +256,11 @@ class ActorHandle private constructor(
                     ?: error("Callback frame ${req.func.frameNum} not found")
             },
             deliver = { result ->
-                response?.complete(ActorResponse.Returned(StructuredClone.encode(result, ctx)))
+                response?.resolve(ActorResponse.Returned(StructuredClone.encode(result, ctx)))
             },
             fail = { ex ->
                 unwindStack()
-                if (response != null) response.complete(ActorResponse.Failure(ex.message ?: ex.toString()))
+                if (response != null) response.resolve(ActorResponse.Failure(ex.message ?: ex.toString()))
                 else runtime.raiseFatal(ex)
             },
         )
@@ -279,8 +278,8 @@ class ActorHandle private constructor(
             ctx.loadFrame(funcRec.frameNum, parentVars = instance.vars)
                 ?: error("Method frame ${funcRec.frameNum} not found")
         },
-        deliver = { req.response.complete(ActorResponse.Returned(StructuredClone.encode(it, ctx))) },
-        fail = { unwindStack(); req.response.complete(ActorResponse.Failure(it.message ?: it.toString())) },
+        deliver = { req.response.resolve(ActorResponse.Returned(StructuredClone.encode(it, ctx))) },
+        fail = { unwindStack(); req.response.resolve(ActorResponse.Failure(it.message ?: it.toString())) },
     )
 
     /**
@@ -311,7 +310,7 @@ class ActorHandle private constructor(
      */
     private fun runFiber(
         args: List<ActorValue>,
-        response: CompletableFuture<ActorResponse>?,
+        response: Promise<ActorResponse>?,
         prepareTarget: () -> Frame,
         deliver: (Record) -> Unit,
         fail: (Throwable) -> Unit,
@@ -346,7 +345,7 @@ class ActorHandle private constructor(
                         ?: error("Fiber suspended without a pending future")
                     fiber.saved = ctx.detachStack()
                     parkedFibers.add(fiber)
-                    awaited.whenComplete { _, _ -> resume(fiber) }
+                    awaited.onComplete { resume(fiber) }
                 }
                 RunResult.COMPLETED -> {
                     // The target may end in `Ret` (sentinel now on top, result
@@ -390,7 +389,7 @@ class ActorHandle private constructor(
             // the awaiter rather than leave it hanging. Completing the response
             // is thread-safe; we must not touch ctx from this (foreign,
             // future-completing) thread.
-            fiber.response?.complete(ActorResponse.Failure("[actor $name] could not resume: ${ex.message ?: ex}"))
+            fiber.response?.resolve(ActorResponse.Failure("[actor $name] could not resume: ${ex.message ?: ex}"))
         }
     }
 
@@ -448,7 +447,7 @@ class ActorHandle private constructor(
      * Asynchronously invoke a method on an object owned by this actor.
      *
      * Posts the work to the dispatcher and returns the still-pending
-     * [CompletableFuture] without blocking. The caller is expected to wrap
+     * [Promise] without blocking. The caller is expected to wrap
      * the future in a [FutureRecord] (which transfers lifetime ownership to
      * the GC-driven counter on this handle) and feed it into a later
      * `await`. Failures surface when the future is awaited, not here.
@@ -457,8 +456,8 @@ class ActorHandle private constructor(
         objectId: Int,
         methodVarIndex: Int,
         args: List<ActorValue>,
-    ): CompletableFuture<ActorResponse> {
-        val future = CompletableFuture<ActorResponse>()
+    ): Promise<ActorResponse> {
+        val future = Promise<ActorResponse>()
         post(ActorRequest.Call(objectId, methodVarIndex, args, future))
         return future
     }
@@ -478,8 +477,8 @@ class ActorHandle private constructor(
      * Used by [VeloFunction.call]; failures complete the future with
      * [ActorResponse.Failure] instead of being fatal.
      */
-    fun requestInvokeAsync(func: FuncRecord, args: List<ActorValue>): CompletableFuture<ActorResponse> {
-        val future = CompletableFuture<ActorResponse>()
+    fun requestInvokeAsync(func: FuncRecord, args: List<ActorValue>): Promise<ActorResponse> {
+        val future = Promise<ActorResponse>()
         post(ActorRequest.InvokeFunc(func, args, future))
         return future
     }
@@ -510,7 +509,7 @@ class ActorHandle private constructor(
     /** Synchronous shortcut: post + join + unwrap. Kept for tests; production
      *  code goes through `requestCallAsync` + a future-aware opcode. */
     fun requestCall(objectId: Int, methodVarIndex: Int, args: List<ActorValue>): ActorValue {
-        return unwrapResponse(requestCallAsync(objectId, methodVarIndex, args).join())
+        return unwrapResponse(requestCallAsync(objectId, methodVarIndex, args).await())
     }
 
     fun requestShutdown() {

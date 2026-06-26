@@ -1,7 +1,5 @@
 package vm.actors
 
-import java.util.concurrent.CompletableFuture
-
 /**
  * Cross-thread payload exchanged with actors via [ActorHandle].
  *
@@ -87,7 +85,7 @@ sealed class ActorRequest {
         val objectId: Int,
         val methodVarIndex: Int,
         val args: List<ActorValue>,
-        val response: CompletableFuture<ActorResponse>,
+        val response: Promise<ActorResponse>,
     ) : ActorRequest()
 
     /**
@@ -100,7 +98,7 @@ sealed class ActorRequest {
     data class InvokeFunc(
         val func: vm.records.FuncRecord,
         val args: List<ActorValue>,
-        val response: CompletableFuture<ActorResponse>?,
+        val response: Promise<ActorResponse>?,
     ) : ActorRequest()
 
     /**
@@ -115,7 +113,7 @@ sealed class ActorRequest {
 }
 
 /**
- * Reply to an [ActorRequest], delivered via the request's [CompletableFuture].
+ * Reply to an [ActorRequest], delivered via the request's [Promise].
  *
  * For [Call] (and callback invocations) it carries the method's return value
  * (already marshalled into [ActorValue]) — or [Failure] with a host-side
