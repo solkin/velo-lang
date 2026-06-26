@@ -50,6 +50,11 @@ data class Context(
         frame.ops.add(op)
     }
 
+    /** Overwrite a previously emitted op (used to backpatch jump distances). */
+    fun replace(index: Int, op: Op) {
+        frame.ops[index] = op
+    }
+
     fun addAll(ops: List<Op>) {
         frame.ops.addAll(ops)
     }

@@ -1,0 +1,889 @@
+# Pac-Man — the 1980 arcade classic on a Canvas, in its original style: a blue double-line maze
+# on black, peach pellets and four flashing energizers, the chomping yellow hero and the four
+# ghosts (Blinky, Pinky, Inky, Clyde) with their distinct chase/scatter personalities, a blue
+# frightened mode after an energizer, eyes scuttling home when eaten, the side tunnel that warps
+# across, lives and score. Tile-based movement is interpolated in sub-tile steps; the whole game
+# advances on one actor that repaints off the event loop. Swipe the maze (or use the D-pad) to turn.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+
+# ---- maze (28 x 31). '#' wall, '.' pellet, 'o' energizer, ' ' path, '-' ghost-house door ----
+array[str] MAZE = new array[str]{
+    "############################",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#o####.#####.##.#####.####o#",
+    "#.####.#####.##.#####.####.#",
+    "#..........................#",
+    "#.####.##.########.##.####.#",
+    "#.####.##.########.##.####.#",
+    "#......##....##....##......#",
+    "######.##### ## #####.######",
+    "######.##### ## #####.######",
+    "######.##          ##.######",
+    "######.## ###--### ##.######",
+    "######.## #      # ##.######",
+    "      .   #      #   .      ",
+    "######.## #      # ##.######",
+    "######.## ######## ##.######",
+    "######.##          ##.######",
+    "######.##### ## #####.######",
+    "######.##### ## #####.######",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#o..##................##..o#",
+    "###.##.##.########.##.##.###",
+    "###.##.##.########.##.##.###",
+    "#......##....##....##......#",
+    "#.##########.##.##########.#",
+    "#.##########.##.##########.#",
+    "#..........................#",
+    "############################"
+};
+
+int COLS = 28;
+int ROWS = 31;
+
+# character codes (Velo str[i] yields the char code)
+int CH_WALL = "#"[0];
+int CH_DOOR = "-"[0];
+int CH_DOT = "."[0];
+int CH_POWER = "o"[0];
+
+# tile codes
+int T_PATH = 0;
+int T_WALL = 1;
+int T_DOT = 2;
+int T_POWER = 3;
+array[int] tile = new array[int](COLS * ROWS);
+int dotsLeft = 0;
+
+# ---- pixel metrics (recomputed on every board resize so the maze fills the space) ---------
+int HUD_ROWS = 4;             # tile-rows reserved for the HUD (2 top, 2 bottom)
+int SPT = 8;                  # sub-steps per tile
+int TS = 11;                  # tile size (dp) — derived from the measured canvas
+int OX = 0;                   # horizontal offset to centre the maze in the canvas
+int HUD_TOP = 2 * TS;
+int HUD_BOT = 2 * TS;
+int BW = COLS * TS;
+int BH = (ROWS + HUD_ROWS) * TS;
+
+# ---- timing (ticks; one tick ~ 40 ms) -----------------------------------------------------
+int TICK_MS = 40;
+int READY_TICKS = 48;
+int DYING_TICKS = 45;
+int WIN_TICKS = 60;
+int FRIGHT_TICKS = 150;
+int FLASH_TICKS = 48;
+int SCATTER_TICKS = 160;
+int CHASE_TICKS = 480;
+
+# All speeds are even so every entity, starting tile-aligned, always lands back on a tile
+# boundary (where it can turn). Frightened ghosts move at normal speed but only every other
+# tick (half pace) rather than at an odd speed — an odd sub-step would let a ghost drift onto
+# a half-tile it could never re-align from, and eaten "eyes" would then sail off forever.
+int PAC_SPD = 2;
+int GHOST_SPD = 2;
+int EYE_SPD = 4;
+
+# ---- palette ------------------------------------------------------------------------------
+str BLACK = "#000000";
+str WALLBLUE = "#2121DE";
+str DOORPINK = "#FFB8FF";
+str PELLET = "#FFD6A8";
+str PAC = "#FFE100";
+str FRIGHT = "#2121FF";
+str FRIGHT_FLASH = "#FFFFFF";
+str EYEW = "#FFFFFF";
+str EYEB = "#2020C0";
+str TEXTW = "#FFFFFF";
+str TEXTY = "#FFE100";
+str TEXTR = "#FF0000";
+array[str] GHOST_COLOR = new array[str]{ "#FF0000", "#FFB8FF", "#00FFFF", "#FFB852" };
+
+# ---- entity state -------------------------------------------------------------------------
+int psx = 0;
+int psy = 0;
+int pdx = 0 - 1;
+int pdy = 0;
+int wantDx = 0 - 1;
+int wantDy = 0;
+int PAC_START_C = 13;
+int PAC_START_R = 23;
+
+# four ghosts: 0 Blinky, 1 Pinky, 2 Inky, 3 Clyde
+array[int] gsx = new array[int](4);
+array[int] gsy = new array[int](4);
+array[int] gdx = new array[int](4);
+array[int] gdy = new array[int](4);
+array[int] gmode = new array[int](4);   # 0 normal, 1 frightened, 2 eyes
+array[int] gStartC = new array[int]{ 13, 14, 12, 15 };
+array[int] gStartR = new array[int]{ 11, 11, 11, 11 };
+array[int] scatterC = new array[int]{ 25, 2, 27, 0 };
+array[int] scatterR = new array[int]{ 0, 0, 30, 30 };
+int HOME_C = 13;              # the tile eaten ghosts (eyes) return to before reviving
+int HOME_R = 11;
+array[int] homeDist = new array[int](COLS * ROWS);
+
+# ---- game state ---------------------------------------------------------------------------
+int score = 0;
+int lives = 3;
+int level = 1;
+int state = 0;                # 0 ready, 1 playing, 2 dying, 3 game over, 4 level clear
+int stateTimer = 0;
+int frightTimer = 0;
+int globalMode = 0;           # 0 scatter, 1 chase
+int modeTimer = 0;
+int eatChain = 0;
+int frame = 0;
+bool paused = false;
+int loopToken = 0;
+int swipeX = 0;
+int swipeY = 0;
+Random rng = new Random(1);
+
+# ---- timer actor (drives the game loop off the event loop) --------------------------------
+actor class Ticker() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+actor[Ticker] ticker = new Ticker();
+
+# ---- widgets ------------------------------------------------------------------------------
+# The board is the weighted middle of the screen: it fills the gap between the app bar and the
+# D-pad and reports its measured size; onBoardResized then sizes the tiles to the largest
+# maze+HUD that fits and centres it (letterboxed) on the canvas.
+View board = ui.canvas().weight(1).fillWidth().background(BLACK);
+
+# A two-row D-pad of plain weighted buttons (no spacers — an empty weighted view has no minimum
+# height and would balloon a wrap-height row). Up spans the top; left/down/right share the next row.
+View up = ui.tonalButton("▲").fillWidth();
+View left = ui.tonalButton("◀").weight(1);
+View down = ui.tonalButton("▼").weight(1);
+View right = ui.tonalButton("▶").weight(1);
+View dpRow2 = ui.row().fillWidth().gap(8);
+dpRow2.add(left);
+dpRow2.add(down);
+dpRow2.add(right);
+
+View pad = ui.column().fillWidth().gap(8).padding(12);
+pad.add(up);
+pad.add(dpRow2);
+
+# A fixed full-height column: app bar on top, the board fills the weighted middle (centered),
+# and the D-pad is pinned at the bottom.
+View page = ui.column().fillWidth().fillHeight();
+View bar = ui.appBar("Pac-Man");
+page.add(bar);
+page.add(board);
+page.add(pad);
+View root = page;
+
+# ---- maze helpers -------------------------------------------------------------------------
+
+# Walkable for any entity. The tunnel row (14) is open past the horizontal edges (warp).
+func walkable(int c, int r) bool {
+    if (r == 14 & (c < 0 | c >= COLS)) then true
+    else {
+        if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+        else tile[r * COLS + c] != T_WALL;
+    };
+};
+
+# BFS distance from the ghost-house mouth to every tile, so eaten "eyes" can always find their
+# way home (a greedy chase, like the live ghosts use, can stall in a local minimum). Recomputed
+# per maze build, but the layout is fixed so the field is the same every time.
+func buildHomeDist() void {
+    int n = COLS * ROWS;
+    int i = 0;
+    while (i < n) { homeDist[i] = 9999; i = i + 1; };
+    array[int] q = new array[int](n);
+    int head = 0;
+    int tail = 0;
+    int home = HOME_R * COLS + HOME_C;
+    homeDist[home] = 0;
+    q[tail] = home;
+    tail = tail + 1;
+    while (head < tail) {
+        int j = q[head];
+        head = head + 1;
+        int jc = j % COLS;
+        int jr = j / COLS;
+        int k = 0;
+        while (k < 4) {
+            int nc = jc;
+            int nr = jr;
+            if (k == 0) { nc = jc - 1; };
+            if (k == 1) { nc = jc + 1; };
+            if (k == 2) { nr = jr - 1; };
+            if (k == 3) { nr = jr + 1; };
+            if (jr == 14 & nc < 0) { nc = COLS - 1; };
+            if (jr == 14 & nc >= COLS) { nc = 0; };
+            if (walkable(nc, nr)) {
+                int nk = nr * COLS + nc;
+                if (homeDist[nk] > homeDist[j] + 1) {
+                    homeDist[nk] = homeDist[j] + 1;
+                    q[tail] = nk;
+                    tail = tail + 1;
+                };
+            };
+            k = k + 1;
+        };
+    };
+    void
+};
+
+func buildMaze() void {
+    dotsLeft = 0;
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            int ch = MAZE[r][c];
+            int code = T_PATH;
+            if (ch == CH_WALL | ch == CH_DOOR) { code = T_WALL; };
+            if (ch == CH_DOT) { code = T_DOT; dotsLeft = dotsLeft + 1; };
+            if (ch == CH_POWER) { code = T_POWER; dotsLeft = dotsLeft + 1; };
+            tile[r * COLS + c] = code;
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    buildHomeDist();
+    void
+};
+
+func iabs(int v) int {
+    if (v < 0) then 0 - v else v;
+};
+
+func startFright() void {
+    frightTimer = FRIGHT_TICKS;
+    eatChain = 0;
+    int i = 0;
+    while (i < 4) {
+        if (gmode[i] != 2) {
+            gmode[i] = 1;
+            gdx[i] = 0 - gdx[i];
+            gdy[i] = 0 - gdy[i];
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- movement -----------------------------------------------------------------------------
+
+func aligned(int sx, int sy) bool {
+    sx % SPT == 0 & sy % SPT == 0;
+};
+
+func movePac() void {
+    if (aligned(psx, psy)) {
+        int c = psx / SPT;
+        int r = psy / SPT;
+        # tunnel warp
+        if (r == 14 & c == 0 & pdx < 0) { psx = (COLS - 1) * SPT; c = COLS - 1; };
+        if (r == 14 & c == COLS - 1 & pdx > 0) { psx = 0; c = 0; };
+        # eat
+        int code = tile[r * COLS + c];
+        if (code == T_DOT) {
+            tile[r * COLS + c] = T_PATH;
+            score = score + 10;
+            dotsLeft = dotsLeft - 1;
+        };
+        if (code == T_POWER) {
+            tile[r * COLS + c] = T_PATH;
+            score = score + 50;
+            dotsLeft = dotsLeft - 1;
+            startFright();
+        };
+        # honor a queued turn
+        if (walkable(c + wantDx, r + wantDy) & (wantDx != pdx | wantDy != pdy)) {
+            pdx = wantDx;
+            pdy = wantDy;
+        };
+        # stop at a wall
+        if (walkable(c + pdx, r + pdy) == false) {
+            pdx = 0;
+            pdy = 0;
+        };
+    };
+    psx = psx + pdx * PAC_SPD;
+    psy = psy + pdy * PAC_SPD;
+    void
+};
+
+# Target tile (tx,ty) for ghost [i] given its personality and the global mode.
+func targetC(int i) int {
+    int pc = psx / SPT;
+    if (gmode[i] == 2) then gStartC[i]
+    else if (globalMode == 0) then scatterC[i]
+    else {
+        if (i == 0) then pc
+        else if (i == 1) then pc + 4 * pdx
+        else if (i == 2) then 2 * (pc + 2 * pdx) - (gsx[0] / SPT)
+        else {
+            int dc = pc - (gsx[3] / SPT);
+            int dr = (psy / SPT) - (gsy[3] / SPT);
+            if (dc * dc + dr * dr > 64) then pc else scatterC[3];
+        };
+    };
+};
+
+func targetR(int i) int {
+    int pr = psy / SPT;
+    if (gmode[i] == 2) then gStartR[i]
+    else if (globalMode == 0) then scatterR[i]
+    else {
+        if (i == 0) then pr
+        else if (i == 1) then pr + 4 * pdy
+        else if (i == 2) then 2 * (pr + 2 * pdy) - (gsy[0] / SPT)
+        else {
+            int dc = (psx / SPT) - (gsx[3] / SPT);
+            int dr = pr - (gsy[3] / SPT);
+            if (dc * dc + dr * dr > 64) then pr else scatterR[3];
+        };
+    };
+};
+
+func chooseGhostDir(int i) void {
+    int c = gsx[i] / SPT;
+    int r = gsy[i] / SPT;
+
+    # tunnel warp
+    if (r == 14 & c == 0 & gdx[i] < 0) { gsx[i] = (COLS - 1) * SPT; c = COLS - 1; };
+    if (r == 14 & c == COLS - 1 & gdx[i] > 0) { gsx[i] = 0; c = 0; };
+
+    if (gmode[i] == 2) {
+        # eyes: descend the precomputed distance field toward home (always reaches it)
+        int bestDx = gdx[i];
+        int bestDy = gdy[i];
+        int bestH = 0 - 1;
+        int k = 0;
+        while (k < 4) {
+            int ddx = 0; int ddy = 0;
+            if (k == 0) { ddx = 0 - 1; };
+            if (k == 1) { ddx = 1; };
+            if (k == 2) { ddy = 0 - 1; };
+            if (k == 3) { ddy = 1; };
+            int nc = c + ddx;
+            int nr = r + ddy;
+            if (r == 14 & nc < 0) { nc = COLS - 1; };
+            if (r == 14 & nc >= COLS) { nc = 0; };
+            if (walkable(nc, nr)) {
+                int h = homeDist[nr * COLS + nc];
+                if (bestH < 0 | h < bestH) { bestH = h; bestDx = ddx; bestDy = ddy; };
+            };
+            k = k + 1;
+        };
+        gdx[i] = bestDx;
+        gdy[i] = bestDy;
+    } else {
+        if (gmode[i] == 1) {
+        # frightened: random legal non-reverse turn
+        array[int] okx = new array[int](4);
+        array[int] oky = new array[int](4);
+        int n = 0;
+        int k = 0;
+        while (k < 4) {
+            int ddx = 0; int ddy = 0;
+            if (k == 0) { ddx = 0 - 1; };
+            if (k == 1) { ddx = 1; };
+            if (k == 2) { ddy = 0 - 1; };
+            if (k == 3) { ddy = 1; };
+            if ((ddx != 0 - gdx[i] | ddy != 0 - gdy[i]) & walkable(c + ddx, r + ddy)) {
+                okx[n] = ddx; oky[n] = ddy; n = n + 1;
+            };
+            k = k + 1;
+        };
+        if (n > 0) {
+            int pick = rng.nextIntBound(n);
+            gdx[i] = okx[pick];
+            gdy[i] = oky[pick];
+        } else {
+            gdx[i] = 0 - gdx[i];      # boxed in — reverse
+            gdy[i] = 0 - gdy[i];
+        };
+    } else {
+        # head toward the target tile; ties resolve up, left, down, right
+        int tx = targetC(i);
+        int ty = targetR(i);
+        int bestDx = gdx[i];
+        int bestDy = gdy[i];
+        int bestD = 0 - 1;
+        int k = 0;
+        while (k < 4) {
+            int ddx = 0; int ddy = 0;
+            if (k == 2) { ddy = 0 - 1; };       # up first
+            if (k == 1) { ddx = 0 - 1; };       # left
+            if (k == 3) { ddy = 1; };           # down
+            if (k == 0) { ddx = 1; };           # right
+            if ((ddx != 0 - gdx[i] | ddy != 0 - gdy[i]) & walkable(c + ddx, r + ddy)) {
+                int nx = c + ddx - tx;
+                int ny = r + ddy - ty;
+                int d = nx * nx + ny * ny;
+                if (bestD < 0 | d < bestD) {
+                    bestD = d;
+                    bestDx = ddx;
+                    bestDy = ddy;
+                };
+            };
+            k = k + 1;
+        };
+        if (bestD < 0) {
+            # dead end — reverse
+            bestDx = 0 - gdx[i];
+            bestDy = 0 - gdy[i];
+        };
+        gdx[i] = bestDx;
+        gdy[i] = bestDy;
+        };
+    };
+    void
+};
+
+func moveGhosts() void {
+    int i = 0;
+    while (i < 4) {
+        # frightened ghosts crawl at half pace (skip every other tick) — never an odd speed
+        bool act = true;
+        if (gmode[i] == 1 & frame % 2 == 1) { act = false; };
+        if (act) {
+            if (aligned(gsx[i], gsy[i])) {
+                int c = gsx[i] / SPT;
+                int r = gsy[i] / SPT;
+                if (gmode[i] == 2 & c == HOME_C & r == HOME_R) {
+                    gmode[i] = 0;               # eyes reached home → revive
+                };
+                chooseGhostDir(i);
+            };
+            int spd = if (gmode[i] == 2) then EYE_SPD else GHOST_SPD;
+            gsx[i] = gsx[i] + gdx[i] * spd;
+            gsy[i] = gsy[i] + gdy[i] * spd;
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- modes & collisions -------------------------------------------------------------------
+
+func updateModes() void {
+    if (frightTimer > 0) {
+        frightTimer = frightTimer - 1;
+        if (frightTimer == 0) {
+            int i = 0;
+            while (i < 4) {
+                if (gmode[i] == 1) { gmode[i] = 0; };
+                i = i + 1;
+            };
+        };
+    } else {
+        modeTimer = modeTimer - 1;
+        if (modeTimer <= 0) {
+            globalMode = if (globalMode == 0) then 1 else 0;
+            modeTimer = if (globalMode == 0) then SCATTER_TICKS else CHASE_TICKS;
+            int i = 0;
+            while (i < 4) {                      # reverse on a phase change
+                if (gmode[i] != 2) {
+                    gdx[i] = 0 - gdx[i];
+                    gdy[i] = 0 - gdy[i];
+                };
+                i = i + 1;
+            };
+        };
+    };
+    void
+};
+
+func loseLife() void {
+    lives = lives - 1;
+    state = 2;
+    stateTimer = DYING_TICKS;
+    void
+};
+
+func checkCollisions() void {
+    int i = 0;
+    while (i < 4) {
+        if (iabs(psx - gsx[i]) < SPT & iabs(psy - gsy[i]) < SPT) {
+            if (gmode[i] == 1) {
+                # snap onto the tile grid so the eyes step cleanly to a tile boundary and can
+                # always re-pick a direction toward home (an off-grid eye would sail off forever)
+                gsx[i] = ((gsx[i] + SPT / 2) / SPT) * SPT;
+                gsy[i] = ((gsy[i] + SPT / 2) / SPT) * SPT;
+                gmode[i] = 2;                   # eaten → eyes
+                int bonus = if (eatChain == 0) then 200 else if (eatChain == 1) then 400 else if (eatChain == 2) then 800 else 1600;
+                score = score + bonus;
+                eatChain = eatChain + 1;
+            } else {
+                if (gmode[i] == 0) {
+                    loseLife();
+                };
+            };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+# ---- positions ----------------------------------------------------------------------------
+
+func resetPositions() void {
+    psx = PAC_START_C * SPT;
+    psy = PAC_START_R * SPT;
+    pdx = 0 - 1;
+    pdy = 0;
+    wantDx = 0 - 1;
+    wantDy = 0;
+    int i = 0;
+    while (i < 4) {
+        gsx[i] = gStartC[i] * SPT;
+        gsy[i] = gStartR[i] * SPT;
+        gdx[i] = if (i % 2 == 0) then 0 - 1 else 1;
+        gdy[i] = 0;
+        gmode[i] = 0;
+        i = i + 1;
+    };
+    frightTimer = 0;
+    globalMode = 0;
+    modeTimer = SCATTER_TICKS;
+    eatChain = 0;
+    void
+};
+
+func newGame() void {
+    buildMaze();
+    score = 0;
+    lives = 3;
+    level = 1;
+    resetPositions();
+    state = 0;
+    stateTimer = READY_TICKS;
+    void
+};
+
+func nextLevel() void {
+    buildMaze();
+    level = level + 1;
+    resetPositions();
+    state = 0;
+    stateTimer = READY_TICKS;
+    void
+};
+
+# ---- drawing ------------------------------------------------------------------------------
+
+func cx(int sx) int {
+    (sx * TS) / SPT + TS / 2 + OX;
+};
+
+func cyv(int sy) int {
+    (sy * TS) / SPT + TS / 2 + HUD_TOP;
+};
+
+# A wall sits on edges of a path tile that border a wall (or the outside, save the tunnel).
+func wallEdge(int c, int r) bool {
+    if (r == 14 & (c < 0 | c >= COLS)) then false
+    else {
+        if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then true
+        else tile[r * COLS + c] == T_WALL;
+    };
+};
+
+func drawMaze() void {
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            int code = tile[r * COLS + c];
+            int x = c * TS + OX;
+            int y = r * TS + HUD_TOP;
+            if (code == T_WALL) {
+                c = c + 1;
+            } else {
+                # blue outline on each side facing a wall (adjacent corridors form the double line)
+                if (wallEdge(c, r - 1)) { board.drawLine(x, y, x + TS, y).color(WALLBLUE).stroke(2).cap("round"); };
+                if (wallEdge(c, r + 1)) { board.drawLine(x, y + TS, x + TS, y + TS).color(WALLBLUE).stroke(2).cap("round"); };
+                if (wallEdge(c - 1, r)) { board.drawLine(x, y, x, y + TS).color(WALLBLUE).stroke(2).cap("round"); };
+                if (wallEdge(c + 1, r)) { board.drawLine(x + TS, y, x + TS, y + TS).color(WALLBLUE).stroke(2).cap("round"); };
+                # pellets
+                if (code == T_DOT) {
+                    board.drawRect(x + TS / 2 - 1, y + TS / 2 - 1, 2, 2).color(PELLET).fill();
+                };
+                if (code == T_POWER) {
+                    if ((frame / 6) % 2 == 0) {
+                        board.drawCircle(x + TS / 2, y + TS / 2, TS / 3).color(PELLET).fill();
+                    };
+                };
+                c = c + 1;
+            };
+        };
+        r = r + 1;
+    };
+    # ghost-house door bar
+    board.drawLine(13 * TS + OX, 12 * TS + HUD_TOP, 15 * TS + OX, 12 * TS + HUD_TOP).color(DOORPINK).stroke(2);
+    void
+};
+
+func drawPacShape(int ccx, int ccy, int r, int adx, int ady, int mouth) void {
+    int dirAng = if (adx > 0) then 0 else if (ady > 0) then 90 else if (adx < 0) then 180 else 270;
+    if (mouth <= 0) {
+        board.drawCircle(ccx, ccy, r).color(PAC).fill();
+    } else {
+        int start = dirAng + mouth;
+        int sweep = 360 - 2 * mouth;
+        board.drawPie(ccx - r, ccy - r, 2 * r, 2 * r, start, sweep).color(PAC).fill();
+    };
+    void
+};
+
+func drawPac() void {
+    int phase = frame % 8;
+    int mouth = if (phase < 4) then phase * 9 else (8 - phase) * 9;
+    int adx = pdx;
+    int ady = pdy;
+    if (adx == 0 & ady == 0) { adx = wantDx; ady = wantDy; };
+    drawPacShape(cx(psx), cyv(psy), TS / 2 + 1, adx, ady, mouth);
+    void
+};
+
+func drawGhost(int i) void {
+    int gx = cx(gsx[i]);
+    int gy = cyv(gsy[i]);
+    int r = TS / 2 + 1;
+    int top = gy - r;
+    int bot = gy + r - 1;
+
+    bool flashing = gmode[i] == 1 & frightTimer < FLASH_TICKS & (frame / 5) % 2 == 0;
+
+    if (gmode[i] != 2) {
+        str body = GHOST_COLOR[i];
+        if (gmode[i] == 1) { body = if (flashing) then FRIGHT_FLASH else FRIGHT; };
+        # dome + body + three rounded feet
+        board.drawPie(gx - r, top, 2 * r, 2 * r, 180, 180).color(body).fill();
+        board.drawRect(gx - r, gy, 2 * r, bot - gy).color(body).fill();
+        board.drawCircle(gx - r + r / 3, bot, r / 3).color(body).fill();
+        board.drawCircle(gx, bot, r / 3).color(body).fill();
+        board.drawCircle(gx + r - r / 3, bot, r / 3).color(body).fill();
+    };
+
+    if (gmode[i] == 1) {
+        # frightened face: two dots and a zigzag mouth
+        str fc = if (flashing) then FRIGHT else FRIGHT_FLASH;
+        board.drawRect(gx - r / 2, gy - r / 4, 2, 2).color(fc).fill();
+        board.drawRect(gx + r / 2 - 2, gy - r / 4, 2, 2).color(fc).fill();
+        board.drawLine(gx - r / 2, gy + r / 3, gx + r / 2, gy + r / 3).color(fc).stroke(1);
+    } else {
+        # eyes look toward travel direction (drawn even for plain "eyes" mode)
+        int lookx = gdx[i];
+        int looky = gdy[i];
+        int ew = r / 2;
+        board.drawCircle(gx - r / 2, gy - r / 5, ew).color(EYEW).fill();
+        board.drawCircle(gx + r / 2, gy - r / 5, ew).color(EYEW).fill();
+        board.drawCircle(gx - r / 2 + lookx * 2, gy - r / 5 + looky * 2, ew / 2 + 1).color(EYEB).fill();
+        board.drawCircle(gx + r / 2 + lookx * 2, gy - r / 5 + looky * 2, ew / 2 + 1).color(EYEB).fill();
+    };
+    void
+};
+
+func drawHud() void {
+    int size = TS + 2;
+    int ty = HUD_TOP - TS / 2;
+    board.drawText(OX + TS, ty, "SCORE ".con(score.str), size).color(TEXTW);
+    str lvl = "LEVEL ".con(level.str);
+    board.drawText(OX + COLS * TS - TS - lvl.len * size * 6 / 10, ty, lvl, size).color(TEXTY);
+    # remaining lives as little Pac-Men below the maze
+    int ly = HUD_TOP + ROWS * TS + TS;
+    int i = 0;
+    while (i < lives) {
+        drawPacShape(OX + TS + i * (TS + TS / 2), ly, TS / 2, 0 - 1, 0, 18);
+        i = i + 1;
+    };
+    void
+};
+
+func drawCenterText(str s, str color, int size, int dy) void {
+    int w = s.len * (size * 6) / 10;
+    board.drawText(OX + COLS * TS / 2 - w / 2, 17 * TS + HUD_TOP + dy, s, size).color(color);
+    void
+};
+
+func draw() void {
+    board.clear();
+    board.drawRect(0, 0, BW, BH).color(BLACK).fill();
+    drawHud();
+    drawMaze();
+    if (state != 2) { drawPac(); };
+    if (state != 4) {
+        int i = 0;
+        while (i < 4) { drawGhost(i); i = i + 1; };
+    };
+    if (paused) { drawCenterText("PAUSED", TEXTY, TS + 3, 0); }
+    else {
+        if (state == 0) { drawCenterText("READY!", TEXTY, TS + 3, 0); };
+        if (state == 3) { drawCenterText("GAME OVER", TEXTR, TS + 3, 0); };
+        if (state == 4) { drawCenterText("LEVEL CLEAR", TEXTY, TS + 2, 0); };
+    };
+    void
+};
+
+# The canvas was laid out (or resized): refit the tiles to its measured size and centre the maze.
+func onBoardResized(int w, int h) void {
+    if (w > 0 & h > 0) {
+        int fitW = w / COLS;
+        int fitH = h / (ROWS + HUD_ROWS);
+        TS = if (fitW < fitH) then fitW else fitH;
+        if (TS < 2) { TS = 2; };
+        BW = w;
+        BH = h;
+        OX = (w - COLS * TS) / 2;
+        int usedH = (ROWS + HUD_ROWS) * TS;
+        HUD_TOP = (h - usedH) / 2 + 2 * TS;
+        HUD_BOT = 2 * TS;
+        draw();
+    };
+    void
+};
+
+# ---- the game loop ------------------------------------------------------------------------
+
+func step() void {
+    movePac();
+    moveGhosts();
+    checkCollisions();
+    updateModes();
+    if (dotsLeft <= 0) {
+        state = 4;
+        stateTimer = WIN_TICKS;
+    };
+    void
+};
+
+func tick(int token) void {
+    if (token == loopToken) {
+        if (paused == false) {
+            frame = frame + 1;
+            if (state == 1) {
+                step();
+            } else {
+                if (state == 0 | state == 2 | state == 4) {
+                    stateTimer = stateTimer - 1;
+                    if (stateTimer <= 0) {
+                        if (state == 0) { state = 1; };
+                        if (state == 2) {
+                            if (lives > 0) {
+                                resetPositions();
+                                state = 0;
+                                stateTimer = READY_TICKS;
+                            } else {
+                                state = 3;
+                                stateTimer = 0;
+                            };
+                        };
+                        if (state == 4) { nextLevel(); };
+                    };
+                };
+            };
+        };
+        draw();
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x);
+            void
+        });
+    };
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+
+func setWant(int dx, int dy) void {
+    if (state == 3) {
+        newGame();
+    } else {
+        wantDx = dx;
+        wantDy = dy;
+    };
+    void
+};
+
+func togglePause() void {
+    if (state == 3) {
+        newGame();                 # restart from the game-over screen
+        paused = false;
+        bar.actionIcon("Pause", icons.pause());
+    } else {
+        paused = paused == false;
+        bar.actionIcon("Pause", if (paused) then icons.play() else icons.pause());
+    };
+    draw();
+    void
+};
+
+up.onClick(func() void { setWant(0, 0 - 1); void });
+down.onClick(func() void { setWant(0, 1); void });
+left.onClick(func() void { setWant(0 - 1, 0); void });
+right.onClick(func() void { setWant(1, 0); void });
+
+board.onPointerDown(func(int x, int y) void {
+    swipeX = x;
+    swipeY = y;
+    void
+});
+
+board.onPointerUp(func(int x, int y) void {
+    int ddx = x - swipeX;
+    int ddy = y - swipeY;
+    if (iabs(ddx) < 8 & iabs(ddy) < 8) {
+        if (state == 3) { newGame(); };
+    } else {
+        if (iabs(ddx) > iabs(ddy)) {
+            setWant(if (ddx > 0) then 1 else 0 - 1, 0);
+        } else {
+            setWant(0, if (ddy > 0) then 1 else 0 - 1);
+        };
+    };
+    void
+});
+
+board.onResize(func(int w, int h) void {
+    onBoardResized(w, h);
+    void
+});
+
+bar.action("Pause", icons.pause(), func() void {
+    togglePause();
+    void
+});
+
+bar.onNav(func() void {
+    loopToken = loopToken + 1;
+    ui.close();
+    void
+});
+
+# ---- go -----------------------------------------------------------------------------------
+
+newGame();
+draw();
+ui.open(root);
+
+loopToken = loopToken + 1;
+async ticker.after(TICK_MS, loopToken, func(int x) void {
+    tick(x);
+    void
+});
+
+term.println("Pac-Man — swipe or use the D-pad to steer.");

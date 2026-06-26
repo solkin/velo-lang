@@ -39,3 +39,14 @@ internal fun ViewState.appBarAction(title: String, icon: String, cb: VeloFunctio
         }
     }
 }
+
+/** Swap the icon of an existing app-bar action (matched by its [title]) — e.g. to toggle play/pause. */
+internal fun ViewState.appBarActionIcon(title: String, icon: String) {
+    ui {
+        val tb = toolbar() ?: return@ui
+        for (i in 0 until tb.menu.size()) {
+            val item = tb.menu.getItem(i)
+            if (item.title == title) item.icon = loadIcon(tb.context, icon)
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+  "id": "pac-man",
+  "name": "Pac-Man",
+  "description": "The 1980 arcade classic in its original style: a blue double-line maze on black, peach pellets and four energizers, the chomping hero and the four ghosts (Blinky, Pinky, Inky, Clyde) with distinct chase/scatter personalities, a frightened blue mode, eyes returning home when eaten, the warp tunnel, lives and score. Swipe the maze or use the D-pad to steer.",
+  "interactive": true
+}

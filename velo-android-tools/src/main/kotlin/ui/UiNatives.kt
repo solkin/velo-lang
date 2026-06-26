@@ -114,6 +114,7 @@ class View {
     // app bar
     fun onNav(cb: VeloFunction): View = nope()
     fun action(title: String, icon: String, cb: VeloFunction): View = nope()
+    fun actionIcon(title: String, icon: String): View = nope()
 
     // canvas (drawing)
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int): Shape = nope()

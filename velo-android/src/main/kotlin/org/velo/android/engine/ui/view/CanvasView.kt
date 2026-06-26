@@ -93,11 +93,24 @@ internal class VeloCanvasView(context: Context) : View(context) {
     }
 
     fun clearOps() {
+        var commit = false
         synchronized(opsLock) {
+            // A clear() marks a frame boundary: publish the frame that was just finished
+            // (the staged ops) atomically before starting the next one. This is what gives an
+            // animation true double buffering — each frame appears whole on the next clear(),
+            // never mid-build, so a GC/scheduling pause can't flash a partial frame. The quiet
+            // timer below only has to flush the very last frame, when no further clear() comes.
+            val finished = stagedOps
+            if (finished != null) {
+                ops.clear()
+                ops.addAll(finished)
+                commit = true
+            }
             stagedOps = ArrayList()
             markStagedMutationLocked()
             scheduleStagedCommitLocked()
         }
+        if (commit) postInvalidateOnAnimation()
     }
 
     /** Re-render after a [Shape] mutated an op's paint (coalesced to one frame). */
@@ -185,7 +198,10 @@ internal class VeloCanvasView(context: Context) : View(context) {
     }
 
     private companion object {
-        const val STAGED_COMMIT_DELAY_MS = 4L
+        // Fallback flush for the final frame of a burst (a clear() commits earlier ones at the
+        // next frame boundary). Long enough that a mid-frame GC/scheduling pause never trips it,
+        // so a partial frame is never published; short enough to be imperceptible for a one-shot draw.
+        const val STAGED_COMMIT_DELAY_MS = 64L
     }
 }
 
