@@ -36,12 +36,41 @@ internal class VeloCanvasView(context: Context) : View(context) {
     var onMove: ((Int, Int) -> Unit)? = null
     var onUp: ((Int, Int) -> Unit)? = null
 
+    // Optional aspect lock: when both are > 0, onMeasure fits the largest aspectW:aspectH box
+    // inside the space the layout offers, so the canvas keeps its proportions as it stretches.
+    private var aspectW = 0
+    private var aspectH = 0
+
     init {
         // A plain View skips onDraw unless it has a background; we draw our own content.
         setWillNotDraw(false)
     }
 
     val density: Float get() = resources.displayMetrics.density
+
+    /** Lock the canvas to a [w]:[h] aspect ratio (0,0 clears it), re-measuring on the next pass. */
+    fun setAspect(w: Int, h: Int) {
+        aspectW = w
+        aspectH = h
+        requestLayout()
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val wSize = MeasureSpec.getSize(widthMeasureSpec)
+        val hSize = MeasureSpec.getSize(heightMeasureSpec)
+        if (aspectW <= 0 || aspectH <= 0 || wSize <= 0 || hSize <= 0) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            return
+        }
+        // Largest aspectW:aspectH box that fits within the offered width x height.
+        var w = wSize
+        var h = w * aspectH / aspectW
+        if (h > hSize) {
+            h = hSize
+            w = h * aspectW / aspectH
+        }
+        setMeasuredDimension(w, h)
+    }
 
     /** Convert an sp font size to px against the current display metrics. */
     fun sp(value: Int): Float =

@@ -87,6 +87,7 @@ class VeloView {
     // --- icons & small widgets ---
 
     fun icon(name: String): VeloView = apply { state.icon(name) }
+    fun iconOnly(): VeloView = apply { state.iconOnly() }
     fun tint(color: String): VeloView = apply { state.tint(color) }
     fun checkable(on: Boolean): VeloView = apply { state.checkable(on) }
     fun thickness(dp: Int): VeloView = apply { state.thickness(dp) }
@@ -128,6 +129,7 @@ class VeloView {
 
     fun onClick(cb: VeloFunction): VeloView = apply { state.onClick(cb) }
     fun onLongClick(cb: VeloFunction): VeloView = apply { state.onLongClick(cb) }
+    fun onResize(cb: VeloFunction): VeloView = apply { state.onResize(cb) }
     fun onChange(cb: VeloFunction): VeloView = apply { state.onChange(cb) }
     fun onToggle(cb: VeloFunction): VeloView = apply { state.onToggle(cb) }
     fun onSlide(cb: VeloFunction): VeloView = apply { state.onSlide(cb) }
@@ -160,6 +162,7 @@ class VeloView {
     fun drawPath(spec: String): Shape = state.drawPath(spec)
     fun drawPoints(spec: String, mode: String): Shape = state.drawPoints(spec, mode)
     fun drawText(x: Int, y: Int, s: String, size: Int): Shape = state.drawText(x, y, s, size)
+    fun aspectRatio(w: Int, h: Int): VeloView = apply { state.aspectRatio(w, h) }
     fun clear(): VeloView = apply { state.clearCanvas() }
     fun onTap(cb: VeloFunction): VeloView = apply { state.onTap(cb) }
     fun onPointerDown(cb: VeloFunction): VeloView = apply { state.onPointerDown(cb) }

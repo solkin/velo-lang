@@ -43,6 +43,21 @@ internal fun ViewState.tint(spec: String) {
     }
 }
 
+/**
+ * Drop a button's label and centre its glyph — the Material way to render an icon-only button.
+ * `ICON_GRAVITY_TEXT_START` lays the icon out relative to the (now empty) text, so the button's
+ * centre gravity centres the glyph instead of pinning it to the start edge.
+ */
+internal fun ViewState.iconOnly() {
+    ui {
+        (av as? MaterialButton)?.apply {
+            text = ""
+            iconPadding = 0
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+        }
+    }
+}
+
 /** Make a chip selectable (filter/suggestion style) or not. */
 internal fun ViewState.checkable(on: Boolean) {
     ui { (av as? Chip)?.isCheckable = on }

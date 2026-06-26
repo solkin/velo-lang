@@ -26,6 +26,26 @@ internal fun ViewState.onLongClick(cb: VeloFunction) {
     ui { av?.setOnLongClickListener { cb.post(); true } }
 }
 
+/**
+ * Fire [cb] with the view's new (width, height) in dp whenever its laid-out size changes —
+ * the hook a Canvas (or any view) uses to refit its contents to the space the layout gives it.
+ * Fires on first layout and on every later resize (rotation, a weighted box growing, …).
+ */
+internal fun ViewState.onResize(cb: VeloFunction) {
+    retain(cb)
+    ui {
+        val v = av ?: return@ui
+        val density = v.resources.displayMetrics.density
+        v.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            val w = right - left
+            val h = bottom - top
+            if (w > 0 && h > 0 && (w != oldRight - oldLeft || h != oldBottom - oldTop)) {
+                cb.post((w / density).toInt(), (h / density).toInt())
+            }
+        }
+    }
+}
+
 /** Set the on/off state of a switch, checkbox or (filter/choice) chip. */
 internal fun ViewState.checked(on: Boolean) {
     ui {

@@ -1,0 +1,676 @@
+# Tetris — the classic falling-blocks game as a native-style Android screen, modelled on the
+# NanoVM "Tetris" demo. The 10x20 well is painted on a Canvas: every tetromino, the faint cell
+# grid, a landing "ghost" and the pause / game-over overlays are plain vector draw ops, and the
+# controls underneath are stock Material3 buttons laid out as a D-pad. The score panel is pinned
+# at the top and the D-pad at the bottom; the well in between takes all the space left over and
+# refits to crisp, centered cells whenever its Canvas is resized (an aspect-locked 10:20 board).
+# Autonomous gravity (the piece falling on its own) runs on a second actor that sleeps, advances
+# the piece and repaints off the event loop — the Velo equivalent of NanoVM's gravity thread.
+# Pieces come from a 7-bag randomizer (each appears once per bag), with a next preview, line-clear
+# scoring and levels.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
+
+# ---- well geometry ------------------------------------------------------------------------
+int COLS = 10;
+int ROWS = 20;
+int INSET = 6;            # gap between the grid and the canvas edge
+int NEXT_CELL = 12;      # cell side in the "next" preview
+int NEXT_BOX = 4 * NEXT_CELL + 8;
+int DEFAULT_CELL = 15;   # cell side before the first measure arrives
+
+# Live well geometry, recomputed from the canvas's measured size on each resize so the grid is
+# always crisp, integer-sized cells centered in whatever box the layout gave the board.
+int cell = DEFAULT_CELL;
+int canvasW = COLS * DEFAULT_CELL + 2 * INSET;
+int canvasH = ROWS * DEFAULT_CELL + 2 * INSET;
+int originX = INSET;
+int originY = INSET;
+
+# ---- the seven tetrominoes ----------------------------------------------------------------
+# Each piece is four rotation states; each state is four (col,row) cells inside a fixed NxN box,
+# so rotating spins the piece in place. Flattened to one array: SHAPES[(((p*4)+rot)*4+i)*2 (+1)].
+# Order: I O T S Z J L.
+array[int] SHAPES = new array[int]{
+    # I
+    0, 1, 1, 1, 2, 1, 3, 1,
+    2, 0, 2, 1, 2, 2, 2, 3,
+    0, 2, 1, 2, 2, 2, 3, 2,
+    1, 0, 1, 1, 1, 2, 1, 3,
+    # O
+    0, 0, 1, 0, 0, 1, 1, 1,
+    0, 0, 1, 0, 0, 1, 1, 1,
+    0, 0, 1, 0, 0, 1, 1, 1,
+    0, 0, 1, 0, 0, 1, 1, 1,
+    # T
+    1, 0, 0, 1, 1, 1, 2, 1,
+    1, 0, 1, 1, 2, 1, 1, 2,
+    0, 1, 1, 1, 2, 1, 1, 2,
+    1, 0, 0, 1, 1, 1, 1, 2,
+    # S
+    1, 0, 2, 0, 0, 1, 1, 1,
+    1, 0, 1, 1, 2, 1, 2, 2,
+    1, 1, 2, 1, 0, 2, 1, 2,
+    0, 0, 0, 1, 1, 1, 1, 2,
+    # Z
+    0, 0, 1, 0, 1, 1, 2, 1,
+    2, 0, 1, 1, 2, 1, 1, 2,
+    0, 1, 1, 1, 1, 2, 2, 2,
+    1, 0, 0, 1, 1, 1, 0, 2,
+    # J
+    0, 0, 0, 1, 1, 1, 2, 1,
+    1, 0, 2, 0, 1, 1, 1, 2,
+    0, 1, 1, 1, 2, 1, 2, 2,
+    1, 0, 1, 1, 0, 2, 1, 2,
+    # L
+    2, 0, 0, 1, 1, 1, 2, 1,
+    1, 0, 1, 1, 1, 2, 2, 2,
+    0, 1, 1, 1, 2, 1, 0, 2,
+    0, 0, 1, 0, 1, 1, 1, 2
+};
+
+# Width of each piece's rotation box, used to spawn it centered.
+array[int] BOX_W = new array[int]{4, 2, 3, 3, 3, 3, 3};
+
+# One vivid color per piece (a literal shade — these are the game's blocks).
+array[str] PIECE_COLOR = new array[str]{
+    "#26C6DA", "#FFCA28", "#AB47BC", "#66BB6A", "#EF5350", "#5C6BC0", "#FFA726"
+};
+
+array[int] LINE_SCORE = new array[int]{0, 100, 300, 500, 800};
+
+# ---- game state ---------------------------------------------------------------------------
+array[int] grid = new array[int](ROWS * COLS);   # 0 = empty, else piece index + 1
+int curPiece = 0;
+int curRot = 0;
+int curX = 0;
+int curY = 0;
+int nextPiece = 0;
+int score = 0;
+int lines = 0;
+int level = 1;
+bool started = false;
+bool paused = false;
+bool gameOver = false;
+
+# 7-bag randomizer: each piece appears once per bag, shuffled with Fisher-Yates.
+array[int] bag = new array[int](7);
+int bagPos = 7;
+Random rng = new Random(time.unix());
+
+int gravToken = 0;       # invalidates a stale gravity loop on new game / close
+
+# ---- the gravity clock (its own actor) ----------------------------------------------------
+# Sleeps, then fires the callback back on the main actor — the Velo equivalent of NanoVM's
+# second gravity thread that drops the piece on a timer and repaints off the event loop.
+actor class TickTimer() {
+    Time timer = new Time();
+
+    func after(int millis, int token, func[(int) void] done) void {
+        timer.sleep(millis);
+        done(token);
+        void
+    };
+};
+
+actor[TickTimer] ticker = new TickTimer();
+
+# ---- UI -----------------------------------------------------------------------------------
+
+# The score / lines / level readout on the left and the "next" preview on the right.
+View scoreText = ui.text("0").style(styles.headlineSmall()).bold();
+View linesText = ui.text("Lines  0").style(styles.bodySmall()).color(colors.onSurfaceVariant());
+View levelText = ui.text("Level  1").style(styles.bodySmall()).color(colors.onSurfaceVariant());
+
+View stats = ui.column().weight(1).gap(2);
+stats.add(ui.text("TETRIS").style(styles.titleMedium()).bold());
+stats.add(scoreText);
+View statLine = ui.row().gap(14);
+statLine.add(linesText);
+statLine.add(levelText);
+stats.add(statLine);
+
+View nextCanvas = ui.canvas().width(NEXT_BOX).height(NEXT_BOX).corner(8).background(colors.surfaceVariant());
+View nextCol = ui.column().width(NEXT_BOX).center().gap(2);
+nextCol.add(ui.text("Next").style(styles.labelSmall()).color(colors.onSurfaceVariant()));
+nextCol.add(nextCanvas);
+
+View scorePanel = ui.row().fillWidth();
+scorePanel.add(stats);
+scorePanel.add(nextCol);
+
+# The well: an aspect-locked (10:20) canvas that grows to fill the gap between the score panel
+# and the controls but never spills past either edge, with a tinted, rounded "screen" backdrop.
+# It reports its measured size so the grid recomputes to crisp cells; the weighted host box
+# absorbs the free space (pushing the controls down) and centers the board.
+View board = ui.canvas().aspectRatio(COLS, ROWS).corner(10).background(colors.surfaceVariant());
+View boardBox = ui.box().weight(1).fillWidth();
+boardBox.add(board);
+board.align("center");
+
+# Stock Material3 buttons (emphasis variants only) laid out as a D-pad.
+View newGameBtn = ui.outlinedButton("New Game").icon(icons.refresh()).weight(1);
+View pauseButton = ui.tonalButton("Pause").weight(1);
+View row1 = ui.row().gap(8).fillWidth();
+row1.add(newGameBtn);
+row1.add(pauseButton);
+
+# Icon-only on this three-across row — a glyph plus a label is too wide for a third of the row.
+View leftBtn = ui.tonalButton("Left").icon(icons.back()).iconOnly().weight(1);
+View rotateBtn = ui.tonalButton("Rotate").icon(icons.refresh()).iconOnly().weight(1);
+View rightBtn = ui.tonalButton("Right").icon(icons.forward()).iconOnly().weight(1);
+View row2 = ui.row().gap(8).fillWidth();
+row2.add(leftBtn);
+row2.add(rotateBtn);
+row2.add(rightBtn);
+
+View downBtn = ui.tonalButton("Down").icon(icons.dropdown()).weight(1);
+View dropBtn = ui.button("Drop").weight(1);
+View row3 = ui.row().gap(8).fillWidth();
+row3.add(downBtn);
+row3.add(dropBtn);
+
+View controls = ui.column().fillWidth().gap(8);
+controls.add(row1);
+controls.add(row2);
+controls.add(row3);
+
+# A fixed (non-scrolling) full-height column: the score panel at the top, the D-pad pinned at
+# the bottom, and the weighted well in between taking all the space left over.
+View page = ui.column().fillWidth().fillHeight();
+View bar = ui.appBar("Tetris");
+page.add(bar);
+View content = ui.column().weight(1).fillWidth().padding(12).gap(10);
+page.add(content);
+content.add(scorePanel);
+content.add(boardBox);
+content.add(controls);
+View root = page;
+
+# ---- geometry / shape helpers -------------------------------------------------------------
+
+func idx(int r, int c) int {
+    r * COLS + c;
+};
+
+func shapeCol(int p, int rot, int i) int {
+    SHAPES[(((p * 4) + rot) * 4 + i) * 2];
+};
+
+func shapeRow(int p, int rot, int i) int {
+    SHAPES[(((p * 4) + rot) * 4 + i) * 2 + 1];
+};
+
+# True when input should move the active piece (game running, not paused / over).
+func playable() bool {
+    started & paused == false & gameOver == false;
+};
+
+# True if piece [p] in rotation [rot] anchored at ([x],[y]) leaves the well or hits a block.
+# The branches are nested rather than `&`-chained because Velo's `&` always evaluates both
+# sides, so the grid lookup must be guarded by control flow to stay inside the well's bounds.
+func collides(int p, int rot, int x, int y) bool {
+    bool hit = false;
+    int i = 0;
+    while (i < 4) {
+        int gx = x + shapeCol(p, rot, i);
+        int gy = y + shapeRow(p, rot, i);
+        if (gx < 0 | gx >= COLS | gy >= ROWS) {
+            hit = true;
+        } else {
+            if (gy >= 0) {
+                if (grid[idx(gy, gx)] != 0) {
+                    hit = true;
+                };
+            };
+        };
+        i = i + 1;
+    };
+    hit;
+};
+
+# Fall interval shrinks as the level climbs, from ~0.8 s down to a fast floor.
+func dropIntervalMs() int {
+    int interval = 800 - (level - 1) * 65;
+    if (interval < 90) then 90 else interval;
+};
+
+# ---- 7-bag randomizer ---------------------------------------------------------------------
+
+func drawFromBag() int {
+    if (bagPos >= 7) {
+        int i = 0;
+        while (i < 7) {
+            bag[i] = i;
+            i = i + 1;
+        };
+        i = 6;
+        while (i > 0) {
+            int j = rng.nextIntBound(i + 1);
+            int t = bag[i];
+            bag[i] = bag[j];
+            bag[j] = t;
+            i = i - 1;
+        };
+        bagPos = 0;
+    };
+    int r = bag[bagPos];
+    bagPos = bagPos + 1;
+    r;
+};
+
+# ---- line clearing ------------------------------------------------------------------------
+
+func rowFull(int r) bool {
+    bool full = true;
+    int c = 0;
+    while (c < COLS) {
+        if (grid[idx(r, c)] == 0) {
+            full = false;
+        };
+        c = c + 1;
+    };
+    full;
+};
+
+# Drop full rows out and award points (scaled by level), Tetris-style.
+func clearLines() void {
+    # A fresh grid starts as empty (0) cells — Velo's `new array[int](n)` leaves slots
+    # uninitialized, so the top rows the compaction never touches must be zeroed explicitly.
+    array[int] compacted = new array[int](ROWS * COLS);
+    int z = 0;
+    while (z < ROWS * COLS) {
+        compacted[z] = 0;
+        z = z + 1;
+    };
+    int target = ROWS - 1;
+    int cleared = 0;
+    int r = ROWS - 1;
+    while (r >= 0) {
+        if (rowFull(r)) {
+            cleared = cleared + 1;
+        } else {
+            int c = 0;
+            while (c < COLS) {
+                compacted[idx(target, c)] = grid[idx(r, c)];
+                c = c + 1;
+            };
+            target = target - 1;
+        };
+        r = r - 1;
+    };
+    grid = compacted;            # the unfilled top rows stay zero-initialized
+    if (cleared > 0) {
+        lines = lines + cleared;
+        score = score + LINE_SCORE[cleared] * level;
+        level = 1 + lines / 10;
+        term.println("[tetris] cleared ".con(cleared.str).con(" line(s); score ").con(score.str));
+    };
+    void
+};
+
+# ---- painting -----------------------------------------------------------------------------
+
+# Draw one filled block (a rounded square inset by 1 dp so cells read as separate bricks).
+func block(View cv, int x, int y, int side, str color) void {
+    cv.drawRoundRect(x + 1, y + 1, side - 2, side - 2, 3).color(color).fill();
+    void
+};
+
+# Dim the well and stamp a centered message (with an optional subtitle) over it.
+func overlay(str title, str subtitle) void {
+    int titleSize = cell + 6;
+    if (titleSize < 22) { titleSize = 22; };
+    int subSize = cell;
+    if (subSize < 15) { subSize = 15; };
+    board.drawRect(0, 0, canvasW, canvasH).color(colors.surface()).alpha(32);
+    board.drawText(originX + 6, canvasH / 2 - titleSize, title, titleSize).color(colors.onSurface());
+    if (subtitle != "") {
+        board.drawText(originX + 6, canvasH / 2 + 6, subtitle, subSize).color(colors.onSurfaceVariant());
+    };
+    void
+};
+
+func drawBoard() void {
+    board.clear();
+
+    # The empty grid: a faint rounded outline per cell, like a brick-game LCD.
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            int v = grid[idx(r, c)];
+            if (v != 0) {
+                block(board, originX + c * cell, originY + r * cell, cell, PIECE_COLOR[v - 1]);
+            } else {
+                board.drawRoundRect(originX + c * cell + 1, originY + r * cell + 1, cell - 2, cell - 2, 3)
+                    .color(colors.outlineVariant()).stroke(1).alpha(18);
+            };
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+
+    if (started & gameOver == false) {
+        # The landing "ghost": where a hard drop would put the piece, as faint outlines.
+        int ghostY = curY;
+        while (collides(curPiece, curRot, curX, ghostY + 1) == false) {
+            ghostY = ghostY + 1;
+        };
+        int i = 0;
+        if (ghostY > curY) {
+            while (i < 4) {
+                int gx = curX + shapeCol(curPiece, curRot, i);
+                int gy = ghostY + shapeRow(curPiece, curRot, i);
+                if (gy >= 0) {
+                    board.drawRoundRect(originX + gx * cell + 1, originY + gy * cell + 1, cell - 2, cell - 2, 3)
+                        .color(PIECE_COLOR[curPiece]).stroke(2).alpha(14);
+                };
+                i = i + 1;
+            };
+        };
+        # The active piece on top.
+        i = 0;
+        while (i < 4) {
+            int gx = curX + shapeCol(curPiece, curRot, i);
+            int gy = curY + shapeRow(curPiece, curRot, i);
+            if (gy >= 0) {
+                block(board, originX + gx * cell, originY + gy * cell, cell, PIECE_COLOR[curPiece]);
+            };
+            i = i + 1;
+        };
+    };
+
+    if (paused) {
+        overlay("PAUSED", "");
+    } else {
+        if (gameOver) {
+            overlay("GAME OVER", "Score ".con(score.str));
+        };
+    };
+    void
+};
+
+func drawNext() void {
+    nextCanvas.clear();
+    # Center the piece within the 4x4 preview by measuring its bounds.
+    int minX = 4;
+    int maxX = 0;
+    int minY = 4;
+    int maxY = 0;
+    int i = 0;
+    while (i < 4) {
+        int cx = shapeCol(nextPiece, 0, i);
+        int cy = shapeRow(nextPiece, 0, i);
+        if (cx < minX) { minX = cx; };
+        if (cx > maxX) { maxX = cx; };
+        if (cy < minY) { minY = cy; };
+        if (cy > maxY) { maxY = cy; };
+        i = i + 1;
+    };
+    int offX = (NEXT_BOX - (maxX - minX + 1) * NEXT_CELL) / 2;
+    int offY = (NEXT_BOX - (maxY - minY + 1) * NEXT_CELL) / 2;
+    i = 0;
+    while (i < 4) {
+        int x = offX + (shapeCol(nextPiece, 0, i) - minX) * NEXT_CELL;
+        int y = offY + (shapeRow(nextPiece, 0, i) - minY) * NEXT_CELL;
+        block(nextCanvas, x, y, NEXT_CELL, PIECE_COLOR[nextPiece]);
+        i = i + 1;
+    };
+    void
+};
+
+func updateStats() void {
+    scoreText.text(score.str);
+    linesText.text("Lines  ".con(lines.str));
+    levelText.text("Level  ".con(level.str));
+    void
+};
+
+# Sync the readout and repaint the well and the preview from the model.
+func render() void {
+    updateStats();
+    drawBoard();
+    drawNext();
+    void
+};
+
+# The canvas was laid out (or resized): refit the grid to its real size and repaint the well.
+func onBoardResized(int w, int h) void {
+    if (w > 0 & h > 0) {
+        canvasW = w;
+        canvasH = h;
+        int fitW = (w - 2 * INSET) / COLS;
+        int fitH = (h - 2 * INSET) / ROWS;
+        int fit = if (fitW < fitH) then fitW else fitH;
+        cell = if (fit < 1) then 1 else fit;
+        originX = (w - cell * COLS) / 2;   # center the grid within the canvas
+        originY = (h - cell * ROWS) / 2;
+        if (started | gameOver) {           # only the well depends on the size; stats/next do not
+            drawBoard();
+        };
+    };
+    void
+};
+
+# ---- game logic ---------------------------------------------------------------------------
+
+# Promote the queued piece to the active one and queue another; game over if it can't fit.
+func spawnNext() void {
+    curPiece = nextPiece;
+    curRot = 0;
+    curX = (COLS - BOX_W[curPiece]) / 2;
+    curY = 0;
+    nextPiece = drawFromBag();
+    if (collides(curPiece, curRot, curX, curY)) {
+        gameOver = true;
+        started = false;
+        term.println("[tetris] game over — score ".con(score.str));
+    };
+    drawNext();
+    void
+};
+
+# Stamp the active piece into the grid, clear any full lines, then spawn the next piece.
+func lockPiece() void {
+    int i = 0;
+    while (i < 4) {
+        int gx = curX + shapeCol(curPiece, curRot, i);
+        int gy = curY + shapeRow(curPiece, curRot, i);
+        if (gy >= 0 & gy < ROWS & gx >= 0 & gx < COLS) {
+            grid[idx(gy, gx)] = curPiece + 1;
+        };
+        i = i + 1;
+    };
+    clearLines();
+    spawnNext();
+    void
+};
+
+func newGame() void {
+    int i = 0;
+    while (i < ROWS * COLS) {
+        grid[i] = 0;
+        i = i + 1;
+    };
+    score = 0;
+    lines = 0;
+    level = 1;
+    paused = false;
+    gameOver = false;
+    started = true;
+    bagPos = 7;                  # force a fresh bag
+    nextPiece = drawFromBag();
+    spawnNext();
+    pauseButton.text("Pause");
+    render();
+    void
+};
+
+# ---- the gravity loop ---------------------------------------------------------------------
+
+func gravityTick(int t) void {
+    if (t == gravToken) {
+        if (playable()) {
+            if (collides(curPiece, curRot, curX, curY + 1)) {
+                lockPiece();
+            } else {
+                curY = curY + 1;
+            };
+            render();
+        };
+        # Keep ticking while the game is alive — paused just skips the drop and resumes later.
+        if (gameOver == false) {
+            async ticker.after(dropIntervalMs(), t, func(int x) void {
+                gravityTick(x);
+                void
+            });
+        };
+    };
+    void
+};
+
+func startGravity() void {
+    gravToken = gravToken + 1;
+    int t = gravToken;
+    async ticker.after(dropIntervalMs(), t, func(int x) void {
+        gravityTick(x);
+        void
+    });
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+
+func onMove(int dx) void {
+    if (playable()) {
+        if (collides(curPiece, curRot, curX + dx, curY) == false) {
+            curX = curX + dx;
+            render();
+        };
+    };
+    void
+};
+
+func onRotate() void {
+    if (playable()) {
+        int nrot = (curRot + 1) % 4;
+        # Try the rotation in place, then a few wall/floor kicks before giving up.
+        array[int] kicks = new array[int]{0, 0 - 1, 1, 0 - 2, 2};
+        int i = 0;
+        bool done = false;
+        while (i < kicks.len & done == false) {
+            if (collides(curPiece, nrot, curX + kicks[i], curY) == false) {
+                curRot = nrot;
+                curX = curX + kicks[i];
+                render();
+                done = true;
+            };
+            i = i + 1;
+        };
+    };
+    void
+};
+
+func onSoftDrop() void {
+    if (playable()) {
+        if (collides(curPiece, curRot, curX, curY + 1) == false) {
+            curY = curY + 1;
+            score = score + 1;       # a nudge of credit for soft-dropping
+            render();
+        } else {
+            lockPiece();
+            render();
+        };
+    };
+    void
+};
+
+func onHardDrop() void {
+    if (playable()) {
+        int dropped = 0;
+        while (collides(curPiece, curRot, curX, curY + 1) == false) {
+            curY = curY + 1;
+            dropped = dropped + 1;
+        };
+        score = score + dropped * 2;  # two points per cell of hard drop
+        lockPiece();
+        render();
+    };
+    void
+};
+
+func onPause() void {
+    if (gameOver == false & started) {
+        paused = paused == false;
+        if (paused) {
+            pauseButton.text("Resume");
+        } else {
+            pauseButton.text("Pause");
+        };
+        render();
+    };
+    void
+};
+
+# ---- wiring -------------------------------------------------------------------------------
+
+newGameBtn.onClick(func() void {
+    newGame();
+    startGravity();
+    void
+});
+
+pauseButton.onClick(func() void {
+    onPause();
+    void
+});
+
+leftBtn.onClick(func() void {
+    onMove(0 - 1);
+    void
+});
+
+rotateBtn.onClick(func() void {
+    onRotate();
+    void
+});
+
+rightBtn.onClick(func() void {
+    onMove(1);
+    void
+});
+
+downBtn.onClick(func() void {
+    onSoftDrop();
+    void
+});
+
+dropBtn.onClick(func() void {
+    onHardDrop();
+    void
+});
+
+board.onResize(func(int w, int h) void {
+    onBoardResized(w, h);
+    void
+});
+
+bar.onNav(func() void {
+    gravToken = gravToken + 1;    # stop the gravity loop
+    ui.close();
+    void
+});
+
+newGame();
+startGravity();
+ui.open(root);
+
+term.println("Tetris opened — drop some blocks.");

@@ -61,6 +61,7 @@ class View {
 
     // icons & small widgets
     fun icon(name: String): View = nope()
+    fun iconOnly(): View = nope()
     fun tint(color: String): View = nope()
     fun checkable(on: Boolean): View = nope()
     fun thickness(dp: Int): View = nope()
@@ -96,6 +97,7 @@ class View {
     // events
     fun onClick(cb: VeloFunction): View = nope()
     fun onLongClick(cb: VeloFunction): View = nope()
+    fun onResize(cb: VeloFunction): View = nope()
     fun onChange(cb: VeloFunction): View = nope()
     fun onToggle(cb: VeloFunction): View = nope()
     fun onSlide(cb: VeloFunction): View = nope()
@@ -124,6 +126,7 @@ class View {
     fun drawPath(spec: String): Shape = nope()
     fun drawPoints(spec: String, mode: String): Shape = nope()
     fun drawText(x: Int, y: Int, s: String, size: Int): Shape = nope()
+    fun aspectRatio(w: Int, h: Int): View = nope()
     fun clear(): View = nope()
     fun onTap(cb: VeloFunction): View = nope()
     fun onPointerDown(cb: VeloFunction): View = nope()

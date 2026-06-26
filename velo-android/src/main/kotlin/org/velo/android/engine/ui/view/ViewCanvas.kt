@@ -115,6 +115,11 @@ internal fun ViewState.clearCanvas() {
     (av as? VeloCanvasView)?.clearOps()
 }
 
+/** Lock this canvas to a [w]:[h] aspect ratio, fitting the largest such box in the space it gets. */
+internal fun ViewState.aspectRatio(w: Int, h: Int) {
+    ui { (av as? VeloCanvasView)?.setAspect(w, h) }
+}
+
 /** Fire [cb] with the dp tap point when the canvas is tapped. */
 internal fun ViewState.onTap(cb: VeloFunction) {
     retain(cb)
