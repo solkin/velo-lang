@@ -1,0 +1,1145 @@
+# QR Generator — a real, native-style Material3 app that turns text into a scannable QR code,
+# with the whole QR standard implemented in Velo itself: there is no host-side QR library, so
+# this file carries a complete byte-mode encoder — Reed-Solomon error correction over GF(256),
+# the eight data masks with the official penalty scoring, and the BCH-protected format/version
+# information. The Android host only draws filled rectangles; everything that makes the code
+# scannable is computed here, in the bytecode.
+#
+# "QR codes carry different kinds of information", so the app is built around content TYPES:
+# pick Text / URL / Wi-Fi / Email / Phone / SMS / Geo / Contact at the top and the form below
+# reshapes to the fields that type needs (a Wi-Fi code wants an SSID and a password; a contact
+# wants a name and a phone). Each type is formatted into the exact string scanners expect
+# (WIFI:…, mailto:…, SMSTO:…, geo:…, BEGIN:VCARD…) and then encoded. An error-correction
+# selector (L/M/Q/H) trades capacity for damage resistance. The form, the scaffold and the
+# canvas are built once; switching type only flips which field group is visible.
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+Icons icons = new Icons();
+Colors colors = new Colors();
+TextStyles styles = new TextStyles();
+
+# =====================================================================================
+#  QR ENGINE
+# =====================================================================================
+#
+#  Galois field GF(256) used by Reed-Solomon. GF_EXP[i] = 2^i in the field (the generator is
+#  2, the primitive polynomial 0x11D); GF_LOG is its inverse. EXP is doubled to 512 entries so
+#  a product's exponent (up to 254+254) can be looked up without a modulo.
+
+array[int] GF_EXP = new array[int](512);
+array[int] GF_LOG = new array[int](256);
+
+func initGf() void {
+    int x = 1;
+    int i = 0;
+    while (i < 255) {
+        GF_EXP[i] = x;
+        GF_LOG[x] = i;
+        x = x.shl(1);
+        if (x >= 256) { x = x ^ 285; };   # reduce mod the primitive polynomial 0x11D
+        i = i + 1;
+    };
+    while (i < 512) {
+        GF_EXP[i] = GF_EXP[i - 255];
+        i = i + 1;
+    };
+};
+initGf();
+
+# Field multiply: 0 absorbs; otherwise add the logs and look the exponent back up.
+func gfMul(int a, int b) int {
+    if ((a == 0) | (b == 0)) then 0 else GF_EXP[GF_LOG[a] + GF_LOG[b]];
+};
+
+# The Reed-Solomon generator polynomial of the given degree: the product of (x - 2^i),
+# i in [0, degree). Coefficients are stored high-order first, so index 0 is the leading 1.
+func rsGenerator(int degree) array[int] {
+    array[int] g = new array[int]{1};
+    int i = 0;
+    while (i < degree) {
+        array[int] ng = new array[int](g.len + 1);
+        int z = 0;
+        while (z < ng.len) { ng[z] = 0; z = z + 1; };
+        int j = 0;
+        while (j < g.len) {
+            ng[j] = ng[j] ^ g[j];                              # multiply by x
+            ng[j + 1] = ng[j + 1] ^ gfMul(g[j], GF_EXP[i]);    #  + by the root 2^i
+            j = j + 1;
+        };
+        g = ng;
+        i = i + 1;
+    };
+    g;
+};
+
+# The error-correction codewords for one data block: the remainder of the data polynomial
+# divided by the generator, computed by synthetic division in the field.
+func rsEncode(array[int] block, int ecLen) array[int] {
+    array[int] gen = rsGenerator(ecLen);
+    array[int] ecc = new array[int](ecLen);
+    int z = 0;
+    while (z < ecLen) { ecc[z] = 0; z = z + 1; };
+    int i = 0;
+    while (i < block.len) {
+        int factor = block[i] ^ ecc[0];
+        int j = 0;
+        while (j < ecLen - 1) { ecc[j] = ecc[j + 1]; j = j + 1; };
+        ecc[ecLen - 1] = 0;
+        if (factor != 0) {
+            j = 0;
+            while (j < ecLen) {
+                ecc[j] = ecc[j] ^ gfMul(gen[j + 1], factor);
+                j = j + 1;
+            };
+        };
+        i = i + 1;
+    };
+    ecc;
+};
+
+# A growable byte buffer (Velo arrays are fixed-size, so we manage capacity by hand).
+class ByteBuf() {
+    array[int] buf = new array[int](32);
+    int count = 0;
+
+    func ensure(int need) void {
+        if (need > buf.len) {
+            int ncap = buf.len * 2;
+            while (ncap < need) { ncap = ncap * 2; };
+            array[int] nb = new array[int](ncap);
+            int i = 0;
+            while (i < count) { nb[i] = buf[i]; i = i + 1; };
+            buf = nb;
+        };
+    };
+    func add(int b) void {
+        ensure(count + 1);
+        buf[count] = b & 255;
+        count = count + 1;
+    };
+    func toArray() array[int] { buf.sub(0, count); };
+};
+
+# A most-significant-bit-first bit stream that packs into whole bytes — the natural shape of
+# a QR data segment (a 4-bit mode, an 8/16-bit length, then 8 bits per character).
+class BitBuf() {
+    ByteBuf bytes = new ByteBuf();
+    int cur = 0;
+    int nbits = 0;
+
+    func push(int val, int len) void {
+        int i = len - 1;
+        while (i >= 0) {
+            int bit = val.shr(i) & 1;
+            cur = cur.shl(1) | bit;
+            nbits = nbits + 1;
+            if (nbits == 8) { bytes.add(cur); cur = 0; nbits = 0; };
+            i = i - 1;
+        };
+    };
+    func bitCount() int { (bytes.count * 8) + nbits; };
+    func padToByte() void {
+        while (nbits != 0) {
+            cur = cur.shl(1);
+            nbits = nbits + 1;
+            if (nbits == 8) { bytes.add(cur); cur = 0; nbits = 0; };
+        };
+    };
+    func toBytes() array[int] { bytes.toArray(); };
+};
+
+# Encode a string as UTF-8 bytes (the QR byte mode is raw bytes; modern scanners read UTF-8).
+# Handles the basic plane and surrogate pairs so emoji and non-Latin text survive.
+func toUtf8(str s) array[int] {
+    ByteBuf b = new ByteBuf();
+    int i = 0;
+    int n = s.len;
+    while (i < n) {
+        int c = s[i];
+        if (c < 128) {
+            b.add(c);
+        } else {
+            if (c < 2048) {
+                b.add(192 | c.shr(6));
+                b.add(128 | (c & 63));
+            } else {
+                bool isHigh = (c >= 55296) & (c <= 56319);
+                bool paired = false;
+                if (isHigh & (i + 1 < n)) {
+                    int c2 = s[i + 1];
+                    if ((c2 >= 56320) & (c2 <= 57343)) {
+                        int cp = 65536 + ((c - 55296).shl(10) + (c2 - 56320));
+                        b.add(240 | cp.shr(18));
+                        b.add(128 | (cp.shr(12) & 63));
+                        b.add(128 | (cp.shr(6) & 63));
+                        b.add(128 | (cp & 63));
+                        i = i + 1;
+                        paired = true;
+                    };
+                };
+                if (paired == false) {
+                    b.add(224 | c.shr(12));
+                    b.add(128 | (c.shr(6) & 63));
+                    b.add(128 | (c & 63));
+                };
+            };
+        };
+        i = i + 1;
+    };
+    b.toArray();
+};
+
+# ---- error-correction characteristics, versions 1..10, levels L,M,Q,H ----------------------
+#  Indexed by (version-1)*4 + level. Per (version, level) QR fixes: how many EC codewords each
+#  block carries, and how the data splits into two block groups. These four tables are the
+#  standard ISO/IEC 18004 values; everything else (capacities, total codewords) derives.
+
+array[int] EC_PER_BLOCK = new array[int]{
+     7, 10, 13, 17,    10, 16, 22, 28,    15, 26, 18, 22,    20, 18, 26, 16,    26, 24, 18, 22,
+    18, 16, 24, 28,    20, 18, 18, 26,    24, 22, 22, 26,    30, 22, 20, 24,    18, 26, 24, 28
+};
+array[int] G1_BLOCKS = new array[int]{
+     1,  1,  1,  1,     1,  1,  1,  1,     1,  1,  2,  2,     1,  2,  2,  4,     1,  2,  2,  2,
+     2,  4,  4,  4,     2,  4,  2,  4,     2,  2,  4,  4,     2,  3,  4,  4,     2,  4,  6,  6
+};
+array[int] G1_WORDS = new array[int]{
+    19, 16, 13,  9,    34, 28, 22, 16,    55, 44, 17, 13,    80, 32, 24,  9,   108, 43, 15, 11,
+    68, 27, 19, 15,    78, 31, 14, 13,    97, 38, 18, 14,   116, 36, 16, 12,    68, 43, 19, 15
+};
+array[int] G2_BLOCKS = new array[int]{
+     0,  0,  0,  0,     0,  0,  0,  0,     0,  0,  0,  0,     0,  0,  0,  0,     0,  0,  2,  2,
+     0,  0,  0,  0,     0,  0,  4,  1,     0,  2,  2,  2,     0,  2,  4,  4,     2,  1,  2,  2
+};
+array[int] G2_WORDS = new array[int]{
+     0,  0,  0,  0,     0,  0,  0,  0,     0,  0,  0,  0,     0,  0,  0,  0,     0,  0, 16, 12,
+     0,  0,  0,  0,     0,  0, 15, 14,     0, 39, 19, 15,     0, 37, 17, 13,    69, 44, 20, 16
+};
+
+# Remainder bits appended after the interleaved codewords, per version (1..10).
+array[int] REM = new array[int]{ 0, 7, 7, 7, 7, 7, 0, 0, 0, 0 };
+
+# The two format-info error-correction field codes, indexed by our level L,M,Q,H.
+array[int] ECC_FIELD = new array[int]{ 1, 0, 3, 2 };
+
+# The 1:1:3:1:1 finder-like run penalised by mask rule 3, and its mirror (each with the four
+# light modules that must flank it).
+array[int] PAT1 = new array[int]{ 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0 };
+array[int] PAT2 = new array[int]{ 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1 };
+
+# The module matrix being built: N is the side in modules, MOD[r*N+c] the dark/light bit,
+# FUN[r*N+c] a 1 where the module is a fixed function pattern (so data placement skips it).
+int N = 0;
+array[int] MOD = new array[int](1);
+array[int] FUN = new array[int](1);
+int LAST_BYTES = 0;
+
+# Alignment-pattern centre coordinates per version (all pairwise combinations are used).
+func alignCoords(int version) array[int] {
+    if (version == 1) { new array[int](0); }
+    else { if (version == 2) { new array[int]{6, 18}; }
+    else { if (version == 3) { new array[int]{6, 22}; }
+    else { if (version == 4) { new array[int]{6, 26}; }
+    else { if (version == 5) { new array[int]{6, 30}; }
+    else { if (version == 6) { new array[int]{6, 34}; }
+    else { if (version == 7) { new array[int]{6, 22, 38}; }
+    else { if (version == 8) { new array[int]{6, 24, 42}; }
+    else { if (version == 9) { new array[int]{6, 26, 46}; }
+    else { new array[int]{6, 28, 50}; };
+    }; }; }; }; }; }; }; };
+};
+
+# Mark module (r,c) as a fixed function pattern carrying value v.
+func setFun(int r, int c, int v) void {
+    int idx = (r * N) + c;
+    MOD[idx] = v;
+    FUN[idx] = 1;
+};
+
+# One 7x7 finder eye plus its one-module light separator, anchored at (top,left).
+func placeFinder(int top, int left) void {
+    int r = -1;
+    while (r <= 7) {
+        int c = -1;
+        while (c <= 7) {
+            int rr = top + r;
+            int cc = left + c;
+            if ((rr >= 0) & (rr < N) & (cc >= 0) & (cc < N)) {
+                int val = 0;
+                if ((r >= 0) & (r <= 6) & (c >= 0) & (c <= 6)) {
+                    bool border = (r == 0) | (r == 6) | (c == 0) | (c == 6);
+                    bool core = (r >= 2) & (r <= 4) & (c >= 2) & (c <= 4);
+                    val = if (border | core) then 1 else 0;
+                };
+                setFun(rr, cc, val);
+            };
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+};
+
+# Reserve (mark as function) the 15-bit format-info strips by both finders so data skips them;
+# the real bits are written later, once the best mask is known.
+func reserveFormat() void {
+    int i = 0;
+    while (i <= 8) {
+        if (i != 6) { setFun(8, i, 0); setFun(i, 8, 0); };
+        i = i + 1;
+    };
+    int k = 0;
+    while (k < 8) { setFun(8, (N - 8) + k, 0); k = k + 1; };
+    k = 0;
+    while (k < 7) { setFun((N - 7) + k, 8, 0); k = k + 1; };
+};
+
+# Reserve the two 6x3 version-info blocks (only present from version 7 up).
+func reserveVersion() void {
+    int r = 0;
+    while (r < 6) {
+        int c = 0;
+        while (c < 3) {
+            setFun((N - 11) + c, r, 0);
+            setFun(r, (N - 11) + c, 0);
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+};
+
+# One 5x5 alignment pattern centred at (cr,cc).
+func drawAlign(int cr, int cc) void {
+    int dr = -2;
+    while (dr <= 2) {
+        int dc = -2;
+        while (dc <= 2) {
+            int ad = if (dr < 0) then (0 - dr) else dr;
+            int adc = if (dc < 0) then (0 - dc) else dc;
+            int dist = if (ad > adc) then ad else adc;
+            int val = if ((dist == 0) | (dist == 2)) then 1 else 0;
+            setFun(cr + dr, cc + dc, val);
+            dc = dc + 1;
+        };
+        dr = dr + 1;
+    };
+};
+
+func placeAlignment(int version) void {
+    array[int] coords = alignCoords(version);
+    int last = coords.len - 1;
+    int a = 0;
+    while (a < coords.len) {
+        int b = 0;
+        while (b < coords.len) {
+            # Every coordinate pairing carries an alignment pattern except the three that would
+            # sit on the finder patterns: the top-left, top-right and bottom-left corners. (The
+            # patterns on the timing lines — e.g. (6, mid) — are kept: their centre row/column
+            # coincides with the timing run, which has the same 1-0-1-0-1 values.)
+            bool corner = ((a == 0) & (b == 0)) | ((a == 0) & (b == last)) | ((a == last) & (b == 0));
+            if (corner == false) { drawAlign(coords[a], coords[b]); };
+            b = b + 1;
+        };
+        a = a + 1;
+    };
+};
+
+# Lay down every fixed pattern: finders, separators, timing rows, the dark module, the
+# reserved format/version areas, and the alignment patterns.
+func buildStructure(int version) void {
+    placeFinder(0, 0);
+    placeFinder(0, N - 7);
+    placeFinder(N - 7, 0);
+    int i = 8;
+    while (i < N - 8) {
+        int v = if ((i % 2) == 0) then 1 else 0;
+        setFun(6, i, v);
+        setFun(i, 6, v);
+        i = i + 1;
+    };
+    setFun(N - 8, 8, 1);          # the always-dark module
+    reserveFormat();
+    if (version >= 7) { reserveVersion(); };
+    placeAlignment(version);
+};
+
+# Walk the final codeword bits up the matrix in the standard two-column boustrophedon, skipping
+# the vertical timing column and every function module.
+func placeData(array[int] codewords, int remBits) void {
+    int bitLen = (codewords.len * 8) + remBits;
+    int bi = 0;
+    int col = N - 1;
+    int up = 1;
+    while (col > 0) {
+        if (col == 6) { col = 5; };
+        int rowStep = if (up == 1) then -1 else 1;
+        int row = if (up == 1) then (N - 1) else 0;
+        int rc = 0;
+        while (rc < N) {
+            int cc = 0;
+            while (cc < 2) {
+                int c = col - cc;
+                if (FUN[(row * N) + c] == 0) {
+                    int bit = 0;
+                    if (bi < bitLen) {
+                        int byteIndex = bi / 8;
+                        if (byteIndex < codewords.len) {
+                            int bitInByte = 7 - (bi % 8);
+                            bit = codewords[byteIndex].shr(bitInByte) & 1;
+                        };
+                    };
+                    MOD[(row * N) + c] = bit;
+                    bi = bi + 1;
+                };
+                cc = cc + 1;
+            };
+            row = row + rowStep;
+            rc = rc + 1;
+        };
+        up = if (up == 1) then 0 else 1;
+        col = col - 2;
+    };
+};
+
+func gbit(int x, int i) int { x.shr(i) & 1; };
+
+func setT(array[int] t, int r, int c, int v) void { t[(r * N) + c] = v; };
+
+# 1 where mask number `mask` flips module (row,col). Conditions use (x=col, y=row).
+func maskBit(int mask, int y, int x) int {
+    int r = 0;
+    if (mask == 0) { r = (x + y) % 2; }
+    else { if (mask == 1) { r = y % 2; }
+    else { if (mask == 2) { r = x % 3; }
+    else { if (mask == 3) { r = (x + y) % 3; }
+    else { if (mask == 4) { r = ((x / 3) + (y / 2)) % 2; }
+    else { if (mask == 5) { r = ((x * y) % 2) + ((x * y) % 3); }
+    else { if (mask == 6) { r = (((x * y) % 2) + ((x * y) % 3)) % 2; }
+    else { r = (((x + y) % 2) + ((x * y) % 3)) % 2; };
+    }; }; }; }; }; };
+    if (r == 0) then 1 else 0;
+};
+
+# Write the 15-bit BCH format information (EC level + mask) into both copies on matrix `t`.
+func drawFormat(array[int] t, int level, int mask) void {
+    int data5 = ECC_FIELD[level].shl(3) | mask;
+    int rem = data5;
+    int i = 0;
+    while (i < 10) { rem = rem.shl(1) ^ ((rem.shr(9) & 1) * 1335); i = i + 1; };
+    int bits = (data5.shl(10) | rem) ^ 21522;
+    # Copy 1, around the top-left finder. The vertical strip (column 8) carries the low bits
+    # 0..7; the horizontal strip (row 8) carries the high bits 14..8 — the placement a decoder
+    # expects (matching ISO/IEC 18004 §7.9 and the segno/Nayuki reference).
+    i = 0;
+    while (i < 6) { setT(t, i, 8, gbit(bits, i)); i = i + 1; };   # column 8, rows 0..5 -> bits 0..5
+    setT(t, 7, 8, gbit(bits, 6));                                 # skip the timing row 6
+    setT(t, 8, 8, gbit(bits, 7));
+    i = 0;
+    while (i < 6) { setT(t, 8, i, gbit(bits, 14 - i)); i = i + 1; };  # row 8, cols 0..5 -> bits 14..9
+    setT(t, 8, 7, gbit(bits, 8));                                 # skip the timing column 6
+    # Copy 2: the horizontal strip on the right carries bits 0..7, the vertical strip at the
+    # bottom carries bits 14..7 (its lowest module is the always-dark module, written last).
+    i = 0;
+    while (i < 8) { setT(t, 8, (N - 1) - i, gbit(bits, i)); i = i + 1; };
+    i = 0;
+    while (i < 8) { setT(t, (N - 1) - i, 8, gbit(bits, 14 - i)); i = i + 1; };
+    setT(t, N - 8, 8, 1);
+};
+
+# Write the 18-bit BCH version information (version 7+) into both blocks on matrix `t`.
+func drawVersion(array[int] t, int version) void {
+    int rem = version;
+    int i = 0;
+    while (i < 12) { rem = rem.shl(1) ^ ((rem.shr(11) & 1) * 7973); i = i + 1; };
+    int bits = version.shl(12) | rem;
+    i = 0;
+    while (i < 18) {
+        int bit = gbit(bits, i);
+        int a = (N - 11) + (i % 3);
+        int b = i / 3;
+        setT(t, a, b, bit);
+        setT(t, b, a, bit);
+        i = i + 1;
+    };
+};
+
+# A copy of MOD with mask `mask` applied to the data modules and the format/version info drawn.
+func cloneApplyMask(int mask, int level, int version) array[int] {
+    int total = N * N;
+    array[int] t = new array[int](total);
+    int i = 0;
+    while (i < total) {
+        int val = MOD[i];
+        if (FUN[i] == 0) {
+            int r = i / N;
+            int c = i - (r * N);
+            if (maskBit(mask, r, c) == 1) { val = val ^ 1; };
+        };
+        t[i] = val;
+        i = i + 1;
+    };
+    drawFormat(t, level, mask);
+    if (version >= 7) { drawVersion(t, version); };
+    t;
+};
+
+# Does the 11-module window at (r,c) (dir 0 = across, 1 = down) match a finder-like pattern?
+func matchPattern(array[int] t, int r, int c, int dir) int {
+    int k = 0;
+    bool m1 = true;
+    bool m2 = true;
+    while (k < 11) {
+        int v = if (dir == 0) then t[(r * N) + c + k] else t[((r + k) * N) + c];
+        if (v != PAT1[k]) { m1 = false; };
+        if (v != PAT2[k]) { m2 = false; };
+        k = k + 1;
+    };
+    if (m1 | m2) then 1 else 0;
+};
+
+# The official mask penalty: long same-colour runs, 2x2 blocks, finder-like patterns, and an
+# imbalance between dark and light. Lower is better; the encoder keeps the lowest-scoring mask.
+func penalty(array[int] t) int {
+    int score = 0;
+
+    # Rule 1 — runs of five or more equal modules along each row, then each column.
+    int r = 0;
+    while (r < N) {
+        int runColor = -1;
+        int runLen = 0;
+        int c = 0;
+        while (c < N) {
+            int v = t[(r * N) + c];
+            if (v == runColor) { runLen = runLen + 1; }
+            else {
+                if (runLen >= 5) { score = score + 3 + (runLen - 5); };
+                runColor = v; runLen = 1;
+            };
+            c = c + 1;
+        };
+        if (runLen >= 5) { score = score + 3 + (runLen - 5); };
+        r = r + 1;
+    };
+    int c2 = 0;
+    while (c2 < N) {
+        int runColor = -1;
+        int runLen = 0;
+        int rr = 0;
+        while (rr < N) {
+            int v = t[(rr * N) + c2];
+            if (v == runColor) { runLen = runLen + 1; }
+            else {
+                if (runLen >= 5) { score = score + 3 + (runLen - 5); };
+                runColor = v; runLen = 1;
+            };
+            rr = rr + 1;
+        };
+        if (runLen >= 5) { score = score + 3 + (runLen - 5); };
+        c2 = c2 + 1;
+    };
+
+    # Rule 2 — every 2x2 block of one colour.
+    int r3 = 0;
+    while (r3 < N - 1) {
+        int c3 = 0;
+        while (c3 < N - 1) {
+            int a = t[(r3 * N) + c3];
+            int b = t[(r3 * N) + c3 + 1];
+            int cc = t[((r3 + 1) * N) + c3];
+            int d = t[((r3 + 1) * N) + c3 + 1];
+            if ((a == b) & (a == cc) & (a == d)) { score = score + 3; };
+            c3 = c3 + 1;
+        };
+        r3 = r3 + 1;
+    };
+
+    # Rule 3 — finder-like 1:1:3:1:1 patterns in any row or column.
+    int rr2 = 0;
+    while (rr2 < N) {
+        int cc2 = 0;
+        while (cc2 <= N - 11) {
+            if (matchPattern(t, rr2, cc2, 0) == 1) { score = score + 40; };
+            cc2 = cc2 + 1;
+        };
+        rr2 = rr2 + 1;
+    };
+    int cc3 = 0;
+    while (cc3 < N) {
+        int rr3 = 0;
+        while (rr3 <= N - 11) {
+            if (matchPattern(t, rr3, cc3, 1) == 1) { score = score + 40; };
+            rr3 = rr3 + 1;
+        };
+        cc3 = cc3 + 1;
+    };
+
+    # Rule 4 — deviation of the dark-module share from 50%.
+    int dark = 0;
+    int i = 0;
+    int total = N * N;
+    while (i < total) { if (t[i] == 1) { dark = dark + 1; }; i = i + 1; };
+    int percent = (dark * 100) / total;
+    int diff = percent - 50;
+    if (diff < 0) { diff = 0 - diff; };
+    score = score + ((diff / 5) * 10);
+
+    score;
+};
+
+# Build the data codeword stream (mode + length + payload + padding), split it into blocks,
+# append Reed-Solomon EC codewords, and interleave both per the spec.
+func buildCodewords(array[int] payload, int version, int level) array[int] {
+    int idx = ((version - 1) * 4) + level;
+    int ecLen = EC_PER_BLOCK[idx];
+    int g1b = G1_BLOCKS[idx];
+    int g1w = G1_WORDS[idx];
+    int g2b = G2_BLOCKS[idx];
+    int g2w = G2_WORDS[idx];
+    int totalData = (g1b * g1w) + (g2b * g2w);
+    int cci = if (version <= 9) then 8 else 16;
+
+    BitBuf bb = new BitBuf();
+    bb.push(4, 4);                    # byte mode indicator
+    bb.push(payload.len, cci);        # character count
+    int i = 0;
+    while (i < payload.len) { bb.push(payload[i], 8); i = i + 1; };
+
+    int capBits = totalData * 8;
+    int termLen = capBits - bb.bitCount();
+    if (termLen > 4) { termLen = 4; };
+    if (termLen > 0) { bb.push(0, termLen); };
+    bb.padToByte();
+
+    array[int] pre = bb.toBytes();
+    array[int] dataCW = new array[int](totalData);
+    int j = 0;
+    while (j < totalData) {
+        if (j < pre.len) { dataCW[j] = pre[j]; }
+        else {
+            int padPos = j - pre.len;
+            dataCW[j] = if ((padPos % 2) == 0) then 236 else 17;   # 0xEC / 0x11
+        };
+        j = j + 1;
+    };
+
+    int totalBlocks = g1b + g2b;
+    array[array[int]] dblocks = new array[array[int]](totalBlocks);
+    array[array[int]] eblocks = new array[array[int]](totalBlocks);
+    int pos = 0;
+    int bk = 0;
+    while (bk < g1b) {
+        dblocks[bk] = dataCW.sub(pos, pos + g1w);
+        eblocks[bk] = rsEncode(dblocks[bk], ecLen);
+        pos = pos + g1w;
+        bk = bk + 1;
+    };
+    while (bk < totalBlocks) {
+        dblocks[bk] = dataCW.sub(pos, pos + g2w);
+        eblocks[bk] = rsEncode(dblocks[bk], ecLen);
+        pos = pos + g2w;
+        bk = bk + 1;
+    };
+
+    int totalCW = totalData + (ecLen * totalBlocks);
+    array[int] out = new array[int](totalCW);
+    int ri = 0;
+    int maxW = if (g2w > g1w) then g2w else g1w;
+    int col = 0;
+    while (col < maxW) {
+        int k = 0;
+        while (k < totalBlocks) {
+            if (col < dblocks[k].len) { out[ri] = dblocks[k][col]; ri = ri + 1; };
+            k = k + 1;
+        };
+        col = col + 1;
+    };
+    col = 0;
+    while (col < ecLen) {
+        int k = 0;
+        while (k < totalBlocks) {
+            out[ri] = eblocks[k][col];
+            ri = ri + 1;
+            k = k + 1;
+        };
+        col = col + 1;
+    };
+    out;
+};
+
+# The whole pipeline: choose the smallest version that fits, encode, build the matrix, pick the
+# best mask, and leave the result in MOD/FUN/N. Returns the version, or 0 if it does not fit.
+func encodeContent(str content, int level) int {
+    array[int] payload = toUtf8(content);
+    LAST_BYTES = payload.len;
+
+    int version = 0;
+    int v = 1;
+    while ((v <= 10) & (version == 0)) {
+        int idx = ((v - 1) * 4) + level;
+        int cap = (G1_BLOCKS[idx] * G1_WORDS[idx]) + (G2_BLOCKS[idx] * G2_WORDS[idx]);
+        int cci = if (v <= 9) then 8 else 16;
+        int needBytes = ((4 + cci + (8 * payload.len)) + 7) / 8;
+        if (needBytes <= cap) { version = v; };
+        v = v + 1;
+    };
+
+    if (version == 0) { 0; }
+    else {
+        array[int] codewords = buildCodewords(payload, version, level);
+
+        N = (version * 4) + 17;
+        MOD = new array[int](N * N);
+        FUN = new array[int](N * N);
+        int z = 0;
+        int total = N * N;
+        while (z < total) { MOD[z] = 0; FUN[z] = 0; z = z + 1; };
+
+        buildStructure(version);
+        placeData(codewords, REM[version - 1]);
+
+        int bestMask = 0;
+        int bestPenalty = -1;
+        array[int] bestMod = MOD;
+        int m = 0;
+        while (m < 8) {
+            array[int] trial = cloneApplyMask(m, level, version);
+            int pen = penalty(trial);
+            if ((bestPenalty == -1) | (pen < bestPenalty)) {
+                bestPenalty = pen;
+                bestMask = m;
+                bestMod = trial;
+            };
+            m = m + 1;
+        };
+        MOD = bestMod;
+        version;
+    };
+};
+
+# =====================================================================================
+#  CONTENT TYPES — each formats its fields into the string a scanner expects
+# =====================================================================================
+
+func hex1(int v) str { "0123456789ABCDEF"[v].char; };
+
+# Percent-encode a string for a URL query component (used by the mailto: builder).
+func urlEncode(str s) str {
+    array[int] bytes = toUtf8(s);
+    str out = "";
+    int i = 0;
+    while (i < bytes.len) {
+        int b = bytes[i];
+        bool unreserved = ((b >= 65) & (b <= 90)) | ((b >= 97) & (b <= 122)) | ((b >= 48) & (b <= 57))
+            | (b == 45) | (b == 95) | (b == 46) | (b == 126);
+        if (unreserved) { out = out + b.char; }
+        else { out = out + "%" + hex1(b / 16) + hex1(b % 16); };
+        i = i + 1;
+    };
+    out;
+};
+
+# Backslash-escape the characters the Wi-Fi format treats specially: \ ; , : "
+func escapeWifi(str s) str {
+    str out = "";
+    int i = 0;
+    while (i < s.len) {
+        int c = s[i];
+        if ((c == 92) | (c == 59) | (c == 44) | (c == 58) | (c == 34)) { out = out + "\\"; };
+        out = out + c.char;
+        i = i + 1;
+    };
+    out;
+};
+
+# True if the string already carries a scheme (contains "://").
+func hasScheme(str s) bool {
+    bool found = false;
+    int i = 0;
+    while (i < s.len - 2) {
+        if ((s[i] == 58) & (s[i + 1] == 47) & (s[i + 2] == 47)) { found = true; };
+        i = i + 1;
+    };
+    found;
+};
+
+# =====================================================================================
+#  UI STATE — every widget that an event reads or mutates lives as a global
+# =====================================================================================
+
+View C = ui.canvas();
+View STATUS = ui.text("");
+
+View TXT     = ui.field("Text or note");
+View URLF    = ui.field("Website address");
+View WSSID   = ui.field("Network name (SSID)");
+View WPASS   = ui.field("Password");
+View WHIDDEN = ui.toggle("Hidden network");
+View EMAIL   = ui.field("Email address");
+View ESUBJ   = ui.field("Subject");
+View EBODY   = ui.field("Message");
+View PHONE   = ui.field("Phone number");
+View SNUM    = ui.field("Phone number");
+View SBODY   = ui.field("Message");
+View GLAT    = ui.field("Latitude");
+View GLNG    = ui.field("Longitude");
+View VCNAME  = ui.field("Full name");
+View VCPHONE = ui.field("Phone");
+View VCEMAIL = ui.field("Email");
+View VCORG   = ui.field("Organization");
+
+array[View] MODE_CHIPS = new array[View](8);
+array[View] GROUPS     = new array[View](8);
+array[View] ECC_CHIPS  = new array[View](4);
+array[View] WENC_CHIPS = new array[View](3);
+
+int MODE = 1;        # 0 Text 1 URL 2 Wi-Fi 3 Email 4 Phone 5 SMS 6 Geo 7 Contact
+int ECC = 1;         # 0 L 1 M 2 Q 3 H
+int WIFI_ENC = 0;    # 0 WPA 1 WEP 2 none
+bool HAS_QR = false;
+int QR_PX = 280;     # the fixed canvas side, in dp
+
+func eccName(int level) str {
+    if (level == 0) then "L" else (if (level == 1) then "M" else (if (level == 2) then "Q" else "H"));
+};
+
+# ---- per-type string builders --------------------------------------------------------------
+
+func buildWifi() str {
+    str ssid = WSSID.value();
+    if (ssid.len == 0) { ""; }
+    else {
+        str enc = if (WIFI_ENC == 0) then "WPA" else (if (WIFI_ENC == 1) then "WEP" else "nopass");
+        str s = "WIFI:T:" + enc + ";S:" + escapeWifi(ssid) + ";";
+        if (WIFI_ENC != 2) { s = s + "P:" + escapeWifi(WPASS.value()) + ";"; };
+        if (WHIDDEN.isChecked()) { s = s + "H:true;"; };
+        s + ";";
+    };
+};
+
+func buildEmail() str {
+    str addr = EMAIL.value();
+    if (addr.len == 0) { ""; }
+    else {
+        str s = "mailto:" + addr;
+        bool has = false;
+        if (ESUBJ.value().len > 0) { s = s + "?subject=" + urlEncode(ESUBJ.value()); has = true; };
+        if (EBODY.value().len > 0) {
+            s = s + (if (has) then "&" else "?") + "body=" + urlEncode(EBODY.value());
+        };
+        s;
+    };
+};
+
+func buildSms() str {
+    str num = SNUM.value();
+    if (num.len == 0) then "" else ("SMSTO:" + num + ":" + SBODY.value());
+};
+
+func buildGeo() str {
+    str la = GLAT.value();
+    str lo = GLNG.value();
+    if ((la.len == 0) | (lo.len == 0)) then "" else ("geo:" + la + "," + lo);
+};
+
+func buildVcard() str {
+    str name = VCNAME.value();
+    if (name.len == 0) { ""; }
+    else {
+        str s = "BEGIN:VCARD\nVERSION:3.0\n";
+        s = s + "N:" + name + "\nFN:" + name + "\n";
+        if (VCPHONE.value().len > 0) { s = s + "TEL:" + VCPHONE.value() + "\n"; };
+        if (VCEMAIL.value().len > 0) { s = s + "EMAIL:" + VCEMAIL.value() + "\n"; };
+        if (VCORG.value().len > 0) { s = s + "ORG:" + VCORG.value() + "\n"; };
+        s + "END:VCARD";
+    };
+};
+
+func currentContent() str {
+    str out = "";
+    if (MODE == 0) { out = TXT.value(); }
+    else { if (MODE == 1) {
+        str u = URLF.value();
+        if (u.len == 0) { out = ""; } else { out = if (hasScheme(u)) then u else ("https://" + u); };
+    }
+    else { if (MODE == 2) { out = buildWifi(); }
+    else { if (MODE == 3) { out = buildEmail(); }
+    else { if (MODE == 4) {
+        str p = PHONE.value();
+        out = if (p.len == 0) then "" else ("tel:" + p);
+    }
+    else { if (MODE == 5) { out = buildSms(); }
+    else { if (MODE == 6) { out = buildGeo(); }
+    else { out = buildVcard(); };
+    }; }; }; }; }; };
+    out;
+};
+
+# ---- rendering -----------------------------------------------------------------------------
+
+# Paint the current matrix: a white field (so the code reads in light or dark theme) with a
+# 4-module quiet zone, then a black square per dark module. Boundaries are computed in integers
+# so the modules tile the canvas exactly, with no seams or drift.
+func drawQr() void {
+    C.clear();
+    C.drawRect(0, 0, QR_PX, QR_PX).color("#FFFFFF");
+    int cells = N + 8;
+    int r = 0;
+    while (r < N) {
+        int c = 0;
+        while (c < N) {
+            if (MOD[(r * N) + c] == 1) {
+                int x0 = (((c + 4) * QR_PX) / cells);
+                int x1 = (((c + 5) * QR_PX) / cells);
+                int y0 = (((r + 4) * QR_PX) / cells);
+                int y1 = (((r + 5) * QR_PX) / cells);
+                C.drawRect(x0, y0, x1 - x0, y1 - y0).color("#000000");
+            };
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+};
+
+func generate() void {
+    str content = currentContent();
+    if (content.len == 0) {
+        HAS_QR = false;
+        C.clear();
+        STATUS.text("Fill in the fields above, then tap Generate.");
+        STATUS.color(colors.onSurfaceVariant());
+    } else {
+        int v = encodeContent(content, ECC);
+        if (v == 0) {
+            HAS_QR = false;
+            C.clear();
+            STATUS.text("Too long for the largest supported size (version 10). Shorten the text or lower the error-correction level.");
+            STATUS.color(colors.error());
+            ui.snackbar("Content too long to encode");
+        } else {
+            HAS_QR = true;
+            drawQr();
+            STATUS.text("Version " + v.str + "  ·  ECC " + eccName(ECC) + "  ·  "
+                + N.str + "×" + N.str + " modules  ·  " + LAST_BYTES.str + " bytes");
+            STATUS.color(colors.onSurfaceVariant());
+        };
+    };
+};
+
+# ---- selection handlers --------------------------------------------------------------------
+
+func selectMode(int i) void {
+    MODE_CHIPS[MODE].checked(false);
+    MODE = i;
+    MODE_CHIPS[i].checked(true);
+    int g = 0;
+    while (g < 8) { GROUPS[g].visible(g == i); g = g + 1; };
+    generate();
+};
+
+func selectEcc(int i) void {
+    ECC_CHIPS[ECC].checked(false);
+    ECC = i;
+    ECC_CHIPS[i].checked(true);
+    generate();
+};
+
+func selectWifiEnc(int i) void {
+    WENC_CHIPS[WIFI_ENC].checked(false);
+    WIFI_ENC = i;
+    WENC_CHIPS[i].checked(true);
+    WPASS.enabled(i != 2);
+    generate();
+};
+
+# =====================================================================================
+#  SCAFFOLD — built once: app bar, scrolling form, the type chips, and the QR card
+# =====================================================================================
+
+func heading(str s) View {
+    ui.text(s).style(styles.titleSmall()).color(colors.primary());
+};
+
+func panel() View {
+    View p = ui.surface().padding(16).fillWidth();
+    p.corner(16);
+    p.background(colors.surfaceContainer());
+    p;
+};
+
+# A vertical group of fields for one content type. Built for every type up front; only the
+# active one is visible, so each keeps whatever was typed when you switch away and back.
+func group() View { ui.column().gap(8).fillWidth(); };
+
+View root = ui.column().fillWidth();
+
+View bar = ui.appBar("QR Generator");
+bar.onNav(func() void { ui.close(); void });
+bar.action("About", icons.info(), func() void {
+    ui.dialog("QR Generator",
+        "Every QR code on this screen is built entirely in Velo — Reed-Solomon error correction, data masking and the format codes all run in the bytecode. Pick a content type, fill the fields, choose an error-correction level and tap Generate.",
+        "Close", func() void { void });
+    void
+});
+root.add(bar);
+
+View scroller = ui.scroll().weight(1);
+root.add(scroller);
+View pages = ui.column().padding(16).gap(16).fillWidth();
+scroller.add(pages);
+
+# ---- content-type selector -----------------------------------------------------------------
+pages.add(heading("Content type"));
+array[str] modeNames = new array[str]{"Text", "URL", "Wi-Fi", "Email", "Phone", "SMS", "Geo", "Contact"};
+View modeRow = ui.flowRow().gap(8).fillWidth();
+int mi = 0;
+while (mi < 8) {
+    View chip = ui.chip(modeNames[mi]).checkable(true);
+    MODE_CHIPS[mi] = chip;
+    int captured = mi;
+    chip.onClick(func() void { selectMode(captured); void });
+    modeRow.add(chip);
+    mi = mi + 1;
+};
+pages.add(modeRow);
+
+# ---- per-type field groups -----------------------------------------------------------------
+View formPanel = panel();
+View formArea = ui.column().fillWidth();
+formPanel.add(formArea);
+pages.add(formPanel);
+
+# 0 — Text
+View gText = group();
+gText.add(TXT);
+GROUPS[0] = gText;
+
+# 1 — URL
+View gUrl = group();
+URLF.keyboardType("text");
+URLF.leading(icons.search());
+gUrl.add(URLF);
+GROUPS[1] = gUrl;
+
+# 2 — Wi-Fi
+View gWifi = group();
+WSSID.leading(icons.settings());
+gWifi.add(WSSID);
+WPASS.keyboardType("text");
+WPASS.leading(icons.lock());
+gWifi.add(WPASS);
+gWifi.add(ui.text("Security").style(styles.bodySmall()).color(colors.onSurfaceVariant()));
+View wencRow = ui.flowRow().gap(8).fillWidth();
+array[str] wencNames = new array[str]{"WPA/WPA2", "WEP", "None"};
+int wi = 0;
+while (wi < 3) {
+    View wc = ui.chip(wencNames[wi]).checkable(true);
+    WENC_CHIPS[wi] = wc;
+    int cap = wi;
+    wc.onClick(func() void { selectWifiEnc(cap); void });
+    wencRow.add(wc);
+    wi = wi + 1;
+};
+gWifi.add(wencRow);
+gWifi.add(WHIDDEN);
+WHIDDEN.onToggle(func(bool on) void { generate(); void });
+GROUPS[2] = gWifi;
+
+# 3 — Email
+View gEmail = group();
+EMAIL.keyboardType("email");
+EMAIL.leading(icons.email());
+gEmail.add(EMAIL);
+gEmail.add(ESUBJ);
+gEmail.add(EBODY);
+GROUPS[3] = gEmail;
+
+# 4 — Phone
+View gPhone = group();
+PHONE.keyboardType("phone");
+PHONE.leading(icons.phone());
+gPhone.add(PHONE);
+GROUPS[4] = gPhone;
+
+# 5 — SMS
+View gSms = group();
+SNUM.keyboardType("phone");
+SNUM.leading(icons.phone());
+gSms.add(SNUM);
+gSms.add(SBODY);
+GROUPS[5] = gSms;
+
+# 6 — Geo
+View gGeo = group();
+GLAT.keyboardType("decimal");
+GLAT.leading(icons.location());
+gGeo.add(GLAT);
+GLNG.keyboardType("decimal");
+GLNG.leading(icons.location());
+gGeo.add(GLNG);
+GROUPS[6] = gGeo;
+
+# 7 — Contact (vCard)
+View gCard = group();
+VCNAME.leading(icons.person());
+gCard.add(VCNAME);
+VCPHONE.keyboardType("phone");
+VCPHONE.leading(icons.phone());
+gCard.add(VCPHONE);
+VCEMAIL.keyboardType("email");
+VCEMAIL.leading(icons.email());
+gCard.add(VCEMAIL);
+VCORG.leading(icons.account());
+gCard.add(VCORG);
+GROUPS[7] = gCard;
+
+int gi = 0;
+while (gi < 8) { formArea.add(GROUPS[gi]); gi = gi + 1; };
+
+# ---- error-correction selector -------------------------------------------------------------
+pages.add(heading("Error correction"));
+View eccRow = ui.flowRow().gap(8).fillWidth();
+array[str] eccNames = new array[str]{"Low", "Medium", "Quartile", "High"};
+int ei = 0;
+while (ei < 4) {
+    View ec = ui.chip(eccNames[ei]).checkable(true);
+    ECC_CHIPS[ei] = ec;
+    int cap = ei;
+    ec.onClick(func() void { selectEcc(cap); void });
+    eccRow.add(ec);
+    ei = ei + 1;
+};
+pages.add(eccRow);
+
+# ---- generate action -----------------------------------------------------------------------
+View genBtn = ui.button("Generate").icon(icons.refresh()).fillWidth();
+genBtn.onClick(func() void { generate(); void });
+pages.add(genBtn);
+
+# ---- the QR card ---------------------------------------------------------------------------
+View qrCard = ui.surface().padding(20).fillWidth();
+qrCard.corner(24);
+qrCard.background(colors.surfaceContainer());
+View qrCol = ui.column().center().fillWidth().gap(12);
+qrCard.add(qrCol);
+
+View frame = ui.surface().padding(16);
+frame.corner(16);
+frame.background("#FFFFFF");
+frame.elevation(1);
+C.width(QR_PX).height(QR_PX);
+frame.add(C);
+qrCol.add(frame);
+
+STATUS.textAlign("center").fillWidth();
+qrCol.add(STATUS);
+pages.add(qrCard);
+
+# ---- initial state: start on URL with a sample so the screen opens on a real code ----------
+MODE_CHIPS[0].checked(false);
+ECC_CHIPS[ECC].checked(true);
+WENC_CHIPS[WIFI_ENC].checked(true);
+URLF.text("https://velo-lang.org");
+
+term.println("Opening QR Generator...");
+selectMode(1);          # selects URL, shows its field group and renders the first code
+ui.open(root);
+term.println("QR Generator opened — choose a type, fill the fields and tap Generate.");
