@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The app bar built by `ui.appBar`. A standard AppBarLayout + MaterialToolbar, exactly
-     like the terminal's, so its title sits at the same height. No programmatic sizing. -->
+     like the terminal's, so its title sits at the same height. No programmatic sizing.
+
+     The program places this as a plain child of a `column`, not inside a CoordinatorLayout,
+     so it has no scroll-coupled lift. translationZ raises it above its siblings: scrolling
+     content (and canvas strokes near the top edge) then pass UNDER the bar instead of being
+     painted over it. translationZ (not elevation) because AppBarLayout's liftOnScroll state
+     animator drives `elevation` back to 0 here — translationZ it leaves alone, and it still
+     contributes to Z, so the bar both occludes content and casts its drop shadow. -->
 <com.google.android.material.appbar.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:background="?attr/colorSurfaceContainer"
+    android:translationZ="3dp">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/velo_toolbar"

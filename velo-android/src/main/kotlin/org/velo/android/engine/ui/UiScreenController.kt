@@ -13,6 +13,7 @@ import androidx.core.view.updatePadding
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.R as M
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.navigation.NavigationBarView
@@ -149,10 +150,14 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
     }
 
     private fun applyInsets(screen: View) {
-        // Edge-to-edge: the window draws behind the system bars. System-bar insets pad the
-        // screen so content (app bar included) clears the status bar, cutouts and navigation.
-        // If the program's root ends in a bottom navigation bar, that bar spans under the
-        // system navigation (Material style) and pads its own content up instead.
+        // Edge-to-edge: the window draws behind the system bars. The top inset is owned by the
+        // program's app bar (when it has one): the bar extends under the status bar and its
+        // background colours that strip, so the status bar matches the toolbar — exactly like a
+        // native Activity (see MainActivity/TerminalActivity). Only when there's no app bar does
+        // the screen itself absorb the top inset.
+        //
+        // If the program's root ends in a bottom navigation bar, that bar spans under the system
+        // navigation (Material style) and pads its own content up instead.
         //
         // The keyboard is handled the native soft-input way: its inset is applied only to the
         // scrollable region, so the focused field scrolls up above the keyboard while the app
@@ -167,16 +172,20 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
             } else {
                 bars.bottom
             }
+            // App bar absorbs the top inset itself, so its colour reaches under the status bar.
+            val appBar = appBarOf(screen)
+            appBar?.updatePadding(top = bars.top)
+            val screenTop = if (appBar != null) 0 else bars.top
             val scroller = scrollableOf(screen)
             if (scroller != null) {
                 scroller.clipToPadding = false
                 scroller.updatePadding(bottom = ime.bottom)
-                screen.updatePadding(top = bars.top, left = bars.left, right = bars.right, bottom = screenBottom)
+                screen.updatePadding(top = screenTop, left = bars.left, right = bars.right, bottom = screenBottom)
             } else {
                 // No scrollable region to absorb the keyboard — keep the field visible by
                 // insetting the screen itself.
                 screen.updatePadding(
-                    top = bars.top,
+                    top = screenTop,
                     left = bars.left,
                     right = bars.right,
                     bottom = maxOf(screenBottom, ime.bottom),
@@ -184,6 +193,17 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
             }
             insets
         }
+    }
+
+    /** The program's top app bar, if it placed one (the first AppBarLayout in the screen tree). */
+    private fun appBarOf(view: View): AppBarLayout? {
+        if (view is AppBarLayout) return view
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                appBarOf(view.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 
     /** The screen's bottom navigation bar, if the program placed one as the last root child. */
