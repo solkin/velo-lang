@@ -9,8 +9,11 @@ import compiler.parser.Token
 
 class AddressOfParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
-        // Parse the target expression, applying postfix operators
-        val target = parser.parseExpression(Precedence.UNARY)
+        // Parse the target expression, applying postfix operators. The operand
+        // binds below the postfix ops (call/index/property, precedence INDEX) so
+        // they attach to it — `&a[i]` is `&(a[i])`, not `(&a)[i]` — but above the
+        // binary operators, so `&a + b` stays `(&a) + b`.
+        val target = parser.parseExpression(Precedence.MULTIPLICATIVE)
         return AddressOfNode(target)
     }
 }

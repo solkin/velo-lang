@@ -9,8 +9,10 @@ import compiler.parser.Token
 
 class DerefParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
-        // Parse the target expression, applying postfix operators
-        val target = parser.parseExpression(Precedence.UNARY)
+        // Parse the target expression, applying postfix operators. Like
+        // address-of, the operand binds below the postfix ops so `*p[i]` is
+        // `*(p[i])`, but above the binary operators so `*p + 1` is `(*p) + 1`.
+        val target = parser.parseExpression(Precedence.MULTIPLICATIVE)
         return DerefNode(target)
     }
 }
