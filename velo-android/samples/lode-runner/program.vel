@@ -15,27 +15,25 @@ Ui ui = new Ui();
 Colors colors = new Colors();
 Icons icons = new Icons();
 
-# ---- level (28 x 16) ----------------------------------------------------------------------
 array[str] LV = new array[str]{
-    "##########S#######S#########",
-    "#   H $   S-------S   $H   #",
-    "####H#####S   H   S####H####",
-    "#   H     H   H   H    H   #",
-    "####H##  #H###H###H#  #H####",
-    "#   H     H   H   H    H   #",
-    "# $ H     HG  H   H   $H   #",
-    "####H  ###H###H  #H####H####",
-    "#   H-----H   H   H    H   #",
-    "#   H     HG  H $ H    H   #",
-    "####H#  ##H###H###H##  H####",
-    "#   H     H   H   H    H   #",
-    "#   H $   H   H   H   $H   #",
-    "####H#####H   H###H####H####",
-    "#   H     H   H   H   PH   #",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+    "#    S         #",
+    "#  $ S         #",
+    "#####H######S  #",
+    "#    H------S$ #",
+    "#    HG #H  #H##",
+    "##H###  #H  $H #",
+    "# H     ###H####",
+    "# H  G     H   #",
+    "#####H#####H   #",
+    "#    H     H   #",
+    "#   $H-----H$  #",
+    "# H###     ###H#",
+    "# H         P H#",
+    "################",
+    "@@@@@@@@@@@@@@@@"
 };
-int COLS = 28;
-int ROWS = 16;
+int COLS = 16;
+int ROWS = 15;
 
 int CH_BRICK = "#"[0];
 int CH_SOLID = "@"[0];
@@ -90,6 +88,7 @@ str SOLIDD = "#5A5A5A";
 str LADC = "#D2D2D2";
 str ROPEC = "#C9A24B";
 str GOLDC = "#FFD11A";
+str GOLD2 = "#D99A1E";
 str GOLDD = "#A8780A";
 # runner: yellow face, red shirt, blue trousers; guard: white suit with a green vest
 str R_FACE = "#FFD24A";
@@ -610,43 +609,63 @@ func drawRope(int x, int y) void {
     void
 };
 
-# A heap of gold — a rounded triangular mound with a couple of nugget bumps, like the original.
+# One gold coin: a filled disc in one of two gold shades with a darker rim so they read apart.
+func drawCoin(int cx, int cy, int r, int shade) void {
+    str col = if (shade == 0) then GOLD2 else GOLDC;
+    board.drawCircle(cx, cy, r).color(col).fill();
+    board.drawCircle(cx, cy, r).color(GOLDD).stroke(1);
+    void
+};
+
+# A heap of gold — a little 3-2-1 pyramid of coins in two shades, like a pile of treasure.
 func drawGold(int x, int y) void {
     int s = TS;
-    int bL = x + 1;
-    int bR = x + s - 1;
-    int bY = y + s - 1;
-    int mid = x + s / 2;
-    int pk = y + s / 4;
-    board.drawPath("M ".con(bL.str).con(" ").con(bY.str)
-        .con(" L ").con(mid.str).con(" ").con(pk.str)
-        .con(" L ").con(bR.str).con(" ").con(bY.str).con(" Z")).color(GOLDC).fill();
-    board.drawCircle(x + s / 3, bY - s / 5, s / 7).color(GOLDC).fill();
-    board.drawCircle(x + 2 * s / 3, bY - s / 5, s / 7).color(GOLDC).fill();
-    board.drawCircle(mid, pk + s / 6, s / 7).color(GOLDC).fill();
-    board.drawLine(bL, bY, bR, bY).color(GOLDD).stroke(2);
+    int r = s / 7;
+    if (r < 2) { r = 2; };
+    int cx = x + s / 2;
+    int baseY = y + s - r - 1;
+    int dy = 8 * r / 5;
+    drawCoin(cx - 2 * r, baseY, r, 0);
+    drawCoin(cx, baseY, r, 1);
+    drawCoin(cx + 2 * r, baseY, r, 0);
+    drawCoin(cx - r, baseY - dy, r, 1);
+    drawCoin(cx + r, baseY - dy, r, 0);
+    drawCoin(cx, baseY - 2 * dy, r, 1);
     void
 };
 
 # A little running figure: filled head and torso (with a vest stripe), arms and striding legs.
-func drawFigure(int ccx, int ccy, str headC, str bodyC, str legC, str vestC, int face, int phase) void {
+# When [rope] is set the figure hangs from a bar — both arms reach straight up to grip it.
+func drawFigure(int ccx, int ccy, str headC, str bodyC, str legC, str vestC, int face, int phase, int rope) void {
     int s = TS;
     int r = s / 2;
     int hd = r / 3;
-    # legs first (behind the torso), striding with the phase
+    # legs (behind the torso), striding with the phase
     int sp = if (phase == 0) then r / 2 else r / 5;
     board.drawLine(ccx - r / 6, ccy + r / 4, ccx - sp, ccy + r).color(legC).stroke(2);
     board.drawLine(ccx + r / 6, ccy + r / 4, ccx + sp, ccy + r).color(legC).stroke(2);
-    # arms swinging with the stride
-    int aw = if (phase == 0) then r / 2 else r / 4;
-    board.drawLine(ccx - r / 4, ccy - r / 6, ccx - aw, ccy + r / 6).color(bodyC).stroke(2);
-    board.drawLine(ccx + r / 4, ccy - r / 6, ccx + aw, ccy + r / 6).color(bodyC).stroke(2);
     # torso, then a narrower vest stripe down its middle
     board.drawRect(ccx - r / 3, ccy - r / 3, 2 * r / 3 + 1, r * 2 / 3).color(bodyC).fill();
     board.drawRect(ccx - r / 6, ccy - r / 3, r / 3 + 1, r * 2 / 3).color(vestC).fill();
+    # arms — from the shoulders (the left/right edges of the torso), drawn over it so they show
+    if (rope == 1) {
+        # hanging from a rope: arms raised up-and-out to the bar at the top of the cell
+        board.drawLine(ccx - r / 3, ccy - r / 4, ccx - r / 2, ccy - r + 1).color(bodyC).stroke(2);
+        board.drawLine(ccx + r / 3, ccy - r / 4, ccx + r / 2, ccy - r + 1).color(bodyC).stroke(2);
+    } else {
+        # swinging with the stride
+        int aw = if (phase == 0) then r / 2 else r / 3;
+        board.drawLine(ccx - r / 3, ccy - r / 4, ccx - aw, ccy + r / 6).color(bodyC).stroke(2);
+        board.drawLine(ccx + r / 3, ccy - r / 4, ccx + aw, ccy + r / 6).color(bodyC).stroke(2);
+    };
     # head
     board.drawCircle(ccx, ccy - r + hd, hd).color(headC).fill();
     void
+};
+
+# Is the entity at sub-position (sx,sy) hanging on a rope tile?
+func onRope(int sx, int sy) int {
+    if (isRope((sx + SPT / 2) / SPT, (sy + SPT / 2) / SPT)) then 1 else 0;
 };
 
 func drawCell(int c, int r) void {
@@ -702,12 +721,14 @@ func draw() void {
     drawField();
     int phase = (frame / 3) % 2;
     if (state != 2) {
-        drawFigure(cxs(px), cys(py), R_FACE, R_SHIRT, R_PANTS, R_SHIRT, pFace, phase);
+        # the runner only swings his arms and legs while he is actually moving
+        int pPhase = if (pmvx != 0 | pmvy != 0) then phase else 1;
+        drawFigure(cxs(px), cys(py), R_FACE, R_SHIRT, R_PANTS, R_SHIRT, pFace, pPhase, onRope(px, py));
     };
     int i = 0;
     while (i < guardCount) {
         int gp = if (gTrapped[i] == 1) then 0 else phase;
-        drawFigure(cxs(gx[i]), cys(gy[i]), G_SUIT, G_SUIT, G_SUIT, G_VEST, 1, gp);
+        drawFigure(cxs(gx[i]), cys(gy[i]), G_SUIT, G_SUIT, G_SUIT, G_VEST, 1, gp, onRope(gx[i], gy[i]));
         i = i + 1;
     };
     if (paused) { drawCenterText("PAUSED", TEXTY, TS + 4); }

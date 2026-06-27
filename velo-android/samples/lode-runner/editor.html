@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lode Runner — Level Editor</title>
+<style>
+  :root {
+    --bg:        #0e1116;
+    --panel:     #161b22;
+    --panel-2:   #1c2230;
+    --border:    #2b3340;
+    --border-2:  #3a4554;
+    --ink:       #e6edf3;
+    --ink-dim:   #8b97a7;
+    --ink-faint: #5d6b7d;
+    --accent:    #2f6feb;
+    --accent-d:  #1f4fb0;
+    --danger:    #d6443c;
+    --ok:        #2ea043;
+    --field:     #000000;
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  header .sub {
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 252px 1fr 360px;
+    gap: 0;
+    height: calc(100vh - 51px);
+  }
+  .col {
+    overflow: auto;
+    padding: 18px;
+  }
+  .col.tools { border-right: 1px solid var(--border); background: var(--panel); }
+  .col.stage { display: flex; flex-direction: column; align-items: center; gap: 14px; background: var(--bg); }
+  .col.out   { border-left: 1px solid var(--border); background: var(--panel); display:flex; flex-direction:column; }
+
+  .group { margin-bottom: 22px; }
+  .group > .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--ink-dim);
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dim-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .field span { font-size: 11px; color: var(--ink-dim); }
+  input[type=number] {
+    width: 100%;
+    background: var(--field);
+    border: 1px solid var(--border-2);
+    color: var(--ink);
+    border-radius: 5px;
+    padding: 7px 9px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+  button {
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 1px solid var(--border-2);
+    background: var(--panel-2);
+    color: var(--ink);
+    padding: 7px 11px;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { border-color: var(--ink-faint); background: #232c3b; }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: var(--accent-d); border-color: var(--accent-d); }
+  button.danger { color: #ffb9b3; }
+  button.danger:hover { border-color: var(--danger); }
+  button.full { width: 100%; }
+
+  .palette { display: flex; flex-direction: column; gap: 4px; }
+  .swatch {
+    display: flex; align-items: center; gap: 11px;
+    padding: 7px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .swatch:hover { background: var(--panel-2); }
+  .swatch.active { background: var(--panel-2); border-color: var(--accent); }
+  .swatch .glyph {
+    width: 30px; height: 30px; flex: none;
+    border-radius: 4px;
+    background: var(--field);
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .swatch .meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .swatch .nm { font-weight: 600; }
+  .swatch .ch { font-family: var(--mono); color: var(--ink-faint); font-size: 11px; }
+
+  .hint { font-size: 11px; color: var(--ink-faint); line-height: 1.6; }
+  .hint kbd {
+    font-family: var(--mono);
+    background: var(--panel-2);
+    border: 1px solid var(--border-2);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0 5px;
+    font-size: 10px;
+    color: var(--ink-dim);
+  }
+
+  .canvas-wrap {
+    border: 1px solid var(--border-2);
+    background: var(--field);
+    padding: 0;
+    line-height: 0;
+    box-shadow: 0 8px 30px rgba(0,0,0,.45);
+  }
+  canvas { display: block; cursor: crosshair; image-rendering: pixelated; }
+
+  .stage-info {
+    display: flex; gap: 18px; align-items: center;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+  }
+  .stage-info b { color: var(--ink); font-weight: 600; }
+  .badge { padding: 2px 8px; border: 1px solid var(--border-2); border-radius: 999px; }
+  .badge.warn { color: #ffd28a; border-color: #6b551f; }
+  .badge.bad  { color: #ffb9b3; border-color: #6b2420; }
+  .badge.good { color: #9be3a8; border-color: #245b30; }
+
+  .out .label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--ink-dim); font-weight: 600; margin-bottom: 10px;
+  }
+  .out-actions { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 320px;
+    resize: none;
+    background: var(--field);
+    border: 1px solid var(--border-2);
+    border-radius: 6px;
+    color: #c8e1ff;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 12px;
+    white-space: pre;
+    tab-size: 4;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .copy-state { font-size: 11px; color: var(--ok); height: 14px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lode Runner · Level Editor</h1>
+  <span class="sub">velo-lang sample — emits an <code>array[str] LV</code> map</span>
+</header>
+
+<div class="layout">
+  <!-- ───────────── TOOLS ───────────── -->
+  <div class="col tools">
+    <div class="group">
+      <div class="label">Dimensions</div>
+      <div class="dim-row">
+        <label class="field"><span>Columns</span><input id="inCols" type="number" min="4" max="80" value="28"></label>
+        <label class="field"><span>Rows</span><input id="inRows" type="number" min="4" max="60" value="16"></label>
+      </div>
+      <button id="btnResize" class="full">Apply size</button>
+      <div class="hint" style="margin-top:8px">Resizing keeps existing cells; new area is filled empty.</div>
+    </div>
+
+    <div class="group">
+      <div class="label">Tiles</div>
+      <div id="palette" class="palette"></div>
+    </div>
+
+    <div class="group">
+      <div class="label">Fill &amp; frame</div>
+      <button id="btnBorder" class="full" style="margin-bottom:6px">Solid border (@)</button>
+      <button id="btnFloor" class="full" style="margin-bottom:6px">Solid floor row (@)</button>
+      <button id="btnClear" class="full danger">Clear all</button>
+    </div>
+
+    <div class="group">
+      <div class="label">How to</div>
+      <div class="hint">
+        <kbd>Click</kbd> / <kbd>drag</kbd> paint the selected tile.<br>
+        <kbd>Right-click</kbd> erases to empty.<br>
+        <kbd>Alt</kbd>+click picks the tile under the cursor.<br><br>
+        Exactly one <b>Player</b> start is kept (placing a new one moves it). Up to <b>4 Guards</b>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── STAGE ───────────── -->
+  <div class="col stage">
+    <div class="stage-info">
+      <span><b id="lblSel">Brick</b> selected</span>
+      <span class="badge" id="lblSize">28 × 16</span>
+      <span class="badge" id="lblGold">Gold 0</span>
+      <span class="badge" id="lblP">No player</span>
+      <span class="badge" id="lblG">Guards 0</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cv" width="560" height="320"></canvas>
+    </div>
+    <div class="hint">Grid mirrors the in-game palette: brown brick, grey concrete, light ladders, gold ropes.</div>
+  </div>
+
+  <!-- ───────────── OUTPUT ───────────── -->
+  <div class="col out">
+    <div class="label">Velo output</div>
+    <div class="out-actions">
+      <button id="btnCopy" class="primary">Copy map</button>
+      <button id="btnCopyFull">Copy with COLS/ROWS</button>
+      <button id="btnImport">Import from text</button>
+    </div>
+    <textarea id="out" spellcheck="false"></textarea>
+    <div class="copy-state" id="copyState"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ── tile model ─────────────────────────────────────────────────────────────
+// char is exactly what the velo sample consumes; ' ' is empty.
+const TILES = [
+  { key: "brick",  ch: "#", name: "Brick",          desc: "diggable wall" },
+  { key: "solid",  ch: "@", name: "Concrete",       desc: "indestructible" },
+  { key: "ladder", ch: "H", name: "Ladder",         desc: "climb" },
+  { key: "rope",   ch: "-", name: "Rope",           desc: "hang & slide" },
+  { key: "gold",   ch: "$", name: "Gold",           desc: "collect" },
+  { key: "hidden", ch: "S", name: "Escape ladder",  desc: "appears when gold cleared" },
+  { key: "player", ch: "P", name: "Player start",   desc: "unique" },
+  { key: "guard",  ch: "G", name: "Guard",          desc: "max 4" },
+  { key: "empty",  ch: " ", name: "Empty",          desc: "erase" },
+];
+const CH_OF = {};            // key -> ch
+const TILE_OF = {};          // ch  -> tile
+for (const t of TILES) { CH_OF[t.key] = t.ch; TILE_OF[t.ch] = t; }
+
+const MAX_GUARDS = 4;
+
+// ── state ──────────────────────────────────────────────────────────────────
+let cols = 28, rows = 16;
+let grid = [];               // grid[r][c] = char
+let selected = "brick";
+
+function blank(c, r) { return Array.from({length: r}, () => Array(c).fill(" ")); }
+
+function defaultLevel() {
+  const LV = [
+    "##########S#######S#########",
+    "#   H $   S-------S   $H   #",
+    "####H#####S   H   S####H####",
+    "#   H     H   H   H    H   #",
+    "####H##  #H###H###H#  #H####",
+    "#   H     H   H   H    H   #",
+    "# $ H     HG  H   H   $H   #",
+    "####H  ###H###H  #H####H####",
+    "#   H-----H   H   H    H   #",
+    "#   H     HG  H $ H    H   #",
+    "####H#  ##H###H###H##  H####",
+    "#   H     H   H   H    H   #",
+    "#   H $   H   H   H   $H   #",
+    "####H#####H   H###H####H####",
+    "#   H     H   H   H   PH   #",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+  ];
+  return LV.map(row => row.split(""));
+}
+
+// ── canvas / drawing ────────────────────────────────────────────────────────
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let TS = 20;                 // tile pixel size, recomputed on resize
+
+const C = {
+  field:  "#000000",
+  grid:   "#161b22",
+  brick:  "#B5651D", brickD: "#5C2E0E",
+  solid:  "#9E9E9E", solidD: "#5A5A5A",
+  ladder: "#D2D2D2",
+  rope:   "#C9A24B",
+  gold:   "#FFD11A", goldD:  "#A8780A",
+  hidden: "#3a6b3a",
+  player: "#E0301C", playerF:"#FFD24A",
+  guard:  "#F0F0F0", guardV: "#2EA02E",
+};
+
+function fitCanvas() {
+  const maxW = Math.min(760, window.innerWidth - 252 - 360 - 80);
+  const maxH = window.innerHeight - 51 - 120;
+  TS = Math.max(8, Math.floor(Math.min(maxW / cols, maxH / rows)));
+  cv.width = cols * TS;
+  cv.height = rows * TS;
+}
+
+function drawTile(ch, c, r) {
+  const x = c * TS, y = r * TS, s = TS;
+  switch (ch) {
+    case "#": {
+      ctx.fillStyle = C.brick; ctx.fillRect(x, y, s, s);
+      ctx.strokeStyle = C.brickD; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + s/2); ctx.lineTo(x + s, y + s/2);
+      ctx.moveTo(x + s/2, y); ctx.lineTo(x + s/2, y + s/2);
+      ctx.moveTo(x, y + s/2); ctx.lineTo(x, y + s);
+      ctx.moveTo(x + s, y + s/2); ctx.lineTo(x + s, y + s);
+      ctx.stroke();
+      break;
+    }
+    case "@": {
+      ctx.fillStyle = C.solid; ctx.fillRect(x, y, s, s);
+      ctx.fillStyle = C.solidD;
+      ctx.fillRect(x, y, s, 1); ctx.fillRect(x, y + s - 1, s, 1);
+      break;
+    }
+    case "H": drawLadder(x, y, s, C.ladder); break;
+    case "-": {
+      ctx.strokeStyle = C.rope; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x + s, y + 2); ctx.stroke();
+      break;
+    }
+    case "$": drawGold(x, y, s); break;
+    case "S": {
+      drawLadder(x, y, s, C.hidden);
+      ctx.strokeStyle = "#244a24"; ctx.lineWidth = 1;
+      ctx.strokeRect(x + 1.5, y + 1.5, s - 3, s - 3);
+      break;
+    }
+    case "P": drawFigure(x, y, s, C.player, C.playerF, C.player); break;
+    case "G": drawFigure(x, y, s, C.guard, C.guard, C.guardV); break;
+  }
+}
+
+function drawLadder(x, y, s, col) {
+  const rL = x + s/4, rR = x + s - s/4;
+  ctx.strokeStyle = col; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(rL, y); ctx.lineTo(rL, y + s);
+  ctx.moveTo(rR, y); ctx.lineTo(rR, y + s);
+  ctx.moveTo(rL, y + s/4); ctx.lineTo(rR, y + s/4);
+  ctx.moveTo(rL, y + 3*s/4); ctx.lineTo(rR, y + 3*s/4);
+  ctx.stroke();
+}
+
+function drawGold(x, y, s) {
+  const bL = x + 1, bR = x + s - 1, bY = y + s - 1, mid = x + s/2, pk = y + s/4;
+  ctx.fillStyle = C.gold;
+  ctx.beginPath();
+  ctx.moveTo(bL, bY); ctx.lineTo(mid, pk); ctx.lineTo(bR, bY); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = C.goldD; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(bL, bY); ctx.lineTo(bR, bY); ctx.stroke();
+}
+
+function drawFigure(x, y, s, body, head, vest) {
+  const cx = x + s/2, cy = y + s/2, r = s/2, hd = Math.max(2, r/3);
+  ctx.strokeStyle = body; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - r/6, cy + r/4); ctx.lineTo(cx - r/2, cy + r);
+  ctx.moveTo(cx + r/6, cy + r/4); ctx.lineTo(cx + r/2, cy + r);
+  ctx.stroke();
+  ctx.fillStyle = body; ctx.fillRect(cx - r/3, cy - r/3, 2*r/3, 2*r/3);
+  ctx.fillStyle = vest; ctx.fillRect(cx - r/6, cy - r/3, r/3, 2*r/3);
+  ctx.fillStyle = head;
+  ctx.beginPath(); ctx.arc(cx, cy - r + hd, hd, 0, Math.PI*2); ctx.fill();
+}
+
+function render() {
+  ctx.fillStyle = C.field;
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  // tiles
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      const ch = grid[r][c];
+      if (ch !== " ") drawTile(ch, c, r);
+    }
+  // grid lines
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 0; c <= cols; c++) { ctx.moveTo(c*TS + .5, 0); ctx.lineTo(c*TS + .5, cv.height); }
+  for (let r = 0; r <= rows; r++) { ctx.moveTo(0, r*TS + .5); ctx.lineTo(cv.width, r*TS + .5); }
+  ctx.stroke();
+}
+
+// ── editing ─────────────────────────────────────────────────────────────────
+function countCh(ch) {
+  let n = 0;
+  for (const row of grid) for (const x of row) if (x === ch) n++;
+  return n;
+}
+
+function paint(c, r, ch) {
+  if (c < 0 || c >= cols || r < 0 || r >= rows) return;
+  if (ch === "P") {
+    // unique player: wipe any existing P first
+    for (let rr = 0; rr < rows; rr++)
+      for (let cc = 0; cc < cols; cc++)
+        if (grid[rr][cc] === "P") grid[rr][cc] = " ";
+  }
+  if (ch === "G" && grid[r][c] !== "G" && countCh("G") >= MAX_GUARDS) {
+    flash("Guard limit reached (max " + MAX_GUARDS + ")", true);
+    return;
+  }
+  grid[r][c] = ch;
+}
+
+function cellFromEvent(e) {
+  const rect = cv.getBoundingClientRect();
+  const c = Math.floor((e.clientX - rect.left) / (rect.width / cols));
+  const r = Math.floor((e.clientY - rect.top) / (rect.height / rows));
+  return [c, r];
+}
+
+let painting = false, paintCh = " ";
+
+cv.addEventListener("contextmenu", e => e.preventDefault());
+cv.addEventListener("mousedown", e => {
+  const [c, r] = cellFromEvent(e);
+  if (c < 0 || c >= cols || r < 0 || r >= rows) return;
+  if (e.altKey) {                     // eyedropper
+    const ch = grid[r][c];
+    const t = TILE_OF[ch] || TILE_OF[" "];
+    selectTile(t.key);
+    return;
+  }
+  painting = true;
+  paintCh = e.button === 2 ? " " : CH_OF[selected];
+  paint(c, r, paintCh);
+  refresh();
+});
+window.addEventListener("mousemove", e => {
+  if (!painting) return;
+  const [c, r] = cellFromEvent(e);
+  paint(c, r, paintCh);
+  refresh();
+});
+window.addEventListener("mouseup", () => { painting = false; });
+
+// ── palette UI ───────────────────────────────────────────────────────────────
+function buildPalette() {
+  const wrap = document.getElementById("palette");
+  wrap.innerHTML = "";
+  for (const t of TILES) {
+    const el = document.createElement("div");
+    el.className = "swatch" + (t.key === selected ? " active" : "");
+    el.dataset.key = t.key;
+    const g = document.createElement("canvas");
+    g.className = "glyph"; g.width = 30; g.height = 30;
+    paintGlyph(g, t.ch);
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML = '<span class="nm">' + t.name + '</span>' +
+                     '<span class="ch">\'' + (t.ch === " " ? "·" : t.ch) + '\' · ' + t.desc + '</span>';
+    el.appendChild(g); el.appendChild(meta);
+    el.addEventListener("click", () => selectTile(t.key));
+    wrap.appendChild(el);
+  }
+}
+
+function paintGlyph(canvas, ch) {
+  const g = canvas.getContext("2d");
+  const sTS = TS; TS = 30;            // borrow drawing routines at glyph scale
+  g.fillStyle = C.field; g.fillRect(0, 0, 30, 30);
+  const realCtx = ctx;
+  // temporarily redirect drawing to glyph ctx
+  drawTileTo(g, ch, 0, 0, 30);
+  TS = sTS;
+}
+
+// standalone draw (used by glyphs) — same look as drawTile but to an arbitrary ctx/size
+function drawTileTo(g, ch, x, y, s) {
+  const save = [ctx, TS];
+  window._g = g;
+  // reuse drawTile by swapping ctx — simplest: inline minimal versions
+  switch (ch) {
+    case "#":
+      g.fillStyle = C.brick; g.fillRect(x, y, s, s);
+      g.strokeStyle = C.brickD; g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(x, y+s/2); g.lineTo(x+s, y+s/2);
+      g.moveTo(x+s/2, y); g.lineTo(x+s/2, y+s/2);
+      g.stroke(); break;
+    case "@":
+      g.fillStyle = C.solid; g.fillRect(x, y, s, s);
+      g.fillStyle = C.solidD; g.fillRect(x, y, s, 2); g.fillRect(x, y+s-2, s, 2); break;
+    case "H": ladderTo(g, x, y, s, C.ladder); break;
+    case "-":
+      g.strokeStyle = C.rope; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(x, y+s/2); g.lineTo(x+s, y+s/2); g.stroke(); break;
+    case "$": {
+      const bL=x+3,bR=x+s-3,bY=y+s-4,mid=x+s/2,pk=y+5;
+      g.fillStyle=C.gold; g.beginPath(); g.moveTo(bL,bY); g.lineTo(mid,pk); g.lineTo(bR,bY); g.closePath(); g.fill();
+      break; }
+    case "S": ladderTo(g, x, y, s, C.hidden); break;
+    case "P": figureTo(g, x, y, s, C.player, C.playerF, C.player); break;
+    case "G": figureTo(g, x, y, s, C.guard, C.guard, C.guardV); break;
+    case " ":
+      g.strokeStyle = "#2b3340"; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x+6, y+s-8); g.lineTo(x+s-6, y+8); g.stroke(); break;
+  }
+}
+function ladderTo(g, x, y, s, col) {
+  const rL=x+s/4, rR=x+s-s/4;
+  g.strokeStyle=col; g.lineWidth=2; g.beginPath();
+  g.moveTo(rL,y+2); g.lineTo(rL,y+s-2); g.moveTo(rR,y+2); g.lineTo(rR,y+s-2);
+  g.moveTo(rL,y+s/3); g.lineTo(rR,y+s/3); g.moveTo(rL,y+2*s/3); g.lineTo(rR,y+2*s/3); g.stroke();
+}
+function figureTo(g, x, y, s, body, head, vest) {
+  const cx=x+s/2, cy=y+s/2, r=s/2.4, hd=r/2.5;
+  g.fillStyle=body; g.fillRect(cx-r/3, cy-r/4, 2*r/3, r/1.5);
+  g.fillStyle=vest; g.fillRect(cx-r/8, cy-r/4, r/4, r/1.5);
+  g.fillStyle=head; g.beginPath(); g.arc(cx, cy-r/1.4, hd, 0, Math.PI*2); g.fill();
+}
+
+function selectTile(key) {
+  selected = key;
+  document.querySelectorAll(".swatch").forEach(s =>
+    s.classList.toggle("active", s.dataset.key === key));
+  const t = TILES.find(x => x.key === key);
+  document.getElementById("lblSel").textContent = t ? t.name : "—";
+}
+
+// ── status + output ──────────────────────────────────────────────────────────
+function updateStatus() {
+  document.getElementById("lblSize").textContent = cols + " × " + rows;
+  document.getElementById("lblGold").textContent = "Gold " + countCh("$");
+  const p = countCh("P");
+  const pEl = document.getElementById("lblP");
+  pEl.textContent = p === 1 ? "Player ✓" : (p === 0 ? "No player" : "Player ×" + p);
+  pEl.className = "badge " + (p === 1 ? "good" : "bad");
+  const ng = countCh("G");
+  const gEl = document.getElementById("lblG");
+  gEl.textContent = "Guards " + ng;
+  gEl.className = "badge " + (ng > MAX_GUARDS ? "bad" : (ng === 0 ? "warn" : "good"));
+}
+
+function levelLiteral(withDims) {
+  const lines = grid.map(row =>
+    '    "' + row.join("").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"');
+  let out = "array[str] LV = new array[str]{\n" + lines.join(",\n") + "\n};";
+  if (withDims) out += "\nint COLS = " + cols + ";\nint ROWS = " + rows + ";";
+  return out;
+}
+
+function updateOutput() {
+  document.getElementById("out").value = levelLiteral(false);
+}
+
+function refresh() {
+  render();
+  updateStatus();
+  updateOutput();
+}
+
+// ── actions ───────────────────────────────────────────────────────────────────
+function resize(newC, newR) {
+  const g = blank(newC, newR);
+  for (let r = 0; r < Math.min(newR, rows); r++)
+    for (let c = 0; c < Math.min(newC, cols); c++)
+      g[r][c] = grid[r][c];
+  cols = newC; rows = newR; grid = g;
+  fitCanvas(); refresh();
+}
+
+document.getElementById("btnResize").addEventListener("click", () => {
+  let nc = parseInt(document.getElementById("inCols").value, 10);
+  let nr = parseInt(document.getElementById("inRows").value, 10);
+  nc = Math.max(4, Math.min(80, nc || cols));
+  nr = Math.max(4, Math.min(60, nr || rows));
+  document.getElementById("inCols").value = nc;
+  document.getElementById("inRows").value = nr;
+  resize(nc, nr);
+});
+
+document.getElementById("btnBorder").addEventListener("click", () => {
+  for (let c = 0; c < cols; c++) { grid[0][c] = "@"; grid[rows-1][c] = "@"; }
+  for (let r = 0; r < rows; r++) { grid[r][0] = "@"; grid[r][cols-1] = "@"; }
+  refresh();
+});
+document.getElementById("btnFloor").addEventListener("click", () => {
+  for (let c = 0; c < cols; c++) grid[rows-1][c] = "@";
+  refresh();
+});
+document.getElementById("btnClear").addEventListener("click", () => {
+  if (!confirm("Clear the whole level?")) return;
+  grid = blank(cols, rows); refresh();
+});
+
+document.getElementById("btnCopy").addEventListener("click", () => copy(levelLiteral(false)));
+document.getElementById("btnCopyFull").addEventListener("click", () => copy(levelLiteral(true)));
+
+document.getElementById("btnImport").addEventListener("click", () => {
+  const txt = document.getElementById("out").value;
+  const rowsParsed = [...txt.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m =>
+    m[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
+  if (rowsParsed.length === 0) { flash("No quoted rows found in text", true); return; }
+  const w = Math.max(...rowsParsed.map(s => s.length));
+  const newRows = rowsParsed.length;
+  const g = blank(w, newRows);
+  for (let r = 0; r < newRows; r++)
+    for (let c = 0; c < rowsParsed[r].length; c++) {
+      const ch = rowsParsed[r][c];
+      g[r][c] = TILE_OF[ch] ? ch : " ";
+    }
+  cols = w; rows = newRows; grid = g;
+  document.getElementById("inCols").value = cols;
+  document.getElementById("inRows").value = rows;
+  fitCanvas(); refresh();
+  flash("Imported " + cols + " × " + rows);
+});
+
+function copy(text) {
+  navigator.clipboard.writeText(text).then(
+    () => flash("Copied to clipboard"),
+    () => { document.getElementById("out").select(); flash("Press ⌘/Ctrl-C to copy", true); }
+  );
+}
+let flashTimer = null;
+function flash(msg, bad) {
+  const el = document.getElementById("copyState");
+  el.textContent = msg;
+  el.style.color = bad ? "var(--danger)" : "var(--ok)";
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.textContent = ""; }, 2400);
+}
+
+window.addEventListener("resize", () => { fitCanvas(); render(); });
+
+// ── boot ───────────────────────────────────────────────────────────────────
+grid = defaultLevel();
+rows = grid.length; cols = grid[0].length;
+document.getElementById("inCols").value = cols;
+document.getElementById("inRows").value = rows;
+buildPalette();
+selectTile("brick");
+fitCanvas();
+refresh();
+</script>
+</body>
+</html>
