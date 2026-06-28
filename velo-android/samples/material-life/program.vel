@@ -99,22 +99,6 @@ actor class LifeEngine(int width, int height) {
         y * w + x;
     };
 
-    func wrapX(int x) int {
-        if (x < 0) then w - 1 else if (x >= w) then 0 else x;
-    };
-
-    func wrapY(int y) int {
-        if (y < 0) then h - 1 else if (y >= h) then 0 else y;
-    };
-
-    func aliveAt(int x, int y) int {
-        if (wrap) {
-            cells[index(wrapX(x), wrapY(y))];
-        } else {
-            if (x < 0 | x >= w | y < 0 | y >= h) then 0 else cells[index(x, y)];
-        };
-    };
-
     func snapshot() array[int] {
         array[int] out = new array[int](cells.len + 1);
         out[0] = generation;
@@ -287,34 +271,78 @@ actor class LifeEngine(int width, int height) {
         snapshot();
     };
 
+    # Conway's B3/S23, one generation. The neighbour count is inlined with direct
+    # array reads (no per-neighbour helper calls — those dominated the cost) and
+    # the snapshot the caller renders is filled in the same pass, so there is no
+    # separate copy afterwards. Row bases (rm/r/rp) and the wrapped/clamped
+    # neighbour rows are hoisted out of the inner loop; on the toroidal default
+    # every cell has all eight neighbours, so the has* guards stay true and only
+    # matter for the bounded (wrap off) mode.
     func step() array[int] {
-        array[int] next = new array[int](cells.len);
+        int len = cells.len;
+        array[int] next = new array[int](len);
+        array[int] out = new array[int](len + 1);
         int y = 0;
         while (y < h) {
+            int row = y * w;
+            int ym = 0;
+            int yp = 0;
+            if (wrap) {
+                ym = if (y == 0) then h - 1 else y - 1;
+                yp = if (y == h - 1) then 0 else y + 1;
+            } else {
+                ym = y - 1;
+                yp = y + 1;
+            };
+            bool hasUp = wrap | (ym >= 0);
+            bool hasDown = wrap | (yp < h);
+            int rm = ym * w;
+            int rp = yp * w;
             int x = 0;
             while (x < w) {
-                int n =
-                    aliveAt(x - 1, y - 1) +
-                    aliveAt(x, y - 1) +
-                    aliveAt(x + 1, y - 1) +
-                    aliveAt(x - 1, y) +
-                    aliveAt(x + 1, y) +
-                    aliveAt(x - 1, y + 1) +
-                    aliveAt(x, y + 1) +
-                    aliveAt(x + 1, y + 1);
-                int i = index(x, y);
-                if (cells[i] == 1) {
-                    next[i] = if (n == 2 | n == 3) then 1 else 0;
+                int xm = 0;
+                int xp = 0;
+                bool hasL = true;
+                bool hasR = true;
+                if (wrap) {
+                    xm = if (x == 0) then w - 1 else x - 1;
+                    xp = if (x == w - 1) then 0 else x + 1;
                 } else {
-                    next[i] = if (n == 3) then 1 else 0;
+                    xm = x - 1;
+                    xp = x + 1;
+                    hasL = xm >= 0;
+                    hasR = xp < w;
                 };
+                int n = 0;
+                if (hasUp) {
+                    if (hasL) { n = n + cells[rm + xm]; };
+                    n = n + cells[rm + x];
+                    if (hasR) { n = n + cells[rm + xp]; };
+                };
+                if (hasL) { n = n + cells[row + xm]; };
+                if (hasR) { n = n + cells[row + xp]; };
+                if (hasDown) {
+                    if (hasL) { n = n + cells[rp + xm]; };
+                    n = n + cells[rp + x];
+                    if (hasR) { n = n + cells[rp + xp]; };
+                };
+                int i = row + x;
+                int v = 0;
+                if (cells[i] == 1) {
+                    v = if (n == 2 | n == 3) then 1 else 0;
+                } else {
+                    v = if (n == 3) then 1 else 0;
+                };
+                next[i] = v;
+                out[i + 1] = v;
                 x += 1;
             };
             y += 1;
         };
         cells = next;
         generation += 1;
-        snapshot();
+        out[0] = generation;
+        out;
     };
 };
 

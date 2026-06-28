@@ -21,7 +21,7 @@
 # linker reflects over native signatures. Keep the public surface and any types
 # referenced from reflected native method signatures.
 -keep class core.** { *; }
--keep class vm.** { *; }
+-keep class vm2.** { *; }
 
 # VeloFunction (guest callbacks passed to natives) is matched by class identity
 # in the native bridge — must survive minification under its real name.

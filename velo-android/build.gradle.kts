@@ -63,7 +63,9 @@ dependencies {
 
     // The Velo VM — pure-JVM modules consumed as ordinary libraries. The compiler
     // is NOT shipped in the app: .vbc is produced at build time, loaded at runtime.
-    implementation(project(":velo-vm"))
+    // velo-vm2 is the clean-room backend; it links against the portable `core`
+    // Dispatcher SPI rather than vm's own actor runtime.
+    implementation(project(":velo-vm2"))
     implementation(project(":velo-core"))
 
     implementation(libs.androidx.core.ktx)

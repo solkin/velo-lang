@@ -1,0 +1,191 @@
+# Benchmark — a small VM stress test that times the core things a virtual machine does:
+# integer arithmetic, recursive calls, array read/write, string building, object allocation
+# (value-type `data class`), and hash-map (`dict`) churn. Each test runs a fixed workload and
+# prints how long it took in milliseconds, plus a checksum so the work can't be optimised away
+# and so the two ports (Velo here, Java on nanovm) can be cross-checked. Finally it opens a
+# Material UI screen, paints many canvas shapes, holds it briefly and closes it — timing how
+# fast the VM can drive the UI bridge. The same workload exists as a Java sample on nanovm, so
+# the two console outputs line up side by side.
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+
+# ---- workload sizes (identical to the nanovm Java port) ----------------------------------
+int ARITH_ITERS = 1000000;
+int FIB_N = 30;
+int ARRAY_SIZE = 50000;
+int ARRAY_REPS = 20;
+int STRING_REPS = 200000;
+int OBJECT_COUNT = 200000;
+int DICT_COUNT = 50000;
+int UI_SHAPES = 1500;
+
+int totalMs = 0;
+
+# Right-pad a label so the timing column lines up.
+func pad(str s, int width) str {
+    str r = s;
+    while (r.len < width) {
+        r = r.con(" ");
+    };
+    r;
+};
+
+# Print one result row and fold its time into the running total.
+func report(str name, int ms, int checksum) void {
+    term.println(pad(name, 12).con(pad(ms.str.con(" ms"), 12)).con("checksum=").con(checksum.str));
+    totalMs = totalMs + ms;
+    void
+};
+
+# ---- 1. integer arithmetic: a tight mixed-op loop ----------------------------------------
+func benchArith() void {
+    int t0 = time.millis();
+    int acc = 0;
+    int i = 0;
+    while (i < ARITH_ITERS) {
+        acc = acc + i * 7 - i / 3 + i % 5;
+        i = i + 1;
+    };
+    report("arith", time.millis() - t0, acc);
+    void
+};
+
+# ---- 2. recursion: naive fibonacci (function-call overhead) -------------------------------
+func fib(int n) int {
+    if (n < 2) then n else fib(n - 1) + fib(n - 2);
+};
+
+func benchFib() void {
+    int t0 = time.millis();
+    int r = fib(FIB_N);
+    report("fib", time.millis() - t0, r);
+    void
+};
+
+# ---- 3. arrays: allocate, fill, sum (indexed read/write + GC) -----------------------------
+func benchArray() void {
+    int t0 = time.millis();
+    int acc = 0;
+    int rep = 0;
+    while (rep < ARRAY_REPS) {
+        array[int] a = new array[int](ARRAY_SIZE);
+        int i = 0;
+        while (i < ARRAY_SIZE) {
+            a[i] = i;
+            i = i + 1;
+        };
+        i = 0;
+        while (i < ARRAY_SIZE) {
+            acc = acc + a[i];
+            i = i + 1;
+        };
+        rep = rep + 1;
+    };
+    report("array", time.millis() - t0, acc);
+    void
+};
+
+# ---- 4. strings: repeated concatenation, reset to stay linear (alloc churn) ----------------
+func benchString() void {
+    int t0 = time.millis();
+    str s = "";
+    int produced = 0;
+    int i = 0;
+    while (i < STRING_REPS) {
+        s = s.con("velo");
+        produced = produced + 4;
+        if (s.len >= 1024) {
+            s = "";
+        };
+        i = i + 1;
+    };
+    report("strings", time.millis() - t0, produced);
+    void
+};
+
+# ---- 5. objects: allocate a value-type per iteration, sum its fields (alloc + GC) ----------
+data class Point(int x, int y) {
+    func sum() int { x + y; };
+};
+
+func benchObjects() void {
+    int t0 = time.millis();
+    int acc = 0;
+    int i = 0;
+    while (i < OBJECT_COUNT) {
+        Point p = new Point(i, i + 1);
+        acc = acc + p.sum();
+        i = i + 1;
+    };
+    report("objects", time.millis() - t0, acc);
+    void
+};
+
+# ---- 6. dict: insert N keys then read them back (hashing + map ops) -----------------------
+func benchDict() void {
+    int t0 = time.millis();
+    dict[int:int] d = new dict[int:int]{};
+    int i = 0;
+    while (i < DICT_COUNT) {
+        d[i] = i * 3;
+        i = i + 1;
+    };
+    int acc = 0;
+    i = 0;
+    while (i < DICT_COUNT) {
+        acc = acc + d[i];
+        i = i + 1;
+    };
+    report("dict", time.millis() - t0, acc);
+    void
+};
+
+# ---- 7. UI: build a screen of many canvas shapes, open, hold, close (UI-bridge speed) -----
+func benchUi() void {
+    int t0 = time.millis();
+
+    View screen = ui.column().fillWidth();
+    View bar = ui.appBar("Benchmark");
+    screen.add(bar);
+
+    View c = ui.canvas().fillWidth().weight(1);
+    c.background(colors.surface());
+    screen.add(c);
+
+    str ink0 = colors.primary();
+    str ink1 = colors.tertiary();
+    int s = 0;
+    while (s < UI_SHAPES) {
+        int x = 12 + s % 320;
+        int y = 12 + s * 11 % 540;
+        c.drawCircle(x, y, 5).color(if (s % 2 == 0) then ink0 else ink1);
+        s = s + 1;
+    };
+
+    ui.open(screen);
+    time.sleep(400);
+    ui.close();
+
+    report("ui", time.millis() - t0, UI_SHAPES);
+    void
+};
+
+# ---- driver ------------------------------------------------------------------------------
+
+term.println("=== Velo VM benchmark ===");
+term.println("");
+
+benchArith();
+benchFib();
+benchArray();
+benchString();
+benchObjects();
+benchDict();
+benchUi();
+
+term.println("");
+term.println(pad("TOTAL", 12).con(totalMs.str).con(" ms"));
+term.println("done.");

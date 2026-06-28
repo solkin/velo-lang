@@ -8,8 +8,8 @@ import org.velo.android.engine.ui.Shape
 import org.velo.android.engine.ui.UiHost
 import org.velo.android.engine.ui.VeloUi
 import org.velo.android.engine.ui.VeloView
-import vm.RunStats
-import vm.VeloRuntime
+import vm2.RunStats
+import vm2.VeloRuntime
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 

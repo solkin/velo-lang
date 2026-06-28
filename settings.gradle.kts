@@ -18,6 +18,7 @@ rootProject.name = "velo-lang"
 include(":velo-core")
 include(":velo-compiler")
 include(":velo-vm")
+include(":velo-vm2")
 include(":velo-cli")
 include(":velo-android")
 include(":velo-android-tools")

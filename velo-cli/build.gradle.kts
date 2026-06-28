@@ -9,6 +9,10 @@ plugins {
 dependencies {
     implementation(project(":velo-compiler"))
     implementation(project(":velo-vm"))
+
+    // Parity gate: run the demo corpus on the clean-room velo-vm2 alongside the
+    // legacy VM and assert identical output. Test-only — the CLI ships velo-vm.
+    testImplementation(project(":velo-vm2"))
 }
 
 application {

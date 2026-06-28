@@ -1,7 +1,7 @@
 package org.velo.android.engine
 
-import vm.actors.Dispatcher
-import vm.actors.DispatcherFactory
+import core.Dispatcher
+import core.DispatcherFactory
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

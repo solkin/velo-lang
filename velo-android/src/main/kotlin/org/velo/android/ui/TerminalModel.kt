@@ -1,7 +1,7 @@
 package org.velo.android.ui
 
 import com.google.android.material.R as MaterialR
-import vm.RunStats
+import vm2.RunStats
 
 /** Which logical stream a chunk of terminal text came from — drives its colour. */
 enum class OutputKind(val colorAttr: Int) {
