@@ -1,4 +1,4 @@
-# Wolf — a minimalist Wolfenstein 3D rendered entirely from Canvas draw ops.
+# Catacomb — a minimalist Wolfenstein-style raycaster rendered entirely from Canvas draw ops.
 #
 # Velo is an integer language with no trig natives, so the whole engine is fixed-point: a
 # baked quarter-wave sine table (scale 1024) drives a camera-plane DDA raycaster that paints
@@ -67,9 +67,9 @@ array[str] MAP = new array[str]{
     "2.............G2",
     "2.G..11...22.A.2",
     "2....1.....2...2",
-    "2.11.1.GG..2.222",
+    "2.11.D.GG..2.222",
     "2....1.....2...2",
-    "2.T..111.222...2",
+    "2.T..111.2D2...2",
     "2..............2",
     "2.222.22.11..G.2",
     "2...........1..2",
@@ -82,9 +82,19 @@ array[str] MAP = new array[str]{
 };
 array[int] tile = new array[int](COLS * ROWS);
 
+# Doors are tile type 5. Each door cell tracks how far it has slid open (0 shut .. 512 wide);
+# at DOOR_PASS it stops blocking and the ray sees straight through to the room behind.
+int DOOR = 5;
+int DOOR_OPEN = 512;
+int DOOR_PASS = 470;
+array[int] doorOpen = new array[int](COLS * ROWS);
+
 func wallAt(int c, int r) int {
     if (c < 0 | r < 0 | c >= COLS | r >= ROWS) then 9
-    else tile[r * COLS + c];
+    else {
+        int code = tile[r * COLS + c];
+        if (code == DOOR & doorOpen[r * COLS + c] >= DOOR_PASS) then 0 else code;
+    };
 };
 
 # ---- entities -----------------------------------------------------------------------------
@@ -146,6 +156,7 @@ array[int] BR = new array[int]{ 122, 46, 124, 150 };
 array[int] BG = new array[int]{ 122, 66, 86, 54 };
 array[int] BB = new array[int]{ 130, 150, 44, 46 };
 array[str] SHADE = new array[str](4 * LV * 2);
+array[str] SHADEM = new array[str](4 * LV * 2);   # the mortar between bricks (a darker shade)
 
 func clamp255(int v) int {
     if (v < 0) then 0 else if (v > 255) then 255 else v;
@@ -173,8 +184,9 @@ func buildShades() void {
             int sd = 0;
             while (sd < 2) {
                 int f = if (sd == 1) then (bright * 68) / 100 else bright;
-                str c = rgb((BR[ti] * f) / 100, (BG[ti] * f) / 100, (BB[ti] * f) / 100);
-                SHADE[(ti * LV + lv) * 2 + sd] = c;
+                SHADE[(ti * LV + lv) * 2 + sd] = rgb((BR[ti] * f) / 100, (BG[ti] * f) / 100, (BB[ti] * f) / 100);
+                int m = (f * 42) / 100;
+                SHADEM[(ti * LV + lv) * 2 + sd] = rgb((BR[ti] * m) / 100, (BG[ti] * m) / 100, (BB[ti] * m) / 100);
                 sd = sd + 1;
             };
             lv = lv + 1;
@@ -184,12 +196,25 @@ func buildShades() void {
     void
 };
 
-func wallColor(int t, int side, int perp) str {
-    int ti = tIdx(t);
+func shadeLv(int perp) int {
     int lv = (LV - 1) - (perp * 15) / (9 * POS);
-    if (lv < 0) { lv = 0; };
-    if (lv > LV - 1) { lv = LV - 1; };
-    SHADE[(ti * LV + lv) * 2 + side];
+    if (lv < 0) then 0 else if (lv > LV - 1) then LV - 1 else lv;
+};
+
+func wallColor(int t, int side, int perp) str {
+    SHADE[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
+};
+
+func wallMortar(int t, int side, int perp) str {
+    SHADEM[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
+};
+
+# A steel door, distance- and side-shaded on the fly (only a handful of strips hit a door at
+# once, so building the colour per strip is cheap).
+func doorColor(int side, int perp, int boost) str {
+    int bright = 38 + shadeLv(perp) * 4 + boost;
+    int f = if (side == 1) then (bright * 70) / 100 else bright;
+    rgb((96 * f) / 100, (120 * f) / 100, (150 * f) / 100);
 };
 
 # ---- map / entity setup -------------------------------------------------------------------
@@ -226,10 +251,12 @@ func buildMap() void {
             if (ch == "2"[0]) { code = 2; };
             if (ch == "3"[0]) { code = 3; };
             if (ch == "4"[0]) { code = 4; };
+            if (ch == "D"[0]) { code = DOOR; };
             if (ch == "G"[0]) { addEntity(0, c, r); };
             if (ch == "T"[0]) { addEntity(1, c, r); };
             if (ch == "A"[0]) { addEntity(2, c, r); };
             tile[r * COLS + c] = code;
+            doorOpen[r * COLS + c] = 0;
             c = c + 1;
         };
         r = r + 1;
@@ -266,6 +293,9 @@ func blocked(int fx, int fy) bool {
 # side that was hit through the two globals below.
 int gType = 0;
 int gSide = 0;
+int gTexX = 0;     # texture coordinate along the hit wall face, 0..1023
+int gMapX = 0;     # the hit cell (needed to look a door's open amount up)
+int gMapY = 0;
 
 func castCol(int sx) int {
     int dirX = cosT(ang);
@@ -314,8 +344,15 @@ func castCol(int sx) int {
 
     gType = hit;
     gSide = side;
+    gMapX = mapX;
+    gMapY = mapY;
     int perp = if (side == 0) then sideX - deltaX else sideY - deltaY;
     if (perp < 16) { perp = 16; };
+    # exact hit coordinate along the wall face -> texture column
+    int hitFp = if (side == 0) then py + (perp * rdy) / TRIG else px + (perp * rdx) / TRIG;
+    int tex = hitFp % POS;
+    if (tex < 0) { tex = tex + POS; };
+    gTexX = tex;
     perp;
 };
 
@@ -335,7 +372,7 @@ pad.add(bFwd);
 pad.add(padRow2);
 
 Container page = ui.column().fillWidth().fillHeight();
-AppBar bar = ui.appBar("Wolf");
+AppBar bar = ui.appBar("Catacomb");
 page.add(bar);
 page.add(view);
 page.add(pad);
@@ -357,6 +394,70 @@ func drawBackdrop() void {
     void
 };
 
+# Overlay a running-bond brick pattern on a wall strip: horizontal mortar courses plus the
+# vertical mortar joint that this column happens to cross (offset every other course). Skipped on
+# far/short strips, where the seams would alias into noise anyway.
+func drawBricks(int x, int top, int lh, int dtop, int dbot, int texX, str mortar) void {
+    if (lh >= 26) {
+        int courses = 4;
+        int bh = lh / courses;
+        if (bh >= 5) {
+            int th = 1 + lh / 150;
+            int c = 1;
+            while (c < courses) {
+                int my = top + c * bh;
+                if (my >= dtop & my <= dbot) {
+                    view.drawRect(x, my, STRIP, th).color(mortar).fill();
+                };
+                c = c + 1;
+            };
+            c = 0;
+            while (c < courses) {
+                int off = if (c % 2 == 0) then 0 else 256;
+                int m = (texX + off) % 512;
+                if (m < 44) {
+                    int by0 = top + c * bh;
+                    if (by0 < dtop) { by0 = dtop; };
+                    int by1 = top + (c + 1) * bh;
+                    if (by1 > dbot) { by1 = dbot; };
+                    if (by1 > by0) { view.drawRect(x, by0, STRIP, by1 - by0).color(mortar).fill(); };
+                };
+                c = c + 1;
+            };
+        };
+    };
+    void
+};
+
+# A two-leaf sliding steel door. The leaves part from the centre as [openAmt] grows; a column in
+# the widening gap shows the dark doorway, the rest shows the metal panel (lit frame, panel lines,
+# and a gold accent on the moving leaf edge).
+func drawDoorStrip(int x, int top, int lh, int dtop, int dbot, int perp, int side, int texX, int openAmt) void {
+    int hgt = dbot - dtop;
+    int d = iabs(texX - 512);
+    if (d < openAmt) {
+        view.drawRect(x, dtop, STRIP, hgt).color("#06070c").fill();
+    } else {
+        view.drawRect(x, dtop, STRIP, hgt).color(doorColor(side, perp, 0)).fill();
+        if (texX < 70 | texX > 954) {
+            view.drawRect(x, dtop, STRIP, hgt).color(doorColor(side, perp, 30)).fill();
+        };
+        int bh = lh / 3;
+        int c = 1;
+        while (c < 3) {
+            int my = top + c * bh;
+            if (my >= dtop & my <= dbot) {
+                view.drawRect(x, my, STRIP, 1 + lh / 150).color(doorColor(side, perp, 0 - 26)).fill();
+            };
+            c = c + 1;
+        };
+        if (iabs(d - openAmt) < 40) {
+            view.drawRect(x, dtop, STRIP, hgt).color("#f4d35e").alpha(55).fill();
+        };
+    };
+    void
+};
+
 func drawWalls() void {
     int x = 0;
     int strip = 0;
@@ -370,7 +471,12 @@ func drawWalls() void {
         int dbot = if (bot > H) then H else bot;
         int hgt = dbot - dtop;
         if (hgt > 0) {
-            view.drawRect(x, dtop, STRIP, hgt).color(wallColor(gType, gSide, perp)).fill();
+            if (gType == DOOR) {
+                drawDoorStrip(x, top, lh, dtop, dbot, perp, gSide, gTexX, doorOpen[gMapY * COLS + gMapX]);
+            } else {
+                view.drawRect(x, dtop, STRIP, hgt).color(wallColor(gType, gSide, perp)).fill();
+                drawBricks(x, top, lh, dtop, dbot, gTexX, wallMortar(gType, gSide, perp));
+            };
         };
         x = x + STRIP;
         strip = strip + 1;
@@ -543,8 +649,14 @@ func drawMinimap() void {
     while (r < ROWS) {
         int c = 0;
         while (c < COLS) {
-            if (tile[r * COLS + c] > 0) {
-                view.drawRect(x0 + c * cell, y0 + r * cell, cell - 1, cell - 1).color("#8a7f63").alpha(80).fill();
+            int code = tile[r * COLS + c];
+            if (code == DOOR) {
+                str dc = if (doorOpen[r * COLS + c] >= DOOR_PASS) then "#f4d35e" else "#d08a3a";
+                view.drawRect(x0 + c * cell, y0 + r * cell, cell - 1, cell - 1).color(dc).fill();
+            } else {
+                if (code > 0) {
+                    view.drawRect(x0 + c * cell, y0 + r * cell, cell - 1, cell - 1).color("#8a7f63").alpha(80).fill();
+                };
             };
             c = c + 1;
         };
@@ -700,6 +812,27 @@ func updateGuards() void {
     void
 };
 
+# Doors slide open while the player is near and ease shut again once they leave.
+func updateDoors() void {
+    int idx = 0;
+    while (idx < COLS * ROWS) {
+        if (tile[idx] == DOOR) {
+            int c = idx % COLS;
+            int r = idx / COLS;
+            int dist = iabs(px - cellCenter(c)) + iabs(py - cellCenter(r));
+            if (dist < POS * 17 / 10) {
+                doorOpen[idx] = doorOpen[idx] + 48;
+                if (doorOpen[idx] > DOOR_OPEN) { doorOpen[idx] = DOOR_OPEN; };
+            } else {
+                doorOpen[idx] = doorOpen[idx] - 48;
+                if (doorOpen[idx] < 0) { doorOpen[idx] = 0; };
+            };
+        };
+        idx = idx + 1;
+    };
+    void
+};
+
 func pickups() void {
     int i = 0;
     while (i < ecount) {
@@ -771,6 +904,7 @@ func step() void {
     if (muzzle > 0) { muzzle = muzzle - 1; };
     if (state == STATE_PLAY) {
         applyInput();
+        updateDoors();
         updateGuards();
         pickups();
     };
@@ -847,4 +981,4 @@ async ticker.after(TICK_MS, loopToken, func(int x) void {
     void
 });
 
-term.println("Wolf — hold the D-pad to move and turn; tap the 3D view to aim and shoot.");
+term.println("Catacomb — hold the D-pad to move and turn; tap the 3D view to aim and shoot. Walk up to a door to open it.");
