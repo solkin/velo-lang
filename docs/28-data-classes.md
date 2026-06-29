@@ -101,4 +101,4 @@ Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads
 
 ---
 
-[Previous: Callbacks ←](27-callbacks.md)
+[Previous: Callbacks ←](27-callbacks.md) | [Next: Interfaces →](29-interfaces.md)

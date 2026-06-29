@@ -101,6 +101,20 @@ n.subscribe(func(str text) void {
 
 The Kotlin-function form carries the full signature, so the compiler checks the Velo lambda against it. Either way the body always executes on the thread that owns the closure. See [Callbacks](27-callbacks.md) for the whole model.
 
+## Satisfying interfaces
+
+Because a native class is bound by **shape**, it can satisfy a Velo [interface](29-interfaces.md) with no annotation or wrapper on the host side — exactly like a Velo class. If the registered class has methods whose names and signatures match the interface, a native handle can be assigned to an interface-typed variable, passed to a function expecting the interface, or dropped into an `array[Interface]` alongside Velo instances. Calls dispatch by name across the native boundary, and a fluent host method that returns itself fulfils a [`Self`](29-interfaces.md#self-return-type)-returning requirement.
+
+```velo
+# A registered host class with `area() int` and `kind() str` satisfies this:
+interface Shape { func area() int; func kind() str; };
+
+Widget w = new Widget("hello");
+Shape s = w;
+term.println(s.kind());        # widget:hello
+term.println(s.area().str);    # 5
+```
+
 ## Errors
 
 - Unregistered class, missing method, wrong signature → compile-time error.

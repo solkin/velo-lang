@@ -1,0 +1,139 @@
+# interface — a structural contract.
+#
+# An `interface` is a named set of method signatures. A type satisfies it by *shape*:
+# if it has the right methods, it qualifies — no `implements`, no base class. Calls
+# through an interface value dispatch dynamically to the concrete type behind it.
+#
+# This sample walks the feature one idea at a time; run it and read along with the output.
+
+Terminal term = new Terminal();
+
+# ---- 1. structural conformance ------------------------------------------------------------
+# `Shape` declares two methods. `Square` and `Rect` never name `Shape`, yet both satisfy it
+# because each has an `area() int` and a `kind() str`.
+
+interface Shape {
+    func area() int;
+    func kind() str;
+};
+
+class Square(int side) {
+    func area() int { side * side; };
+    func kind() str { "square"; };
+};
+
+class Rect(int w, int h) {
+    func area() int { w * h; };
+    func kind() str { "rect"; };
+};
+
+# A `Shape` variable can hold either concrete type; `.kind()`/`.area()` dispatch at run time.
+Shape s = new Square(4);
+term.println("1) s = Square(4) -> ".con(s.kind()).con(", area ").con(s.area().str));
+s = new Rect(3, 5);
+term.println("   s = Rect(3,5)  -> ".con(s.kind()).con(", area ").con(s.area().str));
+
+# Through a `Shape` you may call ONLY what `Shape` declares — even though `Square` also has
+# other methods. That is what lets shared code rely on exactly the contract. (Calling, say,
+# a Square-only method on `s` here would be a compile error.)
+
+# ---- 2. interface as a parameter and as array elements ------------------------------------
+# One function works for every present and future Shape.
+
+func describe(Shape x) str { x.kind().con("(").con(x.area().str).con(")"); };
+term.println("2) describe(Rect(10,10)) = ".con(describe(new Rect(10, 10))));
+
+# A heterogeneous array: each element is a different concrete class behind one element type.
+array[Shape] shapes = new array[Shape]{ new Square(3), new Rect(2, 5), new Square(4) };
+int total = 0;
+int i = 0;
+while (i < shapes.len) {
+    Shape sh = shapes[i];
+    term.println("   shapes[".con(i.str).con("] = ").con(describe(sh)));
+    total += sh.area();
+    i += 1;
+};
+term.println("   total area = ".con(total.str));
+
+# ---- 3. Self: fluent chains keep the concrete type ----------------------------------------
+# A method returning `Self` returns "an instance of whatever the concrete type is", so a
+# chain stays typed instead of widening to the interface.
+
+# `Builder` is declared before `Counter` so the class is checked against it as it compiles.
+interface Builder {
+    func grow() Self;
+    func value() int;
+};
+
+class Counter(int n) {
+    func bump() Self { new Counter(n + 1); };
+    func grow() Self { new Counter(n + 1); };
+    func value() int { n; };
+};
+
+Counter c = new Counter(0);
+term.println("3) Counter(0).bump().bump().bump().value() = ".con(c.bump().bump().bump().value().str));
+
+# `Self` works through an interface too — dispatch keeps flowing after each step.
+Builder b = new Counter(10);
+term.println("   Builder(10).grow().grow().value() = ".con(b.grow().grow().value().str));
+
+# ---- 4. explicit conformance --------------------------------------------------------------
+# Structural satisfaction is enough, but a class may DECLARE the interfaces it means to meet
+# with `: Iface` after the constructor. Nothing changes at run time; you just get the error
+# at the class (listing the missing method) instead of at the first use.
+
+class Triangle(int base, int height) : Shape {
+    func area() int { base * height / 2; };
+    func kind() str { "triangle"; };
+};
+term.println("4) Triangle(6,4) as Shape -> ".con(describe(new Triangle(6, 4))));
+
+# ---- 5. bounded generics ------------------------------------------------------------------
+# A generic type parameter can be bounded by an interface with `[T: Shape]`. Inside the
+# generic you may call the bound's methods on a `T`, and any type argument must satisfy it.
+
+class Boxed[T: Shape](T item) {
+    func areaOf() int { item.area(); };
+};
+Boxed[Square] bs = new Boxed[Square](new Square(5));
+Boxed[Rect] br = new Boxed[Rect](new Rect(3, 4));
+term.println("5) Boxed[Square](5).areaOf() = ".con(bs.areaOf().str));
+term.println("   Boxed[Rect](3,4).areaOf() = ".con(br.areaOf().str));
+
+# ---- 6. native classes satisfy interfaces, too --------------------------------------------
+# A registered native (host) class qualifies by shape exactly like a Velo class. `Time` has a
+# native `unix() int`, so it satisfies this interface with no annotation or wrapper — the call
+# dispatches across the native boundary.
+
+interface Clock {
+    func unix() int;
+};
+Clock clock = new Time();
+term.println("6) Time as Clock: clock.unix() = ".con(clock.unix().str).con(" (seconds since epoch)"));
+
+# ---- 7. what the compiler rejects ---------------------------------------------------------
+# These lines are intentionally commented out — uncomment any one to see the error. They show
+# where the contract is enforced.
+#
+#   a) Calling a method the interface does not declare (the interface is the whole view):
+#        Shape only = new Square(2);
+#        only.kind();          # ok — `kind` is in Shape
+#        only.side;            # error: a Shape has no `side` field
+#
+#   b) Assigning a type that is missing a required method:
+#        class Dot() { func draw() int { 0; }; };
+#        Shape bad = new Dot();           # error: Dot has no `area`/`kind`
+#
+#   c) A type argument that violates a `[T: Shape]` bound:
+#        Boxed[Dot] nope = new Boxed[Dot](new Dot());   # error: Dot does not satisfy Shape
+#
+#   d) A non-interface bound:
+#        class Bag[T: Square](T item) {};   # error: a bound must be an interface
+#
+#   e) An interface across an actor boundary (interfaces are not transferable):
+#        actor class Worker() {
+#            func handle(Shape sh) int { sh.area(); };   # error: Shape is not transferable
+#        };
+
+term.println("done.");

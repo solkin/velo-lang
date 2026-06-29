@@ -116,6 +116,24 @@ int val = reg.getByIndex(0);    # 100
 
 Here `Registry[V]` uses `Entry[str, V]` — the key type is fixed as `str`, while the value type `V` is passed through from the outer class.
 
+### Bounded type parameters
+
+By default a type parameter is opaque: you can store and pass a `T` but not call methods on it. Bounding it with an [interface](29-interfaces.md) — `[T: Shape]` — lets the generic call that interface's methods on a `T`, and forces every type argument to satisfy the bound:
+
+```velo
+interface Shape { func area() int; };
+class Square(int side) { func area() int { side * side; }; };
+
+class Boxed[T: Shape](T item) {
+    func areaOf() int { item.area(); };   # allowed because T is bounded by Shape
+};
+
+Boxed[Square] b = new Boxed[Square](new Square(5));
+term.println(b.areaOf().str);   # 25
+```
+
+The bound must be an interface — see [Interfaces → Bounded generics](29-interfaces.md#bounded-generics).
+
 ## Generic Functions
 
 ### Declaration
@@ -250,8 +268,8 @@ Box[str] b = new Box[str]("ok");
 
 ## Limitations
 
-- **No type parameter constraints** — type parameters are unconstrained (bounded by `any`). You cannot specify `T extends SomeType`.
-- **No property access on type parameters** — since `T` is opaque, you cannot call type-specific properties (like `.str`) on values of type `T` inside the generic body.
+- **Bounds must be interfaces** — a type parameter is unconstrained by default (bounded by `any`), but it may be bounded by an [interface](29-interfaces.md) with `[T: Shape]`. That is the only form of constraint; there is no `T extends SomeClass`.
+- **No property access on unbounded type parameters** — an unbounded `T` is opaque, so you cannot call type-specific properties (like `.str`) on a `T` value inside the generic body. A `T` bounded by an interface lets you call that interface's methods.
 - **No variance** — there is no `in`/`out` variance annotation.
 - **Type arguments required for classes** — unlike functions, generic classes require explicit type arguments at both the declaration and `new` site.
 

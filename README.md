@@ -395,6 +395,7 @@ The project includes many example programs in `velo-cli/src/main/resources/`:
 - `huffman.vel` - Huffman compression algorithm
 - `class.vel` - Class usage examples
 - `ext.vel` - Extension function examples
+- `interfaces.vel` - Structural interfaces, `Self`, bounded generics and native conformance
 - `closures.vel` - Closures, captured state and currying
 - `higher-order.vel` - `apply`, `compose`, `count` and array.map with captures
 - `http-example.vel` - HTTP request examples

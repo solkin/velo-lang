@@ -30,6 +30,7 @@
 26. [Actors](26-actors.md)
 27. [Callbacks](27-callbacks.md)
 28. [Data Classes](28-data-classes.md)
+29. [Interfaces](29-interfaces.md)
 
 ---
 

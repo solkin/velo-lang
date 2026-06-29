@@ -1,0 +1,6 @@
+{
+  "id": "card-feed",
+  "name": "Card Feed",
+  "description": "A scrolling Material3 feed where every card is a different Velo class behind one structural `interface Card`. A heterogeneous array[Card] drives the feed — each render() dispatches dynamically to the concrete class — and a Self-returning builder keeps the stat rows fluent.",
+  "interactive": true
+}

@@ -1,0 +1,140 @@
+# Velo Card Feed — one structural `interface` rendered as a scrolling Material3 feed.
+#
+# Every card on screen is a *different* Velo class. None of them inherits anything; most never
+# even name `Card` — they satisfy it purely by shape (a `title()` and a `render(Ui) Surface`).
+# One card opts into the explicit `: Card` form, which changes nothing at runtime but turns a
+# missing or mis-typed method into an error at the class instead of at the first use.
+#
+# The whole feed is then driven by a single heterogeneous `array[Card]`: each `card.render(ui)`
+# dispatches dynamically to the element's concrete class. A small `Self`-returning builder keeps
+# a card's stat rows reading as a fluent chain.
+#
+# Note the native `Ui` and `Surface` types right in the interface signature — the contract spans
+# the Velo <-> native boundary, and the same dynamic dispatch reaches host widgets too.
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+TextStyles styles = new TextStyles();
+
+# ---- the contract -------------------------------------------------------------------------
+
+interface Card {
+    func title() str;
+    func render(Ui ui) Surface;
+};
+
+# ---- a Self-returning builder -------------------------------------------------------------
+
+# Appends a label/value row into `box` and hands *itself* back, so a column of stats reads as a
+# fluent chain. The `Self` return keeps that chain typed as `Rows` rather than collapsing to a
+# bare interface, so each `.line(...)` still sees `Rows`.
+class Rows(Ui ui, Container box) {
+    func line(str label, str value) Self {
+        Container r = ui.row().fillWidth();
+        r.add(ui.text(label).weight(1));
+        r.add(ui.text(value).bold());
+        box.add(r);
+        new Rows(ui, box);
+    };
+};
+
+# ---- shared chrome ------------------------------------------------------------------------
+
+# A tinted, rounded card with an icon + heading. A top-level helper, so it builds its own theme
+# handles (native classes have no-arg constructors) and stays independent of any globals.
+func cardShell(Ui ui, str heading, str iconName) Surface {
+    Colors colors = new Colors();
+    TextStyles styles = new TextStyles();
+    Surface s = ui.card().fillWidth();
+    s.corner(20);
+    s.background(colors.surfaceContainer());
+    Container head = ui.row().fillWidth();
+    head.gap(8);
+    head.add(ui.icon(iconName).tint(colors.primary()));
+    head.add(ui.text(heading).style(styles.titleMedium()).color(colors.primary()).weight(1));
+    s.add(head);
+    s;
+};
+
+# ---- three card kinds, each a plain class that satisfies `Card` ----------------------------
+
+# Structural conformance: `StatCard` never names `Card`, yet provides exactly its methods.
+class StatCard(str name, str value, str trend) {
+    func title() str { name; };
+    func render(Ui ui) Surface {
+        Colors colors = new Colors();
+        Icons icons = new Icons();
+        TextStyles styles = new TextStyles();
+        Surface s = cardShell(ui, name, icons.thumbUp());
+        s.add(ui.text(value).style(styles.displaySmall()));
+        s.add(ui.text(trend).color(colors.primary()));
+        s;
+    };
+};
+
+# Explicit conformance: the `: Card` form documents intent and fails fast if a method drifts.
+class MetricCard(str name, int pct) : Card {
+    func title() str { name; };
+    func render(Ui ui) Surface {
+        Icons icons = new Icons();
+        Surface s = cardShell(ui, name, icons.favorite());
+
+        # Build the two stat rows through the fluent Self-returning builder.
+        Container stats = ui.column().fillWidth();
+        new Rows(ui, stats)
+            .line("Done", pct.str.con("%"))
+            .line("Left", (100 - pct).str.con("%"));
+        s.add(stats);
+
+        Progress bar = ui.progress();
+        bar.fillWidth();
+        bar.indeterminate(false);
+        bar.progress(pct);
+        s.add(bar);
+        s;
+    };
+};
+
+# Structural conformance again — a totally different shape behind the same interface.
+class QuoteCard(str who, str quote) {
+    func title() str { who; };
+    func render(Ui ui) Surface {
+        Icons icons = new Icons();
+        TextStyles styles = new TextStyles();
+        Surface s = cardShell(ui, who, icons.star());
+        s.add(ui.text(quote).style(styles.bodyLarge()).maxLines(3));
+        s;
+    };
+};
+
+# ---- the feed: one array, many concrete classes, one dispatch ------------------------------
+
+array[Card] cards = new array[Card]{
+    new StatCard("Steps", "9,418", "+12% vs last week"),
+    new MetricCard("Daily goal", 72),
+    new QuoteCard("Ada Lovelace", "That brain of mine is something more than merely mortal, as time will show."),
+    new StatCard("Focus", "3h 20m", "+40m today"),
+    new MetricCard("Battery health", 88),
+    new QuoteCard("Grace Hopper", "The most dangerous phrase in the language is: we've always done it this way.")
+};
+
+Container body = ui.column().fillWidth();
+body.paddingXY(16, 16);
+body.gap(12);
+body.add(ui.text("Today").style(styles.headlineSmall()));
+
+term.println("Building a feed of ".con(cards.len.str).con(" cards through one interface..."));
+
+int i = 0;
+while (i < cards.len) {
+    Card c = cards[i];
+    # `c` is statically a `Card`; the call resolves to StatCard / MetricCard / QuoteCard at run time.
+    term.println("  card ".con((i + 1).str).con(": ").con(c.title()));
+    body.add(c.render(ui));
+    i += 1;
+};
+
+Container screen = ui.scroll().fillWidth();
+screen.add(body);
+ui.open(screen);
+term.println("Feed opened — scroll through the cards.");

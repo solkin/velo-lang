@@ -175,6 +175,10 @@ For the full list of overloadable operators and detailed usage, see [Operator Ov
 
 The classes above are mutable objects shared by reference. For an **immutable value type** — compared by value and copied across actor and native boundaries — use a [`data class`](28-data-classes.md) instead.
 
+## Interfaces
+
+A class can be used through an [interface](29-interfaces.md) — a contract of method signatures it satisfies by shape, with no base class to extend. A class may also name an interface explicitly after its constructor parameters (`class Square(int side) : Shape { ... }`) to document intent and get errors at the declaration. A method whose return type is [`Self`](29-interfaces.md#self-return-type) keeps the concrete type through a fluent chain.
+
 ---
 
 [Previous: Tuples ←](12-tuples.md) | [Next: Extension Functions →](14-extension-functions.md)
