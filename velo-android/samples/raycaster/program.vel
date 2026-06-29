@@ -1,0 +1,850 @@
+# Wolf — a minimalist Wolfenstein 3D rendered entirely from Canvas draw ops.
+#
+# Velo is an integer language with no trig natives, so the whole engine is fixed-point: a
+# baked quarter-wave sine table (scale 1024) drives a camera-plane DDA raycaster that paints
+# fog-shaded, side-darkened wall strips. Guards and pickups are billboarded sprites projected
+# with the same camera and depth-tested against a per-strip wall buffer. Guards wander, then
+# chase on line-of-sight and bite on contact; the pistol fires on a tap (which also aims toward
+# the tapped column). Hold the D-pad to move and turn. Clear every guard to win.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Icons icons = new Icons();
+
+# ---- fixed-point scales -------------------------------------------------------------------
+int POS = 1024;        # world units per map cell
+int TRIG = 1024;       # sine/cosine amplitude
+int ANG = 1024;        # angle units in a full turn
+int BIG = 268435456;   # 1<<28 — a "very far" delta for axis-aligned rays
+int PLANE = 591;       # tan(30 deg) * 1024  -> a 60 deg field of view
+
+# ---- baked quarter-wave sine table (index 0..256, scaled by 1024) -------------------------
+array[int] SINQ = new array[int]{
+    0, 6, 13, 19, 25, 31, 38, 44, 50, 57, 63, 69, 75, 82, 88, 94,
+    100, 107, 113, 119, 125, 132, 138, 144, 150, 156, 163, 169, 175, 181, 187, 194,
+    200, 206, 212, 218, 224, 230, 237, 243, 249, 255, 261, 267, 273, 279, 285, 291,
+    297, 303, 309, 315, 321, 327, 333, 339, 345, 351, 357, 363, 369, 374, 380, 386,
+    392, 398, 403, 409, 415, 421, 426, 432, 438, 443, 449, 455, 460, 466, 472, 477,
+    483, 488, 494, 499, 505, 510, 516, 521, 526, 532, 537, 543, 548, 553, 558, 564,
+    569, 574, 579, 584, 590, 595, 600, 605, 610, 615, 620, 625, 630, 635, 640, 645,
+    650, 654, 659, 664, 669, 674, 678, 683, 688, 692, 697, 702, 706, 711, 715, 720,
+    724, 729, 733, 737, 742, 746, 750, 755, 759, 763, 767, 771, 775, 779, 784, 788,
+    792, 796, 799, 803, 807, 811, 815, 819, 822, 826, 830, 834, 837, 841, 844, 848,
+    851, 855, 858, 862, 865, 868, 872, 875, 878, 882, 885, 888, 891, 894, 897, 900,
+    903, 906, 909, 912, 915, 917, 920, 923, 926, 928, 931, 934, 936, 939, 941, 944,
+    946, 948, 951, 953, 955, 958, 960, 962, 964, 966, 968, 970, 972, 974, 976, 978,
+    980, 982, 983, 985, 987, 989, 990, 992, 993, 995, 996, 998, 999, 1000, 1002, 1003,
+    1004, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1016, 1017, 1018, 1018,
+    1019, 1020, 1020, 1021, 1021, 1022, 1022, 1022, 1023, 1023, 1023, 1024, 1024, 1024, 1024, 1024,
+    1024
+};
+
+func sinT(int a) int {
+    a = a % ANG;
+    if (a < 0) { a = a + ANG; };
+    if (a < 256) then SINQ[a]
+    else if (a < 512) then SINQ[512 - a]
+    else if (a < 768) then 0 - SINQ[a - 512]
+    else 0 - SINQ[1024 - a];
+};
+
+func cosT(int a) int {
+    sinT(a + 256);
+};
+
+func iabs(int v) int {
+    if (v < 0) then 0 - v else v;
+};
+
+# ---- the map (16 x 16). digits are wall types, letters are spawns on an open floor --------
+int COLS = 16;
+int ROWS = 16;
+array[str] MAP = new array[str]{
+    "2222222222222222",
+    "2.............G2",
+    "2.G..11...22.A.2",
+    "2....1.....2...2",
+    "2.11.1.GG..2.222",
+    "2....1.....2...2",
+    "2.T..111.222...2",
+    "2..............2",
+    "2.222.22.11..G.2",
+    "2...........1..2",
+    "2.G.333.....1..2",
+    "2...3.......1..2",
+    "2.A.3.TT..333..2",
+    "2...3........2.2",
+    "2..............2",
+    "2222222222222222"
+};
+array[int] tile = new array[int](COLS * ROWS);
+
+func wallAt(int c, int r) int {
+    if (c < 0 | r < 0 | c >= COLS | r >= ROWS) then 9
+    else tile[r * COLS + c];
+};
+
+# ---- entities -----------------------------------------------------------------------------
+# Guards: kind 0. Pickups: kind 1 treasure, kind 2 ammo. A flat parallel-array store keeps
+# the per-frame projection/sort allocation-free.
+int MAXE = 24;
+array[int] ekind = new array[int](MAXE);   # 0 guard, 1 treasure, 2 ammo
+array[int] ex = new array[int](MAXE);      # fixed-point world x
+array[int] ey = new array[int](MAXE);      # fixed-point world y
+array[int] ealive = new array[int](MAXE);  # 1 active, 0 gone
+array[int] ehp = new array[int](MAXE);
+array[int] edir = new array[int](MAXE);    # wander heading (angle units)
+array[int] ecool = new array[int](MAXE);   # frames until a guard can bite again
+array[int] ehurt = new array[int](MAXE);   # white flash frames after a hit
+int ecount = 0;
+int guardsLeft = 0;
+
+# ---- player & game state ------------------------------------------------------------------
+int px = 0;
+int py = 0;
+int ang = 768;          # facing up the map at the start
+int hp = 100;
+int ammo = 24;
+int score = 0;
+int kills = 0;
+int STATE_PLAY = 0;
+int STATE_DEAD = 1;
+int STATE_WIN = 2;
+int state = 0;
+int frame = 0;
+int loopToken = 0;
+
+# input intents (set while a D-pad button is held)
+int inFwd = 0;
+int inBack = 0;
+int inLeft = 0;
+int inRight = 0;
+
+# weapon feedback
+int muzzle = 0;         # muzzle-flash frames
+int bob = 0;            # gun bob phase
+
+Random rng = new Random(7);
+
+# ---- canvas projection (recomputed on resize, in canvas dp) -------------------------------
+int W = 360;
+int H = 600;
+int HZ = 300;           # horizon (vertical centre of the 3D view)
+int STRIP = 4;          # px width of one cast column
+int NSTRIP = 92;
+array[int] wallPerp = new array[int](512);   # per-strip wall depth, for sprite z-testing
+
+# ---- wall shade palette (baked once: type x level x side) ---------------------------------
+int LV = 16;
+array[str] HEXD = new array[str]{
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"
+};
+array[int] BR = new array[int]{ 122, 46, 124, 150 };
+array[int] BG = new array[int]{ 122, 66, 86, 54 };
+array[int] BB = new array[int]{ 130, 150, 44, 46 };
+array[str] SHADE = new array[str](4 * LV * 2);
+
+func clamp255(int v) int {
+    if (v < 0) then 0 else if (v > 255) then 255 else v;
+};
+
+func hex2(int v) str {
+    int c = clamp255(v);
+    HEXD[c / 16].con(HEXD[c % 16]);
+};
+
+func rgb(int r, int g, int b) str {
+    "#".con(hex2(r)).con(hex2(g)).con(hex2(b));
+};
+
+func tIdx(int t) int {
+    if (t == 2) then 1 else if (t == 3) then 2 else if (t == 4) then 3 else 0;
+};
+
+func buildShades() void {
+    int ti = 0;
+    while (ti < 4) {
+        int lv = 0;
+        while (lv < LV) {
+            int bright = 34 + lv * 4;          # 34..94 percent
+            int sd = 0;
+            while (sd < 2) {
+                int f = if (sd == 1) then (bright * 68) / 100 else bright;
+                str c = rgb((BR[ti] * f) / 100, (BG[ti] * f) / 100, (BB[ti] * f) / 100);
+                SHADE[(ti * LV + lv) * 2 + sd] = c;
+                sd = sd + 1;
+            };
+            lv = lv + 1;
+        };
+        ti = ti + 1;
+    };
+    void
+};
+
+func wallColor(int t, int side, int perp) str {
+    int ti = tIdx(t);
+    int lv = (LV - 1) - (perp * 15) / (9 * POS);
+    if (lv < 0) { lv = 0; };
+    if (lv > LV - 1) { lv = LV - 1; };
+    SHADE[(ti * LV + lv) * 2 + side];
+};
+
+# ---- map / entity setup -------------------------------------------------------------------
+func cellCenter(int c) int {
+    c * POS + POS / 2;
+};
+
+func addEntity(int kind, int c, int r) void {
+    if (ecount < MAXE) {
+        ekind[ecount] = kind;
+        ex[ecount] = cellCenter(c);
+        ey[ecount] = cellCenter(r);
+        ealive[ecount] = 1;
+        ehp[ecount] = 3;
+        edir[ecount] = (c + r) * 128 % ANG;
+        ecool[ecount] = 0;
+        ehurt[ecount] = 0;
+        if (kind == 0) { guardsLeft = guardsLeft + 1; };
+        ecount = ecount + 1;
+    };
+    void
+};
+
+func buildMap() void {
+    ecount = 0;
+    guardsLeft = 0;
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            int ch = MAP[r][c];
+            int code = 0;
+            if (ch == "1"[0]) { code = 1; };
+            if (ch == "2"[0]) { code = 2; };
+            if (ch == "3"[0]) { code = 3; };
+            if (ch == "4"[0]) { code = 4; };
+            if (ch == "G"[0]) { addEntity(0, c, r); };
+            if (ch == "T"[0]) { addEntity(1, c, r); };
+            if (ch == "A"[0]) { addEntity(2, c, r); };
+            tile[r * COLS + c] = code;
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    void
+};
+
+func newGame() void {
+    buildMap();
+    px = cellCenter(8);
+    py = cellCenter(14);
+    ang = 768;
+    hp = 100;
+    ammo = 24;
+    score = 0;
+    kills = 0;
+    state = STATE_PLAY;
+    muzzle = 0;
+    void
+};
+
+# ---- collision ----------------------------------------------------------------------------
+func blocked(int fx, int fy) bool {
+    int rad = 220;
+    wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
+    | wallAt((fx + rad) / POS, (fy - rad) / POS) > 0
+    | wallAt((fx - rad) / POS, (fy + rad) / POS) > 0
+    | wallAt((fx + rad) / POS, (fy + rad) / POS) > 0;
+};
+
+# ---- the DDA raycaster --------------------------------------------------------------------
+# castCol projects screen column [sx] through the camera plane, walks the grid and returns the
+# perpendicular wall distance (fixed-point, cells * 1024). It also reports the wall type and the
+# side that was hit through the two globals below.
+int gType = 0;
+int gSide = 0;
+
+func castCol(int sx) int {
+    int dirX = cosT(ang);
+    int dirY = sinT(ang);
+    int planeX = (0 - dirY) * PLANE / 1024;
+    int planeY = dirX * PLANE / 1024;
+    int camX = (2 * sx * POS) / W - POS;
+    int rdx = dirX + (planeX * camX) / POS;
+    int rdy = dirY + (planeY * camX) / POS;
+    int adx = iabs(rdx);
+    int ady = iabs(rdy);
+
+    int mapX = px / POS;
+    int mapY = py / POS;
+
+    int deltaX = if (adx == 0) then BIG else (TRIG * TRIG) / adx;
+    int deltaY = if (ady == 0) then BIG else (TRIG * TRIG) / ady;
+
+    int stepX = 1;
+    int sideX = 0;
+    int stepY = 1;
+    int sideY = 0;
+    if (adx == 0) {
+        sideX = BIG;
+    } else {
+        if (rdx < 0) { stepX = 0 - 1; sideX = ((px - mapX * POS) * deltaX) / POS; }
+        else { stepX = 1; sideX = ((mapX * POS + POS - px) * deltaX) / POS; };
+    };
+    if (ady == 0) {
+        sideY = BIG;
+    } else {
+        if (rdy < 0) { stepY = 0 - 1; sideY = ((py - mapY * POS) * deltaY) / POS; }
+        else { stepY = 1; sideY = ((mapY * POS + POS - py) * deltaY) / POS; };
+    };
+
+    int side = 0;
+    int hit = 0;
+    int guard = 0;
+    while (hit == 0 & guard < 64) {
+        if (sideX < sideY) { sideX = sideX + deltaX; mapX = mapX + stepX; side = 0; }
+        else { sideY = sideY + deltaY; mapY = mapY + stepY; side = 1; };
+        int t = wallAt(mapX, mapY);
+        if (t > 0) { hit = t; };
+        guard = guard + 1;
+    };
+
+    gType = hit;
+    gSide = side;
+    int perp = if (side == 0) then sideX - deltaX else sideY - deltaY;
+    if (perp < 16) { perp = 16; };
+    perp;
+};
+
+# ---- widgets ------------------------------------------------------------------------------
+Canvas view = ui.canvas().weight(1).fillWidth().background("#0b0d12");
+
+Button bFwd = ui.tonalButton("▲").fillWidth();
+Button bLeft = ui.tonalButton("◀ turn").weight(1);
+Button bBack = ui.tonalButton("▼").weight(1);
+Button bRight = ui.tonalButton("turn ▶").weight(1);
+Container padRow2 = ui.row().fillWidth().gap(8);
+padRow2.add(bLeft);
+padRow2.add(bBack);
+padRow2.add(bRight);
+Container pad = ui.column().fillWidth().gap(8).padding(12);
+pad.add(bFwd);
+pad.add(padRow2);
+
+Container page = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Wolf");
+page.add(bar);
+page.add(view);
+page.add(pad);
+Container root = page;
+
+# ---- drawing ------------------------------------------------------------------------------
+func drawBackdrop() void {
+    view.drawRect(0, 0, W, HZ).color("#10141d").fill();
+    view.drawRect(0, HZ, W, H - HZ).color("#231c16").fill();
+    # a few banded gradients to fake depth on floor and ceiling
+    int i = 0;
+    while (i < 4) {
+        int cy = (i + 1) * HZ / 5;
+        view.drawRect(0, cy, W, 2).color("#1b2233").alpha(40).fill();
+        int fy = HZ + (i + 1) * (H - HZ) / 5;
+        view.drawRect(0, fy, W, 2).color("#352a1d").alpha(40).fill();
+        i = i + 1;
+    };
+    void
+};
+
+func drawWalls() void {
+    int x = 0;
+    int strip = 0;
+    while (x < W) {
+        int perp = castCol(x + STRIP / 2);
+        wallPerp[strip] = perp;
+        int lh = (H * POS) / perp;
+        int top = HZ - lh / 2;
+        int dtop = if (top < 0) then 0 else top;
+        int bot = top + lh;
+        int dbot = if (bot > H) then H else bot;
+        int hgt = dbot - dtop;
+        if (hgt > 0) {
+            view.drawRect(x, dtop, STRIP, hgt).color(wallColor(gType, gSide, perp)).fill();
+        };
+        x = x + STRIP;
+        strip = strip + 1;
+    };
+    # Exactly the strips written this frame — spriteClip reads wallPerp only within [0, NSTRIP),
+    # so it never touches an unwritten (null) cell.
+    NSTRIP = strip;
+    void
+};
+
+# Project entity [i] to screen. Writes screen x, on-screen height and depth into the globals
+# below; returns 1 when it is in front of the camera, 0 otherwise.
+int pScrX = 0;
+int pH = 0;
+int pDepth = 0;
+
+# A horizontal clip window (canvas px) honoured by boxC, so a sprite can be cut by a wall edge.
+int gClipLo = 0;
+int gClipHi = 100000;
+
+func boxC(int x, int y, int w, int h, str color) void {
+    int x0 = if (x < gClipLo) then gClipLo else x;
+    int x1 = if (x + w > gClipHi) then gClipHi else x + w;
+    if (x1 > x0 & h > 0) {
+        view.drawRect(x0, y, x1 - x0, h).color(color).fill();
+    };
+    void
+};
+
+# Narrow the clip window to the run of screen strips around the sprite centre whose wall is
+# farther than the sprite — so a wall edge slices the billboard instead of the whole sprite
+# popping in front of or behind the wall. An occluded centre collapses the window to nothing.
+func spriteClip() void {
+    int c = pScrX / STRIP;
+    if (c < 0) { c = 0; };
+    if (c > NSTRIP - 1) { c = NSTRIP - 1; };
+    int s = c;
+    while (s >= 0 & pDepth < wallPerp[s]) { s = s - 1; };
+    gClipLo = (s + 1) * STRIP;
+    s = c;
+    while (s < NSTRIP & pDepth < wallPerp[s]) { s = s + 1; };
+    gClipHi = s * STRIP;
+    void
+};
+
+func project(int i) int {
+    int dirX = cosT(ang);
+    int dirY = sinT(ang);
+    int planeX = (0 - dirY) * PLANE / 1024;
+    int planeY = dirX * PLANE / 1024;
+    int relX = ex[i] - px;
+    int relY = ey[i] - py;
+    int depth = (planeY * relX - planeX * relY) / PLANE;
+    if (depth < 64) then 0
+    else {
+        int tx = (dirY * relX - dirX * relY) / (0 - PLANE);
+        pScrX = W / 2 + (W * tx) / (2 * depth);
+        pH = (H * POS) / depth;
+        pDepth = depth;
+        1;
+    };
+};
+
+# Drawn from clipped boxes (boxC) so a wall edge can slice the figure cleanly. The caller sets
+# the clip window via spriteClip() first.
+func drawGuard(int sx, int h, int hurt) void {
+    int w = h / 2;
+    int top = HZ - h / 2;
+    str coat = if (hurt > 0) then "#f4f4f4" else "#7a8a55";
+    str dark = if (hurt > 0) then "#cfcfcf" else "#586237";
+    str skin = "#d9a06b";
+    # head
+    boxC(sx - w / 4, top + h / 12, w / 2, h / 5, skin);
+    # torso
+    boxC(sx - w / 2, top + h / 3, w, h / 2, coat);
+    # belt
+    boxC(sx - w / 2, top + h * 4 / 5 - h / 16, w, h / 10, dark);
+    # legs
+    boxC(sx - w / 2, top + h * 5 / 6, w * 2 / 5, h / 6, dark);
+    boxC(sx + w / 10, top + h * 5 / 6, w * 2 / 5, h / 6, dark);
+    # gun arm reaching left
+    boxC(sx - w * 4 / 5, top + h * 2 / 5, w * 3 / 5, h / 8 + 1, "#3a3a3a");
+    void
+};
+
+func drawPickup(int kind, int sx, int h) void {
+    int s = h / 2;
+    if (s < 3) { s = 3; };
+    int top = HZ + h / 4;          # sit it down on the floor
+    if (kind == 1) {
+        # treasure: a stacked gold gem
+        boxC(sx - s / 2, top + s / 4, s, s / 4, "#caa83e");
+        boxC(sx - s / 3, top + s / 2, s * 2 / 3, s / 4, "#f4d35e");
+        boxC(sx - s / 6, top + s * 3 / 4, s / 3, s / 4, "#fff3b0");
+    } else {
+        # ammo: a grey clip with a bright tip
+        boxC(sx - s / 3, top, s * 2 / 3, s, "#9aa4ad");
+        boxC(sx - s / 3, top, s * 2 / 3, s / 4, "#cfd6dd");
+    };
+    void
+};
+
+# Painter's-order sprite pass: gather visible entities, insertion-sort by depth (far first),
+# then draw each with a centre-column z-test against the wall buffer.
+array[int] order = new array[int](MAXE);
+array[int] odepth = new array[int](MAXE);
+
+func drawSprites() void {
+    int n = 0;
+    int i = 0;
+    while (i < ecount) {
+        if (ealive[i] == 1) {
+            if (project(i) == 1) {
+                # insertion sort, farthest first
+                int j = n;
+                while (j > 0 & odepth[j - 1] < pDepth) {
+                    odepth[j] = odepth[j - 1];
+                    order[j] = order[j - 1];
+                    j = j - 1;
+                };
+                odepth[j] = pDepth;
+                order[j] = i;
+                n = n + 1;
+            };
+        };
+        i = i + 1;
+    };
+    int k = 0;
+    while (k < n) {
+        int e = order[k];
+        project(e);
+        if (pScrX > 0 - pH & pScrX < W + pH) {
+            spriteClip();
+            if (gClipHi > gClipLo) {
+                if (ekind[e] == 0) { drawGuard(pScrX, pH, ehurt[e]); }
+                else { drawPickup(ekind[e], pScrX, pH); };
+            };
+        };
+        k = k + 1;
+    };
+    gClipLo = 0;
+    gClipHi = 100000;
+    void
+};
+
+func drawGun() void {
+    int gw = W / 4;
+    int gh = H / 5;
+    int bx = W / 2 - gw / 2 + (sinT(bob) * (W / 60)) / 1024;
+    int by = H - gh + (cosT(bob * 2) * (H / 90)) / 1024;
+    # barrel + body
+    view.drawRect(bx + gw / 3, by, gw / 3, gh).color("#2b2b30").fill();
+    view.drawRect(bx + gw / 4, by + gh / 3, gw / 2, gh).color("#3a3a42").fill();
+    view.drawRect(bx + gw / 5, by + gh * 2 / 3, gw * 3 / 5, gh).color("#23232a").fill();
+    if (muzzle > 0) {
+        int mx = bx + gw / 2;
+        int my = by - gh / 8;
+        view.drawCircle(mx, my, gh / 6 + muzzle).color("#ffe066").fill();
+        view.drawCircle(mx, my, gh / 12 + muzzle / 2).color("#fff7cc").fill();
+    };
+    void
+};
+
+func drawMinimap() void {
+    int cell = 6;
+    int x0 = 10;
+    int y0 = 10;
+    view.drawRect(x0 - 3, y0 - 3, COLS * cell + 6, ROWS * cell + 6).color("#05070b").alpha(60).fill();
+    int r = 0;
+    while (r < ROWS) {
+        int c = 0;
+        while (c < COLS) {
+            if (tile[r * COLS + c] > 0) {
+                view.drawRect(x0 + c * cell, y0 + r * cell, cell - 1, cell - 1).color("#8a7f63").alpha(80).fill();
+            };
+            c = c + 1;
+        };
+        r = r + 1;
+    };
+    int i = 0;
+    while (i < ecount) {
+        if (ealive[i] == 1) {
+            int mx = x0 + (ex[i] / POS) * cell + cell / 2;
+            int my = y0 + (ey[i] / POS) * cell + cell / 2;
+            str col = if (ekind[i] == 0) then "#ff4d4d" else if (ekind[i] == 1) then "#f4d35e" else "#9aa4ad";
+            view.drawRect(mx - 1, my - 1, 3, 3).color(col).fill();
+        };
+        i = i + 1;
+    };
+    int pxm = x0 + (px / POS) * cell + cell / 2;
+    int pym = y0 + (py / POS) * cell + cell / 2;
+    int lx = pxm + cosT(ang) * cell * 2 / 1024;
+    int ly = pym + sinT(ang) * cell * 2 / 1024;
+    view.drawLine(pxm, pym, lx, ly).color("#7fe0ff").stroke(2);
+    view.drawRect(pxm - 2, pym - 2, 4, 4).color("#7fe0ff").fill();
+    void
+};
+
+func drawHud() void {
+    int barW = W / 3;
+    int y = H - 16;
+    # health bar
+    view.drawRect(12, y, barW, 8).color("#3a1414").fill();
+    int hw = barW * hp / 100;
+    if (hw < 0) { hw = 0; };
+    view.drawRect(12, y, hw, 8).color("#e23b3b").fill();
+    view.drawText(12, y - 14, "HP ".con(hp.str), 13).color("#f0e7d1");
+    view.drawText(W / 2 - 10, y - 2, "AMMO ".con(ammo.str), 14).color("#ffe066");
+    view.drawText(W - 120, y - 14, "SCORE ".con(score.str), 13).color("#b9c9d3");
+    view.drawText(W - 120, y, "GUARDS ".con(guardsLeft.str), 13).color("#ff8a8a");
+    void
+};
+
+func drawCenter(str s, str color, int size) void {
+    int w = s.len * size * 6 / 10;
+    view.drawText(W / 2 - w / 2, HZ, s, size).color(color);
+    void
+};
+
+func draw() void {
+    view.clear();
+    drawBackdrop();
+    drawWalls();
+    drawSprites();
+    drawGun();
+    drawMinimap();
+    drawHud();
+    if (state == STATE_DEAD) { drawCenter("YOU DIED — tap to restart", "#ff5555", 18); };
+    if (state == STATE_WIN) { drawCenter("LEVEL CLEARED — tap to restart", "#7CFC9A", 17); };
+    void
+};
+
+# ---- movement, AI, shooting ---------------------------------------------------------------
+func tryMove(int dx, int dy) void {
+    int nx = px + dx;
+    if (blocked(nx, py) == false) { px = nx; };
+    int ny = py + dy;
+    if (blocked(px, ny) == false) { py = ny; };
+    void
+};
+
+func applyInput() void {
+    int turn = 0;
+    if (inLeft == 1) { turn = turn - 22; };
+    if (inRight == 1) { turn = turn + 22; };
+    if (turn != 0) { ang = (ang + turn) % ANG; if (ang < 0) { ang = ang + ANG; }; };
+    int spd = 0;
+    if (inFwd == 1) { spd = 104; };
+    if (inBack == 1) { spd = spd - 104; };
+    if (spd != 0) {
+        tryMove(cosT(ang) * spd / 1024, sinT(ang) * spd / 1024);
+        bob = (bob + 40) % ANG;
+    };
+    void
+};
+
+func losClear(int i) bool {
+    # sample the straight line guard->player at half-cell steps; blocked by any wall cell
+    int dx = px - ex[i];
+    int dy = py - ey[i];
+    int steps = (iabs(dx) + iabs(dy)) / (POS / 2) + 1;
+    int s = 1;
+    bool ok = true;
+    while (s < steps & ok) {
+        int sxp = ex[i] + dx * s / steps;
+        int syp = ey[i] + dy * s / steps;
+        if (wallAt(sxp / POS, syp / POS) > 0) { ok = false; };
+        s = s + 1;
+    };
+    ok;
+};
+
+# Guards collide with a body radius (not just their centre point) so the wide billboard never
+# overlaps a wall face — the same axis-separated slide the player uses.
+func guardBlocked(int fx, int fy) bool {
+    int rad = 340;
+    wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
+    | wallAt((fx + rad) / POS, (fy - rad) / POS) > 0
+    | wallAt((fx - rad) / POS, (fy + rad) / POS) > 0
+    | wallAt((fx + rad) / POS, (fy + rad) / POS) > 0;
+};
+
+func guardMove(int i, int dx, int dy) void {
+    int nx = ex[i] + dx;
+    if (guardBlocked(nx, ey[i]) == false) { ex[i] = nx; };
+    int ny = ey[i] + dy;
+    if (guardBlocked(ex[i], ny) == false) { ey[i] = ny; };
+    void
+};
+
+func updateGuards() void {
+    int i = 0;
+    while (i < ecount) {
+        if (ealive[i] == 1 & ekind[i] == 0) {
+            if (ehurt[i] > 0) { ehurt[i] = ehurt[i] - 1; };
+            if (ecool[i] > 0) { ecool[i] = ecool[i] - 1; };
+            int dx = px - ex[i];
+            int dy = py - ey[i];
+            int dist = iabs(dx) + iabs(dy);
+            bool chase = dist < 8 * POS & losClear(i);
+            if (chase) {
+                # step toward the player along each axis, with a slide on a wall
+                int gspd = 44;
+                int sx = if (dx > 0) then gspd else if (dx < 0) then 0 - gspd else 0;
+                int sy = if (dy > 0) then gspd else if (dy < 0) then 0 - gspd else 0;
+                guardMove(i, sx, sy);
+                if (dist < POS & ecool[i] == 0) {
+                    hp = hp - 9;
+                    ecool[i] = 16;
+                    if (hp <= 0) { hp = 0; state = STATE_DEAD; };
+                };
+            } else {
+                # wander: drift along the heading, turn on a wall or now and then
+                int wx = cosT(edir[i]) * 30 / 1024;
+                int wy = sinT(edir[i]) * 30 / 1024;
+                int bxp = ex[i] + wx * 8;
+                int byp = ey[i] + wy * 8;
+                if (guardBlocked(bxp, byp) | rng.nextIntBound(40) == 0) {
+                    edir[i] = rng.nextIntBound(ANG);
+                } else {
+                    guardMove(i, wx, wy);
+                };
+            };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+func pickups() void {
+    int i = 0;
+    while (i < ecount) {
+        if (ealive[i] == 1 & ekind[i] != 0) {
+            if (iabs(px - ex[i]) < POS * 6 / 10 & iabs(py - ey[i]) < POS * 6 / 10) {
+                if (ekind[i] == 1) { score = score + 500; }
+                else { ammo = ammo + 8; };
+                ealive[i] = 0;
+            };
+        };
+        i = i + 1;
+    };
+    void
+};
+
+func fire() void {
+    if (ammo <= 0) then void
+    else {
+        ammo = ammo - 1;
+        muzzle = 4;
+        int best = 0 - 1;
+        int bestDepth = BIG;
+        int i = 0;
+        while (i < ecount) {
+            if (ealive[i] == 1 & ekind[i] == 0) {
+                if (project(i) == 1) {
+                    int strip = pScrX / STRIP;
+                    bool clear = true;
+                    if (strip >= 0 & strip < NSTRIP) {
+                        if (pDepth >= wallPerp[strip]) { clear = false; };
+                    };
+                    if (clear & iabs(pScrX - W / 2) < pH / 2 + 8 & pDepth < bestDepth) {
+                        bestDepth = pDepth;
+                        best = i;
+                    };
+                };
+            };
+            i = i + 1;
+        };
+        if (best >= 0) {
+            ehp[best] = ehp[best] - 1;
+            ehurt[best] = 4;
+            if (ehp[best] <= 0) {
+                ealive[best] = 0;
+                kills = kills + 1;
+                score = score + 200;
+                guardsLeft = guardsLeft - 1;
+                if (guardsLeft <= 0) { state = STATE_WIN; };
+            };
+        };
+        void
+    };
+};
+
+# ---- the game loop ------------------------------------------------------------------------
+actor class Ticker() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+actor[Ticker] ticker = new Ticker();
+int TICK_MS = 45;
+
+func step() void {
+    frame = frame + 1;
+    if (muzzle > 0) { muzzle = muzzle - 1; };
+    if (state == STATE_PLAY) {
+        applyInput();
+        updateGuards();
+        pickups();
+    };
+    draw();
+    void
+};
+
+func tick(int token) void {
+    if (token == loopToken) {
+        step();
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x);
+            void
+        });
+    };
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+func restart() void {
+    newGame();
+    void
+};
+
+bFwd.onPress(func() void { inFwd = 1; void }, func() void { inFwd = 0; void });
+bBack.onPress(func() void { inBack = 1; void }, func() void { inBack = 0; void });
+bLeft.onPress(func() void { inLeft = 1; void }, func() void { inLeft = 0; void });
+bRight.onPress(func() void { inRight = 1; void }, func() void { inRight = 0; void });
+
+# Tap the 3D view to aim toward the tapped column and fire (hybrid control). When the round is
+# over, any tap restarts.
+view.onPointerDown(func(int x, int y) void {
+    if (state != STATE_PLAY) {
+        restart();
+    } else {
+        int delta = (x - W / 2) * 40 / W;
+        ang = (ang + delta) % ANG;
+        if (ang < 0) { ang = ang + ANG; };
+        fire();
+    };
+    void
+});
+
+view.onResize(func(int w, int h) void {
+    if (w > 0 & h > 0) {
+        W = w;
+        H = h;
+        HZ = h / 2;
+        draw();
+    };
+    void
+});
+
+bar.action("Restart", icons.refresh(), func() void {
+    restart();
+    void
+});
+
+bar.onNav(func() void {
+    loopToken = loopToken + 1;
+    ui.close();
+    void
+});
+
+# ---- go -----------------------------------------------------------------------------------
+buildShades();
+newGame();
+draw();
+ui.open(root);
+
+loopToken = loopToken + 1;
+async ticker.after(TICK_MS, loopToken, func(int x) void {
+    tick(x);
+    void
+});
+
+term.println("Wolf — hold the D-pad to move and turn; tap the 3D view to aim and shoot.");

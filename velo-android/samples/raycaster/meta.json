@@ -1,0 +1,6 @@
+{
+  "id": "raycaster",
+  "name": "Raycaster",
+  "description": "A minimalist Wolfenstein 3D built from Canvas draw ops: a fixed-point DDA raycaster (no floats, no trig natives — a baked sine table) renders textured, fog-shaded walls; billboarded guards patrol and chase, a pistol fires on tap, and a HUD tracks health, ammo and score. Move with the D-pad, aim and shoot by tapping the 3D view.",
+  "interactive": true
+}
