@@ -2,6 +2,7 @@ package compiler.parser
 
 import compiler.nodes.ClassType
 import compiler.nodes.GenericType
+import compiler.nodes.InterfaceType
 import compiler.nodes.NativeClassType
 import core.NativeRegistry
 
@@ -18,6 +19,7 @@ class ParserContext(
     private val nativeRegistry: NativeRegistry? = null,
 ) {
     val classTypes = mutableMapOf<String, ClassType>()
+    private val interfaceTypes = mutableMapOf<String, InterfaceType>()
     private val genericTypes = mutableMapOf<String, GenericType>()
 
     /**
@@ -39,9 +41,22 @@ class ParserContext(
         return classTypes[name]
     }
 
+    fun registerInterface(name: String, type: InterfaceType) {
+        interfaceTypes[name] = type
+    }
+
+    fun isInterfaceType(name: String): Boolean {
+        return interfaceTypes.containsKey(name)
+    }
+
+    fun getInterfaceType(name: String): InterfaceType? {
+        return interfaceTypes[name]
+    }
+
     /** A Velo class declaration shadows a registered native class. */
     fun isNativeType(name: String): Boolean =
-        !classTypes.containsKey(name) && nativeRegistry?.isRegistered(name) == true
+        !classTypes.containsKey(name) && !interfaceTypes.containsKey(name) &&
+            nativeRegistry?.isRegistered(name) == true
 
     fun getNativeType(name: String): NativeClassType? {
         if (!isNativeType(name)) return null
@@ -49,8 +64,8 @@ class ParserContext(
         return NativeClassType(descriptor)
     }
 
-    fun registerGenericType(name: String) {
-        genericTypes[name] = GenericType(name)
+    fun registerGenericType(name: String, bound: InterfaceType? = null) {
+        genericTypes[name] = GenericType(name, bound)
     }
 
     fun isGenericType(name: String): Boolean {

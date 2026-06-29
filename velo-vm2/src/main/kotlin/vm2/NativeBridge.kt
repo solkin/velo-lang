@@ -39,6 +39,36 @@ class NativeBridge {
         return support.hostToVelo(result)
     }
 
+    /**
+     * Dynamic interface dispatch onto a native handle: resolve [method] by name
+     * on the host class of [receiver] (introspected once, cached in [registry])
+     * and invoke it. Unlike [call], which uses a pre-linked pool entry, the host
+     * class is only known at run time here — the receiver could be any class that
+     * satisfies the interface. Returns the converted result, or
+     * [Interpreter.NO_VALUE] for `void`.
+     */
+    fun callByName(
+        receiver: Any,
+        method: String,
+        args: List<Any?>,
+        registry: core.NativeRegistry,
+        owner: ActorRef,
+        support: NativeSupport,
+    ): Any? {
+        val info = registry.getByJvmClass(receiver.javaClass)
+            ?: error("No registered native class for ${receiver.javaClass.name} (interface dispatch)")
+        val descriptor = registry.descriptor(info.veloName)
+            ?: error("Native class '${info.veloName}' has no descriptor")
+        val m = descriptor.methods[method]
+            ?: error("Native class '${info.veloName}' has no method '$method'")
+        val invokeArgs = ArrayList<Any?>(args.size + 1)
+        invokeArgs.add(receiver)
+        args.forEachIndexed { i, a -> invokeArgs.add(toJvm(a, m.jvmParams.getOrNull(i), owner, support)) }
+        val result = m.handle.invokeWithArguments(invokeArgs)
+        if (m.returns == VmType.Void) return Interpreter.NO_VALUE
+        return support.hostToVelo(result)
+    }
+
     private fun toJvm(value: Any?, target: Class<*>?, owner: ActorRef, support: NativeSupport): Any? {
         if (target == null) return value
         if (target == VeloFunction::class.java) {

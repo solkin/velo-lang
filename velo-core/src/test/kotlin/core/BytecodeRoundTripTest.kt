@@ -66,6 +66,8 @@ class BytecodeRoundTripTest {
         Op.Halt,
         Op.Ret,
         Op.Frame(num = 7),
+        Op.MethodLoad(name = "padding"),
+        Op.InterfaceCall(method = "padding", args = 1),
         Op.Instance,
         Op.Call(args = 2, classParent = true),
         Op.Call(args = -1, classParent = false),
@@ -133,6 +135,16 @@ class BytecodeRoundTripTest {
                         DataField(name = "points", index = 1, type = VmType.Array(VmType.Class("Point"))),
                     ),
                 ),
+            ),
+            classMethods = listOf(
+                ClassMethodsInfo(
+                    frameNum = 1,
+                    methods = listOf(
+                        ClassMethod(name = "padding", index = 3),
+                        ClassMethod(name = "visible", index = 4),
+                    ),
+                ),
+                ClassMethodsInfo(frameNum = 5, methods = emptyList()),
             ),
         )
 

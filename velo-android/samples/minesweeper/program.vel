@@ -101,22 +101,22 @@ actor[Timer] clock = new Timer();
 actor[Timer] presser = new Timer();
 
 # ---- widgets ------------------------------------------------------------------------------
-View panel = ui.canvas().width(BW).height(PANEL_H);
-View board = ui.canvas().width(BW).height(BH);
+Canvas panel = ui.canvas().width(BW).height(PANEL_H);
+Canvas board = ui.canvas().width(BW).height(BH);
 
-View window = ui.column().center().padding(8).gap(8).background(SILVER);
+Container window = ui.column().center().padding(8).gap(8).background(SILVER);
 window.add(panel);
 window.add(board);
 
-View page = ui.column().fillWidth().fillHeight();
-View bar = ui.appBar("Minesweeper");
+Container page = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Minesweeper");
 page.add(bar);
-View scroller = ui.scroll().weight(1);
+Container scroller = ui.scroll().weight(1);
 page.add(scroller);
-View content = ui.column().fillWidth().center().padding(12);
+Container content = ui.column().fillWidth().center().padding(12);
 scroller.add(content);
 content.add(window);
-View root = page;
+Container root = page;
 
 # ---- geometry helpers ---------------------------------------------------------------------
 
@@ -222,7 +222,7 @@ func floodReveal(int start) void {
 
 # ---- drawing: bevels ----------------------------------------------------------------------
 
-func bevelRaised(View cv, int x, int y, int w, int h, int t, str face) void {
+func bevelRaised(Canvas cv, int x, int y, int w, int h, int t, str face) void {
     cv.drawRect(x, y, w, h).color(face).fill();
     cv.drawRect(x, y, w, t).color(WHITE).fill();
     cv.drawRect(x, y, t, h).color(WHITE).fill();
@@ -231,7 +231,7 @@ func bevelRaised(View cv, int x, int y, int w, int h, int t, str face) void {
     void
 };
 
-func bevelSunken(View cv, int x, int y, int w, int h, int t, str face) void {
+func bevelSunken(Canvas cv, int x, int y, int w, int h, int t, str face) void {
     cv.drawRect(x, y, w, h).color(face).fill();
     cv.drawRect(x, y, w, t).color(GRAY).fill();
     cv.drawRect(x, y, t, h).color(GRAY).fill();
@@ -372,7 +372,7 @@ func drawBoard() void {
 
 # ---- drawing: status panel (LED counters + smiley) ----------------------------------------
 
-func drawSeg(View cv, int X, int Y, int seg, bool on) void {
+func drawSeg(Canvas cv, int X, int Y, int seg, bool on) void {
     str col = if (on) then LED_ON else LED_DIM;
     if (seg == 0) { cv.drawRect(X + 3, Y, 7, 3).color(col).fill(); }
     else if (seg == 1) { cv.drawRect(X + 10, Y + 3, 3, 8).color(col).fill(); }
@@ -385,7 +385,7 @@ func drawSeg(View cv, int X, int Y, int seg, bool on) void {
 };
 
 # d in 0..9 lights its font pattern; -1 draws a minus; -2 is blank.
-func drawDigit(View cv, int X, int Y, int d) void {
+func drawDigit(Canvas cv, int X, int Y, int d) void {
     int seg = 0;
     while (seg < 7) {
         bool on = false;
@@ -400,7 +400,7 @@ func drawDigit(View cv, int X, int Y, int d) void {
     void
 };
 
-func drawLed(View cv, int X, int Y, int value) void {
+func drawLed(Canvas cv, int X, int Y, int value) void {
     bevelSunken(cv, X, Y, LED_W, LED_H, 2, BLACK);
     int d0 = 0;
     int d1 = 0;
@@ -425,13 +425,13 @@ func drawLed(View cv, int X, int Y, int value) void {
     void
 };
 
-func drawXeye(View cv, int ex, int ey) void {
+func drawXeye(Canvas cv, int ex, int ey) void {
     cv.drawLine(ex - 2, ey - 2, ex + 2, ey + 2).color(BLACK).stroke(1);
     cv.drawLine(ex - 2, ey + 2, ex + 2, ey - 2).color(BLACK).stroke(1);
     void
 };
 
-func drawFace(View cv, int X, int Y, int S, int state) void {
+func drawFace(Canvas cv, int X, int Y, int S, int state) void {
     bevelRaised(cv, X, Y, S, S, 2, SILVER);
     int cx = X + S / 2;
     int cy = Y + S / 2;
@@ -674,16 +674,16 @@ func onPanelTap(int tx, int ty) void {
 };
 
 func openDifficulty() void {
-    View sheet = ui.column().padding(20).gap(12).fillWidth();
+    Container sheet = ui.column().padding(20).gap(12).fillWidth();
     sheet.add(ui.text("New game").style(styles.titleMedium()).bold());
 
-    View b1 = ui.button("Beginner — 9 × 9, 10 mines").fillWidth();
+    Button b1 = ui.button("Beginner — 9 × 9, 10 mines").fillWidth();
     b1.onClick(func() void {
         applyDifficulty(9, 9, 10, 26);
         ui.dismissSheet();
         void
     });
-    View b2 = ui.tonalButton("Intermediate — 16 × 16, 40 mines").fillWidth();
+    Button b2 = ui.tonalButton("Intermediate — 16 × 16, 40 mines").fillWidth();
     b2.onClick(func() void {
         applyDifficulty(16, 16, 40, 18);
         ui.dismissSheet();

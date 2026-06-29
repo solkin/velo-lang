@@ -17,7 +17,10 @@ data class DefNode(
         if (!type.sameAs(defType) && !type.sameAs(AnyType)) {
             throw IllegalArgumentException("Illegal assign type $defType != $type")
         }
-        val v = ctx.def(name, defType)
+        // An interface-typed declaration keeps the interface as the variable's
+        // static type (so dispatch stays dynamic and only interface methods are
+        // callable); other declarations keep the more precise initializer type.
+        val v = ctx.def(name, if (type is InterfaceType) type else defType)
         ctx.add(Op.Store(v.index))
         return VoidType
     }

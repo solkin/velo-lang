@@ -1,124 +1,196 @@
 package ui
 
+import core.NativeRegistry
 import core.VeloFunction
 
+/** Register the `Ui` factory and every widget type (abstract bases are not registered). */
+fun NativeRegistry.registerUiStubs(): NativeRegistry = this
+    .register(Ui::class).register(Shape::class)
+    .register(Text::class).register(Button::class).register(Field::class)
+    .register(Chip::class).register(Toggle::class).register(ListItem::class)
+    .register(AppBar::class).register(Icon::class).register(Container::class)
+    .register(Surface::class).register(Drawer::class).register(Slider::class)
+    .register(Progress::class).register(ListView::class).register(Tabs::class)
+    .register(Nav::class).register(Canvas::class).register(Divider::class)
+    .register(Spacer::class)
+
 /**
- * Compile-time signature mirrors of the Android `Ui` / `View` natives
- * (`org.velo.android.engine.ui.VeloUi` / `VeloView`).
+ * Compile-time signature mirrors of the Android UI widget natives
+ * (`org.velo.android.engine.ui.*`).
  *
  * The sample compiler resolves and type-checks native calls against registered host
  * classes, but the real Material3 implementations live in the Android app and pull in
  * `android.jar`, which a pure-JVM build can't load. These stubs carry the exact same
  * Velo-facing signatures so a `.vel` UI program compiles to `.vbc` here, then links
  * against the real implementations at runtime on Android (the linker matches by Velo
- * name + signature). The bodies are never executed; if a UI program is run headless
- * they fail loudly rather than pretending to draw.
+ * name + signature). The bodies are never executed.
  *
- * Keep these in lockstep with the Android classes — a signature drift surfaces as a
- * link error on device.
+ * Widgets are split into typed classes that share modifiers through abstract bases:
+ * the registry exposes inherited public methods, and a modifier returning its base is
+ * exposed as returning the concrete widget — so a fluent chain keeps its type and a
+ * container accepts any widget while `text.progress()` is a compile error. Keep these
+ * in lockstep with the Android classes — a signature drift surfaces as a link error.
  */
 private fun nope(): Nothing =
     throw UnsupportedOperationException("Velo UI natives are only available on the Android host")
 
+/** Every widget: universal layout, visual and event modifiers. */
 @Suppress("unused")
-class View {
-    // containers / layout
-    fun add(child: View): View = nope()
-    fun padding(dp: Int): View = nope()
-    fun gap(dp: Int): View = nope()
-    fun center(): View = nope()
-    fun fillWidth(): View = nope()
-    fun fillHeight(): View = nope()
-    fun width(dp: Int): View = nope()
-    fun height(dp: Int): View = nope()
-    fun weight(w: Int): View = nope()
+abstract class Widget {
+    fun padding(dp: Int): Widget = nope()
+    fun paddingXY(h: Int, v: Int): Widget = nope()
+    fun fillWidth(): Widget = nope()
+    fun fillHeight(): Widget = nope()
+    fun width(dp: Int): Widget = nope()
+    fun height(dp: Int): Widget = nope()
+    fun weight(w: Int): Widget = nope()
+    fun background(color: String): Widget = nope()
+    fun corner(dp: Int): Widget = nope()
+    fun align(spec: String): Widget = nope()
+    fun visible(on: Boolean): Widget = nope()
+    fun enabled(on: Boolean): Widget = nope()
+    fun badge(text: String): Widget = nope()
+    fun badgeDot(): Widget = nope()
+    fun onClick(cb: VeloFunction): Widget = nope()
+    fun onLongClick(cb: VeloFunction): Widget = nope()
+    fun onPress(down: VeloFunction, up: VeloFunction): Widget = nope()
+    fun onResize(cb: VeloFunction): Widget = nope()
+}
 
-    // common visual modifiers (any kind)
-    fun background(color: String): View = nope()
-    fun corner(dp: Int): View = nope()
-    fun paddingXY(h: Int, v: Int): View = nope()
-    fun align(spec: String): View = nope()
+/** Anything that bears text: a label, button, field, chip, list item or app bar. */
+@Suppress("unused")
+abstract class TextWidget : Widget() {
+    fun text(s: String): TextWidget = nope()
+    fun color(spec: String): TextWidget = nope()
+    fun textSize(sp: Int): TextWidget = nope()
+    fun bold(): TextWidget = nope()
+    fun style(token: String): TextWidget = nope()
+    fun textAlign(spec: String): TextWidget = nope()
+    fun maxLines(n: Int): TextWidget = nope()
+    fun strikethrough(): TextWidget = nope()
+}
 
-    // content / text
-    fun text(s: String): View = nope()
-    fun color(spec: String): View = nope()
-    fun hint(s: String): View = nope()
+@Suppress("unused")
+class Text : TextWidget()
+
+@Suppress("unused")
+class Button : TextWidget() {
+    fun icon(name: String): Button = nope()
+    fun iconOnly(): Button = nope()
+    fun tint(color: String): Button = nope()
+}
+
+@Suppress("unused")
+class Field : TextWidget() {
     fun value(): String = nope()
-    fun textSize(sp: Int): View = nope()
-    fun bold(): View = nope()
-    fun style(token: String): View = nope()
-    fun textAlign(spec: String): View = nope()
-    fun maxLines(n: Int): View = nope()
-    fun strikethrough(): View = nope()
-    fun enabled(on: Boolean): View = nope()
-    fun visible(on: Boolean): View = nope()
+    fun hint(s: String): Field = nope()
+    fun placeholder(s: String): Field = nope()
+    fun error(message: String): Field = nope()
+    fun keyboardType(type: String): Field = nope()
+    fun onSubmit(cb: VeloFunction): Field = nope()
+    fun onFocusChange(cb: VeloFunction): Field = nope()
+    fun onChange(cb: VeloFunction): Field = nope()
+    fun leading(name: String): Field = nope()
+    fun supporting(s: String): Field = nope()
+}
 
-    // text field extras
-    fun placeholder(s: String): View = nope()
-    fun error(message: String): View = nope()
-    fun keyboardType(type: String): View = nope()
-    fun onSubmit(cb: VeloFunction): View = nope()
-    fun onFocusChange(cb: VeloFunction): View = nope()
-
-    // icons & small widgets
-    fun icon(name: String): View = nope()
-    fun iconOnly(): View = nope()
-    fun tint(color: String): View = nope()
-    fun checkable(on: Boolean): View = nope()
-    fun thickness(dp: Int): View = nope()
-
-    // surface & list item
-    fun elevation(dp: Int): View = nope()
-    fun border(width: Int, color: String): View = nope()
-    fun supporting(s: String): View = nope()
-    fun leading(name: String): View = nope()
-    fun trailing(name: String): View = nope()
-
-    // navigation components
-    fun item(label: String, icon: String): View = nope()
-    fun drawerContent(panel: View): View = nope()
-    fun openDrawer(on: Boolean): View = nope()
-    fun isDrawerOpen(): Boolean = nope()
-    fun badge(text: String): View = nope()
-    fun badgeDot(): View = nope()
-
-    // toggles
-    fun checked(on: Boolean): View = nope()
+@Suppress("unused")
+class Chip : TextWidget() {
+    fun icon(name: String): Chip = nope()
+    fun tint(color: String): Chip = nope()
+    fun checkable(on: Boolean): Chip = nope()
+    fun checked(on: Boolean): Chip = nope()
     fun isChecked(): Boolean = nope()
+    fun onToggle(cb: VeloFunction): Chip = nope()
+}
 
-    // slider
-    fun range(min: Int, max: Int): View = nope()
-    fun slide(v: Int): View = nope()
+/** A switch, checkbox or radio button: a labelled on/off control. */
+@Suppress("unused")
+class Toggle : TextWidget() {
+    fun checked(on: Boolean): Toggle = nope()
+    fun isChecked(): Boolean = nope()
+    fun onToggle(cb: VeloFunction): Toggle = nope()
+}
+
+@Suppress("unused")
+class ListItem : TextWidget() {
+    fun supporting(s: String): ListItem = nope()
+    fun leading(name: String): ListItem = nope()
+    fun trailing(name: String): ListItem = nope()
+}
+
+@Suppress("unused")
+class AppBar : TextWidget() {
+    fun onNav(cb: VeloFunction): AppBar = nope()
+    fun action(title: String, icon: String, cb: VeloFunction): AppBar = nope()
+    fun actionIcon(title: String, icon: String): AppBar = nope()
+}
+
+@Suppress("unused")
+class Icon : Widget() {
+    fun icon(name: String): Icon = nope()
+    fun tint(color: String): Icon = nope()
+}
+
+/** A container: holds children added with [add]. */
+@Suppress("unused")
+open class Container : Widget() {
+    fun add(child: Any): Container = nope()
+    fun gap(dp: Int): Container = nope()
+    fun center(): Container = nope()
+    fun onSelect(cb: VeloFunction): Container = nope()
+    fun select(index: Int): Container = nope()
+}
+
+@Suppress("unused")
+class Surface : Container() {
+    fun elevation(dp: Int): Surface = nope()
+    fun border(width: Int, color: String): Surface = nope()
+}
+
+@Suppress("unused")
+class Drawer : Container() {
+    fun drawerContent(panel: Any): Drawer = nope()
+    fun openDrawer(on: Boolean): Drawer = nope()
+    fun isDrawerOpen(): Boolean = nope()
+}
+
+@Suppress("unused")
+class Slider : Widget() {
+    fun range(min: Int, max: Int): Slider = nope()
+    fun slide(v: Int): Slider = nope()
     fun position(): Int = nope()
+    fun onSlide(cb: VeloFunction): Slider = nope()
+}
 
-    // progress
-    fun progress(pct: Int): View = nope()
-    fun indeterminate(on: Boolean): View = nope()
+@Suppress("unused")
+class Progress : Widget() {
+    fun progress(pct: Int): Progress = nope()
+    fun indeterminate(on: Boolean): Progress = nope()
+}
 
-    // events
-    fun onClick(cb: VeloFunction): View = nope()
-    fun onLongClick(cb: VeloFunction): View = nope()
-    fun onPress(down: VeloFunction, up: VeloFunction): View = nope()
-    fun onResize(cb: VeloFunction): View = nope()
-    fun onChange(cb: VeloFunction): View = nope()
-    fun onToggle(cb: VeloFunction): View = nope()
-    fun onSlide(cb: VeloFunction): View = nope()
+@Suppress("unused")
+class ListView : Widget() {
+    fun items(rows: List<String>): ListView = nope()
+    fun onItemClick(cb: VeloFunction): ListView = nope()
+}
 
-    // list (RecyclerView)
-    fun items(rows: List<String>): View = nope()
-    fun onItemClick(cb: VeloFunction): View = nope()
+@Suppress("unused")
+class Tabs : Widget() {
+    fun tab(label: String): Tabs = nope()
+    fun onSelect(cb: VeloFunction): Tabs = nope()
+    fun select(index: Int): Tabs = nope()
+}
 
-    // tabs (TabLayout)
-    fun tab(label: String): View = nope()
-    fun onSelect(cb: VeloFunction): View = nope()
-    fun select(index: Int): View = nope()
+@Suppress("unused")
+class Nav : Widget() {
+    fun item(label: String, icon: String): Nav = nope()
+    fun onSelect(cb: VeloFunction): Nav = nope()
+    fun select(index: Int): Nav = nope()
+}
 
-    // app bar
-    fun onNav(cb: VeloFunction): View = nope()
-    fun action(title: String, icon: String, cb: VeloFunction): View = nope()
-    fun actionIcon(title: String, icon: String): View = nope()
-
-    // canvas (drawing)
+@Suppress("unused")
+class Canvas : Widget() {
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int): Shape = nope()
     fun drawRect(x: Int, y: Int, w: Int, h: Int): Shape = nope()
     fun drawRoundRect(x: Int, y: Int, w: Int, h: Int, r: Int): Shape = nope()
@@ -129,17 +201,25 @@ class View {
     fun drawPath(spec: String): Shape = nope()
     fun drawPoints(spec: String, mode: String): Shape = nope()
     fun drawText(x: Int, y: Int, s: String, size: Int): Shape = nope()
-    fun aspectRatio(w: Int, h: Int): View = nope()
-    fun clear(): View = nope()
-    fun onTap(cb: VeloFunction): View = nope()
-    fun onPointerDown(cb: VeloFunction): View = nope()
-    fun onPointerMove(cb: VeloFunction): View = nope()
-    fun onPointerUp(cb: VeloFunction): View = nope()
+    fun clear(): Canvas = nope()
+    fun aspectRatio(w: Int, h: Int): Canvas = nope()
+    fun onTap(cb: VeloFunction): Canvas = nope()
+    fun onPointerDown(cb: VeloFunction): Canvas = nope()
+    fun onPointerMove(cb: VeloFunction): Canvas = nope()
+    fun onPointerUp(cb: VeloFunction): Canvas = nope()
 }
 
+@Suppress("unused")
+class Divider : Widget() {
+    fun thickness(dp: Int): Divider = nope()
+}
+
+@Suppress("unused")
+class Spacer : Widget()
+
 /**
- * Compile-time mirror of the Android `Shape` native (`org.velo.android.engine.ui.Shape`) —
- * the handle a canvas `draw*` call returns, for styling that primitive's paint.
+ * Compile-time mirror of the Android `Shape` native — the handle a canvas `draw*` call
+ * returns, for styling that primitive's paint.
  */
 @Suppress("unused")
 class Shape {
@@ -154,55 +234,59 @@ class Shape {
 
 @Suppress("unused")
 class Ui {
-    // widget factories
-    fun text(s: String): View = nope()
-    fun button(s: String): View = nope()
-    fun tonalButton(s: String): View = nope()
-    fun outlinedButton(s: String): View = nope()
-    fun textButton(s: String): View = nope()
-    fun field(hint: String): View = nope()
-    fun toggle(label: String): View = nope()
-    fun check(label: String): View = nope()
-    fun slider(min: Int, max: Int): View = nope()
-    fun card(): View = nope()
-    fun column(): View = nope()
-    fun row(): View = nope()
-    fun box(): View = nope()
-    fun scroll(): View = nope()
-    fun progress(): View = nope()
-    fun spinner(): View = nope()
-    fun list(): View = nope()
-    fun canvas(): View = nope()
-    fun tabs(): View = nope()
-    fun appBar(title: String): View = nope()
+    // text & buttons
+    fun text(s: String): Text = nope()
+    fun button(s: String): Button = nope()
+    fun tonalButton(s: String): Button = nope()
+    fun outlinedButton(s: String): Button = nope()
+    fun textButton(s: String): Button = nope()
 
-    // icons & small widgets
-    fun icon(name: String): View = nope()
-    fun iconButton(name: String): View = nope()
-    fun fab(name: String): View = nope()
-    fun smallFab(name: String): View = nope()
-    fun extendedFab(label: String, name: String): View = nope()
-    fun chip(label: String): View = nope()
-    fun divider(): View = nope()
-    fun spacer(): View = nope()
-    fun radio(label: String): View = nope()
-    fun radioGroup(): View = nope()
+    // inputs & selection
+    fun field(hint: String): Field = nope()
+    fun toggle(label: String): Toggle = nope()
+    fun check(label: String): Toggle = nope()
+    fun radio(label: String): Toggle = nope()
+    fun slider(min: Int, max: Int): Slider = nope()
+    fun chip(label: String): Chip = nope()
 
     // containers
-    fun surface(): View = nope()
-    fun flowRow(): View = nope()
-    fun flowColumn(): View = nope()
-    fun lazyRow(): View = nope()
-    fun listItem(headline: String): View = nope()
+    fun card(): Surface = nope()
+    fun surface(): Surface = nope()
+    fun column(): Container = nope()
+    fun row(): Container = nope()
+    fun box(): Container = nope()
+    fun scroll(): Container = nope()
+    fun flowRow(): Container = nope()
+    fun flowColumn(): Container = nope()
+    fun radioGroup(): Container = nope()
+    fun drawer(): Drawer = nope()
+
+    // feedback & indicators
+    fun progress(): Progress = nope()
+    fun spinner(): Progress = nope()
+    fun list(): ListView = nope()
+    fun lazyRow(): ListView = nope()
+    fun canvas(): Canvas = nope()
+    fun tabs(): Tabs = nope()
+    fun appBar(title: String): AppBar = nope()
+    fun listItem(headline: String): ListItem = nope()
+
+    // icons & small widgets
+    fun icon(name: String): Icon = nope()
+    fun iconButton(name: String): Button = nope()
+    fun fab(name: String): Button = nope()
+    fun smallFab(name: String): Button = nope()
+    fun extendedFab(label: String, name: String): Button = nope()
+    fun divider(): Divider = nope()
+    fun spacer(): Spacer = nope()
 
     // navigation components
-    fun navBar(): View = nope()
-    fun navRail(): View = nope()
-    fun drawer(): View = nope()
-    fun menu(anchor: View, items: List<String>, onSelect: VeloFunction) { nope() }
+    fun navBar(): Nav = nope()
+    fun navRail(): Nav = nope()
+    fun menu(anchor: Any, items: List<String>, onSelect: VeloFunction) { nope() }
 
-    // navigation
-    fun open(root: View): View = nope()
+    // navigation (screen stack)
+    fun open(root: Any): Container = nope()
     fun close() { nope() }
     fun onBack(cb: VeloFunction) { nope() }
 
@@ -213,6 +297,6 @@ class Ui {
     fun snackAction(message: String, action: String, onAction: VeloFunction) { nope() }
 
     // bottom sheet
-    fun sheet(content: View) { nope() }
+    fun sheet(content: Any) { nope() }
     fun dismissSheet() { nope() }
 }

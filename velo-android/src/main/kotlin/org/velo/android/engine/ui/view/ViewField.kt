@@ -19,7 +19,7 @@ internal fun ViewState.placeholder(s: String) {
 /**
  * Set the field's error message; an empty string clears it. Named `errorText`, not `error`,
  * so it doesn't shadow `kotlin.error` inside other [ViewState] members — the Velo-facing name
- * is `error`, mapped on the [org.velo.android.engine.ui.VeloView] facade.
+ * is `error`, mapped on the [Widget] facade.
  */
 internal fun ViewState.errorText(message: String) {
     ui { (av as? TextInputLayout)?.error = message.ifEmpty { null } }

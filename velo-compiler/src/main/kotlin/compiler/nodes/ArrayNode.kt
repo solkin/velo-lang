@@ -13,7 +13,7 @@ data class ArrayNode(
             listOf != null -> {
                 listOf.forEach {
                     val itemType = it.compile(ctx)
-                    if (!itemType.sameAs(type)) {
+                    if (!assignableArg(type, itemType)) {
                         throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
                     }
                 }

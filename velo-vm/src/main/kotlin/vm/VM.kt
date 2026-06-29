@@ -26,6 +26,7 @@ class VM(
     private var frameLoader: FrameLoader? = null
     private var natives: Array<BoundNative> = emptyArray()
     private var dataClasses: Map<Int, core.DataClassInfo> = emptyMap()
+    private var methodTables: Map<Int, Map<String, Int>> = emptyMap()
 
     /**
      * Load a compiled program and link its native pool against the
@@ -36,6 +37,9 @@ class VM(
         frameLoader = GeneralFrameLoader(program.frames.associateBy { it.num })
         natives = NativeLinker.link(program.natives, nativeRegistry)
         dataClasses = program.dataClasses.associateBy { it.frameNum }
+        methodTables = program.classMethods.associate { info ->
+            info.frameNum to info.methods.associate { it.name to it.index }
+        }
     }
 
     /**
@@ -62,6 +66,7 @@ class VM(
             sharedNativeRegistry = nativeRegistry,
             sharedNatives = natives,
             sharedDataClasses = dataClasses,
+            sharedMethodTables = methodTables,
             dispatcher = pump,
             profiler = profiler,
         )

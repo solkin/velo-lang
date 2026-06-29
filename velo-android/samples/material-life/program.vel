@@ -365,11 +365,11 @@ array[int] current = await async engine.stampCenter(PULSAR);
 
 # The root is a stacking box so the play/pause + clear FABs float over the scrolling
 # content, bottom-end, the way a Scaffold would place them on a Material screen.
-View root = ui.box().fillWidth().fillHeight();
-View page = ui.column().fillWidth().fillHeight();
+Container root = ui.box().fillWidth().fillHeight();
+Container page = ui.column().fillWidth().fillHeight();
 root.add(page);
 
-View bar = ui.appBar("Game of Life");
+AppBar bar = ui.appBar("Game of Life");
 bar.onNav(func() void {
     playing = false;
     playToken += 1;
@@ -378,58 +378,58 @@ bar.onNav(func() void {
 });
 page.add(bar);
 
-View scroller = ui.scroll().weight(1);
+Container scroller = ui.scroll().weight(1);
 page.add(scroller);
 
-View content = ui.column().padding(16).gap(14).fillWidth();
+Container content = ui.column().padding(16).gap(14).fillWidth();
 scroller.add(content);
 
-func statTile(str label, View value) View {
-    View tile = ui.surface().corner(16).weight(1);
+func statTile(str label, Text value) Surface {
+    Surface tile = ui.surface().corner(16).weight(1);
     tile.elevation(2);
-    View col = ui.column().padding(12).gap(2);
+    Container col = ui.column().padding(12).gap(2);
     col.add(ui.text(label).style(styles.labelSmall()).color(colors.onSurfaceVariant()));
     col.add(value);
     tile.add(col);
     tile;
 };
 
-View generationLabel = ui.text("0").style(styles.titleLarge()).bold();
-View liveLabel = ui.text("0").style(styles.titleLarge()).bold();
-View fpsLabel = ui.text("—").style(styles.titleLarge()).bold();
+Text generationLabel = ui.text("0").style(styles.titleLarge()).bold();
+Text liveLabel = ui.text("0").style(styles.titleLarge()).bold();
+Text fpsLabel = ui.text("—").style(styles.titleLarge()).bold();
 
-View stats = ui.row().gap(10).fillWidth();
+Container stats = ui.row().gap(10).fillWidth();
 stats.add(statTile("Generation", generationLabel));
 stats.add(statTile("Live cells", liveLabel));
 stats.add(statTile("FPS", fpsLabel));
 content.add(stats);
 
-View board = ui.canvas().width(BOARD_PX_W).height(BOARD_PX_H).corner(16).background(colors.surfaceVariant());
-View boardWrap = ui.column().fillWidth().center();
+Canvas board = ui.canvas().width(BOARD_PX_W).height(BOARD_PX_H).corner(16).background(colors.surfaceVariant());
+Container boardWrap = ui.column().fillWidth().center();
 boardWrap.add(board);
 content.add(boardWrap);
 
-View palette = ui.flowRow().gap(8).fillWidth();
+Container palette = ui.flowRow().gap(8).fillWidth();
 content.add(palette);
 
-array[View] chips = new array[View](PATTERN_COUNT);
+array[Chip] chips = new array[Chip](PATTERN_COUNT);
 
-View actions = ui.row().gap(8).fillWidth();
-View step = ui.tonalButton("Step").icon(icons.forward()).weight(1);
-View random = ui.tonalButton("Random").icon(icons.refresh()).weight(1);
+Container actions = ui.row().gap(8).fillWidth();
+Button step = ui.tonalButton("Step").icon(icons.forward()).weight(1);
+Button random = ui.tonalButton("Random").icon(icons.refresh()).weight(1);
 actions.add(step);
 actions.add(random);
 content.add(actions);
 
-View caption = ui.text("").style(styles.bodySmall()).color(colors.onSurfaceVariant()).textAlign("center");
+Text caption = ui.text("").style(styles.bodySmall()).color(colors.onSurfaceVariant()).textAlign("center");
 content.add(caption);
 
 # Bottom clearance so the scrolled controls never end up hidden behind the floating FABs.
 content.add(ui.spacer().height(88));
 
-View fabStack = ui.column().gap(12).padding(16).align("bottomEnd");
-View clearFab = ui.smallFab(icons.delete()).background(colors.secondaryContainer()).tint(colors.onSecondaryContainer());
-View playFab = ui.fab(icons.play()).background(colors.primaryContainer()).tint(colors.onPrimaryContainer());
+Container fabStack = ui.column().gap(12).padding(16).align("bottomEnd");
+Button clearFab = ui.smallFab(icons.delete()).background(colors.secondaryContainer()).tint(colors.onSecondaryContainer());
+Button playFab = ui.fab(icons.play()).background(colors.primaryContainer()).tint(colors.onPrimaryContainer());
 fabStack.add(clearFab);
 fabStack.add(playFab);
 root.add(fabStack);
@@ -502,8 +502,8 @@ func armPattern(int idx) void {
     void
 };
 
-func makeChip(str label, int idx) View {
-    View c = ui.chip(label).checkable(true).checked(idx == armed);
+func makeChip(str label, int idx) Chip {
+    Chip c = ui.chip(label).checkable(true).checked(idx == armed);
     c.onClick(func() void {
         armPattern(idx);
         void
@@ -513,7 +513,7 @@ func makeChip(str label, int idx) View {
 
 int pi = 0;
 while (pi < PATTERN_COUNT) {
-    View c = makeChip(PATTERN_NAMES[pi], pi);
+    Chip c = makeChip(PATTERN_NAMES[pi], pi);
     chips[pi] = c;
     palette.add(c);
     pi += 1;
@@ -565,12 +565,12 @@ func applyResize(int newCols) void {
 };
 
 func openSettings() void {
-    View panel = ui.column().padding(20).gap(14).fillWidth();
+    Container panel = ui.column().padding(20).gap(14).fillWidth();
 
     panel.add(ui.text("Animation").style(styles.labelMedium()).color(colors.primary()));
-    View speedLabel = ui.text("Speed — ".con(genPerSec.str).con(" gen/s")).style(styles.titleSmall());
+    Text speedLabel = ui.text("Speed — ".con(genPerSec.str).con(" gen/s")).style(styles.titleSmall());
     panel.add(speedLabel);
-    View speed = ui.slider(MIN_SPEED, MAX_SPEED).fillWidth();
+    Slider speed = ui.slider(MIN_SPEED, MAX_SPEED).fillWidth();
     speed.slide(genPerSec);
     speed.onSlide(func(int v) void {
         genPerSec = if (v < MIN_SPEED) then MIN_SPEED else v;
@@ -583,9 +583,9 @@ func openSettings() void {
     panel.add(ui.divider());
 
     panel.add(ui.text("Field").style(styles.labelMedium()).color(colors.primary()));
-    View sizeLabel = ui.text(fieldLabel()).style(styles.titleSmall());
+    Text sizeLabel = ui.text(fieldLabel()).style(styles.titleSmall());
     panel.add(sizeLabel);
-    View size = ui.slider(MIN_COLS, MAX_COLS).fillWidth();
+    Slider size = ui.slider(MIN_COLS, MAX_COLS).fillWidth();
     size.slide(cols);
     size.onSlide(func(int v) void {
         applyResize(v);
@@ -596,9 +596,9 @@ func openSettings() void {
 
     panel.add(ui.divider());
 
-    View wrapRow = ui.row().fillWidth();
+    Container wrapRow = ui.row().fillWidth();
     wrapRow.add(ui.text("Wrap edges (toroidal)").weight(1));
-    View wrapSwitch = ui.toggle("");
+    Toggle wrapSwitch = ui.toggle("");
     wrapSwitch.checked(wrap);
     wrapSwitch.onToggle(func(bool on) void {
         wrap = on;
@@ -609,9 +609,9 @@ func openSettings() void {
     wrapRow.add(wrapSwitch);
     panel.add(wrapRow);
 
-    View gridRow = ui.row().fillWidth();
+    Container gridRow = ui.row().fillWidth();
     gridRow.add(ui.text("Show grid lines").weight(1));
-    View gridSwitch = ui.toggle("");
+    Toggle gridSwitch = ui.toggle("");
     gridSwitch.checked(showGrid);
     gridSwitch.onToggle(func(bool on) void {
         showGrid = on;
@@ -623,7 +623,7 @@ func openSettings() void {
 
     panel.add(ui.divider());
 
-    View done = ui.button("Done").fillWidth();
+    Button done = ui.button("Done").fillWidth();
     done.onClick(func() void {
         ui.dismissSheet();
         void

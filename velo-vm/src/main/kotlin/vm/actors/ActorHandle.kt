@@ -52,6 +52,7 @@ class ActorHandle private constructor(
     sharedNativeRegistry: NativeRegistry,
     sharedNatives: Array<core.BoundNative>,
     sharedDataClasses: Map<Int, core.DataClassInfo>,
+    sharedMethodTables: Map<Int, Map<String, Int>>,
     private val dispatcher: Dispatcher,
     profiler: VMProfiler? = null,
 ) {
@@ -69,6 +70,7 @@ class ActorHandle private constructor(
         currentActor = this,
         natives = sharedNatives,
         dataClasses = sharedDataClasses,
+        methodTables = sharedMethodTables,
     )
 
     private val executor = VMExecutor(ctx, profiler)
@@ -542,6 +544,7 @@ class ActorHandle private constructor(
             sharedNativeRegistry: NativeRegistry,
             sharedNatives: Array<core.BoundNative> = emptyArray(),
             sharedDataClasses: Map<Int, core.DataClassInfo> = emptyMap(),
+            sharedMethodTables: Map<Int, Map<String, Int>> = emptyMap(),
             dispatcher: Dispatcher,
             profiler: VMProfiler? = null,
         ): ActorHandle {
@@ -553,6 +556,7 @@ class ActorHandle private constructor(
                 sharedNativeRegistry = sharedNativeRegistry,
                 sharedNatives = sharedNatives,
                 sharedDataClasses = sharedDataClasses,
+                sharedMethodTables = sharedMethodTables,
                 dispatcher = dispatcher,
                 profiler = profiler,
             )
@@ -577,6 +581,7 @@ class ActorHandle private constructor(
             sharedNativeRegistry: NativeRegistry,
             sharedNatives: Array<core.BoundNative>,
             sharedDataClasses: Map<Int, core.DataClassInfo>,
+            sharedMethodTables: Map<Int, Map<String, Int>>,
             classFrameNum: Int,
             className: String,
             args: List<ActorValue>,
@@ -590,6 +595,7 @@ class ActorHandle private constructor(
                 sharedNativeRegistry = sharedNativeRegistry,
                 sharedNatives = sharedNatives,
                 sharedDataClasses = sharedDataClasses,
+                sharedMethodTables = sharedMethodTables,
                 dispatcher = runtime.newActorDispatcher("velo-actor-$id-$className"),
             )
             runtime.register(handle)

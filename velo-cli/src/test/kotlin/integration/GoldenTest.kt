@@ -45,6 +45,9 @@ class GoldenTest {
 
     private val goldenDir = getGoldenDir()
 
+    /** Golden cases the legacy VM cannot run (velo-vm2-only language features). */
+    private val legacyUnsupported = emptySet<String>()
+
     private fun getGoldenDir(): File {
         // Try to find from test resources
         val resourceUrl = this::class.java.classLoader.getResource("golden")
@@ -94,6 +97,7 @@ class GoldenTest {
                     )
                 },
                 dataClasses = shared.dataClasses.toList(),
+                classMethods = shared.classMethods.toList(),
             )
         } catch (ex: Throwable) {
             System.err.println("Compilation error: ${ex.message}")
@@ -300,6 +304,14 @@ class GoldenTest {
         for (velFile in velFiles) {
             val testName = velFile.nameWithoutExtension
             val goldenFile = File(goldenDir, "$testName.golden")
+
+            // Cases exercising features the legacy VM does not implement (interface
+            // dispatch via Op.MethodLoad is a velo-vm2 feature). They are covered by
+            // velo-vm2's own golden runner.
+            if (testName in legacyUnsupported) {
+                println("Skipping $testName - not supported by the legacy VM")
+                continue
+            }
 
             if (!goldenFile.exists()) {
                 println("Skipping $testName - no golden file")

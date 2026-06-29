@@ -1,6 +1,7 @@
 import compiler.VeloCompiler
 import core.Bytecode
 import core.NativeRegistry
+import ui.registerUiStubs
 import java.io.File
 
 /**
@@ -20,9 +21,7 @@ fun main(args: Array<String>) {
 
     val natives = NativeRegistry()
         .registerDefaults()
-        .register(ui.Ui::class)
-        .register(ui.View::class)
-        .register(ui.Shape::class)
+        .registerUiStubs()
         .register(ui.Colors::class)
         .register(ui.Icons::class)
         .register(ui.TextStyles::class)

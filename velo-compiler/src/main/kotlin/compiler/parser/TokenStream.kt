@@ -20,6 +20,7 @@ class TokenStream(private val input: Input) {
         "null",
         "include",
         "operator",
+        "interface",
     ).plus(stdTypesSet)
 
     private fun isKeyword(str: String): Boolean {
@@ -290,6 +291,7 @@ const val PTR = "ptr"
 const val ACTOR = "actor"
 const val DATA = "data"
 const val FUTURE = "future"
+const val SELF = "Self"
 
 val stdTypesSet = setOf(
     BYTE,
@@ -307,4 +309,5 @@ val stdTypesSet = setOf(
     PTR,
     ACTOR,
     FUTURE,
+    SELF,
 )

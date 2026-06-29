@@ -1,5 +1,8 @@
 package org.velo.android.engine
 
+import org.velo.android.engine.ui.registerUiNatives
+import org.velo.android.engine.ui.uiWidgetNames
+
 import com.google.android.material.button.MaterialButton
 import compiler.VeloCompiler
 import core.Bytecode
@@ -13,7 +16,6 @@ import org.velo.android.engine.ui.Icons
 import org.velo.android.engine.ui.Shape
 import org.velo.android.engine.ui.TextStyles
 import org.velo.android.engine.ui.VeloUi
-import org.velo.android.engine.ui.VeloView
 import java.io.DataInputStream
 import java.io.File
 
@@ -40,9 +42,7 @@ class UiNativeLinkTest {
         .register("FileSystem", VeloFileSystem::class)
         .register("Http", VeloHttp::class)
         .register("Socket", VeloSocket::class)
-        .register("Ui", VeloUi::class)
-        .register("View", VeloView::class)
-        .register("Shape", Shape::class)
+        .registerUiNatives()
         .register("Colors", Colors::class)
         .register("Icons", Icons::class)
         .register("TextStyles", TextStyles::class)

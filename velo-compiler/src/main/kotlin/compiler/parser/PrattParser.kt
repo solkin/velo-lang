@@ -56,6 +56,12 @@ class PrattParser(
                     } else {
                         null
                     }
+                } else if (varName != null && context.isInterfaceType(varName) &&
+                    nextToken?.type == TokenType.VARIABLE
+                ) {
+                    // `InterfaceName varname ...` — a definition typed by a
+                    // structural interface.
+                    keywordParselets["__class_type__"]
                 } else if (varName != null && context.isNativeType(varName) &&
                     nextToken?.type == TokenType.VARIABLE
                 ) {

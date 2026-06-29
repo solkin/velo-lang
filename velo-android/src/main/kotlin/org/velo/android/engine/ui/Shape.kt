@@ -15,7 +15,7 @@ import org.velo.android.engine.ui.view.strokeJoinOf
  * A handle to one drawing primitive on a `canvas`, returned by the canvas `draw*` methods —
  * registered as the Velo native `Shape`.
  *
- * Shapes are deliberately a separate native type from [VeloView]: a shape is never added to
+ * Shapes are deliberately a separate native type from [Widget]: a shape is never added to
  * a layout container (only ever drawn onto a canvas), so it doesn't need to share `View`'s
  * type, and keeping it apart stops the canvas paint API from crowding every widget handle.
  * Each method mutates the underlying [DrawOp]'s paint on the worker thread and requests a

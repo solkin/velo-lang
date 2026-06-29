@@ -148,34 +148,34 @@ actor class Ticker() {
 actor[Ticker] ticker = new Ticker();
 
 # ---- widgets ------------------------------------------------------------------------------
-View board = ui.canvas().weight(1).fillWidth().background(BLACK);
+Canvas board = ui.canvas().weight(1).fillWidth().background(BLACK);
 
-View digL = ui.tonalButton("◣").weight(1);
-View upBtn = ui.tonalButton("▲").weight(1);
-View digR = ui.tonalButton("◢").weight(1);
-View row1 = ui.row().fillWidth().gap(8);
+Button digL = ui.tonalButton("◣").weight(1);
+Button upBtn = ui.tonalButton("▲").weight(1);
+Button digR = ui.tonalButton("◢").weight(1);
+Container row1 = ui.row().fillWidth().gap(8);
 row1.add(digL);
 row1.add(upBtn);
 row1.add(digR);
 
-View leftBtn = ui.tonalButton("◀").weight(1);
-View downBtn = ui.tonalButton("▼").weight(1);
-View rightBtn = ui.tonalButton("▶").weight(1);
-View row2 = ui.row().fillWidth().gap(8);
+Button leftBtn = ui.tonalButton("◀").weight(1);
+Button downBtn = ui.tonalButton("▼").weight(1);
+Button rightBtn = ui.tonalButton("▶").weight(1);
+Container row2 = ui.row().fillWidth().gap(8);
 row2.add(leftBtn);
 row2.add(downBtn);
 row2.add(rightBtn);
 
-View pad = ui.column().fillWidth().gap(8).padding(12);
+Container pad = ui.column().fillWidth().gap(8).padding(12);
 pad.add(row1);
 pad.add(row2);
 
-View page = ui.column().fillWidth().fillHeight();
-View bar = ui.appBar("Lode Runner");
+Container page = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Lode Runner");
 page.add(bar);
 page.add(board);
 page.add(pad);
-View root = page;
+Container root = page;
 
 # ---- level build --------------------------------------------------------------------------
 

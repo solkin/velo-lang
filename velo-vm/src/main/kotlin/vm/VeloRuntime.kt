@@ -143,6 +143,10 @@ class VeloRuntime(
             sharedFrameLoader = frameLoader,
             sharedNativeRegistry = nativeRegistry,
             sharedNatives = natives,
+            sharedDataClasses = program.dataClasses.associateBy { it.frameNum },
+            sharedMethodTables = program.classMethods.associate { info ->
+                info.frameNum to info.methods.associate { it.name to it.index }
+            },
             dispatcher = dispatcher,
         )
         actorRuntime.onFatal = { ex ->

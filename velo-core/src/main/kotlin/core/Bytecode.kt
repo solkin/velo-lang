@@ -18,7 +18,7 @@ object Bytecode {
 
     const val MAGIC = 0x5e10
     const val VERSION_MAJOR = 0x0b
-    const val VERSION_MINOR = 0x00
+    const val VERSION_MINOR = 0x01
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -50,8 +50,21 @@ object Bytecode {
         out.writeByte(VERSION_MINOR)
         writeNatives(program.natives, out)
         writeDataClasses(program.dataClasses, out)
+        writeClassMethods(program.classMethods, out)
         out.writeShort(program.frames.size)
         program.frames.forEach { writeFrame(it, out) }
+    }
+
+    private fun writeClassMethods(classMethods: List<ClassMethodsInfo>, out: DataOutputStream) {
+        out.writeShort(classMethods.size)
+        classMethods.forEach { info ->
+            out.writeInt(info.frameNum)
+            out.writeShort(info.methods.size)
+            info.methods.forEach { method ->
+                out.writeUTF(method.name)
+                out.writeInt(method.index)
+            }
+        }
     }
 
     private fun writeDataClasses(dataClasses: List<DataClassInfo>, out: DataOutputStream) {
@@ -97,6 +110,11 @@ object Bytecode {
             is Op.If -> out.writeInt(op.elseSkip)
             is Op.Move -> out.writeInt(op.count)
             is Op.Frame -> out.writeInt(op.num)
+            is Op.MethodLoad -> out.writeUTF(op.name)
+            is Op.InterfaceCall -> {
+                out.writeUTF(op.method)
+                out.writeInt(op.args)
+            }
             is Op.PtrRef -> out.writeInt(op.varIndex)
             is Op.Call -> {
                 out.writeInt(op.args)
@@ -213,8 +231,24 @@ object Bytecode {
         }
         val natives = readNatives(inp)
         val dataClasses = readDataClasses(inp)
+        val classMethods = readClassMethods(inp)
         val frames = List(inp.readShort().toInt()) { readFrame(inp) }
-        return SerializedProgram(natives = natives, frames = frames, dataClasses = dataClasses)
+        return SerializedProgram(
+            natives = natives,
+            frames = frames,
+            dataClasses = dataClasses,
+            classMethods = classMethods,
+        )
+    }
+
+    private fun readClassMethods(inp: DataInputStream): List<ClassMethodsInfo> {
+        return List(inp.readShort().toInt()) {
+            val frameNum = inp.readInt()
+            val methods = List(inp.readShort().toInt()) {
+                ClassMethod(name = inp.readUTF(), index = inp.readInt())
+            }
+            ClassMethodsInfo(frameNum = frameNum, methods = methods)
+        }
     }
 
     private fun readDataClasses(inp: DataInputStream): List<DataClassInfo> {
@@ -268,6 +302,8 @@ object Bytecode {
             0x14 -> Op.IntChar
             0x15 -> Op.IntStr
             0x18 -> Op.Frame(num = inp.readInt())
+            0x19 -> Op.MethodLoad(name = inp.readUTF())
+            0x1c -> Op.InterfaceCall(method = inp.readUTF(), args = inp.readInt())
             0x1a -> Op.Sub
             0x1b -> Op.More
             0x1d -> Op.Move(count = inp.readInt())

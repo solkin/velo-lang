@@ -70,7 +70,7 @@ data class CallNode(
                 }
                 resolvedArgTypes.forEachIndexed { i, def ->
                     val argType = argTypes[i]
-                    if (!argType.sameAs(def)) {
+                    if (!assignableArg(def, argType)) {
                         throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
                     }
                 }
@@ -82,7 +82,7 @@ data class CallNode(
             resolvedArgTypes.forEachIndexed { i, def ->
                 if (i < argTypes.size) {
                     val argType = argTypes[i]
-                    if (!argType.sameAs(def)) {
+                    if (!assignableArg(def, argType)) {
                         throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
                     }
                 }
@@ -176,6 +176,7 @@ data class CallNode(
         val frameNum = classType.num
             ?: throw IllegalStateException("Class '${classType.name}' has no frame number")
         val returnType = if (typeArgs.isNotEmpty()) classType.copy(typeArgs = typeArgs) else classType
+        if (typeArgs.isNotEmpty()) checkTypeArgBounds(classType.name, typeArgs)
         val argTypes = args.map { it.compile(ctx) }
         if (returnType.typeArgs.isNotEmpty()) {
             val classArgTypes = returnType.args ?: emptyList()
@@ -183,7 +184,7 @@ data class CallNode(
             resolvedArgTypes.forEachIndexed { i, def ->
                 if (i < argTypes.size) {
                     val argType = argTypes[i]
-                    if (!argType.sameAs(def)) {
+                    if (!assignableArg(def, argType)) {
                         throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
                     }
                 }

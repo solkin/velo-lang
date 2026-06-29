@@ -1,0 +1,5 @@
+square = 9
+rect = 10
+square = 16
+rect(100)
+3

@@ -13,6 +13,8 @@ data class ClassNode(
     val typeParams: List<String> = emptyList(),
     val defs: List<DefNode>,
     val body: Node,
+    val conforms: List<InterfaceType> = emptyList(),
+    val typeParamBounds: List<InterfaceType?> = emptyList(),
 ) : Node() {
     override fun compile(ctx: Context): Type {
         if (isActor && typeParams.isNotEmpty()) {
@@ -55,6 +57,27 @@ data class ClassNode(
         body.compile(ctx = classOps)
         classOps.add(Op.Instance)
         classOps.add(Op.Ret)
+
+        // Register this class's method signatures so structural interface checks
+        // (which run without a Context) can resolve them by name, and emit the
+        // runtime method table that backs Op.MethodLoad interface dispatch.
+        val methodVars = classOps.frame.vars.filter { it.value.type is FuncType }
+        TypeRegistry.register(name, methodVars.mapValues { it.value.type as FuncType })
+        TypeRegistry.registerBounds(name, typeParamBounds)
+        ctx.shared.classMethods.add(
+            core.ClassMethodsInfo(
+                frameNum = classOps.frame.num,
+                methods = methodVars.map { core.ClassMethod(name = it.key, index = it.value.index) },
+            )
+        )
+        conforms.forEach { iface ->
+            if (!iface.sameAs(classType)) {
+                throw IllegalStateException(
+                    "Class '$name' declares it conforms to '${iface.name}' but does not satisfy it; " +
+                        "missing or mismatched method(s) from ${iface.methods.keys}"
+                )
+            }
+        }
 
         if (isActor) {
             validateActorSignatures(classOps)
@@ -207,6 +230,11 @@ data class ClassElementProp(val name: String) : Prop {
         ctx.merge(propCtx)
         ctx.add(Op.Frame(num = propCtx.frame.num))
         ctx.add(Op.Call(args = args.size, classParent = true))
+        // A `Self` return resolves to the concrete receiver type, so a fluent
+        // builder keeps its type through a chain.
+        if (funcType != null && funcType.derived is SelfType) {
+            return instanceType
+        }
         var resolved = instanceType.resolveGeneric(resultType)
         if (methodTypeBindings.isNotEmpty() && funcType != null) {
             resolved = resolveGenericType(resolved, funcType.typeParams, methodTypeBindings)

@@ -20,6 +20,13 @@ class Vars(
     private val base: Int,
     private val slots: Array<Record>,
     val parent: Vars?,
+    /**
+     * The bytecode frame number whose scope this is, or -1 for synthetic scopes.
+     * For a class-instance scope this is the class frame number, which interface
+     * dispatch ([Op.MethodLoad]) uses to find the receiver's method table — the
+     * legacy VM's [Vars] otherwise carries no class identity (vm2's Frame does).
+     */
+    val frameNum: Int = -1,
 ) {
     fun get(index: Int): Record {
         var scope: Vars? = this
@@ -55,12 +62,12 @@ class Vars(
  * emitted by the compiler). The slots start uninitialised ([EmptyRecord]); the
  * base is the frame's first index, so a raw variable index maps to `index - base`.
  */
-fun createVars(vars: List<Int>, parent: Vars? = null): Vars {
-    if (vars.isEmpty()) return Vars(base = 0, slots = emptyArray(), parent = parent)
+fun createVars(vars: List<Int>, parent: Vars? = null, frameNum: Int = -1): Vars {
+    if (vars.isEmpty()) return Vars(base = 0, slots = emptyArray(), parent = parent, frameNum = frameNum)
     // Indices are ascending (declaration order); slots span first..last so a raw
     // index maps to `index - base`. The compiler numbers each frame contiguously,
     // so span == count, but a sparse set (e.g. hand-written bytecode) still maps
     // cleanly — the gaps are just unused EmptyRecord slots.
     val base = vars.first()
-    return Vars(base = base, slots = Array(vars.last() - base + 1) { EmptyRecord }, parent = parent)
+    return Vars(base = base, slots = Array(vars.last() - base + 1) { EmptyRecord }, parent = parent, frameNum = frameNum)
 }

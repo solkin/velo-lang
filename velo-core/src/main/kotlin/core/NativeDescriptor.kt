@@ -109,34 +109,57 @@ class NativeClassDescriptor(
             } ?: emptyList()
 
             val methods = LinkedHashMap<String, NativeMethodDescriptor>()
-            val candidates = jvmClass.declaredMethods
-                .filter { Modifier.isPublic(it.modifiers) && !it.isSynthetic && !it.isBridge }
-                .sortedBy { it.name }
-            for (method in candidates) {
-                if (methods.containsKey(method.name)) {
-                    problems += "Native class '$veloName' method '${method.name}' is overloaded — " +
-                        "Velo dispatches by name, keep one public method per name"
-                    continue
-                }
-                val params = method.parameterTypes.mapIndexed { i, p ->
-                    mapJvmType(p, method.genericParameterTypes.getOrNull(i), registry)
-                        ?: VmType.Any.also {
-                            problems += "Native method '$veloName.${method.name}' parameter #${i + 1} " +
-                                "has unmappable type ${p.name}"
-                        }
-                }
-                val returns = mapJvmType(method.returnType, method.genericReturnType, registry)
-                    ?: VmType.Any.also {
-                        problems += "Native method '$veloName.${method.name}' return type " +
-                            "${method.returnType.name} is unmappable"
+            // Collect public methods declared on the class AND its non-framework
+            // superclasses, so a widget can inherit a shared set of modifiers from a
+            // base. Walk most-derived first; a name seen lower in the hierarchy
+            // (an override) shadows the inherited one. Two public methods of the same
+            // name in ONE class is a genuine overload (Velo has no overloads) and is
+            // reported. Framework supertypes (Object, java.*, kotlin.*) are not walked.
+            var cls: Class<*>? = jvmClass
+            while (cls != null && !isFrameworkClass(cls)) {
+                val level = cls.declaredMethods
+                    .filter { Modifier.isPublic(it.modifiers) && !it.isSynthetic && !it.isBridge }
+                    .sortedBy { it.name }
+                val atThisLevel = HashSet<String>()
+                for (method in level) {
+                    if (!atThisLevel.add(method.name)) {
+                        problems += "Native class '${cls.simpleName}' method '${method.name}' is overloaded — " +
+                            "Velo dispatches by name, keep one public method per name"
+                        continue
                     }
-                methods[method.name] = NativeMethodDescriptor(
-                    name = method.name,
-                    params = params,
-                    returns = returns,
-                    jvmParams = method.parameterTypes.toList(),
-                    handle = lookup.unreflect(method),
-                )
+                    if (methods.containsKey(method.name)) continue // overridden lower down
+                    val params = method.parameterTypes.mapIndexed { i, p ->
+                        mapJvmType(p, method.genericParameterTypes.getOrNull(i), registry)
+                            ?: VmType.Any.also {
+                                problems += "Native method '$veloName.${method.name}' parameter #${i + 1} " +
+                                    "has unmappable type ${p.name}"
+                            }
+                    }
+                    // A method returning the widget's own type (or a base it extends)
+                    // is the fluent-builder shape: expose it as returning the *concrete*
+                    // class being introspected, so a chain keeps that type and a `Self`
+                    // interface method is satisfied.
+                    val rawReturn = method.returnType
+                    val returns = if (rawReturn != Any::class.java && !isFrameworkClass(rawReturn) &&
+                        rawReturn.isAssignableFrom(jvmClass)
+                    ) {
+                        VmType.Class(veloName)
+                    } else {
+                        mapJvmType(rawReturn, method.genericReturnType, registry)
+                            ?: VmType.Any.also {
+                                problems += "Native method '$veloName.${method.name}' return type " +
+                                    "${rawReturn.name} is unmappable"
+                            }
+                    }
+                    methods[method.name] = NativeMethodDescriptor(
+                        name = method.name,
+                        params = params,
+                        returns = returns,
+                        jvmParams = method.parameterTypes.toList(),
+                        handle = lookup.unreflect(method),
+                    )
+                }
+                cls = cls.superclass
             }
 
             if (problems.isNotEmpty()) {
@@ -165,6 +188,11 @@ class NativeClassDescriptor(
          *     — full signature recovered from generics, giving strict
          *     compile-time checking; the host receives a plain lambda.
          */
+        /** Object and platform types — never walked for inherited methods nor treated as a widget self-return. */
+        private fun isFrameworkClass(c: Class<*>): Boolean =
+            c == Any::class.java || c.name.startsWith("java.") || c.name.startsWith("kotlin.") ||
+                c.name.startsWith("android.") || c.name.startsWith("androidx.")
+
         fun mapJvmType(c: Class<*>, generic: JType?, registry: NativeRegistry): VmType? = when {
             c == java.lang.Void.TYPE || c == Unit::class.java -> VmType.Void
             c == Integer.TYPE || c == java.lang.Integer::class.java -> VmType.Int

@@ -1,0 +1,42 @@
+# Structural interfaces + Self dispatch, end to end.
+Terminal term = new Terminal();
+
+interface Shape {
+    func area() int;
+    func kind() str;
+};
+
+# Neither class names `Shape` — they satisfy it structurally.
+class Square(int side) {
+    func area() int { side * side; };
+    func kind() str { "square"; };
+};
+
+class Rect(int w, int h) {
+    func area() int { w * h; };
+    func kind() str { "rect"; };
+};
+
+# A heterogeneous array of an interface type: each call dispatches dynamically
+# to the element's concrete class.
+array[Shape] shapes = new array[Shape]{ new Square(3), new Rect(2, 5), new Square(4) };
+int i = 0;
+while (i < shapes.len) {
+    Shape s = shapes[i];
+    term.println(s.kind().con(" = ").con(s.area().str));
+    i += 1;
+};
+
+# An interface value passed through a function parameter.
+func describe(Shape s) str { s.kind().con("(").con(s.area().str).con(")"); };
+term.println(describe(new Rect(10, 10)));
+
+# `Self` return: a fluent chain keeps the concrete type, then crosses to the
+# interface where dispatch continues.
+class Counter(int n) {
+    func bump() Self { new Counter(n + 1); };
+    func value() int { n; };
+};
+
+Counter c = new Counter(0);
+term.println(c.bump().bump().bump().value().str);

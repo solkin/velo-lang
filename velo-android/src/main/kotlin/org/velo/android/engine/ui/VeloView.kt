@@ -2,12 +2,13 @@ package org.velo.android.engine.ui
 
 import android.view.View
 import android.view.ViewGroup
+import core.NativeRegistry
 import core.VeloFunction
 import org.velo.android.engine.ui.view.ViewState
-// The per-concern ViewState operations this facade delegates to live in the `view` subpackage.
+// The per-concern ViewState operations the facades delegate to live in the `view` subpackage.
 import org.velo.android.engine.ui.view.*
 
-/** What kind of Material3 widget a [VeloView] wraps — drives which methods are meaningful. */
+/** What kind of Material3 widget a widget wraps — drives which ViewState branch runs. */
 internal enum class Kind {
     NONE, TEXT, BUTTON, FIELD, SWITCH, CHECKBOX, SLIDER, CARD,
     COLUMN, ROW, BOX, SCROLL, PROGRESS, SPINNER, LIST, TABS, APPBAR, CANVAS,
@@ -17,144 +18,186 @@ internal enum class Kind {
 }
 
 /**
- * The single Velo native handle for every on-screen widget — registered as `View`.
+ * Base of every on-screen widget: the universal layout, visual and event modifiers,
+ * over the shared [ViewState] that holds all Android state. Each concrete widget below
+ * is a thin typed facade that adds only the methods meaningful for it — so a container
+ * accepts any widget while `text.progress()` is a compile error.
  *
- * Velo's native type system matches handles by exact class with no inheritance, so a
- * container that accepts "any widget" needs all widgets to share one Velo type. Hence
- * one wrapper class with a [Kind] tag instead of a class per component: a column and a
- * button are both `View`, so `column.add(button)` type-checks. Methods that don't fit a
- * widget's kind are no-ops.
- *
- * This class is only a thin dispatch facade: each method delegates to a [ViewState]
- * operation (defined in the ViewLayout / ViewText / ViewControls / ViewCollections /
- * ViewAppBar extension files) so the broad widget API stays readable. [ViewState] holds
- * all Android state and marshals each call onto the main thread; event setters also retain
- * their callback so the program's event loop stays alive while the screen is shown.
- *
- * Programs never construct this directly — the public no-arg constructor exists only so the
- * native binder (which requires exactly one public constructor of mappable types) can
- * introspect the class. Real instances come from [VeloUi]'s factories via [make].
+ * Velo's registry exposes inherited methods and maps a modifier returning [Widget] to
+ * the concrete subclass, so `column.padding(8)` stays a `Column` and a chain keeps its
+ * type. Programs never construct these directly: real instances come from [VeloUi]'s
+ * factories via [make]; the public no-arg constructor exists only so the native binder
+ * can introspect each class.
  */
-class VeloView {
+abstract class Widget {
 
-    // All Android state and the per-concern operations live here; the public methods below
-    // are one-liners over it. Injected by [bind] right after construction (see [make]); a
-    // view built outside the `Ui` factories (never bound) is inert. Private, so it is not
-    // part of the Velo-visible native surface.
-    private val state = ViewState()
+    // All Android state and the per-concern operations live here; injected by [make].
+    // @get:JvmSynthetic keeps the internal getter off the Velo-visible native surface.
+    @get:JvmSynthetic internal val state = ViewState()
 
-    // --- containers / layout ---
+    fun padding(dp: Int): Widget = apply { state.padding(dp) }
+    fun paddingXY(h: Int, v: Int): Widget = apply { state.paddingXY(h, v) }
+    fun fillWidth(): Widget = apply { state.fillWidth() }
+    fun fillHeight(): Widget = apply { state.fillHeight() }
+    fun width(dp: Int): Widget = apply { state.width(dp) }
+    fun height(dp: Int): Widget = apply { state.height(dp) }
+    fun weight(w: Int): Widget = apply { state.weight(w) }
+    fun background(color: String): Widget = apply { state.background(color) }
+    fun corner(dp: Int): Widget = apply { state.corner(dp) }
+    fun align(spec: String): Widget = apply { state.align(spec) }
+    fun visible(on: Boolean): Widget = apply { state.visible(on) }
+    fun enabled(on: Boolean): Widget = apply { state.enabled(on) }
+    fun badge(text: String): Widget = apply { state.badge(text) }
+    fun badgeDot(): Widget = apply { state.badgeDot() }
+    fun onClick(cb: VeloFunction): Widget = apply { state.onClick(cb) }
+    fun onLongClick(cb: VeloFunction): Widget = apply { state.onLongClick(cb) }
+    fun onPress(down: VeloFunction, up: VeloFunction): Widget = apply { state.onPress(down, up) }
+    fun onResize(cb: VeloFunction): Widget = apply { state.onResize(cb) }
 
-    fun add(child: VeloView): VeloView = apply { state.add(child.state) }
-    fun padding(dp: Int): VeloView = apply { state.padding(dp) }
-    fun gap(dp: Int): VeloView = apply { state.gap(dp) }
-    fun center(): VeloView = apply { state.center() }
-    fun fillWidth(): VeloView = apply { state.fillWidth() }
-    fun fillHeight(): VeloView = apply { state.fillHeight() }
-    fun width(dp: Int): VeloView = apply { state.width(dp) }
-    fun height(dp: Int): VeloView = apply { state.height(dp) }
-    fun weight(w: Int): VeloView = apply { state.weight(w) }
+    // ---- host-side plumbing (synthetic, so not part of the Velo native surface) ----
 
-    // --- common visual modifiers (any kind) ---
+    @JvmSynthetic internal fun androidView(): View? = state.av
 
-    fun background(color: String): VeloView = apply { state.background(color) }
-    fun corner(dp: Int): VeloView = apply { state.corner(dp) }
-    fun paddingXY(h: Int, v: Int): VeloView = apply { state.paddingXY(h, v) }
-    fun align(spec: String): VeloView = apply { state.align(spec) }
+    @JvmSynthetic internal fun releaseCallbacks() = state.releaseCallbacks()
 
-    // --- content / text ---
+    @JvmSynthetic
+    internal fun injectState(kind: Kind, view: View, content: ViewGroup?, binding: UiBinding) {
+        state.kind = kind
+        state.av = view
+        state.content = content
+        state.binding = binding
+        if (kind == Kind.FIELD || kind == Kind.SLIDER || kind == Kind.PROGRESS ||
+            kind == Kind.LIST || kind == Kind.APPBAR || kind == Kind.SCROLL || kind == Kind.TABS ||
+            kind == Kind.DIVIDER || kind == Kind.LAZY_ROW || kind == Kind.NAV_BAR
+        ) {
+            state.fillW = true
+        }
+    }
 
-    fun text(s: String): VeloView = apply { state.text(s) }
-    fun color(spec: String): VeloView = apply { state.color(spec) }
-    fun hint(s: String): VeloView = apply { state.hint(s) }
+    companion object {
+        /** Build [kind] over an already-created Android [view]; [content] is where children go. */
+        @JvmSynthetic
+        internal fun <T : Widget> make(create: () -> T, kind: Kind, view: View, content: ViewGroup?, binding: UiBinding): T =
+            create().apply { injectState(kind, view, content, binding) }
+    }
+}
+
+/** Anything that bears text: a label, button, field, chip, list item or app bar. */
+abstract class TextWidget : Widget() {
+    fun text(s: String): TextWidget = apply { state.text(s) }
+    fun color(spec: String): TextWidget = apply { state.color(spec) }
+    fun textSize(sp: Int): TextWidget = apply { state.textSize(sp) }
+    fun bold(): TextWidget = apply { state.bold() }
+    fun style(token: String): TextWidget = apply { state.style(token) }
+    fun textAlign(spec: String): TextWidget = apply { state.textAlign(spec) }
+    fun maxLines(n: Int): TextWidget = apply { state.maxLines(n) }
+    fun strikethrough(): TextWidget = apply { state.strikethrough() }
+}
+
+class Text : TextWidget()
+
+class Button : TextWidget() {
+    fun icon(name: String): Button = apply { state.icon(name) }
+    fun iconOnly(): Button = apply { state.iconOnly() }
+    fun tint(color: String): Button = apply { state.tint(color) }
+}
+
+class Field : TextWidget() {
     fun value(): String = state.value()
-    fun textSize(sp: Int): VeloView = apply { state.textSize(sp) }
-    fun bold(): VeloView = apply { state.bold() }
-    fun style(token: String): VeloView = apply { state.style(token) }
-    fun textAlign(spec: String): VeloView = apply { state.textAlign(spec) }
-    fun maxLines(n: Int): VeloView = apply { state.maxLines(n) }
-    fun strikethrough(): VeloView = apply { state.strikethrough() }
-    fun enabled(on: Boolean): VeloView = apply { state.enabled(on) }
-    fun visible(on: Boolean): VeloView = apply { state.visible(on) }
+    fun hint(s: String): Field = apply { state.hint(s) }
+    fun placeholder(s: String): Field = apply { state.placeholder(s) }
+    fun error(message: String): Field = apply { state.errorText(message) }
+    fun keyboardType(type: String): Field = apply { state.keyboardType(type) }
+    fun onSubmit(cb: VeloFunction): Field = apply { state.onSubmit(cb) }
+    fun onFocusChange(cb: VeloFunction): Field = apply { state.onFocusChange(cb) }
+    fun onChange(cb: VeloFunction): Field = apply { state.onChange(cb) }
+    fun leading(name: String): Field = apply { state.leading(name) }
+    fun supporting(s: String): Field = apply { state.supporting(s) }
+}
 
-    // --- text field extras ---
-
-    fun placeholder(s: String): VeloView = apply { state.placeholder(s) }
-    fun error(message: String): VeloView = apply { state.errorText(message) }
-    fun keyboardType(type: String): VeloView = apply { state.keyboardType(type) }
-    fun onSubmit(cb: VeloFunction): VeloView = apply { state.onSubmit(cb) }
-    fun onFocusChange(cb: VeloFunction): VeloView = apply { state.onFocusChange(cb) }
-
-    // --- icons & small widgets ---
-
-    fun icon(name: String): VeloView = apply { state.icon(name) }
-    fun iconOnly(): VeloView = apply { state.iconOnly() }
-    fun tint(color: String): VeloView = apply { state.tint(color) }
-    fun checkable(on: Boolean): VeloView = apply { state.checkable(on) }
-    fun thickness(dp: Int): VeloView = apply { state.thickness(dp) }
-
-    // --- surface & list item ---
-
-    fun elevation(dp: Int): VeloView = apply { state.elevation(dp) }
-    fun border(width: Int, color: String): VeloView = apply { state.border(width, color) }
-    fun supporting(s: String): VeloView = apply { state.supporting(s) }
-    fun leading(name: String): VeloView = apply { state.leading(name) }
-    fun trailing(name: String): VeloView = apply { state.trailing(name) }
-
-    // --- navigation components ---
-
-    fun item(label: String, icon: String): VeloView = apply { state.item(label, icon) }
-    fun drawerContent(panel: VeloView): VeloView = apply { state.drawerContent(panel.state) }
-    fun openDrawer(on: Boolean): VeloView = apply { state.openDrawer(on) }
-    fun isDrawerOpen(): Boolean = state.isDrawerOpen()
-    fun badge(text: String): VeloView = apply { state.badge(text) }
-    fun badgeDot(): VeloView = apply { state.badgeDot() }
-
-    // --- toggles ---
-
-    fun checked(on: Boolean): VeloView = apply { state.checked(on) }
+class Chip : TextWidget() {
+    fun icon(name: String): Chip = apply { state.icon(name) }
+    fun tint(color: String): Chip = apply { state.tint(color) }
+    fun checkable(on: Boolean): Chip = apply { state.checkable(on) }
+    fun checked(on: Boolean): Chip = apply { state.checked(on) }
     fun isChecked(): Boolean = state.isChecked()
+    fun onToggle(cb: VeloFunction): Chip = apply { state.onToggle(cb) }
+}
 
-    // --- slider ---
+/** A switch, checkbox or radio button: a labelled on/off control. */
+class Toggle : TextWidget() {
+    fun checked(on: Boolean): Toggle = apply { state.checked(on) }
+    fun isChecked(): Boolean = state.isChecked()
+    fun onToggle(cb: VeloFunction): Toggle = apply { state.onToggle(cb) }
+}
 
-    fun range(min: Int, max: Int): VeloView = apply { state.range(min, max) }
-    fun slide(v: Int): VeloView = apply { state.slide(v) }
+class ListItem : TextWidget() {
+    fun supporting(s: String): ListItem = apply { state.supporting(s) }
+    fun leading(name: String): ListItem = apply { state.leading(name) }
+    fun trailing(name: String): ListItem = apply { state.trailing(name) }
+}
+
+class AppBar : TextWidget() {
+    fun onNav(cb: VeloFunction): AppBar = apply { state.onNav(cb) }
+    fun action(title: String, icon: String, cb: VeloFunction): AppBar = apply { state.appBarAction(title, icon, cb) }
+    fun actionIcon(title: String, icon: String): AppBar = apply { state.appBarActionIcon(title, icon) }
+}
+
+class Icon : Widget() {
+    fun icon(name: String): Icon = apply { state.icon(name) }
+    fun tint(color: String): Icon = apply { state.tint(color) }
+}
+
+/** A container: holds children added with [add]. */
+open class Container : Widget() {
+    fun add(child: Any): Container = apply { state.add((child as Widget).state) }
+    fun gap(dp: Int): Container = apply { state.gap(dp) }
+    fun center(): Container = apply { state.center() }
+    fun onSelect(cb: VeloFunction): Container = apply { state.onSelect(cb) }
+    fun select(index: Int): Container = apply { state.select(index) }
+}
+
+class Surface : Container() {
+    fun elevation(dp: Int): Surface = apply { state.elevation(dp) }
+    fun border(width: Int, color: String): Surface = apply { state.border(width, color) }
+}
+
+class Drawer : Container() {
+    fun drawerContent(panel: Any): Drawer = apply { state.drawerContent((panel as Widget).state) }
+    fun openDrawer(on: Boolean): Drawer = apply { state.openDrawer(on) }
+    fun isDrawerOpen(): Boolean = state.isDrawerOpen()
+}
+
+class Slider : Widget() {
+    fun range(min: Int, max: Int): Slider = apply { state.range(min, max) }
+    fun slide(v: Int): Slider = apply { state.slide(v) }
     fun position(): Int = state.position()
+    fun onSlide(cb: VeloFunction): Slider = apply { state.onSlide(cb) }
+}
 
-    // --- progress ---
+class Progress : Widget() {
+    fun progress(pct: Int): Progress = apply { state.progress(pct) }
+    fun indeterminate(on: Boolean): Progress = apply { state.indeterminate(on) }
+}
 
-    fun progress(pct: Int): VeloView = apply { state.progress(pct) }
-    fun indeterminate(on: Boolean): VeloView = apply { state.indeterminate(on) }
+class ListView : Widget() {
+    fun items(rows: List<String>): ListView = apply { state.items(rows) }
+    fun onItemClick(cb: VeloFunction): ListView = apply { state.onItemClick(cb) }
+}
 
-    // --- events ---
+class Tabs : Widget() {
+    fun tab(label: String): Tabs = apply { state.tab(label) }
+    fun onSelect(cb: VeloFunction): Tabs = apply { state.onSelect(cb) }
+    fun select(index: Int): Tabs = apply { state.select(index) }
+}
 
-    fun onClick(cb: VeloFunction): VeloView = apply { state.onClick(cb) }
-    fun onLongClick(cb: VeloFunction): VeloView = apply { state.onLongClick(cb) }
-    fun onPress(down: VeloFunction, up: VeloFunction): VeloView = apply { state.onPress(down, up) }
-    fun onResize(cb: VeloFunction): VeloView = apply { state.onResize(cb) }
-    fun onChange(cb: VeloFunction): VeloView = apply { state.onChange(cb) }
-    fun onToggle(cb: VeloFunction): VeloView = apply { state.onToggle(cb) }
-    fun onSlide(cb: VeloFunction): VeloView = apply { state.onSlide(cb) }
+class Nav : Widget() {
+    fun item(label: String, icon: String): Nav = apply { state.item(label, icon) }
+    fun onSelect(cb: VeloFunction): Nav = apply { state.onSelect(cb) }
+    fun select(index: Int): Nav = apply { state.select(index) }
+}
 
-    // --- list (RecyclerView) ---
-
-    fun items(rows: List<String>): VeloView = apply { state.items(rows) }
-    fun onItemClick(cb: VeloFunction): VeloView = apply { state.onItemClick(cb) }
-
-    // --- tabs (TabLayout) ---
-
-    fun tab(label: String): VeloView = apply { state.tab(label) }
-    fun onSelect(cb: VeloFunction): VeloView = apply { state.onSelect(cb) }
-    fun select(index: Int): VeloView = apply { state.select(index) }
-
-    // --- app bar ---
-
-    fun onNav(cb: VeloFunction): VeloView = apply { state.onNav(cb) }
-    fun action(title: String, icon: String, cb: VeloFunction): VeloView = apply { state.appBarAction(title, icon, cb) }
-    fun actionIcon(title: String, icon: String): VeloView = apply { state.appBarActionIcon(title, icon) }
-
-    // --- canvas (drawing) ---
-
+class Canvas : Widget() {
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int): Shape = state.drawLine(x1, y1, x2, y2)
     fun drawRect(x: Int, y: Int, w: Int, h: Int): Shape = state.drawRect(x, y, w, h)
     fun drawRoundRect(x: Int, y: Int, w: Int, h: Int, r: Int): Shape = state.drawRoundRect(x, y, w, h, r)
@@ -165,42 +208,35 @@ class VeloView {
     fun drawPath(spec: String): Shape = state.drawPath(spec)
     fun drawPoints(spec: String, mode: String): Shape = state.drawPoints(spec, mode)
     fun drawText(x: Int, y: Int, s: String, size: Int): Shape = state.drawText(x, y, s, size)
-    fun aspectRatio(w: Int, h: Int): VeloView = apply { state.aspectRatio(w, h) }
-    fun clear(): VeloView = apply { state.clearCanvas() }
-    fun onTap(cb: VeloFunction): VeloView = apply { state.onTap(cb) }
-    fun onPointerDown(cb: VeloFunction): VeloView = apply { state.onPointerDown(cb) }
-    fun onPointerMove(cb: VeloFunction): VeloView = apply { state.onPointerMove(cb) }
-    fun onPointerUp(cb: VeloFunction): VeloView = apply { state.onPointerUp(cb) }
-
-    // --- host-side plumbing (synthetic, so not part of the Velo native surface) ---
-
-    /** Release every callback held by this view tree — called by [VeloUi] when its screen is popped. */
-    @JvmSynthetic
-    internal fun releaseCallbacks() = state.releaseCallbacks()
-
-    @JvmSynthetic
-    internal fun androidView(): View? = state.av
-
-    /** Inject the Android state right after construction. Synthetic, so it isn't a Velo method. */
-    @JvmSynthetic
-    internal fun bind(kind: Kind, view: View, content: ViewGroup?, binding: UiBinding): VeloView = apply {
-        state.kind = kind
-        state.av = view
-        state.content = content
-        state.binding = binding
-        // Widgets meant to span their row default to filling width (overridable per call).
-        if (kind == Kind.FIELD || kind == Kind.SLIDER || kind == Kind.PROGRESS ||
-            kind == Kind.LIST || kind == Kind.APPBAR || kind == Kind.SCROLL || kind == Kind.TABS ||
-            kind == Kind.DIVIDER || kind == Kind.LAZY_ROW || kind == Kind.NAV_BAR
-        ) {
-            state.fillW = true
-        }
-    }
-
-    companion object {
-        /** Build a wrapper around an already-created Android [view]; [content] is where children go. */
-        @JvmSynthetic
-        internal fun make(kind: Kind, view: View, content: ViewGroup?, binding: UiBinding): VeloView =
-            VeloView().bind(kind, view, content, binding)
-    }
+    fun clear(): Canvas = apply { state.clearCanvas() }
+    fun aspectRatio(w: Int, h: Int): Canvas = apply { state.aspectRatio(w, h) }
+    fun onTap(cb: VeloFunction): Canvas = apply { state.onTap(cb) }
+    fun onPointerDown(cb: VeloFunction): Canvas = apply { state.onPointerDown(cb) }
+    fun onPointerMove(cb: VeloFunction): Canvas = apply { state.onPointerMove(cb) }
+    fun onPointerUp(cb: VeloFunction): Canvas = apply { state.onPointerUp(cb) }
 }
+
+class Divider : Widget() {
+    fun thickness(dp: Int): Divider = apply { state.thickness(dp) }
+}
+
+class Spacer : Widget()
+
+/** Register the `Ui` factory, `Shape`, and every widget type (abstract bases are not registered). */
+fun NativeRegistry.registerUiNatives(): NativeRegistry = this
+    .register("Ui", VeloUi::class)
+    .register("Shape", Shape::class)
+    .register(Text::class).register(Button::class).register(Field::class)
+    .register(Chip::class).register(Toggle::class).register(ListItem::class)
+    .register(AppBar::class).register(Icon::class).register(Container::class)
+    .register(Surface::class).register(Drawer::class).register(Slider::class)
+    .register(Progress::class).register(ListView::class).register(Tabs::class)
+    .register(Nav::class).register(Canvas::class).register(Divider::class)
+    .register(Spacer::class)
+
+/** The Velo names every UI widget type registers under — for contract tests. */
+val uiWidgetNames: List<String> = listOf(
+    "Text", "Button", "Field", "Chip", "Toggle", "ListItem", "AppBar", "Icon",
+    "Container", "Surface", "Drawer", "Slider", "Progress", "ListView", "Tabs",
+    "Nav", "Canvas", "Divider", "Spacer",
+)

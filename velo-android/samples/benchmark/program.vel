@@ -147,11 +147,11 @@ func benchDict() void {
 func benchUi() void {
     int t0 = time.millis();
 
-    View screen = ui.column().fillWidth();
-    View bar = ui.appBar("Benchmark");
+    Container screen = ui.column().fillWidth();
+    AppBar bar = ui.appBar("Benchmark");
     screen.add(bar);
 
-    View c = ui.canvas().fillWidth().weight(1);
+    Canvas c = ui.canvas().fillWidth().weight(1);
     c.background(colors.surface());
     screen.add(c);
 

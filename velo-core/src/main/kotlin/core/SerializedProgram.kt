@@ -11,4 +11,5 @@ data class SerializedProgram(
     val natives: List<NativeRef>,
     val frames: List<SerializedFrame>,
     val dataClasses: List<DataClassInfo> = emptyList(),
+    val classMethods: List<ClassMethodsInfo> = emptyList(),
 )

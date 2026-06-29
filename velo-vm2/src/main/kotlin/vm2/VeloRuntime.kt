@@ -72,7 +72,10 @@ class VeloRuntime(private val natives: NativeRegistry = NativeRegistry()) {
     private fun interpreter(program: SerializedProgram, mainDispatcher: Dispatcher?): Interpreter {
         val frames = program.frames.associate { it.num to FrameSpec(it) }
         val dataClasses = program.dataClasses.associateBy { it.frameNum }
+        val methodTables = program.classMethods.associate { info ->
+            info.frameNum to info.methods.associate { it.name to it.index }
+        }
         val bound = NativeLinker.link(program.natives, natives)
-        return Interpreter(frames, dataClasses, bound, NativeBridge(), factory, natives, mainDispatcher, heap)
+        return Interpreter(frames, dataClasses, methodTables, bound, NativeBridge(), factory, natives, mainDispatcher, heap)
     }
 }

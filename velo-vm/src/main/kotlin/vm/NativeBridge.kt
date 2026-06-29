@@ -43,6 +43,29 @@ object NativeBridge {
         else -> adapt(record.getAs(vmType, ctx), target)
     }
 
+    /**
+     * Dynamic interface dispatch onto a native handle: resolve [method] by name
+     * on the host class of [receiver] and invoke it. The host class is only known
+     * at run time (any class satisfying the interface), so the method is looked up
+     * through the registry rather than a pre-linked pool entry. Returns the
+     * converted result, or `null` for `void`.
+     */
+    fun callByName(receiver: Record, method: String, args: List<Record>, ctx: VMContext): Record? {
+        val handle = (receiver as? RefRecord)?.takeIf { it.kind == RefKind.NATIVE }?.get<Any>(ctx)
+            ?: throw IllegalArgumentException("Interface dispatch target for '$method' is not a native handle")
+        val info = ctx.nativeRegistry.getByJvmClass(handle.javaClass)
+            ?: throw IllegalArgumentException("No registered native class for ${handle.javaClass.name}")
+        val descriptor = ctx.nativeRegistry.descriptor(info.veloName)
+            ?: throw IllegalArgumentException("Native class '${info.veloName}' has no descriptor")
+        val m = descriptor.methods[method]
+            ?: throw IllegalArgumentException("Native class '${info.veloName}' has no method '$method'")
+        val jvmArgs = ArrayList<Any?>(args.size + 1)
+        jvmArgs.add(handle)
+        args.forEachIndexed { i, a -> jvmArgs.add(toJvm(a, m.params[i], m.jvmParams[i], ctx)) }
+        val result = m.handle.invokeWithArguments(jvmArgs)
+        return if (m.returns == VmType.Void) null else toVelo(result, ctx)
+    }
+
     /** Build the host counterpart of a Velo `data class` instance, field by field. */
     private fun dataToJvm(record: RefRecord, veloName: String, ctx: VMContext): Any {
         val frame: Frame = record.get(ctx)

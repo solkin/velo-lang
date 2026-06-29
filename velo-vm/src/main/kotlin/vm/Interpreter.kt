@@ -275,6 +275,52 @@ object Interpreter {
             pc + 1
         }
 
+        // Dynamic interface dispatch: this op runs inside the one-op wrapper an
+        // interface call builds, entered with the receiver instance's scope as its
+        // parent (classParent dispatch). That parent scope carries the receiver's
+        // class frame number, whose method table resolves the method by name; the
+        // resolved function value is loaded from the instance scope, exactly as a
+        // concrete call would Op.Load it at a statically known slot.
+        is Op.MethodLoad -> {
+            val frame = ctx.currentFrame()
+            val instanceVars = frame.vars.parent
+                ?: throw IllegalStateException("Interface dispatch wrapper has no receiver scope")
+            val table = ctx.methodTables[instanceVars.frameNum]
+                ?: throw IllegalStateException("Class frame #${instanceVars.frameNum} has no method table")
+            val index = table[op.name]
+                ?: throw IllegalStateException("Class frame #${instanceVars.frameNum} has no method '${op.name}'")
+            frame.subs.push(instanceVars.get(index))
+            pc + 1
+        }
+
+        // Outer half of interface dispatch (replaces a concrete call's
+        // Op.Call(classParent = true)). Stack: wrapper on top, then args, then the
+        // receiver. A Velo instance enters the wrapper exactly like a classParent
+        // call; a native handle discards the wrapper and dispatches by name.
+        is Op.InterfaceCall -> {
+            val thisFrame = ctx.currentFrame()
+            val callable = thisFrame.subs.pop()                       // dispatch wrapper
+            val raw = Array(op.args) { thisFrame.subs.pop() }         // raw[0] = top = first parameter
+            val receiver = thisFrame.subs.pop()
+            if (receiver is RefRecord && receiver.kind == RefKind.CLASS) {
+                val frameNum = when (callable) {
+                    is FuncRecord -> callable.frameNum
+                    is CallbackRecord -> callable.func.frameNum
+                    else -> callable.getInt()
+                }
+                val newFrame = ctx.loadFrame(frameNum, parentVars = receiver.getFrame().vars)
+                    ?: throw Exception("Frame $frameNum not found")
+                // Match Op.Call's positive-arg path: push in reversed pop order.
+                raw.reversedArray().forEach { newFrame.subs.push(it) }
+                ctx.pushFrame(newFrame)
+                pc + 1
+            } else {
+                val result = NativeBridge.callByName(receiver, op.method, raw.toList(), ctx)
+                result?.let { thisFrame.subs.push(it) }
+                pc + 1
+            }
+        }
+
         is Op.Halt -> throw HaltException()
 
         // ---- Bitwise ----
@@ -530,6 +576,7 @@ object Interpreter {
                 sharedNativeRegistry = ctx.nativeRegistry,
                 sharedNatives = ctx.natives,
                 sharedDataClasses = ctx.dataClasses,
+                sharedMethodTables = ctx.methodTables,
                 classFrameNum = op.classFrameNum,
                 className = op.className,
                 args = cloned,

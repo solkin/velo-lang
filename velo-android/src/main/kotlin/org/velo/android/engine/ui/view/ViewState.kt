@@ -13,16 +13,15 @@ import org.velo.android.engine.ui.Kind
 import org.velo.android.engine.ui.UiBinding
 
 /**
- * The mutable Android-side state behind a [VeloView] handle: the wrapped Android view,
+ * The mutable Android-side state behind a [Widget] handle: the wrapped Android view,
  * its container slot for children, the active [UiBinding], retained callbacks and the
  * layout intents composed into LayoutParams when the view is `add`ed to a parent.
  *
- * The public [VeloView] facade is a thin dispatch surface over this — every Velo-callable
+ * The typed [Widget] facades are a thin dispatch surface over this — every Velo-callable
  * method there is a one-liner delegating here. The per-concern operations themselves live
  * in extension functions (ViewLayout / ViewText / ViewControls / ViewCollections /
- * ViewAppBar) so the broad widget API stays readable while remaining a single Velo native
- * type (Velo matches native handles by exact class, with no inheritance — so one container
- * can hold any widget only if every widget shares one type).
+ * ViewAppBar) so the broad widget API stays readable; the [Kind] tag, not the facade type,
+ * selects which Android branch each operation runs.
  */
 internal class ViewState {
 

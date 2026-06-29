@@ -28,6 +28,8 @@ private const val OP_IF = 0x12
 private const val OP_INTCHAR = 0x14
 private const val OP_INTSTR = 0x15
 private const val OP_FRAME = 0x18
+private const val OP_METHODLOAD = 0x19
+private const val OP_INTERFACECALL = 0x1c
 private const val OP_SUB = 0x1a
 private const val OP_MORE = 0x1b
 private const val OP_MOVE = 0x1d
@@ -80,6 +82,7 @@ private const val OP_FUTUREAWAIT = 0x62
 class Interpreter(
     private val frames: Map<Int, FrameSpec>,
     private val dataClasses: Map<Int, DataClassInfo>,
+    private val methodTables: Map<Int, Map<String, Int>>,
     private val bound: Array<BoundNative>,
     private val bridge: NativeBridge,
     private val factory: DispatcherFactory?,
@@ -297,6 +300,7 @@ class Interpreter(
                     // ---- frames / instances (capture the current frame as a scope) ----
                     OP_FRAME -> { val num = (ops[i] as Op.Frame).num; s.push(FuncValue(frames[num] ?: error("No frame #$num"), act)) }
                     OP_INSTANCE -> { s.push(heap.track(Instance(act, spec.num))); afterAlloc() }
+                    OP_METHODLOAD -> s.push(methodLoad(act, (ops[i] as Op.MethodLoad).name))
 
                     // ---- pointers ----
                     OP_PTRNEW -> s.push(BoxPtr(s.pop()))
@@ -310,6 +314,7 @@ class Interpreter(
 
                     // ---- control / calls / actors (may suspend or unwind the fiber) ----
                     OP_CALL -> if (callOp(fiber, op = ops[i] as Op.Call)) return
+                    OP_INTERFACECALL -> if (interfaceCall(fiber, ops[i] as Op.InterfaceCall)) return
                     OP_RET -> if (returnFrom(fiber, act)) return
                     OP_HALT -> { cs.clear(); fiber.onSettled(NO_VALUE, null); return }
                     OP_NATIVECALL -> nativeCall(ops[i] as Op.NativeCall, fiber)
@@ -387,6 +392,54 @@ class Interpreter(
             }
         }
         return true
+    }
+
+    /**
+     * Dynamic method resolution for interface dispatch. The dispatch wrapper
+     * frame [act] runs with the receiver instance's scope as its lexical parent
+     * (set by the enclosing `classParent` call), so that parent identifies the
+     * concrete class ([FrameSpec.num]). Its method table maps the requested
+     * [name] to a slot, which is loaded from the instance scope — the same
+     * function value a concrete call would `Op.Load` at a statically known slot.
+     */
+    private fun methodLoad(act: Frame, name: String): Any? {
+        val instanceScope = act.parent
+            ?: error("interface dispatch wrapper has no receiver scope")
+        val table = methodTables[instanceScope.spec.num]
+            ?: error("class frame #${instanceScope.spec.num} has no method table")
+        val index = table[name]
+            ?: error("class frame #${instanceScope.spec.num} has no method '$name'")
+        return instanceScope.load(index)
+    }
+
+    /**
+     * Outer half of interface dispatch. For a Velo class instance this is exactly
+     * a `classParent` call — it enters the dispatch wrapper, whose [Op.MethodLoad]
+     * resolves the method against the receiver's method table. For a native handle
+     * the wrapper is discarded and the method is resolved by name on the host
+     * class and invoked across the boundary.
+     */
+    private fun interfaceCall(fiber: Fiber, op: Op.InterfaceCall): Boolean {
+        val vs = fiber.vs
+        val callable = vs.pop()                 // the dispatch wrapper
+        val n = op.args
+        val opBase = vs.top - n
+        val receiver = vs.a[opBase - 1]
+        if (receiver is Instance) {
+            val fn = callable as FuncValue
+            val callee = Frame(fn.frame, receiver.scope)
+            callee.opBase = opBase
+            callee.retBase = opBase - 1
+            fiber.callStack.addLast(callee)
+            return false
+        }
+        // Native handle: args sit above the receiver, first parameter on top.
+        val args = ArrayList<Any?>(n)
+        repeat(n) { args.add(vs.pop()) }
+        vs.pop()                                // the receiver handle
+        val result = bridge.callByName(receiver!!, op.method, args, registry, fiber.actor, this)
+        if (result !== NO_VALUE) vs.push(result)
+        return false
     }
 
     private fun callOp(fiber: Fiber, op: Op.Call): Boolean {

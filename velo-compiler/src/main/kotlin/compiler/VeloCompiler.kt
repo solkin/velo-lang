@@ -99,6 +99,7 @@ class VeloCompiler(
             shared = shared,
         )
         try {
+            compiler.nodes.TypeRegistry.reset()
             node.compile(ctx)
             return SerializedProgram(
                 natives = shared.nativePool.toList(),
@@ -110,6 +111,7 @@ class VeloCompiler(
                     )
                 },
                 dataClasses = shared.dataClasses.toList(),
+                classMethods = shared.classMethods.toList(),
             )
         } catch (ex: Throwable) {
             println("!! Compilation failed: ${ex.message}")

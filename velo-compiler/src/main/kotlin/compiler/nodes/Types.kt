@@ -56,7 +56,7 @@ object AnyHashProp : Prop {
     }
 }
 
-data class GenericType(val name: String) : Type {
+data class GenericType(val name: String, val bound: InterfaceType? = null) : Type {
     override fun sameAs(type: Type): Boolean = when (type) {
         is GenericType -> name == type.name
         is AnyType -> true
@@ -67,14 +67,28 @@ data class GenericType(val name: String) : Type {
         throw Exception("Generic type '$name' has no default value")
     }
 
-    override fun prop(name: String): Prop? = null
+    // A bounded parameter (`[T: View]`) exposes the methods of its bound, so the
+    // generic body can call them on a `T` value; the call dispatches dynamically
+    // (Op.MethodLoad) exactly as on an interface-typed receiver.
+    override fun prop(name: String): Prop? = bound?.prop(name)
 
-    override fun log() = name
+    override fun log() = if (bound != null) "$name: ${bound.name}" else name
 
     override fun vmType() = VmType.Any
 
     override fun name() = name
 }
+
+/**
+ * Is a value of [source] acceptable where [target] is expected at an argument
+ * or element position? Argument sites in this compiler historically test
+ * `source.sameAs(target)` (a near-symmetric relation for the original types).
+ * Structural interface satisfaction is directional — only `interface.sameAs(class)`
+ * holds — so this helper adds that one case without disturbing the existing
+ * behaviour for every other target type.
+ */
+fun assignableArg(target: Type, source: Type): Boolean =
+    source.sameAs(target) || (target is InterfaceType && target.sameAs(source))
 
 fun inferTypeBindings(
     typeParams: List<String>,

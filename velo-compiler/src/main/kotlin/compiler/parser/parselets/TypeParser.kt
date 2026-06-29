@@ -16,6 +16,7 @@ object TypeParser {
                 val value = token.value as? String
                 value != null && (
                     parser.context.isClassType(value) ||
+                        parser.context.isInterfaceType(value) ||
                         parser.context.isGenericType(value) ||
                         parser.context.isNativeType(value)
                     )
@@ -65,6 +66,7 @@ object TypeParser {
             }
             VOID -> VoidType
             ANY -> AnyType
+            SELF -> SelfType
             ACTOR -> {
                 // Syntax: actor[ClassName]. Parser-level we accept any single
                 // class type wrapper; the actor-class invariant is enforced
@@ -86,6 +88,7 @@ object TypeParser {
                 val className = value as? String
                     ?: throw IllegalArgumentException("Unknown type value: $value")
                 parser.context.getGenericType(className)?.let { return it }
+                parser.context.getInterfaceType(className)?.let { return it }
                 parser.context.getNativeType(className)?.let { return it }
                 val classType = parser.context.getClassType(className)
                     ?: throw IllegalArgumentException("Unknown type: $className")

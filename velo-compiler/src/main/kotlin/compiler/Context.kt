@@ -25,6 +25,9 @@ class CompilerShared(
     /** Marshalling metadata for every `data class` the program declares. */
     val dataClasses = mutableListOf<core.DataClassInfo>()
 
+    /** Per-class method tables (name -> instance slot) for interface dispatch. */
+    val classMethods = mutableListOf<core.ClassMethodsInfo>()
+
     fun intern(ref: NativeRef): Int {
         val existing = nativePool.indexOf(ref)
         if (existing >= 0) return existing

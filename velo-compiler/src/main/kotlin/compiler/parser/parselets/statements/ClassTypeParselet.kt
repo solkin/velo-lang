@@ -10,6 +10,9 @@ import compiler.parser.Token
 class ClassTypeParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val className = token.value as String
+        parser.context.getInterfaceType(className)?.let { interfaceType ->
+            return TypeParser.parseDefBody(parser, interfaceType)
+        }
         parser.context.getNativeType(className)?.let { nativeType ->
             return TypeParser.parseDefBody(parser, nativeType)
         }

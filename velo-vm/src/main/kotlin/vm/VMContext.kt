@@ -31,6 +31,8 @@ class VMContext(
     val natives: Array<BoundNative> = emptyArray(),
     /** Marshalling metadata for `data class` values, keyed by class frame number. */
     val dataClasses: Map<Int, DataClassInfo> = emptyMap(),
+    /** Per-class method tables (name -> instance slot), keyed by class frame number, for interface dispatch. */
+    val methodTables: Map<Int, Map<String, Int>> = emptyMap(),
 ) {
     /**
      * Get current frame from stack

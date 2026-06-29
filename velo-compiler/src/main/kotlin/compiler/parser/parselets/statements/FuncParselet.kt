@@ -18,9 +18,10 @@ class FuncParselet : PrefixParselet {
         } else {
             null
         }
-        val typeParams = parseTypeParams(parser)
+        val typeParamList = parseTypeParams(parser)
+        val typeParams = typeParamList.map { it.name }
         val savedGenerics = parser.context.saveGenericTypes()
-        typeParams.forEach { parser.context.registerGenericType(it) }
+        typeParamList.forEach { parser.context.registerGenericType(it.name, it.bound) }
         val defsNodes = parser.parseDelimited('(', ')', ',') {
             TypeParser.parseDef(parser)
         }

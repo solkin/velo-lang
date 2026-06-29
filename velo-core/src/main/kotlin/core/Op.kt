@@ -268,6 +268,39 @@ sealed interface Op {
     }
 
     /**
+     * Resolve the method [name] on the receiver instance whose scope is this
+     * frame's lexical parent, and push its function value — the dynamic half of
+     * **interface dispatch**. A concrete `instance.method(...)` knows the
+     * method's slot statically (`Op.Load`); an interface-typed receiver does
+     * not, because the concrete class is only known at run time. This op is
+     * emitted inside the one-op dispatch wrapper an interface call builds, which
+     * runs with the receiver as its parent scope (the same `classParent` setup a
+     * concrete call uses), so the lookup consults the receiver class's method
+     * table (built at load time, keyed by class frame). Stack: `[] -> [func]`
+     */
+    data class MethodLoad(val name: String) : Op {
+        override val opcode get() = 0x19
+    }
+
+    /**
+     * Invoke method [method] on an interface-typed receiver, dispatching on the
+     * receiver's runtime kind — the outer half of interface dispatch, emitted in
+     * place of a concrete call's `Op.Call(classParent = true)`. Stack matches that
+     * call: the dispatch wrapper (a function value) on top, then [args] arguments,
+     * then the receiver.
+     *
+     * If the receiver is a Velo class instance, this behaves exactly like a
+     * `classParent` call — it enters the wrapper, whose [MethodLoad] resolves the
+     * slot from the receiver's method table. If the receiver is a **native handle**
+     * (a host object satisfying the interface structurally), the wrapper is
+     * discarded and the method is resolved by name on the host class and invoked
+     * across the native boundary. [args] is the argument count.
+     */
+    data class InterfaceCall(val method: String, val args: Int) : Op {
+        override val opcode get() = 0x1c
+    }
+
+    /**
      * Invoke a callable. Stack (top to bottom): the callable; [args]
      * arguments; iff [classParent] — the receiver instance whose variables
      * become the new frame's parent scope (`instance.method(...)` dispatch).

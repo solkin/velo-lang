@@ -20,7 +20,6 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.divider.MaterialDivider
@@ -32,7 +31,6 @@ import com.google.android.material.navigationrail.NavigationRailView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.radiobutton.MaterialRadioButton
-import com.google.android.material.slider.Slider
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -53,14 +51,14 @@ import org.velo.android.engine.ui.view.loadIcon
  * thread-local the session installs for the run. Every method here is called on the Velo
  * worker thread and hops onto the Android main thread via the binding.
  *
- * Widgets are created by the factory methods (`column`, `button`, `field`, …), all
- * returning the single [VeloView] handle type so containers can hold any of them.
+ * Widgets are created by the factory methods (`column`, `button`, `field`, …), each
+ * returning its own typed [Widget] subclass; containers accept any widget via `add`.
  * Navigation (`open`/`close`/`title`/`onBack`) maintains a screen back-stack over the
  * terminal; closing the last screen reveals the terminal again.
  */
 class VeloUi {
 
-    private class Screen(val root: VeloView, var onBack: VeloFunction?)
+    private class Screen(val root: Widget, var onBack: VeloFunction?)
 
     // Touched only on the main thread (all mutations run inside binding.onUi).
     private val screens = ArrayList<Screen>()
@@ -76,7 +74,7 @@ class VeloUi {
     // --- widget factories ---
 
     /** A read-only text label. */
-    fun text(s: String): VeloView = build(Kind.TEXT) { ctx ->
+    fun text(s: String): Text = build(Kind.TEXT, ::Text) { ctx ->
         MaterialTextView(ctx).apply {
             text = s
             setTextAppearance(M.style.TextAppearance_Material3_BodyLarge)
@@ -84,24 +82,24 @@ class VeloUi {
     }
 
     /** A filled Material3 button. */
-    fun button(s: String): VeloView = button(s, null)
+    fun button(s: String): Button = button(s, null)
 
     /** A tonal (secondary-container) Material3 button. */
-    fun tonalButton(s: String): VeloView = button(s, M.style.Widget_Material3_Button_TonalButton)
+    fun tonalButton(s: String): Button = button(s, M.style.Widget_Material3_Button_TonalButton)
 
     /** An outlined Material3 button. */
-    fun outlinedButton(s: String): VeloView = button(s, M.style.Widget_Material3_Button_OutlinedButton)
+    fun outlinedButton(s: String): Button = button(s, M.style.Widget_Material3_Button_OutlinedButton)
 
     /** A low-emphasis text-only Material3 button. */
-    fun textButton(s: String): VeloView = button(s, M.style.Widget_Material3_Button_TextButton)
+    fun textButton(s: String): Button = button(s, M.style.Widget_Material3_Button_TextButton)
 
-    private fun button(s: String, styleRes: Int?): VeloView = build(Kind.BUTTON) { ctx ->
+    private fun button(s: String, styleRes: Int?): Button = build(Kind.BUTTON, ::Button) { ctx ->
         val themed = if (styleRes != null) ContextThemeWrapper(ctx, styleRes) else ctx
         MaterialButton(themed).apply { text = s } to null
     }
 
     /** An outlined text input field with a floating [hint]. */
-    fun field(hint: String): VeloView = build(Kind.FIELD) { ctx ->
+    fun field(hint: String): Field = build(Kind.FIELD, ::Field) { ctx ->
         val til = TextInputLayout(ContextThemeWrapper(ctx, M.style.Widget_Material3_TextInputLayout_OutlinedBox))
         til.hint = hint
         til.addView(TextInputEditText(til.context))
@@ -109,18 +107,18 @@ class VeloUi {
     }
 
     /** A Material3 switch with a trailing [label]. */
-    fun toggle(label: String): VeloView = build(Kind.SWITCH) { ctx ->
+    fun toggle(label: String): Toggle = build(Kind.SWITCH, ::Toggle) { ctx ->
         MaterialSwitch(ctx).apply { text = label } to null
     }
 
     /** A Material3 checkbox with a trailing [label]. */
-    fun check(label: String): VeloView = build(Kind.CHECKBOX) { ctx ->
+    fun check(label: String): Toggle = build(Kind.CHECKBOX, ::Toggle) { ctx ->
         MaterialCheckBox(ctx).apply { text = label } to null
     }
 
     /** A Material3 slider over the inclusive range [min]..[max]. */
-    fun slider(min: Int, max: Int): VeloView = build(Kind.SLIDER) { ctx ->
-        Slider(ctx).apply {
+    fun slider(min: Int, max: Int): Slider = build(Kind.SLIDER, ::Slider) { ctx ->
+        com.google.android.material.slider.Slider(ctx).apply {
             valueFrom = min.toFloat()
             valueTo = max.toFloat()
             value = min.toFloat()
@@ -128,7 +126,7 @@ class VeloUi {
     }
 
     /** A Material3 card container; add children to it. */
-    fun card(): VeloView = build(Kind.CARD) { ctx ->
+    fun card(): Surface = build(Kind.CARD, ::Surface) { ctx ->
         val card = MaterialCardView(ctx)
         val inner = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -142,7 +140,7 @@ class VeloUi {
     }
 
     /** A vertical container. */
-    fun column(): VeloView = build(Kind.COLUMN) { ctx ->
+    fun column(): Container = build(Kind.COLUMN, ::Container) { ctx ->
         val ll = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             // Don't clip children to our bounds/padding, so an elevated child (a FAB, an
@@ -154,7 +152,7 @@ class VeloUi {
     }
 
     /** A horizontal container. */
-    fun row(): VeloView = build(Kind.ROW) { ctx ->
+    fun row(): Container = build(Kind.ROW, ::Container) { ctx ->
         val ll = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             clipChildren = false
@@ -164,7 +162,7 @@ class VeloUi {
     }
 
     /** A stacking (frame) container; children overlap. */
-    fun box(): VeloView = build(Kind.BOX) { ctx ->
+    fun box(): Container = build(Kind.BOX, ::Container) { ctx ->
         val fl = FrameLayout(ctx).apply {
             clipChildren = false
             clipToPadding = false
@@ -173,7 +171,7 @@ class VeloUi {
     }
 
     /** A vertically scrolling container. */
-    fun scroll(): VeloView = build(Kind.SCROLL) { ctx ->
+    fun scroll(): Container = build(Kind.SCROLL, ::Container) { ctx ->
         val sv = NestedScrollView(ctx)
         val inner = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -190,17 +188,17 @@ class VeloUi {
     }
 
     /** A linear (horizontal bar) progress indicator. */
-    fun progress(): VeloView = build(Kind.PROGRESS) { ctx ->
+    fun progress(): Progress = build(Kind.PROGRESS, ::Progress) { ctx ->
         LinearProgressIndicator(ctx).apply { isIndeterminate = true } to null
     }
 
     /** A circular (spinning) progress indicator. */
-    fun spinner(): VeloView = build(Kind.SPINNER) { ctx ->
+    fun spinner(): Progress = build(Kind.SPINNER, ::Progress) { ctx ->
         CircularProgressIndicator(ctx).apply { isIndeterminate = true } to null
     }
 
-    /** A recycling list of text rows; fill it with [VeloView.items] and react with [VeloView.onItemClick]. */
-    fun list(): VeloView = build(Kind.LIST) { ctx ->
+    /** A recycling list of text rows; fill it with `items` and react with `onItemClick`. */
+    fun list(): ListView = build(Kind.LIST, ::ListView) { ctx ->
         RecyclerView(ctx).apply {
             layoutManager = LinearLayoutManager(ctx)
             adapter = VeloListAdapter()
@@ -208,12 +206,12 @@ class VeloUi {
     }
 
     /** A free-form drawing surface; draw with the canvas `draw*` methods and react with `onTap`/`onPointer*`. */
-    fun canvas(): VeloView = build(Kind.CANVAS) { ctx ->
+    fun canvas(): Canvas = build(Kind.CANVAS, ::Canvas) { ctx ->
         VeloCanvasView(ctx) to null
     }
 
-    /** A Material3 tab row; add tabs with [VeloView.tab] and react with [VeloView.onSelect]. */
-    fun tabs(): VeloView = build(Kind.TABS) { ctx ->
+    /** A Material3 tab row; add tabs with `tab` and react with `onSelect`. */
+    fun tabs(): Tabs = build(Kind.TABS, ::Tabs) { ctx ->
         TabLayout(ctx).apply {
             // Spread tabs evenly across the full width, Material-style.
             tabMode = TabLayout.MODE_FIXED
@@ -223,22 +221,22 @@ class VeloUi {
 
     /**
      * A Material3 top app bar with [title]. Nothing is added to a screen automatically —
-     * place this at the top of your layout yourself, native-style. Use [VeloView.text] to
-     * change the title and [VeloView.onNav] for the navigation (back) button.
+     * place this at the top of your layout yourself, native-style. Use `text` to
+     * change the title and `onNav` for the navigation (back) button.
      */
-    fun appBar(title: String): VeloView {
+    fun appBar(title: String): AppBar {
         val b = binding()
         return b.onUi {
             val bar = LayoutInflater.from(b.host.context).inflate(R.layout.velo_app_bar, null)
             bar.findViewById<MaterialToolbar>(R.id.velo_toolbar).title = title
-            VeloView.make(Kind.APPBAR, bar, null, b)
+            Widget.make(::AppBar, Kind.APPBAR, bar, null, b)
         }
     }
 
     // --- icons & small widgets ---
 
-    /** A standalone Material icon from the built-in set; recolour with [VeloView.tint]. */
-    fun icon(name: String): VeloView = build(Kind.ICON) { ctx ->
+    /** A standalone Material icon from the built-in set; recolour with `tint`. */
+    fun icon(name: String): Icon = build(Kind.ICON, ::Icon) { ctx ->
         AppCompatImageView(ctx).apply {
             setImageDrawable(loadIcon(ctx, name))
             imageTintList = ColorStateList.valueOf(MaterialColors.getColor(this, M.attr.colorOnSurfaceVariant, 0))
@@ -246,7 +244,7 @@ class VeloUi {
     }
 
     /** A clickable icon-only button (Material3 icon-button style). */
-    fun iconButton(name: String): VeloView = build(Kind.ICON_BUTTON) { ctx ->
+    fun iconButton(name: String): Button = build(Kind.ICON_BUTTON, ::Button) { ctx ->
         // The icon-button look (square, centred glyph, no text padding) comes from the style
         // wired as the default style attribute — applying it via ContextThemeWrapper alone
         // leaves a text-button shell with the icon stuck to the start.
@@ -256,12 +254,12 @@ class VeloUi {
     }
 
     /** A circular floating action button carrying an icon. */
-    fun fab(name: String): VeloView = build(Kind.FAB) { ctx ->
+    fun fab(name: String): Button = build(Kind.FAB, ::Button) { ctx ->
         FloatingActionButton(ctx).apply { setImageDrawable(loadIcon(ctx, name)) } to null
     }
 
     /** A smaller circular floating action button for secondary stacked actions. */
-    fun smallFab(name: String): VeloView = build(Kind.FAB) { ctx ->
+    fun smallFab(name: String): Button = build(Kind.FAB, ::Button) { ctx ->
         FloatingActionButton(ctx).apply {
             setSize(FloatingActionButton.SIZE_MINI)
             setImageDrawable(loadIcon(ctx, name))
@@ -269,35 +267,35 @@ class VeloUi {
     }
 
     /** An extended floating action button: a pill with [label] and an icon. */
-    fun extendedFab(label: String, name: String): VeloView = build(Kind.FAB) { ctx ->
+    fun extendedFab(label: String, name: String): Button = build(Kind.FAB, ::Button) { ctx ->
         ExtendedFloatingActionButton(ctx).apply {
             text = label
             icon = loadIcon(ctx, name)
         } to null
     }
 
-    /** A Material3 chip with [label]; make it selectable with [VeloView.checkable]. */
-    fun chip(label: String): VeloView = build(Kind.CHIP) { ctx ->
-        Chip(ctx).apply { text = label } to null
+    /** A Material3 chip with [label]; make it selectable with `checkable`. */
+    fun chip(label: String): Chip = build(Kind.CHIP, ::Chip) { ctx ->
+        com.google.android.material.chip.Chip(ctx).apply { text = label } to null
     }
 
     /** A horizontal divider rule. */
-    fun divider(): VeloView = build(Kind.DIVIDER) { ctx ->
+    fun divider(): Divider = build(Kind.DIVIDER, ::Divider) { ctx ->
         MaterialDivider(ctx) to null
     }
 
     /** Empty space — give it a fixed `width`/`height` or a `weight` to push siblings apart. */
-    fun spacer(): VeloView = build(Kind.SPACER) { ctx ->
+    fun spacer(): Spacer = build(Kind.SPACER, ::Spacer) { ctx ->
         View(ctx) to null
     }
 
     /** A radio button with [label]; place several in a [radioGroup] for single-choice selection. */
-    fun radio(label: String): VeloView = build(Kind.RADIO) { ctx ->
+    fun radio(label: String): Toggle = build(Kind.RADIO, ::Toggle) { ctx ->
         MaterialRadioButton(ctx).apply { text = label } to null
     }
 
-    /** A single-choice container for radio buttons; react with [VeloView.onSelect]. */
-    fun radioGroup(): VeloView = build(Kind.RADIO_GROUP) { ctx ->
+    /** A single-choice container for radio buttons; react with `onSelect`. */
+    fun radioGroup(): Container = build(Kind.RADIO_GROUP, ::Container) { ctx ->
         val rg = RadioGroup(ctx)
         rg to rg
     }
@@ -305,7 +303,7 @@ class VeloUi {
     // --- containers ---
 
     /** A flat themed surface (no corner radius); style with `background`/`elevation`/`border`. */
-    fun surface(): VeloView = build(Kind.SURFACE) { ctx ->
+    fun surface(): Surface = build(Kind.SURFACE, ::Surface) { ctx ->
         val card = MaterialCardView(ctx).apply {
             radius = 0f
             cardElevation = 0f
@@ -320,27 +318,27 @@ class VeloUi {
     }
 
     /** A horizontal container whose children wrap onto new lines. */
-    fun flowRow(): VeloView = build(Kind.FLOW_ROW) { ctx ->
+    fun flowRow(): Container = build(Kind.FLOW_ROW, ::Container) { ctx ->
         val f = FlowLayout(ctx, vertical = false)
         f to f
     }
 
     /** A vertical container whose children wrap into new columns. */
-    fun flowColumn(): VeloView = build(Kind.FLOW_COLUMN) { ctx ->
+    fun flowColumn(): Container = build(Kind.FLOW_COLUMN, ::Container) { ctx ->
         val f = FlowLayout(ctx, vertical = true)
         f to f
     }
 
-    /** A horizontally recycling strip of text rows; fill with [VeloView.items], react with [VeloView.onItemClick]. */
-    fun lazyRow(): VeloView = build(Kind.LAZY_ROW) { ctx ->
+    /** A horizontally recycling strip of text rows; fill with `items`, react with `onItemClick`. */
+    fun lazyRow(): ListView = build(Kind.LAZY_ROW, ::ListView) { ctx ->
         RecyclerView(ctx).apply {
             layoutManager = LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
             adapter = VeloListAdapter()
         } to null
     }
 
-    /** A Material3 list item: headline ([VeloView.text]) plus optional supporting/leading/trailing. */
-    fun listItem(headline: String): VeloView = build(Kind.LIST_ITEM) { ctx ->
+    /** A Material3 list item: headline (`text`) plus optional supporting/leading/trailing. */
+    fun listItem(headline: String): ListItem = build(Kind.LIST_ITEM, ::ListItem) { ctx ->
         val v = LayoutInflater.from(ctx).inflate(R.layout.velo_list_item, null)
         v.findViewById<MaterialTextView>(R.id.velo_li_headline).text = headline
         v to null
@@ -348,31 +346,31 @@ class VeloUi {
 
     // --- navigation components ---
 
-    /** A bottom navigation bar; add destinations with [VeloView.item], react with [VeloView.onSelect]. */
-    fun navBar(): VeloView = build(Kind.NAV_BAR) { ctx ->
+    /** A bottom navigation bar; add destinations with `item`, react with `onSelect`. */
+    fun navBar(): Nav = build(Kind.NAV_BAR, ::Nav) { ctx ->
         BottomNavigationView(ctx) to null
     }
 
-    /** A vertical side navigation rail; add destinations with [VeloView.item], react with [VeloView.onSelect]. */
-    fun navRail(): VeloView = build(Kind.NAV_RAIL) { ctx ->
+    /** A vertical side navigation rail; add destinations with `item`, react with `onSelect`. */
+    fun navRail(): Nav = build(Kind.NAV_RAIL, ::Nav) { ctx ->
         NavigationRailView(ctx) to null
     }
 
     /**
      * A modal navigation drawer. `add` the main content, set the slide-in panel with
-     * [VeloView.drawerContent], and toggle it with [VeloView.openDrawer].
+     * `drawerContent`, and toggle it with `openDrawer`.
      */
-    fun drawer(): VeloView = build(Kind.DRAWER) { ctx ->
+    fun drawer(): Drawer = build(Kind.DRAWER, ::Drawer) { ctx ->
         val dl = DrawerLayout(ctx)
         dl to dl
     }
 
     /** Show a dropdown [menu] of [items] anchored to [anchor]; fires [onSelect] with the chosen index. */
-    fun menu(anchor: VeloView, items: List<String>, onSelect: VeloFunction) {
+    fun menu(anchor: Any, items: List<String>, onSelect: VeloFunction) {
         val b = binding()
         onSelect.retain()
         b.onUi {
-            val view = anchor.androidView() ?: return@onUi
+            val view = (anchor as Widget).androidView() ?: return@onUi
             // Anchor to the view, but theme the popup from the host (a widget's context can be a
             // style-only ContextThemeWrapper, which renders the menu as a blank, mis-placed panel).
             val popup = PopupMenu(b.host.context, view)
@@ -386,14 +384,14 @@ class VeloUi {
     // --- navigation (screen stack) ---
 
     /** Push [root] as a new full-screen screen over the terminal and return it. */
-    fun open(root: VeloView): VeloView {
+    fun open(root: Any): Container {
         val b = binding()
         b.onUi {
-            screens.add(Screen(root, null))
-            b.host.pushScreen(root.androidView()!!)
+            screens.add(Screen(root as Widget, null))
+            b.host.pushScreen((root as Widget).androidView()!!)
             refreshBack(b)
         }
-        return root
+        return root as Container
     }
 
     /** Pop the current screen; the terminal reappears once the last one closes. */
@@ -471,10 +469,10 @@ class VeloUi {
     }
 
     /** Present [content] in a modal bottom sheet; its callbacks live until it is dismissed. */
-    fun sheet(content: VeloView) {
+    fun sheet(content: Any) {
         val b = binding()
         b.onUi {
-            b.host.showBottomSheet(content.androidView()!!) { content.releaseCallbacks() }
+            b.host.showBottomSheet((content as Widget).androidView()!!) { content.releaseCallbacks() }
         }
     }
 
@@ -499,11 +497,15 @@ class VeloUi {
         }
     }
 
-    private fun build(kind: Kind, factory: (Context) -> Pair<View, ViewGroup?>): VeloView {
+    private inline fun <T : Widget> build(
+        kind: Kind,
+        noinline create: () -> T,
+        crossinline factory: (Context) -> Pair<View, ViewGroup?>,
+    ): T {
         val b = binding()
         return b.onUi {
             val (view, content) = factory(b.host.context)
-            VeloView.make(kind, view, content, b)
+            Widget.make(create, kind, view, content, b)
         }
     }
 }

@@ -164,31 +164,31 @@ actor[Ticker] ticker = new Ticker();
 # The board is the weighted middle of the screen: it fills the gap between the app bar and the
 # D-pad and reports its measured size; onBoardResized then sizes the tiles to the largest
 # maze+HUD that fits and centres it (letterboxed) on the canvas.
-View board = ui.canvas().weight(1).fillWidth().background(BLACK);
+Canvas board = ui.canvas().weight(1).fillWidth().background(BLACK);
 
 # A two-row D-pad of plain weighted buttons (no spacers — an empty weighted view has no minimum
 # height and would balloon a wrap-height row). Up spans the top; left/down/right share the next row.
-View up = ui.tonalButton("▲").fillWidth();
-View left = ui.tonalButton("◀").weight(1);
-View down = ui.tonalButton("▼").weight(1);
-View right = ui.tonalButton("▶").weight(1);
-View dpRow2 = ui.row().fillWidth().gap(8);
+Button up = ui.tonalButton("▲").fillWidth();
+Button left = ui.tonalButton("◀").weight(1);
+Button down = ui.tonalButton("▼").weight(1);
+Button right = ui.tonalButton("▶").weight(1);
+Container dpRow2 = ui.row().fillWidth().gap(8);
 dpRow2.add(left);
 dpRow2.add(down);
 dpRow2.add(right);
 
-View pad = ui.column().fillWidth().gap(8).padding(12);
+Container pad = ui.column().fillWidth().gap(8).padding(12);
 pad.add(up);
 pad.add(dpRow2);
 
 # A fixed full-height column: app bar on top, the board fills the weighted middle (centered),
 # and the D-pad is pinned at the bottom.
-View page = ui.column().fillWidth().fillHeight();
-View bar = ui.appBar("Pac-Man");
+Container page = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Pac-Man");
 page.add(bar);
 page.add(board);
 page.add(pad);
-View root = page;
+Container root = page;
 
 # ---- maze helpers -------------------------------------------------------------------------
 

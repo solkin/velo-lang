@@ -38,7 +38,10 @@ data class FuncNode(
         }.reversed()
         argTypes += args.map { it.type }
         val retType = body.compile(funcOps)
-        if (!retType.sameAs(type)) {
+        // A `Self` return means "this class": the body yields a value of the
+        // enclosing class type, which the method's own context cannot name here,
+        // so the concrete check is deferred to the call site (Self resolution).
+        if (type !is SelfType && !retType.sameAs(type)) {
             throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
         }
         funcOps.add(Op.Ret)

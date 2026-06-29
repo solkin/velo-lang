@@ -765,31 +765,31 @@ func hasScheme(str s) bool {
 #  UI STATE — every widget that an event reads or mutates lives as a global
 # =====================================================================================
 
-View C = ui.canvas();
-View STATUS = ui.text("");
+Canvas C = ui.canvas();
+Text STATUS = ui.text("");
 
-View TXT     = ui.field("Text or note");
-View URLF    = ui.field("Website address");
-View WSSID   = ui.field("Network name (SSID)");
-View WPASS   = ui.field("Password");
-View WHIDDEN = ui.toggle("Hidden network");
-View EMAIL   = ui.field("Email address");
-View ESUBJ   = ui.field("Subject");
-View EBODY   = ui.field("Message");
-View PHONE   = ui.field("Phone number");
-View SNUM    = ui.field("Phone number");
-View SBODY   = ui.field("Message");
-View GLAT    = ui.field("Latitude");
-View GLNG    = ui.field("Longitude");
-View VCNAME  = ui.field("Full name");
-View VCPHONE = ui.field("Phone");
-View VCEMAIL = ui.field("Email");
-View VCORG   = ui.field("Organization");
+Field TXT = ui.field("Text or note");
+Field URLF = ui.field("Website address");
+Field WSSID = ui.field("Network name (SSID)");
+Field WPASS = ui.field("Password");
+Toggle WHIDDEN = ui.toggle("Hidden network");
+Field EMAIL = ui.field("Email address");
+Field ESUBJ = ui.field("Subject");
+Field EBODY = ui.field("Message");
+Field PHONE = ui.field("Phone number");
+Field SNUM = ui.field("Phone number");
+Field SBODY = ui.field("Message");
+Field GLAT = ui.field("Latitude");
+Field GLNG = ui.field("Longitude");
+Field VCNAME = ui.field("Full name");
+Field VCPHONE = ui.field("Phone");
+Field VCEMAIL = ui.field("Email");
+Field VCORG = ui.field("Organization");
 
-array[View] MODE_CHIPS = new array[View](8);
-array[View] GROUPS     = new array[View](8);
-array[View] ECC_CHIPS  = new array[View](4);
-array[View] WENC_CHIPS = new array[View](3);
+array[Chip] MODE_CHIPS= new array[Chip](8);
+array[Container] GROUPS     = new array[Container](8);
+array[Chip] ECC_CHIPS  = new array[Chip](4);
+array[Chip] WENC_CHIPS= new array[Chip](3);
 
 int MODE = 1;        # 0 Text 1 URL 2 Wi-Fi 3 Email 4 Phone 5 SMS 6 Geo 7 Contact
 int ECC = 1;         # 0 L 1 M 2 Q 3 H
@@ -954,12 +954,12 @@ func selectWifiEnc(int i) void {
 #  SCAFFOLD — built once: app bar, scrolling form, the type chips, and the QR card
 # =====================================================================================
 
-func heading(str s) View {
+func heading(str s) Text {
     ui.text(s).style(styles.titleSmall()).color(colors.primary());
 };
 
-func panel() View {
-    View p = ui.surface().padding(16).fillWidth();
+func panel() Surface {
+    Surface p = ui.surface().padding(16).fillWidth();
     p.corner(16);
     p.background(colors.surfaceContainer());
     p;
@@ -967,11 +967,11 @@ func panel() View {
 
 # A vertical group of fields for one content type. Built for every type up front; only the
 # active one is visible, so each keeps whatever was typed when you switch away and back.
-func group() View { ui.column().gap(8).fillWidth(); };
+func group() Container { ui.column().gap(8).fillWidth(); };
 
-View root = ui.column().fillWidth();
+Container root = ui.column().fillWidth();
 
-View bar = ui.appBar("QR Generator");
+AppBar bar = ui.appBar("QR Generator");
 bar.onNav(func() void { ui.close(); void });
 bar.action("About", icons.info(), func() void {
     ui.dialog("QR Generator",
@@ -981,18 +981,18 @@ bar.action("About", icons.info(), func() void {
 });
 root.add(bar);
 
-View scroller = ui.scroll().weight(1);
+Container scroller = ui.scroll().weight(1);
 root.add(scroller);
-View pages = ui.column().padding(16).gap(16).fillWidth();
+Container pages = ui.column().padding(16).gap(16).fillWidth();
 scroller.add(pages);
 
 # ---- content-type selector -----------------------------------------------------------------
 pages.add(heading("Content type"));
 array[str] modeNames = new array[str]{"Text", "URL", "Wi-Fi", "Email", "Phone", "SMS", "Geo", "Contact"};
-View modeRow = ui.flowRow().gap(8).fillWidth();
+Container modeRow = ui.flowRow().gap(8).fillWidth();
 int mi = 0;
 while (mi < 8) {
-    View chip = ui.chip(modeNames[mi]).checkable(true);
+    Chip chip = ui.chip(modeNames[mi]).checkable(true);
     MODE_CHIPS[mi] = chip;
     int captured = mi;
     chip.onClick(func() void { selectMode(captured); void });
@@ -1002,36 +1002,36 @@ while (mi < 8) {
 pages.add(modeRow);
 
 # ---- per-type field groups -----------------------------------------------------------------
-View formPanel = panel();
-View formArea = ui.column().fillWidth();
+Surface formPanel = panel();
+Container formArea = ui.column().fillWidth();
 formPanel.add(formArea);
 pages.add(formPanel);
 
 # 0 — Text
-View gText = group();
+Container gText = group();
 gText.add(TXT);
 GROUPS[0] = gText;
 
 # 1 — URL
-View gUrl = group();
+Container gUrl = group();
 URLF.keyboardType("text");
 URLF.leading(icons.search());
 gUrl.add(URLF);
 GROUPS[1] = gUrl;
 
 # 2 — Wi-Fi
-View gWifi = group();
+Container gWifi = group();
 WSSID.leading(icons.settings());
 gWifi.add(WSSID);
 WPASS.keyboardType("text");
 WPASS.leading(icons.lock());
 gWifi.add(WPASS);
 gWifi.add(ui.text("Security").style(styles.bodySmall()).color(colors.onSurfaceVariant()));
-View wencRow = ui.flowRow().gap(8).fillWidth();
+Container wencRow = ui.flowRow().gap(8).fillWidth();
 array[str] wencNames = new array[str]{"WPA/WPA2", "WEP", "None"};
 int wi = 0;
 while (wi < 3) {
-    View wc = ui.chip(wencNames[wi]).checkable(true);
+    Chip wc = ui.chip(wencNames[wi]).checkable(true);
     WENC_CHIPS[wi] = wc;
     int cap = wi;
     wc.onClick(func() void { selectWifiEnc(cap); void });
@@ -1044,7 +1044,7 @@ WHIDDEN.onToggle(func(bool on) void { generate(); void });
 GROUPS[2] = gWifi;
 
 # 3 — Email
-View gEmail = group();
+Container gEmail = group();
 EMAIL.keyboardType("email");
 EMAIL.leading(icons.email());
 gEmail.add(EMAIL);
@@ -1053,14 +1053,14 @@ gEmail.add(EBODY);
 GROUPS[3] = gEmail;
 
 # 4 — Phone
-View gPhone = group();
+Container gPhone = group();
 PHONE.keyboardType("phone");
 PHONE.leading(icons.phone());
 gPhone.add(PHONE);
 GROUPS[4] = gPhone;
 
 # 5 — SMS
-View gSms = group();
+Container gSms = group();
 SNUM.keyboardType("phone");
 SNUM.leading(icons.phone());
 gSms.add(SNUM);
@@ -1068,7 +1068,7 @@ gSms.add(SBODY);
 GROUPS[5] = gSms;
 
 # 6 — Geo
-View gGeo = group();
+Container gGeo = group();
 GLAT.keyboardType("decimal");
 GLAT.leading(icons.location());
 gGeo.add(GLAT);
@@ -1078,7 +1078,7 @@ gGeo.add(GLNG);
 GROUPS[6] = gGeo;
 
 # 7 — Contact (vCard)
-View gCard = group();
+Container gCard = group();
 VCNAME.leading(icons.person());
 gCard.add(VCNAME);
 VCPHONE.keyboardType("phone");
@@ -1096,11 +1096,11 @@ while (gi < 8) { formArea.add(GROUPS[gi]); gi = gi + 1; };
 
 # ---- error-correction selector -------------------------------------------------------------
 pages.add(heading("Error correction"));
-View eccRow = ui.flowRow().gap(8).fillWidth();
+Container eccRow = ui.flowRow().gap(8).fillWidth();
 array[str] eccNames = new array[str]{"Low", "Medium", "Quartile", "High"};
 int ei = 0;
 while (ei < 4) {
-    View ec = ui.chip(eccNames[ei]).checkable(true);
+    Chip ec = ui.chip(eccNames[ei]).checkable(true);
     ECC_CHIPS[ei] = ec;
     int cap = ei;
     ec.onClick(func() void { selectEcc(cap); void });
@@ -1110,18 +1110,18 @@ while (ei < 4) {
 pages.add(eccRow);
 
 # ---- generate action -----------------------------------------------------------------------
-View genBtn = ui.button("Generate").icon(icons.refresh()).fillWidth();
+Button genBtn = ui.button("Generate").icon(icons.refresh()).fillWidth();
 genBtn.onClick(func() void { generate(); void });
 pages.add(genBtn);
 
 # ---- the QR card ---------------------------------------------------------------------------
-View qrCard = ui.surface().padding(20).fillWidth();
+Surface qrCard = ui.surface().padding(20).fillWidth();
 qrCard.corner(24);
 qrCard.background(colors.surfaceContainer());
-View qrCol = ui.column().center().fillWidth().gap(12);
+Container qrCol = ui.column().center().fillWidth().gap(12);
 qrCard.add(qrCol);
 
-View frame = ui.surface().padding(16);
+Surface frame = ui.surface().padding(16);
 frame.corner(16);
 frame.background("#FFFFFF");
 frame.elevation(1);

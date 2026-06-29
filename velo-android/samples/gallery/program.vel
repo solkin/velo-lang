@@ -27,14 +27,14 @@ int meter = 40;
 # ---- small builder helpers ----------------------------------------------------------------
 
 # A section heading with a little colour to separate groups.
-func heading(str s) View {
+func heading(str s) Text {
     ui.text(s).style(styles.titleMedium()).color(colors.primary());
 };
 
 # A rounded, tinted content card. Note: a rounded card clips its content, so never put an
 # elevated child (a FAB) inside one — its shadow would be sliced at the corner.
-func panel() View {
-    View p = ui.surface().padding(16).fillWidth();
+func panel() Surface {
+    Surface p = ui.surface().padding(16).fillWidth();
     p.corner(16);
     p.elevation(1);
     p.background(colors.surfaceContainer());
@@ -42,8 +42,8 @@ func panel() View {
 };
 
 # One headline-number stat tile: an icon over a big number over a caption.
-func statTile(str value, str caption, str iconName) View {
-    View tile = panel().weight(1);
+func statTile(str value, str caption, str iconName) Surface {
+    Surface tile = panel().weight(1);
     tile.add(ui.icon(iconName).tint(colors.primary()));
     tile.add(ui.text(value).style(styles.headlineSmall()));
     tile.add(ui.text(caption).style(styles.bodySmall()).color(colors.onSurfaceVariant()));
@@ -52,17 +52,17 @@ func statTile(str value, str caption, str iconName) View {
 
 # ---- Home -------------------------------------------------------------------------------
 
-func buildHome(View col) void {
+func buildHome(Container col) void {
     # Greeting surface tinted with the primary-container role. The "like" action is a filled
     # button (flat in M3) rather than a FAB, so the rounded surface clipping leaves no shadow
     # to cut — FABs are showcased on the Components tab where they can float freely.
-    View hero = ui.surface().padding(20).fillWidth();
+    Surface hero = ui.surface().padding(20).fillWidth();
     hero.corner(20);
     hero.background(colors.primaryContainer());
     hero.add(ui.text("Good evening 👋").style(styles.headlineSmall()).color(colors.onPrimaryContainer()));
     hero.add(ui.text("Here is what happened while you were away.")
         .style(styles.bodyMedium()).color(colors.onPrimaryContainer()));
-    View heroCta = ui.button("Like ".con(likes.str)).icon(icons.favorite());
+    Button heroCta = ui.button("Like ".con(likes.str)).icon(icons.favorite());
     heroCta.onClick(func() void {
         likes += 1;
         heroCta.text("Like ".con(likes.str));
@@ -73,7 +73,7 @@ func buildHome(View col) void {
     col.add(hero);
 
     # A row of stat tiles.
-    View stats = ui.row().gap(12).fillWidth();
+    Container stats = ui.row().gap(12).fillWidth();
     stats.add(statTile("12", "Projects", icons.list()));
     stats.add(statTile("87%", "Done", icons.checkCircle()));
     stats.add(statTile(likes.str, "Likes", icons.thumbUp()));
@@ -81,12 +81,12 @@ func buildHome(View col) void {
 
     # Filter chips that update a label — single visible selection feel.
     col.add(heading("Filter"));
-    View pickLabel = ui.text("Showing: All").style(styles.bodySmall()).color(colors.onSurfaceVariant());
-    View chips = ui.flowRow().gap(8).fillWidth();
-    View cAll = ui.chip("All").checkable(true).checked(true);
-    View cStar = ui.chip("Starred").checkable(true).icon(icons.star());
-    View cTeam = ui.chip("Team").checkable(true).icon(icons.person());
-    View cDone = ui.chip("Done").checkable(true).icon(icons.done());
+    Text pickLabel = ui.text("Showing: All").style(styles.bodySmall()).color(colors.onSurfaceVariant());
+    Container chips = ui.flowRow().gap(8).fillWidth();
+    Chip cAll = ui.chip("All").checkable(true).checked(true);
+    Chip cStar = ui.chip("Starred").checkable(true).icon(icons.star());
+    Chip cTeam = ui.chip("Team").checkable(true).icon(icons.person());
+    Chip cDone = ui.chip("Done").checkable(true).icon(icons.done());
     cAll.onClick(func() void { pickLabel.text("Showing: All"); void });
     cStar.onClick(func() void { pickLabel.text("Showing: Starred"); void });
     cTeam.onClick(func() void { pickLabel.text("Showing: Team"); void });
@@ -100,7 +100,7 @@ func buildHome(View col) void {
 
     # A horizontal carousel of recent items (recycling lazy row).
     col.add(heading("Recent"));
-    View carousel = ui.lazyRow().height(48);
+    ListView carousel = ui.lazyRow().height(48);
     carousel.items(new array[str]{"  Design  ", "  Specs  ", "  Build  ", "  Review  ", "  Ship  ", "  Notes  "});
     carousel.onItemClick(func(int i) void {
         ui.snackbar("Opened card ".con(i.str));
@@ -111,19 +111,19 @@ func buildHome(View col) void {
     # A live meter: the slider drives a determinate progress bar and its caption. A spinner
     # sits alongside to show indeterminate work.
     col.add(heading("Sync progress"));
-    View meterPanel = panel();
-    View meterRow = ui.row().gap(16).fillWidth();
-    View bar = ui.progress();
+    Surface meterPanel = panel();
+    Container meterRow = ui.row().gap(16).fillWidth();
+    Progress bar = ui.progress();
     bar.indeterminate(false);
     bar.progress(meter);
-    View barWrap = ui.column().weight(1);
-    View meterLabel = ui.text(meter.str.con("% synced")).style(styles.bodyMedium());
+    Container barWrap = ui.column().weight(1);
+    Text meterLabel = ui.text(meter.str.con("% synced")).style(styles.bodyMedium());
     barWrap.add(meterLabel);
     barWrap.add(bar);
     meterRow.add(barWrap);
     meterRow.add(ui.spinner());
     meterPanel.add(meterRow);
-    View meterSlider = ui.slider(0, 100);
+    Slider meterSlider = ui.slider(0, 100);
     meterSlider.slide(meter);
     meterSlider.onSlide(func(int v) void {
         meter = v;
@@ -136,19 +136,19 @@ func buildHome(View col) void {
 
     # A recent-activity list built from Material list items.
     col.add(heading("Activity"));
-    View act1 = ui.listItem("Maria commented on Specs");
+    ListItem act1 = ui.listItem("Maria commented on Specs");
     act1.supporting("2 minutes ago");
     act1.leading(icons.person());
     act1.trailing(icons.forward());
     act1.onClick(func() void { ui.snackbar("Opened comment"); void });
     col.add(act1);
-    View act2 = ui.listItem("Build #482 passed");
+    ListItem act2 = ui.listItem("Build #482 passed");
     act2.supporting("18 minutes ago");
     act2.leading(icons.checkCircle());
     act2.trailing(icons.forward());
     act2.onClick(func() void { ui.snackbar("Opened build"); void });
     col.add(act2);
-    View act3 = ui.listItem("New release drafted");
+    ListItem act3 = ui.listItem("New release drafted");
     act3.supporting("1 hour ago");
     act3.leading(icons.send());
     act3.trailing(icons.forward());
@@ -159,18 +159,18 @@ func buildHome(View col) void {
 
 # ---- Components --------------------------------------------------------------------------
 
-func buildComponents(View col) void {
+func buildComponents(Container col) void {
     # Every Material3 button emphasis, wrapping onto new lines as needed.
     col.add(heading("Buttons"));
-    View btnPanel = panel();
-    View btns = ui.flowRow().gap(8).fillWidth();
-    View bFilled = ui.button("Filled");
+    Surface btnPanel = panel();
+    Container btns = ui.flowRow().gap(8).fillWidth();
+    Button bFilled = ui.button("Filled");
     bFilled.onClick(func() void { ui.snackbar("Filled tapped"); void });
-    View bTonal = ui.tonalButton("Tonal");
+    Button bTonal = ui.tonalButton("Tonal");
     bTonal.onClick(func() void { ui.snackbar("Tonal tapped"); void });
-    View bOut = ui.outlinedButton("Outlined");
+    Button bOut = ui.outlinedButton("Outlined");
     bOut.onClick(func() void { ui.snackbar("Outlined tapped"); void });
-    View bText = ui.textButton("Text");
+    Button bText = ui.textButton("Text");
     bText.onClick(func() void { ui.snackbar("Text tapped"); void });
     btns.add(bFilled);
     btns.add(bTonal);
@@ -182,19 +182,19 @@ func buildComponents(View col) void {
     # Icon buttons (one badged) in a card; the FABs sit on a plain row beneath so their
     # shadows float freely (a rounded card would clip them).
     col.add(heading("Icon buttons"));
-    View iconPanel = panel();
-    View iconRow = ui.row().gap(8);
+    Surface iconPanel = panel();
+    Container iconRow = ui.row().gap(8);
     iconRow.add(ui.iconButton(icons.search()));
     iconRow.add(ui.iconButton(icons.edit()));
     iconRow.add(ui.iconButton(icons.share()));
-    View bell = ui.iconButton(icons.notifications());
+    Button bell = ui.iconButton(icons.notifications());
     bell.badge("3");
     iconRow.add(bell);
     iconPanel.add(iconRow);
     col.add(iconPanel);
 
     col.add(heading("Floating action buttons"));
-    View fabRow = ui.row().gap(16).padding(8);
+    Container fabRow = ui.row().gap(16).padding(8);
     fabRow.add(ui.fab(icons.add()));
     fabRow.add(ui.smallFab(icons.edit()));
     fabRow.add(ui.extendedFab("Compose", icons.send()));
@@ -202,21 +202,21 @@ func buildComponents(View col) void {
 
     # Selection controls: switches, checkboxes and a single-choice radio group.
     col.add(heading("Selection"));
-    View selPanel = panel();
-    View sw = ui.toggle("Wi-Fi");
+    Surface selPanel = panel();
+    Toggle sw = ui.toggle("Wi-Fi");
     sw.checked(true);
     sw.onToggle(func(bool on) void {
         ui.snackbar(if (on) then "Wi-Fi on" else "Wi-Fi off");
         void
     });
     selPanel.add(sw);
-    View ck = ui.check("I agree to the terms");
+    Toggle ck = ui.check("I agree to the terms");
     ck.onToggle(func(bool on) void { void });
     selPanel.add(ck);
     selPanel.add(ui.divider());
     selPanel.add(ui.text("Delivery").style(styles.bodyMedium()));
-    View pick = ui.text("Selected: Standard").style(styles.bodySmall()).color(colors.onSurfaceVariant());
-    View group = ui.radioGroup().fillWidth();
+    Text pick = ui.text("Selected: Standard").style(styles.bodySmall()).color(colors.onSurfaceVariant());
+    Container group = ui.radioGroup().fillWidth();
     group.add(ui.radio("Standard"));
     group.add(ui.radio("Express"));
     group.add(ui.radio("Pickup"));
@@ -231,11 +231,11 @@ func buildComponents(View col) void {
 
     # Tabs whose selection swaps a body label.
     col.add(heading("Tabs"));
-    View tabs = ui.tabs();
+    Tabs tabs = ui.tabs();
     tabs.tab("Overview");
     tabs.tab("Stats");
     tabs.tab("About");
-    View tabBody = ui.text("Overview content").style(styles.bodyMedium());
+    Text tabBody = ui.text("Overview content").style(styles.bodyMedium());
     array[str] tabText = new array[str]{"Overview content", "Stats content", "About content"};
     tabs.onSelect(func(int i) void {
         tabBody.text(tabText[i]);
@@ -246,53 +246,53 @@ func buildComponents(View col) void {
 
     # Feedback surfaces: dialog, confirm, snackbar, snackbar-with-action, bottom sheet, menu.
     col.add(heading("Feedback"));
-    View fbPanel = panel();
-    View fb = ui.flowRow().gap(8).fillWidth();
-    View bDialog = ui.tonalButton("Dialog");
+    Surface fbPanel = panel();
+    Container fb = ui.flowRow().gap(8).fillWidth();
+    Button bDialog = ui.tonalButton("Dialog");
     bDialog.onClick(func() void {
         ui.dialog("Material dialog", "Rendered by the Android host from Velo bytecode.", "Got it",
             func() void { ui.snackbar("Dialog dismissed"); void });
         void
     });
-    View bConfirm = ui.tonalButton("Confirm");
+    Button bConfirm = ui.tonalButton("Confirm");
     bConfirm.onClick(func() void {
         ui.confirm("Delete item?", "This cannot be undone.",
             "Delete", func() void { ui.snackbar("Deleted"); void },
             "Cancel", func() void { void });
         void
     });
-    View bSnack = ui.tonalButton("Snackbar");
+    Button bSnack = ui.tonalButton("Snackbar");
     bSnack.onClick(func() void { ui.snackbar("Plain snackbar"); void });
-    View bUndo = ui.tonalButton("Undo snack");
+    Button bUndo = ui.tonalButton("Undo snack");
     bUndo.onClick(func() void {
         ui.snackAction("Message archived", "Undo", func() void { ui.snackbar("Restored"); void });
         void
     });
-    View bSheet = ui.tonalButton("Bottom sheet");
+    Button bSheet = ui.tonalButton("Bottom sheet");
     bSheet.onClick(func() void {
-        View sheet = ui.column().padding(20).gap(12).fillWidth();
+        Container sheet = ui.column().padding(20).gap(12).fillWidth();
         sheet.add(ui.text("Share to").style(styles.titleMedium()));
-        View shareList = ui.row().gap(20);
-        View opt1 = ui.column().center();
+        Container shareList = ui.row().gap(20);
+        Container opt1 = ui.column().center();
         opt1.add(ui.iconButton(icons.email()));
         opt1.add(ui.text("Email").style(styles.labelSmall()));
-        View opt2 = ui.column().center();
+        Container opt2 = ui.column().center();
         opt2.add(ui.iconButton(icons.share()));
         opt2.add(ui.text("Link").style(styles.labelSmall()));
-        View opt3 = ui.column().center();
+        Container opt3 = ui.column().center();
         opt3.add(ui.iconButton(icons.phone()));
         opt3.add(ui.text("SMS").style(styles.labelSmall()));
         shareList.add(opt1);
         shareList.add(opt2);
         shareList.add(opt3);
         sheet.add(shareList);
-        View closeSheet = ui.button("Done");
+        Button closeSheet = ui.button("Done");
         closeSheet.onClick(func() void { ui.dismissSheet(); void });
         sheet.add(closeSheet);
         ui.sheet(sheet);
         void
     });
-    View bMenu = ui.tonalButton("Menu");
+    Button bMenu = ui.tonalButton("Menu");
     bMenu.onClick(func() void {
         ui.menu(bMenu, new array[str]{"Rename", "Duplicate", "Delete"}, func(int i) void {
             ui.snackbar("Menu item ".con(i.str));
@@ -313,10 +313,10 @@ func buildComponents(View col) void {
 
 # ---- Profile -----------------------------------------------------------------------------
 
-func buildProfile(View col) void {
+func buildProfile(Container col) void {
     # Header: a big avatar glyph over a title and a caption.
-    View header = ui.column().center().fillWidth();
-    View avatar = ui.icon(icons.account());
+    Container header = ui.column().center().fillWidth();
+    Icon avatar = ui.icon(icons.account());
     avatar.tint(colors.primary());
     header.add(avatar);
     header.add(ui.text("Your profile").style(styles.titleLarge()));
@@ -326,20 +326,20 @@ func buildProfile(View col) void {
     # The form: three validated fields with leading icons and the right keyboards. The bodies
     # are never rebuilt, so each field simply keeps what you type as you move between tabs.
     col.add(heading("Details"));
-    View formPanel = panel();
+    Surface formPanel = panel();
 
-    View nameField = ui.field("Full name");
+    Field nameField = ui.field("Full name");
     nameField.leading(icons.person());
     formPanel.add(nameField);
 
-    View emailField = ui.field("Email");
+    Field emailField = ui.field("Email");
     emailField.leading(icons.email());
     emailField.keyboardType("email");
     emailField.supporting("We never share it");
     emailField.onChange(func(str s) void { emailField.error(""); void });
     formPanel.add(emailField);
 
-    View phoneField = ui.field("Phone");
+    Field phoneField = ui.field("Phone");
     phoneField.leading(icons.phone());
     phoneField.keyboardType("phone");
     formPanel.add(phoneField);
@@ -347,21 +347,21 @@ func buildProfile(View col) void {
 
     # Preferences as switches.
     col.add(heading("Preferences"));
-    View prefPanel = panel();
-    View pNotify = ui.toggle("Push notifications");
+    Surface prefPanel = panel();
+    Toggle pNotify = ui.toggle("Push notifications");
     pNotify.checked(true);
     pNotify.onToggle(func(bool on) void { void });
     prefPanel.add(pNotify);
-    View pDark = ui.toggle("Dark theme");
+    Toggle pDark = ui.toggle("Dark theme");
     pDark.onToggle(func(bool on) void { void });
     prefPanel.add(pDark);
-    View pBeta = ui.toggle("Beta features");
+    Toggle pBeta = ui.toggle("Beta features");
     pBeta.onToggle(func(bool on) void { void });
     prefPanel.add(pBeta);
     col.add(prefPanel);
 
     # Save validates the email; a missing one surfaces an inline field error.
-    View save = ui.button("Save changes").fillWidth();
+    Button save = ui.button("Save changes").fillWidth();
     save.onClick(func() void {
         if (emailField.value().len == 0) {
             emailField.error("Email is required");
@@ -373,7 +373,7 @@ func buildProfile(View col) void {
     col.add(save);
 
     # Sign out asks for confirmation, then leaves the app back to the terminal.
-    View signOut = ui.textButton("Sign out").fillWidth();
+    Button signOut = ui.textButton("Sign out").fillWidth();
     signOut.onClick(func() void {
         ui.confirm("Sign out?", "You will return to the terminal.",
             "Sign out", func() void { ui.close(); void },
@@ -388,10 +388,10 @@ func buildProfile(View col) void {
 
 array[str] titles = new array[str]{"Velo Gallery", "Components", "Profile"};
 
-View root = ui.column().fillWidth();
+Container root = ui.column().fillWidth();
 
 # Top app bar: title plus three actions that fold into the overflow when space runs out.
-View bar = ui.appBar(titles[0]);
+AppBar bar = ui.appBar(titles[0]);
 bar.action("Search", icons.search(), func() void { ui.snackbar("Search"); void });
 bar.action("Refresh", icons.refresh(), func() void { ui.snackbar("Refreshed"); void });
 bar.action("About", icons.info(), func() void {
@@ -402,20 +402,20 @@ bar.action("About", icons.info(), func() void {
 root.add(bar);
 
 # One scroller holding all three bodies; only the active one is visible.
-View scroller = ui.scroll().weight(1);
+Container scroller = ui.scroll().weight(1);
 root.add(scroller);
-View pages = ui.column().fillWidth();
+Container pages = ui.column().fillWidth();
 scroller.add(pages);
 
-View home = ui.column().padding(16).gap(12).fillWidth();
+Container home = ui.column().padding(16).gap(12).fillWidth();
 buildHome(home);
 pages.add(home);
 
-View components = ui.column().padding(16).gap(12).fillWidth();
+Container components = ui.column().padding(16).gap(12).fillWidth();
 buildComponents(components);
 pages.add(components);
 
-View profile = ui.column().padding(16).gap(12).fillWidth();
+Container profile = ui.column().padding(16).gap(12).fillWidth();
 buildProfile(profile);
 pages.add(profile);
 
@@ -425,7 +425,7 @@ profile.visible(false);
 
 # Bottom navigation just flips which body is shown — no rebuild, so switching is instant and
 # every screen keeps its state.
-View nav = ui.navBar();
+Nav nav = ui.navBar();
 nav.item("Home", icons.home());
 nav.item("Components", icons.list());
 nav.item("Profile", icons.person());

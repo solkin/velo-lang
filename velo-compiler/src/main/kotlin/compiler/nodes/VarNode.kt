@@ -25,9 +25,11 @@ data class VarNode(
         if (!v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal var assign type $type != ${v.type}")
         }
-        // Don't retype to NullType - keep the original pointer type
-        if (type !is NullType) {
-            ctx.retype(name, type) // Clarify variable type from the right side of assignment
+        // Clarify the variable type from the right-hand side — but not for an
+        // interface-typed variable (it must keep its interface type so dispatch
+        // stays dynamic), and never collapse a pointer to NullType.
+        if (type !is NullType && v.type !is InterfaceType) {
+            ctx.retype(name, type)
         }
         ctx.add(Op.Store(v.index))
     }
