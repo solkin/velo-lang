@@ -185,7 +185,7 @@ func buildShades() void {
             while (sd < 2) {
                 int f = if (sd == 1) then (bright * 68) / 100 else bright;
                 SHADE[(ti * LV + lv) * 2 + sd] = rgb((BR[ti] * f) / 100, (BG[ti] * f) / 100, (BB[ti] * f) / 100);
-                int m = (f * 42) / 100;
+                int m = (f * 55) / 100;
                 SHADEM[(ti * LV + lv) * 2 + sd] = rgb((BR[ti] * m) / 100, (BG[ti] * m) / 100, (BB[ti] * m) / 100);
                 sd = sd + 1;
             };
@@ -401,28 +401,34 @@ func drawBricks(int x, int top, int lh, int dtop, int dbot, int texX, str mortar
     if (lh >= 26) {
         int courses = 4;
         int bh = lh / courses;
-        if (bh >= 5) {
-            int th = 1 + lh / 150;
-            int c = 1;
-            while (c < courses) {
-                int my = top + c * bh;
+        if (bh >= 6) {
+            int th = 1 + lh / 300;
+            if (th > 3) { th = 3; };
+            # Vertical joints first, inset below each course line so the grid corners stay crisp;
+            # only on near walls, where a thin joint reads as a brick edge rather than noise.
+            if (lh >= 60) {
+                int c = 0;
+                while (c < courses) {
+                    int off = if (c % 2 == 0) then 0 else 256;
+                    int m = (texX + off) % 512;
+                    if (m < 26) {
+                        int by0 = top + c * bh + th;
+                        if (by0 < dtop) { by0 = dtop; };
+                        int by1 = top + (c + 1) * bh;
+                        if (by1 > dbot) { by1 = dbot; };
+                        if (by1 > by0) { view.drawRect(x, by0, STRIP, by1 - by0).color(mortar).fill(); };
+                    };
+                    c = c + 1;
+                };
+            };
+            # Horizontal courses on top, so they read as one continuous, even mortar line.
+            int hc = 1;
+            while (hc < courses) {
+                int my = top + hc * bh;
                 if (my >= dtop & my <= dbot) {
                     view.drawRect(x, my, STRIP, th).color(mortar).fill();
                 };
-                c = c + 1;
-            };
-            c = 0;
-            while (c < courses) {
-                int off = if (c % 2 == 0) then 0 else 256;
-                int m = (texX + off) % 512;
-                if (m < 44) {
-                    int by0 = top + c * bh;
-                    if (by0 < dtop) { by0 = dtop; };
-                    int by1 = top + (c + 1) * bh;
-                    if (by1 > dbot) { by1 = dbot; };
-                    if (by1 > by0) { view.drawRect(x, by0, STRIP, by1 - by0).color(mortar).fill(); };
-                };
-                c = c + 1;
+                hc = hc + 1;
             };
         };
     };
