@@ -48,12 +48,12 @@ class TokenStreamTest {
 
     @Test
     fun testNumberWithTrailingDots() {
+        // `..` lexes as the single range operator (e.g. `123..130`).
         val input = StringInput("123..")
         val tokenStream = TokenStream(input)
 
         val token1 = tokenStream.next()
         val token2 = tokenStream.next()
-        val token3 = tokenStream.next()
 
         assertEquals(
             Token(
@@ -63,15 +63,9 @@ class TokenStreamTest {
         )
         assertEquals(
             Token(
-                type = TokenType.PUNCTUATION,
-                value = '.'
+                type = TokenType.OPERATOR,
+                value = ".."
             ), token2
-        )
-        assertEquals(
-            Token(
-                type = TokenType.PUNCTUATION,
-                value = '.'
-            ), token3
         )
     }
 

@@ -268,11 +268,22 @@ class TokenStream(private val input: Input) {
             ch == '\'' -> return readChar()
             isDigit(ch) -> return readNumber()
             isIdStart(ch) -> return readIdent()
+            ch == '.' -> return readDot()
             isPunctuation(ch) -> return readPunctuation()
             isOpChar(ch) -> return readOperator()
         }
         input.croak("Can't handle character: $ch")
         return null
+    }
+
+    /** `..` (the range operator) vs a single `.` (property access). */
+    private fun readDot(): Token {
+        input.next()
+        if (!input.eof() && input.peek() == '.') {
+            input.next()
+            return Token(type = TokenType.OPERATOR, value = "..")
+        }
+        return Token(type = TokenType.PUNCTUATION, value = '.')
     }
 
     // ---- Automatic semicolon insertion ----
