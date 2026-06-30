@@ -1,0 +1,29 @@
+# `!`, `&&`, `||` — the familiar C/Java logical operators (short-circuit).
+Terminal term = new Terminal()
+
+func show(bool b) void {
+    term.println(if (b) then "T" else "F")
+}
+
+bool t = true
+bool f = false
+
+show(!f)
+show(!t)
+show(t && t)
+show(t && f)
+show(f || t)
+show(f || f)
+
+# Precedence: comparisons bind tighter than && / ||.
+int x = 7
+show(x > 0 && x < 10)
+show(x < 0 || x > 5)
+
+# Short-circuit: the right side is not evaluated when the left decides it,
+# so dividing by a guarded-nonzero value is safe.
+int d = 0
+show(d != 0 && 10 / d > 0)
+
+# Negation composes with &&.
+show(!(x > 100) && !f)

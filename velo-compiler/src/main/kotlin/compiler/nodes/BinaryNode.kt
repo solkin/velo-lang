@@ -18,7 +18,9 @@ data class BinaryNode(
         // eagerly above and then ran an If-dance that assumed it had not — corrupting the stack
         // (a stray operand was left behind whenever a sub-expression took the skip branch),
         // which silently produced wrong results for nested boolean expressions.
-        if (leftType is BoolType && (operator == "&" || operator == "|")) {
+        // `&&` / `||` are the logical operators; `&` / `|` stay bitwise on ints
+        // but short-circuit when both sides are bool (kept as aliases for now).
+        if (leftType is BoolType && (operator == "&" || operator == "|" || operator == "&&" || operator == "||")) {
             return compileShortCircuit(ctx)
         }
 
@@ -179,7 +181,7 @@ data class BinaryNode(
      * once its length is known. Every path consumes the operands and leaves exactly one bool.
      */
     private fun compileShortCircuit(ctx: Context): Type {
-        if (operator == "&") {
+        if (operator == "&" || operator == "&&") {
             //   [If ?]  <right>  [Move 1]  [Push false]
             // left true  → fall through, evaluate right, its value is the result (skip Push false)
             // left false → skip right + Move, land on Push false

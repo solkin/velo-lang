@@ -10,6 +10,6 @@ import compiler.parser.Token
 class UnaryParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val operand = parser.parseExpression(Precedence.UNARY)
-        return UnaryNode("-", operand)
+        return UnaryNode(token.value as String, operand)
     }
 }

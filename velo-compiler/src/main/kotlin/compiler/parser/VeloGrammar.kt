@@ -54,6 +54,7 @@ object VeloGrammar {
         parser.registerOperator("&", AddressOfParselet())
         parser.registerOperator("*", DerefParselet())
         parser.registerOperator("-", UnaryParselet())
+        parser.registerOperator("!", UnaryParselet())
         
         // Infix operators with precedence
         parser.registerInfix("=", Precedence.ASSIGNMENT, AssignParselet())
@@ -64,7 +65,9 @@ object VeloGrammar {
         parser.registerInfix("%=", Precedence.ASSIGNMENT, AssignParselet())
         
         parser.registerInfix("|", Precedence.OR, LogicalParselet(Precedence.OR))
+        parser.registerInfix("||", Precedence.OR, LogicalParselet(Precedence.OR))
         parser.registerInfix("&", Precedence.AND, LogicalParselet(Precedence.AND))
+        parser.registerInfix("&&", Precedence.AND, LogicalParselet(Precedence.AND))
         parser.registerInfix("^", Precedence.XOR, LogicalParselet(Precedence.XOR))
         
         parser.registerInfix("<", Precedence.COMPARISON, BinaryParselet(Precedence.COMPARISON))

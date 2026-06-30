@@ -29,6 +29,18 @@ data class UnaryNode(
                 ctx.add(Op.Sub)
                 operandType
             }
+            "!" -> {
+                val operandType = operand.compile(ctx)
+                if (operandType !is BoolType) {
+                    throw IllegalArgumentException("Unary operator '!' expects a bool operand, got ${operandType.log()}")
+                }
+                // !x: if x is true push false, else push true.
+                ctx.add(Op.If(elseSkip = 2))
+                ctx.add(Op.Push(value = false))
+                ctx.add(Op.Move(count = 1))
+                ctx.add(Op.Push(value = true))
+                BoolType
+            }
             else -> throw IllegalArgumentException("Unknown unary operator: $operator")
         }
     }
