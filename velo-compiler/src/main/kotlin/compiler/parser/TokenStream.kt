@@ -206,10 +206,84 @@ class TokenStream(private val input: Input) {
     }
 
     private fun readString(): Token {
-        return Token(
-            type = TokenType.STRING,
-            value = readEscaped(delimiter = '"')
-        )
+        // Recognises `$name` and `${expr}` interpolation. A string with no
+        // interpolation keeps a plain `String` value; otherwise the value is an
+        // [Interpolation] the string parselet expands into a concatenation.
+        input.next() // opening quote
+        val segments = mutableListOf<StrSegment>()
+        val literal = StringBuilder()
+        fun flush() {
+            if (literal.isNotEmpty()) {
+                segments.add(StrLit(literal.toString()))
+                literal.clear()
+            }
+        }
+        var escaped = false
+        while (!input.eof()) {
+            val ch = input.next()
+            if (escaped) {
+                literal.append(
+                    when (ch) {
+                        'n' -> '\n'
+                        't' -> '\r'
+                        else -> ch
+                    }
+                )
+                escaped = false
+            } else if (ch == '\\') {
+                escaped = true
+            } else if (ch == '"') {
+                break
+            } else if (ch == '$' && !input.eof() && (input.peek() == '{' || isIdStart(input.peek()))) {
+                flush()
+                if (input.peek() == '{') {
+                    input.next() // consume '{'
+                    segments.add(StrExpr(readInterpolationExpr()))
+                } else {
+                    segments.add(StrExpr(readWhile(::isId)))
+                }
+            } else {
+                literal.append(ch)
+            }
+        }
+        flush()
+        return when {
+            segments.isEmpty() -> Token(type = TokenType.STRING, value = "")
+            segments.size == 1 && segments[0] is StrLit ->
+                Token(type = TokenType.STRING, value = (segments[0] as StrLit).text)
+            else -> Token(type = TokenType.STRING, value = Interpolation(segments))
+        }
+    }
+
+    /** Read the source of a `${...}` hole up to the matching `}` (the `{` is
+     * already consumed), tolerating nested braces and quoted strings. */
+    private fun readInterpolationExpr(): String {
+        val sb = StringBuilder()
+        var depth = 1
+        while (!input.eof()) {
+            val ch = input.next()
+            when (ch) {
+                '{' -> { depth++; sb.append(ch) }
+                '}' -> { depth--; if (depth == 0) return sb.toString() else sb.append(ch) }
+                '"' -> {
+                    sb.append(ch)
+                    var esc = false
+                    while (!input.eof()) {
+                        val c = input.next()
+                        sb.append(c)
+                        if (esc) {
+                            esc = false
+                        } else if (c == '\\') {
+                            esc = true
+                        } else if (c == '"') {
+                            break
+                        }
+                    }
+                }
+                else -> sb.append(ch)
+            }
+        }
+        return sb.toString()
     }
 
     private fun readChar(): Token {

@@ -1,0 +1,21 @@
+# Kotlin-style string interpolation: $name and ${expr}, with `.str` on any
+# primitive (int, float, bool, str).
+Terminal term = new Terminal()
+
+int x = 7
+float pi = 3.14
+bool ok = true
+str who = "Velo"
+
+term.println("x = $x")
+term.println("sum = ${x + 3}, pi = $pi")
+term.println("hello $who, ok = $ok")
+term.println("nested: ${if (x > 5) then "big" else "small"}")
+
+# Escaped dollar stays literal; a lone dollar is literal too.
+term.println("literal: \$x and price $$x")
+
+# Interpolation works inside loops and with computed values.
+for i in 1..4 {
+    term.println("i=$i sq=${i * i}")
+}
