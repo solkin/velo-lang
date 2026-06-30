@@ -54,7 +54,7 @@ class ErrorLifecycleTest {
                 """
                 Terminal term = new Terminal();
                 Boom boom = new Boom();
-                actor class Worker() { func go() int { boom.bang(); }; };
+                actor class Worker() { func go() int { return boom.bang(); }; };
                 actor[Worker] w = new Worker();
                 term.println((await async w.go()).str());
                 """.trimIndent(),

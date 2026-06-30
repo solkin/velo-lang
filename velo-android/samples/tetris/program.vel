@@ -197,20 +197,20 @@ Container root = page;
 # ---- geometry / shape helpers -------------------------------------------------------------
 
 func idx(int r, int c) int {
-    r * COLS + c;
+    return r * COLS + c;
 };
 
 func shapeCol(int p, int rot, int i) int {
-    SHAPES[(((p * 4) + rot) * 4 + i) * 2];
+    return SHAPES[(((p * 4) + rot) * 4 + i) * 2];
 };
 
 func shapeRow(int p, int rot, int i) int {
-    SHAPES[(((p * 4) + rot) * 4 + i) * 2 + 1];
+    return SHAPES[(((p * 4) + rot) * 4 + i) * 2 + 1];
 };
 
 # True when input should move the active piece (game running, not paused / over).
 func playable() bool {
-    started & paused == false & gameOver == false;
+    return started & paused == false & gameOver == false;
 };
 
 # True if piece [p] in rotation [rot] anchored at ([x],[y]) leaves the well or hits a block.
@@ -233,13 +233,13 @@ func collides(int p, int rot, int x, int y) bool {
         };
         i = i + 1;
     };
-    hit;
+    return hit;
 };
 
 # Fall interval shrinks as the level climbs, from ~0.8 s down to a fast floor.
 func dropIntervalMs() int {
     int interval = 800 - (level - 1) * 65;
-    if (interval < 90) then 90 else interval;
+    return if (interval < 90) then 90 else interval;
 };
 
 # ---- 7-bag randomizer ---------------------------------------------------------------------
@@ -263,7 +263,7 @@ func drawFromBag() int {
     };
     int r = bag[bagPos];
     bagPos = bagPos + 1;
-    r;
+    return r;
 };
 
 # ---- line clearing ------------------------------------------------------------------------
@@ -277,7 +277,7 @@ func rowFull(int r) bool {
         };
         c = c + 1;
     };
-    full;
+    return full;
 };
 
 # Drop full rows out and award points (scaled by level), Tetris-style.

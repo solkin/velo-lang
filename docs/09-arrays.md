@@ -64,14 +64,14 @@ The callback takes the value first; the index is an optional second parameter.
 array[int] numbers = new array[int]{1, 2, 3, 4, 5};
 array[int] doubled = numbers.map(
     func(int value) int {
-        value * 2
+        return value * 2
     }
 );  # [2, 4, 6, 8, 10]
 
 # With the index:
 array[int] offset = numbers.map(
     func(int value, int index) int {
-        value + index
+        return value + index
     }
 );  # [1, 3, 5, 7, 9]
 ```

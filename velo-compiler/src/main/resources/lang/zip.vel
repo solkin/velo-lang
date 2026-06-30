@@ -5,9 +5,9 @@ include "lang/str.vel";
 class Zip() {
     func ushr1(int value) int {
         if (value < 0) {
-            ((value & 2147483647) / 2) + 1073741824;
+            return ((value & 2147483647) / 2) + 1073741824;
         } else {
-            value / 2;
+            return value / 2;
         };
     };
 
@@ -18,13 +18,13 @@ class Zip() {
             result = ushr1(result);
             i = i + 1;
         };
-        result;
+        return result;
     };
 
     func writeU16(array[byte] out, int pos, int value) int {
         out[pos] = value & 255;
         out[pos + 1] = ushr(value, 8) & 255;
-        pos + 2;
+        return pos + 2;
     };
 
     func writeU32(array[byte] out, int pos, int value) int {
@@ -32,7 +32,7 @@ class Zip() {
         out[pos + 1] = ushr(value, 8) & 255;
         out[pos + 2] = ushr(value, 16) & 255;
         out[pos + 3] = ushr(value, 24) & 255;
-        pos + 4;
+        return pos + 4;
     };
 
     func copyBytes(array[byte] out, int pos, array[byte] data) int {
@@ -41,7 +41,7 @@ class Zip() {
             out[pos + i] = data[i];
             i = i + 1;
         };
-        pos + data.len();
+        return pos + data.len();
     };
 
     func create(array[byte] input, str entryName) array[byte] {
@@ -105,7 +105,7 @@ class Zip() {
         pos = writeU32(out, pos, centralDirectoryOffset);
         pos = writeU16(out, pos, 0);              # comment length
 
-        out;
+        return out;
     };
 };
 

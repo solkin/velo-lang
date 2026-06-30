@@ -9,7 +9,7 @@ class Person(str name, int age) {
     func setName(str n) void { name = n; };
     func setAge(int a) void { age = a; };
     func describe() str {
-        name.con(" is ").con(age.str()).con(" years old");
+        return name.con(" is ").con(age.str()).con(" years old");
     };
 };
 
@@ -81,13 +81,13 @@ class Point(int x, int y) {
     func setX(int val) void { x = val; };
     func setY(int val) void { y = val; };
     func describe() str {
-        "(".con(x.str()).con(", ").con(y.str()).con(")");
+        return "(".con(x.str()).con(", ").con(y.str()).con(")");
     };
 };
 
 class Line(Point start, Point finish) {
     func describe() str {
-        start.describe().con(" -> ").con(finish.describe());
+        return start.describe().con(" -> ").con(finish.describe());
     };
 };
 
@@ -106,7 +106,7 @@ term.println(line.describe());  # Output: (10, 20) -> (100, 200)
 # --- Example 9: Apply block in function return ---
 
 func createPerson(str name, int age) Person {
-    new Person("", 0) {
+    return new Person("", 0) {
         it.setName(name);
         it.setAge(age);
     };

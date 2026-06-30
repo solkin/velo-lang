@@ -8,13 +8,13 @@ interface Shape {
 
 # Neither class names `Shape` — they satisfy it structurally.
 class Square(int side) {
-    func area() int { side * side; };
-    func kind() str { "square"; };
+    func area() int { return side * side; };
+    func kind() str { return "square"; };
 };
 
 class Rect(int w, int h) {
-    func area() int { w * h; };
-    func kind() str { "rect"; };
+    func area() int { return w * h; };
+    func kind() str { return "rect"; };
 };
 
 # A heterogeneous array of an interface type: each call dispatches dynamically
@@ -28,14 +28,14 @@ while (i < shapes.len()) {
 };
 
 # An interface value passed through a function parameter.
-func describe(Shape s) str { s.kind().con("(").con(s.area().str()).con(")"); };
+func describe(Shape s) str { return s.kind().con("(").con(s.area().str()).con(")"); };
 term.println(describe(new Rect(10, 10)));
 
 # `Self` return: a fluent chain keeps the concrete type, then crosses to the
 # interface where dispatch continues.
 class Counter(int n) {
-    func bump() Self { new Counter(n + 1); };
-    func value() int { n; };
+    func bump() Self { return new Counter(n + 1); };
+    func value() int { return n; };
 };
 
 Counter c = new Counter(0);

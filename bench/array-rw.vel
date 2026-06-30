@@ -24,7 +24,7 @@ func run() int {
         };
         p += 1;
     };
-    sum;
+    return sum;
 };
 
 term.println(run().str());

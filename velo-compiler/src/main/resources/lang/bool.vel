@@ -1,14 +1,14 @@
 # Boolean extension functions
 
 ext(bool b) str() str {
-    if b then "true" else "false"
+    return if b then "true" else "false"
 };
 
 ext(bool b) int() int {
-    if b then 1 else 0
+    return if b then 1 else 0
 };
 
 ext(bool b) not() bool {
-    if b then false else true
+    return if b then false else true
 };
 

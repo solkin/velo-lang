@@ -180,7 +180,7 @@ class SharedCounter() {
     };
     
     func getValue() int {
-        valuePtr.val;
+        return valuePtr.val;
     };
 };
 

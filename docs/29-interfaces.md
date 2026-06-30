@@ -10,13 +10,13 @@ interface Shape {
 
 # Neither class names `Shape`. They satisfy it because they have its methods.
 class Square(int side) {
-    func area() int { side * side; };
-    func kind() str { "square"; };
+    func area() int { return side * side; };
+    func kind() str { return "square"; };
 };
 
 class Rect(int w, int h) {
-    func area() int { w * h; };
-    func kind() str { "rect"; };
+    func area() int { return w * h; };
+    func kind() str { return "rect"; };
 };
 
 Shape s = new Square(4);
@@ -47,7 +47,7 @@ A type satisfies an interface when it provides **every** method, each with a mat
 ```velo
 interface Shape { func area() int; };
 
-class Dot() { func draw() int { 0; }; };
+class Dot() { func draw() int { return 0; }; };
 
 Shape s = new Dot();   # error: Dot has no `area() int` — it does not satisfy Shape
 ```
@@ -56,7 +56,7 @@ A signature that differs only in return type does **not** match:
 
 ```velo
 interface Shape { func area() int; };
-class Square(int side) { func area() str { "no"; }; };
+class Square(int side) { func area() str { return "no"; }; };
 
 Shape s = new Square(2);   # error: area returns str, not int
 ```
@@ -71,8 +71,8 @@ Through an interface-typed value you may call **only** the methods the interface
 interface Shape { func area() int; };
 
 class Square(int side) {
-    func area() int { side * side; };
-    func kind() str { "square"; };
+    func area() int { return side * side; };
+    func kind() str { return "square"; };
 };
 
 Shape s = new Square(2);
@@ -90,8 +90,8 @@ Structural satisfaction alone is enough, but a class may also **declare** the in
 interface Shape { func area() int; func kind() str; };
 
 class Square(int side) : Shape {
-    func area() int { side * side; };
-    func kind() str { "square"; };
+    func area() int { return side * side; };
+    func kind() str { return "square"; };
 };
 ```
 
@@ -99,7 +99,7 @@ This changes nothing at run time — dispatch is identical. What it buys you is 
 
 ```velo
 interface Shape { func area() int; func kind() str; };
-class Square(int side) : Shape { func area() int { side * side; }; };
+class Square(int side) : Shape { func area() int { return side * side; }; };
 # error: Square declares it conforms to Shape but is missing kind()
 ```
 
@@ -111,7 +111,7 @@ An interface is an ordinary type: use it for variables, parameters, return types
 interface Shape { func area() int; func kind() str; };
 
 # A function that works for any Shape.
-func describe(Shape s) str { s.kind().con("(").con(s.area().str()).con(")"); };
+func describe(Shape s) str { return s.kind().con("(").con(s.area().str()).con(")"); };
 term.println(describe(new Rect(10, 10)));   # rect(100)
 
 # A heterogeneous array — each element a different concrete class.
@@ -133,8 +133,8 @@ A method may declare its return type as **`Self`** — "an instance of whatever 
 
 ```velo
 class Counter(int n) {
-    func bump() Self { new Counter(n + 1); };
-    func value() int { n; };
+    func bump() Self { return new Counter(n + 1); };
+    func value() int { return n; };
 };
 
 Counter c = new Counter(0);
@@ -152,8 +152,8 @@ interface Builder {
 };
 
 class Counter(int n) {
-    func grow() Self { new Counter(n + 1); };
-    func value() int { n; };
+    func grow() Self { return new Counter(n + 1); };
+    func value() int { return n; };
 };
 
 Builder b = new Counter(10);
@@ -166,18 +166,18 @@ A [generic](23-generics.md) type parameter can be **bounded** by an interface wi
 
 ```velo
 interface Shape { func area() int; };
-class Square(int side) { func area() int { side * side; }; };
-class Rect(int w, int h) { func area() int { w * h; }; };
+class Square(int side) { func area() int { return side * side; }; };
+class Rect(int w, int h) { func area() int { return w * h; }; };
 
 class Boxed[T: Shape](T item) {
-    func areaOf() int { item.area(); };   # `area` is available because T: Shape
+    func areaOf() int { return item.area(); };   # `area` is available because T: Shape
 };
 
 Boxed[Square] a = new Boxed[Square](new Square(5));
 term.println(a.areaOf().str());   # 25
 
 # Violating the bound is rejected:
-class Dot() { func draw() int { 0; }; };
+class Dot() { func draw() int { return 0; }; };
 Boxed[Dot] bad = new Boxed[Dot](new Dot());   # error: Dot does not satisfy Shape
 ```
 
@@ -206,7 +206,7 @@ An interface value is **not** [transferable](26-actors.md#what-crosses-the-bound
 interface Shape { func area() int; };
 
 actor class Worker() {
-    func handle(Shape s) int { s.area(); };   # error: Shape is not transferable
+    func handle(Shape s) int { return s.area(); };   # error: Shape is not transferable
 };
 ```
 

@@ -19,10 +19,10 @@ actor class Counter(int start) {
 
     func bump() int {
         n += 1;
-        n;
+        return n;
     };
 
-    func value() int { n; };
+    func value() int { return n; };
 };
 ```
 
@@ -77,9 +77,9 @@ actor class Account() {
         # state rather than trusting a value captured before the await.
         if (ok && balance >= amount) {
             balance = balance - amount;
-            true;
+            return true;
         } else {
-            false;
+            return false;
         };
     };
 };
@@ -120,7 +120,7 @@ Everything else is non-transferable and rejected **at the point of declaration**
 class Pair(int a, int b) {};
 
 actor class Bad() {
-    func make() Pair { new Pair(1, 2); };  # compile error:
+    func make() Pair { return new Pair(1, 2); };  # compile error:
     # Actor method 'Bad.make' return type has type 'Pair',
     # which is not transferable across an actor boundary
 };
@@ -152,7 +152,7 @@ actor class Coordinator() {
     func process(int p, int q) tuple[int, int] {
         future[int] fp = async w1.compute(p);
         future[int] fq = async w2.compute(q);
-        new tuple(await fp, await fq);
+        return new tuple(await fp, await fq);
     };
 };
 ```
@@ -169,7 +169,7 @@ An actor's method may return an `actor[T]` — either itself or another actor. T
 actor class Container() {
     actor[Counter] inner = new Counter(0);
 
-    func get() actor[Counter] { inner; };
+    func get() actor[Counter] { return inner; };
 };
 
 actor[Container] box = new Container();
@@ -234,7 +234,7 @@ actor class Counter(int start) {
     int n = start;
     func bump() int {
         n += 1;
-        n;
+        return n;
     };
 };
 

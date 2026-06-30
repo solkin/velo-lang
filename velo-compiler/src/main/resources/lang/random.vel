@@ -17,9 +17,9 @@ class Random(int seed) {
 
     func ushr1(int value) int {
         if (value < 0) {
-            ((value & 2147483647) / 2) + 1073741824;
+            return ((value & 2147483647) / 2) + 1073741824;
         } else {
-            value / 2;
+            return value / 2;
         };
     };
 
@@ -30,7 +30,7 @@ class Random(int seed) {
             result = ushr1(result);
             i = i + 1;
         };
-        result;
+        return result;
     };
 
     # this.seed = (seed ^ 0x5DEECE66D) & ((1 << 48) - 1)
@@ -82,15 +82,15 @@ class Random(int seed) {
         advance();
         # high = (seed >>> 16) as a signed 32-bit int, i.e. next(32)
         int high = state[2] | state[3].shl(8) | state[4].shl(16) | state[5].shl(24);
-        if (bits == 32) then high else ushr(high, 32 - bits);
+        return if (bits == 32) then high else ushr(high, 32 - bits);
     };
 
     func nextInt() int {
-        next(32);
+        return next(32);
     };
 
     func nextBoolean() bool {
-        next(1) != 0;
+        return next(1) != 0;
     };
 
     # java.util.Random.nextInt(bound): uniform in [0, bound).
@@ -115,11 +115,11 @@ class Random(int seed) {
                 result = u % bound;
             };
         };
-        result;
+        return result;
     };
 
     # java.util.Random.nextFloat(): next(24) / 2^24, in [0, 1).
     func nextFloat() float {
-        (1.0 * next(24)) / 16777216.0;
+        return (1.0 * next(24)) / 16777216.0;
     };
 };

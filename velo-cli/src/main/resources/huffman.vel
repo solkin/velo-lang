@@ -29,7 +29,7 @@ func nextLine(str data, int from) str {
             i = i + 1;
         };
     };
-    data.sub(from, i);
+    return data.sub(from, i);
 };
 
 func padInt(int value, int width) str {
@@ -37,7 +37,7 @@ func padInt(int value, int width) str {
     while (s.len() < width) {
         s = "0".con(s);
     };
-    s;
+    return s;
 };
 
 # === Frequency counting ===
@@ -50,13 +50,13 @@ func countFreqs(str input) Map[int, int] {
         freqs[ch] = freqs.getOrDefault(ch, 0) + 1;
         i = i + 1;
     };
-    freqs;
+    return freqs;
 };
 
 # === Priority queue operations on array ===
 
 func removeAt(array[Node] arr, int idx) array[Node] {
-    arr.sub(0, idx).con(arr.sub(idx + 1, arr.len()));
+    return arr.sub(0, idx).con(arr.sub(idx + 1, arr.len()));
 };
 
 func findMinIdx(array[Node] arr) int {
@@ -70,7 +70,7 @@ func findMinIdx(array[Node] arr) int {
         };
         i = i + 1;
     };
-    minIdx;
+    return minIdx;
 };
 
 # === Build Huffman tree from frequencies ===
@@ -85,7 +85,7 @@ func buildTree(Map[int, int] freqs) Node {
     };
 
     if (nodes.len() == 1) {
-        nodes[0];
+        return nodes[0];
     } else {
         while (nodes.len() > 1) {
             int i1 = findMinIdx(nodes);
@@ -101,7 +101,7 @@ func buildTree(Map[int, int] freqs) Node {
             parent.setRight(n2);
             nodes = nodes.plus(parent);
         };
-        nodes[0];
+        return nodes[0];
     };
 };
 
@@ -111,9 +111,9 @@ func buildTree(Map[int, int] freqs) Node {
 
 func serializeTree(Node node) str {
     if (node.isLeaf) {
-        "1".con(padInt(node.ch, 3));
+        return "1".con(padInt(node.ch, 3));
     } else {
-        "0".con(serializeTree(node.left)).con(serializeTree(node.right));
+        return "0".con(serializeTree(node.left)).con(serializeTree(node.right));
     };
 };
 
@@ -121,14 +121,14 @@ func deserializeTree(str data, int pos) ParseResult {
     if (data[pos] == 49) {
         str code = data.sub(pos + 1, pos + 4);
         int ch = code.int();
-        new ParseResult(new Node(ch, 0, true), pos + 4);
+        return new ParseResult(new Node(ch, 0, true), pos + 4);
     } else {
         ParseResult leftR = deserializeTree(data, pos + 1);
         ParseResult rightR = deserializeTree(data, leftR.pos);
         Node node = new Node(0, 0, false);
         node.setLeft(leftR.node);
         node.setRight(rightR.node);
-        new ParseResult(node, rightR.pos);
+        return new ParseResult(node, rightR.pos);
     };
 };
 
@@ -160,7 +160,7 @@ func encode(str input, Map[int, str] codes) str {
         bits = bits.con(codes[input[i]]);
         i = i + 1;
     };
-    bits;
+    return bits;
 };
 
 # === Decode bit string using tree ===
@@ -189,7 +189,7 @@ func decode(str bits, Node root) str {
             i = i + 1;
         };
     };
-    result;
+    return result;
 };
 
 # === Pack bit string into printable ASCII (6 bits per char, offset +48) ===
@@ -214,7 +214,7 @@ func packBits(str bits) str {
         packed = packed.con((val + 48).char());
         i = i + 6;
     };
-    packed;
+    return packed;
 };
 
 # === Unpack printable chars back to bit string ===
@@ -237,7 +237,7 @@ func unpackBits(str packed, int bitCount) str {
         bits = bits.con(chunk);
         i = i + 1;
     };
-    bits.sub(0, bitCount);
+    return bits.sub(0, bitCount);
 };
 
 # === Compress: build tree, encode, pack, serialize to string ===
@@ -253,7 +253,7 @@ func compress(str input) str {
     str packed = packBits(bits);
     str treeSer = serializeTree(tree);
 
-    input.len().str()
+    return input.len().str()
         .con("\n").con(bits.len().str())
         .con("\n").con(treeSer)
         .con("\n\n").con(packed);
@@ -282,7 +282,7 @@ func decompress(str data) str {
 
     str packed = data.sub(pos, data.len());
     str bits = unpackBits(packed, bitCount);
-    decode(bits, tree);
+    return decode(bits, tree);
 };
 
 # ============================================================

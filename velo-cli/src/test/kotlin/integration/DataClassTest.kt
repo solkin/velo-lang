@@ -42,7 +42,7 @@ class DataClassTest {
             Terminal term = new Terminal();
 
             data class Point(int x, int y) {
-                func sum() int { x + y; };
+                func sum() int { return x + y; };
             };
 
             Point p = new Point(3, 4);
@@ -60,7 +60,7 @@ class DataClassTest {
             compileOrThrow(
                 """
                 data class Point(int x, int y) {
-                    func mutate() int { x = 99; x; };
+                    func mutate() int { x = 99; return x; };
                 };
                 Point p = new Point(1, 2);
                 """.trimIndent()
@@ -113,7 +113,7 @@ class DataClassTest {
             data class Point(int x, int y) {};
 
             actor class Maker() {
-                func make() Point { new Point(1, 2); };
+                func make() Point { return new Point(1, 2); };
             };
             """.trimIndent()
         )
@@ -127,11 +127,11 @@ class DataClassTest {
             Terminal term = new Terminal();
 
             data class Point(int x, int y) {
-                func sum() int { x + y; };
+                func sum() int { return x + y; };
             };
 
             actor class Echo() {
-                func bounce(Point p) Point { p; };
+                func bounce(Point p) Point { return p; };
             };
 
             actor[Echo] e = new Echo();
@@ -153,7 +153,7 @@ class DataClassTest {
             data class Pair(int a, int b) {};
 
             actor class Maker() {
-                func make(int a, int b) Pair { new Pair(a, b); };
+                func make(int a, int b) Pair { return new Pair(a, b); };
             };
 
             actor[Maker] m = new Maker();
@@ -175,7 +175,7 @@ class DataClassTest {
             data class Outer(Inner inner, int k) {};
 
             actor class Echo() {
-                func bounce(Outer o) Outer { o; };
+                func bounce(Outer o) Outer { return o; };
             };
 
             actor[Echo] e = new Echo();

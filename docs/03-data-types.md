@@ -83,7 +83,7 @@ tuple[int, str, float] triple = new tuple(42, "text", 3.14);
 
 ```velo
 func[int] add = func(int a, int b) int {
-    a + b;
+    return return a + b;
 };
 ```
 

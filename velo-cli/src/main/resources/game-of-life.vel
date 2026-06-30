@@ -14,9 +14,9 @@ class GameOfLife(Terminal term) {
     func calc(array[array[int]] matrix, int x, int y) int {
          func window(int a) int {
             if (a >= 0) {
-                if (a < matrix.len()) then a else a - matrix.len();
+                return if (a < matrix.len()) then a else a - matrix.len();
             } else {
-                matrix.len() + a;
+                return matrix.len() + a;
             }
         };
 
@@ -30,7 +30,7 @@ class GameOfLife(Terminal term) {
                 matrix[window(y + 1)][x] +
                 matrix[window(y + 1)][window(x + 1)];
 
-        if cells == 2 then {
+        return if cells == 2 then {
             matrix[y][x]
         } else if cells == 3 then {
             1
@@ -46,11 +46,11 @@ class GameOfLife(Terminal term) {
                     func(int col, int index) int {
                         term.print(col.str());
                         term.print(" ");
-                        col;
+                        return col;
                     }
                 );
                 term.println("");
-                row
+                return row
             }
         );
         void
@@ -59,9 +59,9 @@ class GameOfLife(Terminal term) {
     func nextGeneration() void {
         w = w.map(
             func(array[int] row, int y) array[int] {
-                row.map(
+                return row.map(
                     func(int col, int x) int {
-                        calc(w, x, y);
+                        return calc(w, x, y);
                     }
                 );
             }

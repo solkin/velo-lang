@@ -217,7 +217,7 @@ func buildLevel() void {
 # ---- terrain helpers ----------------------------------------------------------------------
 
 func solid(int c, int r) bool {
-    if (r >= ROWS) then true
+    return if (r >= ROWS) then true
     else {
         if (c < 0 | c >= COLS | r < 0) then true
         else {
@@ -228,7 +228,7 @@ func solid(int c, int r) bool {
 };
 
 func isLad(int c, int r) bool {
-    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    return if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
     else {
         int v = cell[r * COLS + c];
         v == LAD | (v == HID & escapeOpen);
@@ -236,12 +236,12 @@ func isLad(int c, int r) bool {
 };
 
 func isRope(int c, int r) bool {
-    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    return if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
     else cell[r * COLS + c] == ROPE;
 };
 
 func isHole(int c, int r) bool {
-    if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
+    return if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
     else cell[r * COLS + c] == HOLE;
 };
 
@@ -257,21 +257,21 @@ func trappedGuardAt(int c, int r) bool {
         };
         i = i + 1;
     };
-    hit;
+    return hit;
 };
 
 func solidBelow(int c, int r) bool {
-    solid(c, r + 1) | isLad(c, r + 1) | trappedGuardAt(c, r + 1);
+    return solid(c, r + 1) | isLad(c, r + 1) | trappedGuardAt(c, r + 1);
 };
 
 # A dug pit is NOT a floor for the runner — he drops straight through it (the Lode Runner way
 # to tunnel down). Guards, by contrast, get caught in it (handled in decideGuard).
 func supported(int c, int r) bool {
-    isLad(c, r) | isRope(c, r) | solidBelow(c, r);
+    return isLad(c, r) | isRope(c, r) | solidBelow(c, r);
 };
 
 func aligned(int sx, int sy) bool {
-    sx % SPT == 0 & sy % SPT == 0;
+    return sx % SPT == 0 & sy % SPT == 0;
 };
 
 # ---- guard distance field (BFS of guard-steps from the runner) ----------------------------
@@ -437,12 +437,12 @@ func guardStepAt(int c, int r, int ddx, int ddy) int {
     int nc = c + ddx;
     int nr = r + ddy;
     if (ddy < 0) {
-        if (isLad(c, r) == false | solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
+        return if (isLad(c, r) == false | solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
     } else {
         if (ddy > 0) {
-            if (solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
+            return if (solid(nc, nr)) then 0 - 1 else dist[nr * COLS + nc];
         } else {
-            if (solid(nc, nr) | supported(c, r) == false) then 0 - 1 else dist[nr * COLS + nc];
+            return if (solid(nc, nr) | supported(c, r) == false) then 0 - 1 else dist[nr * COLS + nc];
         };
     };
 };
@@ -566,10 +566,10 @@ func newGame() void {
 
 # ---- drawing ------------------------------------------------------------------------------
 
-func px0(int c) int { c * TS + OX; };
-func py0(int r) int { r * TS + HUD_TOP; };
-func cxs(int sx) int { (sx * TS) / SPT + TS / 2 + OX; };
-func cys(int sy) int { (sy * TS) / SPT + TS / 2 + HUD_TOP; };
+func px0(int c) int { return c * TS + OX; };
+func py0(int r) int { return r * TS + HUD_TOP; };
+func cxs(int sx) int { return (sx * TS) / SPT + TS / 2 + OX; };
+func cys(int sy) int { return (sy * TS) / SPT + TS / 2 + HUD_TOP; };
 
 func drawBrick(int x, int y, bool closing) void {
     int s = TS;
@@ -665,7 +665,7 @@ func drawFigure(int ccx, int ccy, str headC, str bodyC, str legC, str vestC, int
 
 # Is the entity at sub-position (sx,sy) hanging on a rope tile?
 func onRope(int sx, int sy) int {
-    if (isRope((sx + SPT / 2) / SPT, (sy + SPT / 2) / SPT)) then 1 else 0;
+    return if (isRope((sx + SPT / 2) / SPT, (sy + SPT / 2) / SPT)) then 1 else 0;
 };
 
 func drawCell(int c, int r) void {

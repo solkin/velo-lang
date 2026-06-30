@@ -30,7 +30,7 @@ func pad(str s, int width) str {
     while (r.len() < width) {
         r = r.con(" ");
     };
-    r;
+    return r;
 };
 
 # Print one result row and fold its time into the running total.
@@ -55,7 +55,7 @@ func benchArith() void {
 
 # ---- 2. recursion: naive fibonacci (function-call overhead) -------------------------------
 func fib(int n) int {
-    if (n < 2) then n else fib(n - 1) + fib(n - 2);
+    return if (n < 2) then n else fib(n - 1) + fib(n - 2);
 };
 
 func benchFib() void {
@@ -108,7 +108,7 @@ func benchString() void {
 
 # ---- 5. objects: allocate a value-type per iteration, sum its fields (alloc + GC) ----------
 data class Point(int x, int y) {
-    func sum() int { x + y; };
+    func sum() int { return x + y; };
 };
 
 func benchObjects() void {

@@ -22,7 +22,7 @@ d.arr().map(
     func(tuple[int,str] value, int index) int {
         str v = value.1.str().con("->".con(value.2.con(if (index < d.len-1) then ", " else "")));
         term.println(v);
-        index;
+        return index;
     }
 );
 
@@ -32,7 +32,7 @@ d.keys().map(
     func(int key, int index) int {
         str v = key.str().con(if (index < d.len-1) then ", " else "");
         term.println(v);
-        index;
+        return index;
     }
 );
 
@@ -42,6 +42,6 @@ d.vals().map(
     func(str value, int index) int {
         str v = value.con(if (index < d.len-1) then ", " else "");
         term.println(v);
-        index;
+        return index;
     }
 );

@@ -50,7 +50,7 @@ A non-`void` callback hands a result back to the invoker, which blocks until the
 ```velo
 actor class Doubler() {
     func make() func[(int) int] {
-        func(int v) int { v * 2; };
+        return return func(int v) int { return v * 2; };
     };
 };
 

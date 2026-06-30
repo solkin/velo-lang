@@ -13,7 +13,7 @@ In functions, the last expression automatically becomes the return value:
 
 ```velo
 func add(int a, int b) int {
-    a + b;  # This value will be returned
+    return a + b;  # This value will be returned
 };
 ```
 

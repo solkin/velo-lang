@@ -30,7 +30,7 @@ term.println("main frame done");
 # main context runs it on Doubler and hands the value back.
 actor class Doubler() {
     func make() func[(int) int] {
-        func(int v) int { v * 2; };
+        return return func(int v) int { return v * 2; };
     };
 };
 

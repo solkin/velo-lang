@@ -61,13 +61,13 @@ class InterfaceDispatchTest {
             };
 
             class Square(int side) {
-                func area() int { side * side; };
-                func kind() str { "square"; };
+                func area() int { return side * side; };
+                func kind() str { return "square"; };
             };
 
             class Rect(int w, int h) {
-                func area() int { w * h; };
-                func kind() str { "rect"; };
+                func area() int { return w * h; };
+                func kind() str { return "rect"; };
             };
 
             Shape s = new Square(4);
@@ -88,10 +88,10 @@ class InterfaceDispatchTest {
             Terminal term = new Terminal();
 
             interface Shape { func area() int; };
-            class Square(int side) { func area() int { side * side; }; };
-            class Rect(int w, int h) { func area() int { w * h; }; };
+            class Square(int side) { func area() int { return side * side; }; };
+            class Rect(int w, int h) { func area() int { return w * h; }; };
 
-            func total(Shape a, Shape b) int { a.area() + b.area(); };
+            func total(Shape a, Shape b) int { return a.area() + b.area(); };
 
             term.println(total(new Square(2), new Rect(3, 4)).str());
             """.trimIndent()
@@ -106,8 +106,8 @@ class InterfaceDispatchTest {
             Terminal term = new Terminal();
 
             interface Shape { func area() int; };
-            class Square(int side) { func area() int { side * side; }; };
-            class Rect(int w, int h) { func area() int { w * h; }; };
+            class Square(int side) { func area() int { return side * side; }; };
+            class Rect(int w, int h) { func area() int { return w * h; }; };
 
             array[Shape] shapes = new array[Shape]{ new Square(2), new Rect(3, 4), new Square(5) };
             int sum = 0;
@@ -129,8 +129,8 @@ class InterfaceDispatchTest {
             Terminal term = new Terminal();
 
             class Counter(int n) {
-                func grow() Self { new Counter(n + 1); };
-                func value() int { n; };
+                func grow() Self { return new Counter(n + 1); };
+                func value() int { return n; };
             };
 
             Counter c = new Counter(0);
@@ -152,8 +152,8 @@ class InterfaceDispatchTest {
             };
 
             class Counter(int n) {
-                func grow() Self { new Counter(n + 1); };
-                func value() int { n; };
+                func grow() Self { return new Counter(n + 1); };
+                func value() int { return n; };
             };
 
             Builder b = new Counter(10);
@@ -170,7 +170,7 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
-                class Square(int side) : Shape { func area() int { side * side; }; };
+                class Square(int side) : Shape { func area() int { return side * side; }; };
                 Square s = new Square(3);
                 term.println(s.area().str());
                 """.trimIndent()
@@ -185,7 +185,7 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; func kind() str; };
-                class Square(int side) : Shape { func area() int { side * side; }; };
+                class Square(int side) : Shape { func area() int { return side * side; }; };
                 """.trimIndent()
             )
         )
@@ -198,7 +198,7 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
-                class Dot() { func draw() int { 0; }; };
+                class Dot() { func draw() int { return 0; }; };
                 Shape s = new Dot();
                 """.trimIndent()
             )
@@ -212,7 +212,7 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
-                class Square(int side) { func area() int { side * side; }; func kind() str { "sq"; }; };
+                class Square(int side) { func area() int { return side * side; }; func kind() str { return "sq"; }; };
                 Shape s = new Square(2);
                 term.println(s.kind());
                 """.trimIndent()
@@ -228,7 +228,7 @@ class InterfaceDispatchTest {
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
                 actor class Worker() {
-                    func handle(Shape s) int { s.area(); };
+                    func handle(Shape s) int { return s.area(); };
                 };
                 """.trimIndent()
             )
@@ -242,11 +242,11 @@ class InterfaceDispatchTest {
             Terminal term = new Terminal();
 
             interface Shape { func area() int; };
-            class Square(int side) { func area() int { side * side; }; };
-            class Rect(int w, int h) { func area() int { w * h; }; };
+            class Square(int side) { func area() int { return side * side; }; };
+            class Rect(int w, int h) { func area() int { return w * h; }; };
 
             class Boxed[T: Shape](T item) {
-                func areaOf() int { item.area(); };
+                func areaOf() int { return item.area(); };
             };
 
             Boxed[Square] a = new Boxed[Square](new Square(5));
@@ -265,8 +265,8 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
-                class Dot() { func draw() int { 0; }; };
-                class Boxed[T: Shape](T item) { func areaOf() int { item.area(); }; };
+                class Dot() { func draw() int { return 0; }; };
+                class Boxed[T: Shape](T item) { func areaOf() int { return item.area(); }; };
                 Boxed[Dot] b = new Boxed[Dot](new Dot());
                 """.trimIndent()
             )
@@ -293,7 +293,7 @@ class InterfaceDispatchTest {
                 """
                 Terminal term = new Terminal();
                 interface Shape { func area() int; };
-                class Square(int side) { func area() str { "no"; }; };
+                class Square(int side) { func area() str { return "no"; }; };
                 Shape s = new Square(2);
                 """.trimIndent()
             )

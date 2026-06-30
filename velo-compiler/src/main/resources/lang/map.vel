@@ -35,20 +35,20 @@ class Map[K, V]() {
     func bucketIndex(K key) int {
         int idx = key.hash() % capacity;
         if (idx < 0) {
-            idx + capacity;
+            return idx + capacity;
         } else {
-            idx;
+            return idx;
         };
     };
 
     func empty() bool {
-        len == 0;
+        return len == 0;
     };
 
     func key(K key) bool {
         int idx = bucketIndex(key);
         if (occupied[idx] == false) {
-            false;
+            return false;
         } else {
             Entry current = buckets[idx];
             bool found = current.key == key;
@@ -58,14 +58,14 @@ class Map[K, V]() {
                     found = true;
                 };
             };
-            found;
+            return found;
         };
     };
 
     func get(K key) ptr[V] {
         int idx = bucketIndex(key);
         if (occupied[idx] == false) {
-            null;
+            return null;
         } else {
             Entry current = buckets[idx];
             bool found = current.key == key;
@@ -76,9 +76,9 @@ class Map[K, V]() {
                 };
             };
             if (found) {
-                new ptr[V](current.val);
+                return new ptr[V](current.val);
             } else {
-                null;
+                return null;
             };
         };
     };
@@ -86,16 +86,16 @@ class Map[K, V]() {
     func getOrDefault(K key, V defaultValue) V {
         ptr[V] result = get(key);
         if (result != null) {
-            result.val();
+            return result.val();
         } else {
-            defaultValue;
+            return defaultValue;
         };
     };
 
     # The value under the key; dereferences null on a missing key —
     # check with key() or use getOrDefault() when unsure.
     func at(K key) V {
-        get(key).val();
+        return get(key).val();
     };
 
     func putInternal(K key, V value) void {
@@ -163,17 +163,17 @@ class Map[K, V]() {
 
     func putIfAbsent(K k, V value) bool {
         if (key(k)) {
-            false;
+            return false;
         } else {
             put(k, value);
-            true;
+            return true;
         };
     };
 
     func del(K key) bool {
         int idx = bucketIndex(key);
         if (occupied[idx] == false) {
-            false;
+            return false;
         } else {
             Entry head = buckets[idx];
             if (head.key == key) {
@@ -183,7 +183,7 @@ class Map[K, V]() {
                     occupied[idx] = false;
                 };
                 len = len - 1;
-                true;
+                return true;
             } else {
                 Entry prev = head;
                 bool found = false;
@@ -201,7 +201,7 @@ class Map[K, V]() {
                         prev = curr;
                     };
                 };
-                found;
+                return found;
             };
         };
     };
@@ -223,7 +223,7 @@ class Map[K, V]() {
             };
             idx = idx + 1;
         };
-        result;
+        return result;
     };
 
     func vals() array[V] {
@@ -243,7 +243,7 @@ class Map[K, V]() {
             };
             idx = idx + 1;
         };
-        result;
+        return result;
     };
 
     func val(V value) bool {
@@ -265,7 +265,7 @@ class Map[K, V]() {
             };
             idx = idx + 1;
         };
-        found;
+        return found;
     };
 
     func arr() array[tuple[K, V]] {
@@ -285,7 +285,7 @@ class Map[K, V]() {
             };
             idx = idx + 1;
         };
-        result;
+        return result;
     };
 
     func clear() void {
@@ -298,7 +298,7 @@ class Map[K, V]() {
     };
 
     operator [](K key) V {
-        at(key);
+        return at(key);
     };
 
     operator []=(K key, V value) void {

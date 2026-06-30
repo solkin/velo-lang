@@ -16,7 +16,7 @@ func run() int {
         sum = (sum + t[0] + t[3]) % 1000000007;
         i += 1;
     };
-    sum;
+    return sum;
 };
 
 term.println(run().str());

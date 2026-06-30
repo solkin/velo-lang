@@ -4,7 +4,7 @@
 
 ```velo
 func add(int a, int b) int {
-    a + b;
+    return a + b;
 };
 ```
 
@@ -18,7 +18,7 @@ int result = add(5, 3);  # result = 8
 
 ```velo
 func getAnswer() int {
-    42;
+    return 42;
 };
 
 int answer = getAnswer();
@@ -36,7 +36,7 @@ func printHello() void {
 
 ```velo
 any add = func(int a, int b) int {
-    a + b;
+    return a + b;
 };
 
 int result = add(5, 3);
@@ -48,11 +48,11 @@ Velo Lang supports recursive calls:
 
 ```velo
 func factorial(int n) int {
-    if n <= 1 then 1 else n * factorial(n - 1);
+    return if n <= 1 then 1 else n * factorial(n - 1);
 };
 
 func fibonacci(int n) int {
-    if n < 2 then n else fibonacci(n - 1) + fibonacci(n - 2);
+    return if n < 2 then n else fibonacci(n - 1) + fibonacci(n - 2);
 };
 ```
 
@@ -68,7 +68,7 @@ When the full signature is known, use the rich form `func(<args>) <ret>` (typica
 
 ```velo
 # Full signature is preserved when assigned to `any`.
-any square = func(int x) int { x * x; };
+any square = func(int x) int { return x * x; };
 
 # Loose form — only the return type is part of the type.
 func[int] callback = square;
@@ -85,10 +85,10 @@ A higher-order function takes a function as a parameter or returns one.
 
 ```velo
 func apply(int x, func[int] f) int {
-    f(x);
+    return f(x);
 };
 
-any square = func(int x) int { x * x; };
+any square = func(int x) int { return x * x; };
 
 int result = apply(5, square);  # 25
 ```
@@ -99,13 +99,13 @@ Returning a function from a function lets you build new behaviour by combining e
 
 ```velo
 func compose(func[int] f, func[int] g) func[int] {
-    func(int x) int {
-        f(g(x));
+    return func(int x) int {
+        return f(g(x));
     };
 };
 
-any inc    = func(int x) int { x + 1; };
-any square = func(int x) int { x * x; };
+any inc    = func(int x) int { return x + 1; };
+any square = func(int x) int { return x * x; };
 
 func[int] incThenSquare = compose(square, inc);
 int r = incThenSquare(4);   # (4 + 1)^2 = 25
@@ -123,12 +123,12 @@ func count(array[int] arr, func[bool] pred) int {
         };
         i = i + 1;
     };
-    n;
+    return n;
 };
 
 int big = count(
-    new array[int]{3, 12, 7, 25},
-    func(int v) bool { v > 10; }
+    new array[int]{return 3, 12, 7, 25},
+    func(int v) bool { return v > 10; }
 );  # 2
 ```
 

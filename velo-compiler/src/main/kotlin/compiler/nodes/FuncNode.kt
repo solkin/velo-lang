@@ -40,12 +40,15 @@ data class FuncNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
-        val retType = body.compile(funcOps)
-        // A `Self` return means "this class": the body yields a value of the
-        // enclosing class type, which the method's own context cannot name here,
-        // so the concrete check is deferred to the call site (Self resolution).
-        if (type !is SelfType && !retType.sameAs(type)) {
-            throw IllegalStateException("Function $name return type $retType is not the same as defined $type")
+        body.compile(funcOps)
+        // Returns are explicit (each `return` is type-checked against `type` by
+        // ReturnNode). A non-void function must therefore return on every path —
+        // there is no implicit "last expression is the result". `Self` returns
+        // are resolved at the call site, so the path check still applies.
+        if (type !is VoidType && !alwaysReturns(body)) {
+            throw IllegalStateException(
+                "Function ${name ?: "<anonymous>"} must return ${type.log()} on every path (add an explicit 'return')"
+            )
         }
         funcOps.add(Op.Ret)
 
@@ -54,6 +57,18 @@ data class FuncNode(
 
         return resultType
     }
+}
+
+/**
+ * Conservative control-flow check: does every path through [node] hit a
+ * `return`? A bare expression, a loop (may run zero times), and a `let`/scope
+ * closure are not terminal; an `if` counts only when both branches return.
+ */
+private fun alwaysReturns(node: Node): Boolean = when (node) {
+    is ReturnNode -> true
+    is ProgramNode -> node.prog.isNotEmpty() && alwaysReturns(node.prog.last())
+    is IfNode -> node.elseNode != null && alwaysReturns(node.thenNode) && alwaysReturns(node.elseNode)
+    else -> false
 }
 
 data class FuncType(

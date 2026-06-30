@@ -76,7 +76,7 @@ class Vm2OnAndroidTest {
         val source = """
             Terminal term = new Terminal();
             actor class Adder(int base) {
-                func add(int x) int { base + x; };
+                func add(int x) int { return base + x; };
             };
             actor[Adder] a = new Adder(100);
             actor[Adder] b = new Adder(200);

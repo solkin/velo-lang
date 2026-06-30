@@ -11,7 +11,7 @@ Use square brackets `[T, U, ...]` after the class name to declare type parameter
 ```velo
 class Box[T](T value) {
     func get() T {
-        value;
+        return value;
     };
     func set(T newValue) void {
         value = newValue;
@@ -45,10 +45,10 @@ b.set(20);          # Accepts int, not any type
 ```velo
 class Pair[T, U](T first, U second) {
     func getFirst() T {
-        first;
+        return first;
     };
     func getSecond() U {
-        second;
+        return second;
     };
 };
 
@@ -72,11 +72,11 @@ class Container[T]() {
     };
 
     func get(int index) T {
-        items[index];
+        return items[index];
     };
 
     func getSize() int {
-        size;
+        return size;
     };
 };
 
@@ -92,8 +92,8 @@ A generic class can use another generic class in its fields, with partial or ful
 
 ```velo
 class Entry[K, V](K key, V val) {
-    func getKey() K { key; };
-    func getVal() V { val; };
+    func getKey() K { return key; };
+    func getVal() V { return val; };
 };
 
 class Registry[V]() {
@@ -105,7 +105,7 @@ class Registry[V]() {
     };
 
     func getByIndex(int index) V {
-        entries[index].getVal();
+        return entries[index].getVal();
     };
 };
 
@@ -122,10 +122,10 @@ By default a type parameter is opaque: you can store and pass a `T` but not call
 
 ```velo
 interface Shape { func area() int; };
-class Square(int side) { func area() int { side * side; }; };
+class Square(int side) { func area() int { return side * side; }; };
 
 class Boxed[T: Shape](T item) {
-    func areaOf() int { item.area(); };   # allowed because T is bounded by Shape
+    func areaOf() int { return item.area(); };   # allowed because T is bounded by Shape
 };
 
 Boxed[Square] b = new Boxed[Square](new Square(5));
@@ -142,7 +142,7 @@ Use square brackets after the function name to declare type parameters:
 
 ```velo
 func identity[T](T value) T {
-    value;
+    return value;
 };
 ```
 
@@ -159,7 +159,7 @@ The compiler matches argument types against parameter types to deduce what each 
 
 ```velo
 func first[T](array[T] items) T {
-    items[0];
+    return items[0];
 };
 
 array[int] nums = new array[int]{10, 20, 30};
@@ -172,7 +172,7 @@ Generic functions can have multiple type parameters and return generic class ins
 
 ```velo
 func makePair[A, B](A a, B b) Pair[A, B] {
-    new Pair[A, B](a, b);
+    return new Pair[A, B](a, b);
 };
 
 Pair[int, str] p = makePair(7, "seven");
@@ -191,7 +191,7 @@ Methods inside classes can have their own type parameters, independent of the cl
 ```velo
 class Utils() {
     func wrap[T](T value) Box[T] {
-        new Box[T](value);
+        return new Box[T](value);
     };
 };
 
@@ -213,12 +213,12 @@ class Mapper[T]() {
     };
 
     func transform[U](func[U] fn) array[U] {
-        items.map(fn);
+        return items.map(fn);
     };
 };
 
 func strLen(str item, int idx) int {
-    item.len();
+    return item.len();
 };
 
 Mapper[str] m = new Mapper[str]();
@@ -239,7 +239,7 @@ Within a generic class or function, a type parameter `T` is treated as an opaque
 
 ```velo
 class Box[T](T value) {
-    func get() T { value; };       # OK: T matches T
+    func get() T { return value; };       # OK: T matches T
     # func bad() int { value; };   # ERROR: T is not int
 };
 ```

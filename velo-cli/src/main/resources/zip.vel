@@ -10,7 +10,7 @@ func repeat(str value, int count) str {
         result = result.con(value);
         i = i + 1;
     };
-    result;
+    return result;
 };
 
 func padRight(str value, int width) str {
@@ -18,7 +18,7 @@ func padRight(str value, int width) str {
     while (result.len() < width) {
         result = result.con(" ");
     };
-    result;
+    return result;
 };
 
 func printKV(str key, str value) void {
@@ -35,7 +35,7 @@ func percentBar(int percent) str {
     if (filled > width) {
         filled = width;
     };
-    "[".con(repeat("#", filled)).con(repeat(".", width - filled)).con("]");
+    return "[".con(repeat("#", filled)).con(repeat(".", width - filled)).con("]");
 };
 
 func baseName(str path) str {
@@ -47,7 +47,7 @@ func baseName(str path) str {
         };
         i = i + 1;
     };
-    path.sub(slash + 1, path.len());
+    return path.sub(slash + 1, path.len());
 };
 
 term.println("");

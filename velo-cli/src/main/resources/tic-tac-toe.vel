@@ -20,7 +20,7 @@ func printBoard() void {
 
 # Check if three cells contain the same non-empty mark
 func checkLine(str a, str b, str c) bool {
-    a != " " & a == b & b == c;
+    return a != " " & a == b & b == c;
 };
 
 # Check all winning combinations for the given player
@@ -37,7 +37,7 @@ func checkWinner(str player) bool {
     # Diagonals
     if (checkLine(board[0][0], board[1][1], board[2][2])) { win = true; };
     if (checkLine(board[0][2], board[1][1], board[2][0])) { win = true; };
-    win;
+    return win;
 };
 
 # Check if the board is completely filled (draw condition)
@@ -54,7 +54,7 @@ func isDraw() bool {
         };
         i += 1;
     };
-    full;
+    return full;
 };
 
 str currentPlayer = "X";

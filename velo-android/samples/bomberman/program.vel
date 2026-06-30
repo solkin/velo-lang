@@ -180,19 +180,19 @@ Container root = page;
 
 # ---- helpers --------------------------------------------------------------------------------
 func rnd(int n) int {
-    rng.nextIntBound(n);
+    return rng.nextIntBound(n);
 };
 
 func iabs(int v) int {
-    if (v < 0) then 0 - v else v;
+    return if (v < 0) then 0 - v else v;
 };
 
 func aligned(int a, int b) bool {
-    a % SPT == 0 & b % SPT == 0;
+    return a % SPT == 0 & b % SPT == 0;
 };
 
 func walkable(int c, int r) bool {
-    if (c < 0 | c >= W | r < 0 | r >= H) then false
+    return if (c < 0 | c >= W | r < 0 | r >= H) then false
     else if (tile[r * W + c] != T_FLOOR) then false
     else if (bombGrid[r * W + c] != 0) then false
     else true;

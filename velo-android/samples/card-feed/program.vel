@@ -34,7 +34,7 @@ class Rows(Ui ui, Container box) {
         r.add(ui.text(label).weight(1));
         r.add(ui.text(value).bold());
         box.add(r);
-        new Rows(ui, box);
+        return new Rows(ui, box);
     };
 };
 
@@ -53,14 +53,14 @@ func cardShell(Ui ui, str heading, str iconName) Surface {
     head.add(ui.icon(iconName).tint(colors.primary()));
     head.add(ui.text(heading).style(styles.titleMedium()).color(colors.primary()).weight(1));
     s.add(head);
-    s;
+    return s;
 };
 
 # ---- three card kinds, each a plain class that satisfies `Card` ----------------------------
 
 # Structural conformance: `StatCard` never names `Card`, yet provides exactly its methods.
 class StatCard(str name, str value, str trend) {
-    func title() str { name; };
+    func title() str { return name; };
     func render(Ui ui) Surface {
         Colors colors = new Colors();
         Icons icons = new Icons();
@@ -68,13 +68,13 @@ class StatCard(str name, str value, str trend) {
         Surface s = cardShell(ui, name, icons.thumbUp());
         s.add(ui.text(value).style(styles.displaySmall()));
         s.add(ui.text(trend).color(colors.primary()));
-        s;
+        return s;
     };
 };
 
 # Explicit conformance: the `: Card` form documents intent and fails fast if a method drifts.
 class MetricCard(str name, int pct) : Card {
-    func title() str { name; };
+    func title() str { return name; };
     func render(Ui ui) Surface {
         Icons icons = new Icons();
         Surface s = cardShell(ui, name, icons.favorite());
@@ -91,19 +91,19 @@ class MetricCard(str name, int pct) : Card {
         bar.indeterminate(false);
         bar.progress(pct);
         s.add(bar);
-        s;
+        return s;
     };
 };
 
 # Structural conformance again — a totally different shape behind the same interface.
 class QuoteCard(str who, str quote) {
-    func title() str { who; };
+    func title() str { return who; };
     func render(Ui ui) Surface {
         Icons icons = new Icons();
         TextStyles styles = new TextStyles();
         Surface s = cardShell(ui, who, icons.star());
         s.add(ui.text(quote).style(styles.bodyLarge()).maxLines(3));
-        s;
+        return s;
     };
 };
 

@@ -4,10 +4,10 @@ Terminal term = new Terminal();
 func isPrime(int n) bool {
     # 0 и 1 не являются простыми числами
     if (n < 2) {
-        false;
+        return false;
     } else if (n == 2) {
         # 2 - единственное четное простое число
-        true;
+        return true;
     } else if (n % 2 == 0) {
         # Все остальные четные числа не являются простыми
         false;
@@ -52,7 +52,7 @@ func printPrimes(int n) str {
         term.println("");
     };
     
-    term.println("Всего найдено простых чисел: ".con(count.str()));
+    return term.println("Всего найдено простых чисел: ".con(count.str()));
 };
 
 # Основная программа

@@ -78,9 +78,9 @@ class NativeInterfaceTest {
             """
             Terminal term = new Terminal();
             interface Shape { func area() int; func kind() str; };
-            class Square(int side) { func area() int { side * side; }; func kind() str { "square"; }; };
+            class Square(int side) { func area() int { return side * side; }; func kind() str { return "square"; }; };
 
-            func describe(Shape s) str { s.kind().con("=").con(s.area().str()); };
+            func describe(Shape s) str { return s.kind().con("=").con(s.area().str()); };
 
             term.println(describe(new Square(3)));
             term.println(describe(new Widget("ab")));

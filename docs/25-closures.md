@@ -10,8 +10,8 @@ In Velo every `func` literal is a closure. The captured environment is bound at 
 
 ```velo
 func makeAdder(int n) func[int] {
-    func(int x) int {
-        x + n;
+    return func(int x) int {
+        return x + n;
     };
 };
 
@@ -32,9 +32,9 @@ Captured variables are not snapshots — closures read and write the same storag
 ```velo
 func makeCounter() func[int] {
     int count = 0;
-    func() int {
+    return func() int {
         count = count + 1;
-        count;
+        return count;
     };
 };
 
@@ -58,9 +58,9 @@ class Pair(func[void] add, func[int] get) {};
 
 func makeAccumulator() Pair {
     int total = 0;
-    new Pair(
+    return new Pair(
         func(int v) void { total = total + v; },
-        func() int { total; }
+        func() int { return total; }
     );
 };
 
@@ -76,8 +76,8 @@ A function that returns another function lets you bind arguments one at a time:
 
 ```velo
 func add(int a) func[int] {
-    func(int b) int {
-        a + b;
+    return func(int b) int {
+        return a + b;
     };
 };
 
@@ -114,7 +114,7 @@ Velo closures use **lexical** (sometimes called *definition-site*) scoping. The 
 ```velo
 func make() func[int] {
     int x = 100;
-    func() int { x; };
+    return func() int { return x; };
 };
 
 int x = 1;            # outer x — irrelevant to the closure

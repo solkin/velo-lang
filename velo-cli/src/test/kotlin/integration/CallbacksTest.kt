@@ -117,12 +117,12 @@ class CallbacksTest {
             actor class Holder() {
                 int n = 0;
                 func makeAdder() func[(int) void] {
-                    func(int v) void {
+                    return return func(int v) void {
                         n = n + v;
                         void
                     };
                 };
-                func value() int { n; };
+                func value() int { return n; };
             };
 
             actor class Firer() {
@@ -153,7 +153,7 @@ class CallbacksTest {
             Terminal term = new Terminal();
 
             actor class Echo() {
-                func give(func[(int) void] cb) func[(int) void] { cb; };
+                func give(func[(int) void] cb) func[(int) void] { return return cb; };
             };
 
             actor[Echo] e = new Echo();
@@ -395,7 +395,7 @@ class CallbacksTest {
             Terminal term = new Terminal();
 
             actor class Doubler() {
-                func make() func[(int) int] { func(int v) int { v * 2; }; };
+                func make() func[(int) int] { return return func(int v) int { return v * 2; }; };
             };
 
             actor[Doubler] d = new Doubler();
@@ -415,10 +415,10 @@ class CallbacksTest {
             Terminal term = new Terminal();
 
             actor class Doubler() {
-                func make() func[(int) int] { func(int v) int { v * 2; }; };
+                func make() func[(int) int] { return return func(int v) int { return v * 2; }; };
             };
             actor class Worker() {
-                func apply(func[(int) int] f, int x) int { f(x); };
+                func apply(func[(int) int] f, int x) int { return f(x); };
             };
 
             actor[Doubler] d = new Doubler();
@@ -444,13 +444,13 @@ class CallbacksTest {
 
             actor class Worker() {
                 func run(func[() int] ask) int {
-                    ask() * 2;
+                    return ask() * 2;
                 };
             };
 
             int base = 21;
             actor[Worker] w = new Worker();
-            int r = await async w.run(func() int { base; });
+            int r = await async w.run(func() int { return return base; });
             term.println(r.str());
             """.trimIndent()
         )

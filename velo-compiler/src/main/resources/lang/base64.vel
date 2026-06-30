@@ -31,7 +31,7 @@ class Base64Encoder() {
     # @return Закодированная строка в формате BASE64
     func encode(str text) str {
         if (text.len() == 0) {
-            "";
+            return "";
         } else {
             str result = "";
             int i = 0;
@@ -84,7 +84,7 @@ class Base64Encoder() {
                 
                 i = i + 3;
             };
-            result;
+            return result;
         };
     };
     
@@ -93,7 +93,7 @@ class Base64Encoder() {
     # @return Декодированная исходная строка
     func decode(str encoded) str {
         if (encoded.len() == 0) {
-            "";
+            return "";
         } else {
             str result = "";
             int i = 0;
@@ -148,7 +148,7 @@ class Base64Encoder() {
                     i = i + 4;
                 };
             };
-            result;
+            return result;
         };
     };
 };

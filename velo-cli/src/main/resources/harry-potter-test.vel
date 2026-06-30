@@ -60,7 +60,7 @@ class TestResults() {
                 house = "Слизерин";
             };
         };
-        house;
+        return house;
     };
     
     # Determines patronus based on house
@@ -68,9 +68,9 @@ class TestResults() {
         if (lang == 0) {
             # English
             if (house == "Gryffindor") {
-                "Lion";
+                return "Lion";
             } else if (house == "Hufflepuff") {
-                "Badger";
+                return "Badger";
             } else if (house == "Ravenclaw") {
                 "Eagle";
             } else {
@@ -79,9 +79,9 @@ class TestResults() {
         } else {
             # Russian
             if (house == "Гриффиндор") {
-                "Лев";
+                return "Лев";
             } else if (house == "Пуффендуй") {
-                "Барсук";
+                return "Барсук";
             } else if (house == "Когтевран") {
                 "Орел";
             } else {
@@ -95,9 +95,9 @@ class TestResults() {
         if (lang == 0) {
             # English
             if (house == "Gryffindor") {
-                "Oak, 11 inches, phoenix feather core";
+                return "Oak, 11 inches, phoenix feather core";
             } else if (house == "Hufflepuff") {
-                "Hazel, 10 inches, unicorn hair core";
+                return "Hazel, 10 inches, unicorn hair core";
             } else if (house == "Ravenclaw") {
                 "Cypress, 12 inches, veela hair core";
             } else {
@@ -106,9 +106,9 @@ class TestResults() {
         } else {
             # Russian
             if (house == "Гриффиндор") {
-                "Дуб, 11 дюймов, сердцевина из перья феникса";
+                return "Дуб, 11 дюймов, сердцевина из перья феникса";
             } else if (house == "Пуффендуй") {
-                "Орешник, 10 дюймов, сердцевина из волос единорога";
+                return "Орешник, 10 дюймов, сердцевина из волос единорога";
             } else if (house == "Когтевран") {
                 "Кипарис, 12 дюймов, сердцевина из волос вейлы";
             } else {
@@ -146,7 +146,7 @@ func askQuestion(str question, array[str] options, int lang) int {
         };
         choice = 1;
     };
-    choice - 1; # Return index (0-based)
+    return choice - 1; # Return index (0-based)
 };
 
 # Language selection

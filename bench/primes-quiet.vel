@@ -19,7 +19,7 @@ func countPrimes(int limit) int {
         if (isPrime) { count += 1; };
         i += 1;
     };
-    count;
+    return count;
 };
 
 term.println(countPrimes(20000).str());

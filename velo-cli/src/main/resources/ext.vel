@@ -1,17 +1,17 @@
 ext(float a) mul() int {
-    a * 100
+    return a * 100
 };
 
 ext(int a) max(int b) int {
-    if (a > b) then a else b;
+    return if (a > b) then a else b;
 };
 
 ext(int a) cnt(int b, float c, str s) str {
-    a.str().con("-").con(b.str()).con("-").con(c.mul().str()).con(s)
+    return a.str().con("-").con(b.str()).con("-").con(c.mul().str()).con(s)
 };
 
 ext(str a) insert(int index, str s) str {
-    a.sub(0, index).con(s).con(a.sub(index, a.len()))
+    return a.sub(0, index).con(s).con(a.sub(index, a.len()))
 };
 
 ext(int num) hex() str {
@@ -41,7 +41,7 @@ ext(int num) hex() str {
             hexString
         };
     };
-    hexString;
+    return hexString;
 };
 
 Terminal term = new Terminal();

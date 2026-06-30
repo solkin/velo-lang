@@ -32,7 +32,7 @@ class ConcurrencyTest {
         actor class Worker(int id) {
             func run() str {
                 probe.sleep(120);
-                probe.threadName().con(":").con((id * 10).str());
+                return probe.threadName().con(":").con((id * 10).str());
             };
         };
 

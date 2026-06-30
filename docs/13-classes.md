@@ -10,7 +10,7 @@ class Point(int x, int y) {
     
     # Methods
     func distance() float {
-        (xCoord * xCoord + yCoord * yCoord).float.sqrt();
+        return (xCoord * xCoord + yCoord * yCoord).float.sqrt();
     };
     
     func move(int dx, int dy) void {
@@ -60,7 +60,7 @@ class Counter() {
     };
     
     func getValue() int {
-        value;
+        return value;
     };
 };
 
@@ -99,7 +99,7 @@ class ValueStorage(int h, str b) {
     int a = h + 1;  # Initialization in constructor
     
     func getValue() int {
-        a
+        return a
     };
 };
 ```
@@ -122,7 +122,7 @@ class Counter() {
     };
     
     func getValue() int {
-        value;
+        return value;
     };
 };
 
@@ -145,7 +145,7 @@ class Random(int seed) {
     func next() int {
         int r = previous * 2;
         previous = r;     # Modifying field inside method: OK
-        r;
+        return r;
     };
 };
 
@@ -162,11 +162,11 @@ Classes can define custom behavior for built-in operators using the `operator` k
 ```velo
 class Vector(int x, int y) {
     operator +(Vector other) Vector {
-        new Vector(x + other.x, y + other.y);
+        return new Vector(x + other.x, y + other.y);
     };
 
     operator [](int index) int {
-        if (index == 0) then x else y;
+        return if (index == 0) then x else y;
     };
 };
 

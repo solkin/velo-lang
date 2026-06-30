@@ -45,18 +45,18 @@ array[int] SINQ = new array[int]{
 func sinT(int a) int {
     a = a % ANG;
     if (a < 0) { a = a + ANG; };
-    if (a < 256) then SINQ[a]
+    return if (a < 256) then SINQ[a]
     else if (a < 512) then SINQ[512 - a]
     else if (a < 768) then 0 - SINQ[a - 512]
     else 0 - SINQ[1024 - a];
 };
 
 func cosT(int a) int {
-    sinT(a + 256);
+    return sinT(a + 256);
 };
 
 func iabs(int v) int {
-    if (v < 0) then 0 - v else v;
+    return if (v < 0) then 0 - v else v;
 };
 
 # ---- the map (16 x 16). digits are wall types, letters are spawns on an open floor --------
@@ -90,7 +90,7 @@ int DOOR_PASS = 470;
 array[int] doorOpen = new array[int](COLS * ROWS);
 
 func wallAt(int c, int r) int {
-    if (c < 0 | r < 0 | c >= COLS | r >= ROWS) then 9
+    return if (c < 0 | r < 0 | c >= COLS | r >= ROWS) then 9
     else {
         int code = tile[r * COLS + c];
         if (code == DOOR & doorOpen[r * COLS + c] >= DOOR_PASS) then 0 else code;
@@ -159,20 +159,20 @@ array[str] SHADE = new array[str](4 * LV * 2);
 array[str] SHADEM = new array[str](4 * LV * 2);   # the mortar between bricks (a darker shade)
 
 func clamp255(int v) int {
-    if (v < 0) then 0 else if (v > 255) then 255 else v;
+    return if (v < 0) then 0 else if (v > 255) then 255 else v;
 };
 
 func hex2(int v) str {
     int c = clamp255(v);
-    HEXD[c / 16].con(HEXD[c % 16]);
+    return HEXD[c / 16].con(HEXD[c % 16]);
 };
 
 func rgb(int r, int g, int b) str {
-    "#".con(hex2(r)).con(hex2(g)).con(hex2(b));
+    return "#".con(hex2(r)).con(hex2(g)).con(hex2(b));
 };
 
 func tIdx(int t) int {
-    if (t == 2) then 1 else if (t == 3) then 2 else if (t == 4) then 3 else 0;
+    return if (t == 2) then 1 else if (t == 3) then 2 else if (t == 4) then 3 else 0;
 };
 
 func buildShades() void {
@@ -198,15 +198,15 @@ func buildShades() void {
 
 func shadeLv(int perp) int {
     int lv = (LV - 1) - (perp * 15) / (9 * POS);
-    if (lv < 0) then 0 else if (lv > LV - 1) then LV - 1 else lv;
+    return if (lv < 0) then 0 else if (lv > LV - 1) then LV - 1 else lv;
 };
 
 func wallColor(int t, int side, int perp) str {
-    SHADE[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
+    return SHADE[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
 };
 
 func wallMortar(int t, int side, int perp) str {
-    SHADEM[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
+    return SHADEM[(tIdx(t) * LV + shadeLv(perp)) * 2 + side];
 };
 
 # A steel door, distance- and side-shaded on the fly (only a handful of strips hit a door at
@@ -214,12 +214,12 @@ func wallMortar(int t, int side, int perp) str {
 func doorColor(int side, int perp, int boost) str {
     int bright = 38 + shadeLv(perp) * 4 + boost;
     int f = if (side == 1) then (bright * 70) / 100 else bright;
-    rgb((96 * f) / 100, (120 * f) / 100, (150 * f) / 100);
+    return rgb((96 * f) / 100, (120 * f) / 100, (150 * f) / 100);
 };
 
 # ---- map / entity setup -------------------------------------------------------------------
 func cellCenter(int c) int {
-    c * POS + POS / 2;
+    return c * POS + POS / 2;
 };
 
 func addEntity(int kind, int c, int r) void {
@@ -281,7 +281,7 @@ func newGame() void {
 # ---- collision ----------------------------------------------------------------------------
 func blocked(int fx, int fy) bool {
     int rad = 220;
-    wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
+    return wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
     | wallAt((fx + rad) / POS, (fy - rad) / POS) > 0
     | wallAt((fx - rad) / POS, (fy + rad) / POS) > 0
     | wallAt((fx + rad) / POS, (fy + rad) / POS) > 0;
@@ -353,7 +353,7 @@ func castCol(int sx) int {
     int tex = hitFp % POS;
     if (tex < 0) { tex = tex + POS; };
     gTexX = tex;
-    perp;
+    return perp;
 };
 
 # ---- widgets ------------------------------------------------------------------------------
@@ -536,7 +536,7 @@ func project(int i) int {
     int relX = ex[i] - px;
     int relY = ey[i] - py;
     int depth = (planeY * relX - planeX * relY) / PLANE;
-    if (depth < 64) then 0
+    return if (depth < 64) then 0
     else {
         int tx = (dirY * relX - dirX * relY) / (0 - PLANE);
         pScrX = W / 2 + (W * tx) / (2 * depth);
@@ -758,14 +758,14 @@ func losClear(int i) bool {
         if (wallAt(sxp / POS, syp / POS) > 0) { ok = false; };
         s = s + 1;
     };
-    ok;
+    return ok;
 };
 
 # Guards collide with a body radius (not just their centre point) so the wide billboard never
 # overlaps a wall face — the same axis-separated slide the player uses.
 func guardBlocked(int fx, int fy) bool {
     int rad = 340;
-    wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
+    return wallAt((fx - rad) / POS, (fy - rad) / POS) > 0
     | wallAt((fx + rad) / POS, (fy - rad) / POS) > 0
     | wallAt((fx - rad) / POS, (fy + rad) / POS) > 0
     | wallAt((fx + rad) / POS, (fy + rad) / POS) > 0;

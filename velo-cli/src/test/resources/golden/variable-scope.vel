@@ -61,9 +61,9 @@ term.println(counter.str());
 # Замыкание захватывает переменную
 func[int] makeCounter = func() int {
     int count = 0;
-    func() int {
+    return return func() int {
         count = count + 1;
-        count;
+        return count;
     }();
 };
 
@@ -75,16 +75,16 @@ class ScopeTest(int value) {
     int localValue = value * 2;
     
     func getValue() int {
-        value;
+        return value;
     };
     
     func getLocalValue() int {
-        localValue;
+        return localValue;
     };
     
     func compute(int value) int {
         # параметр value скрывает поле
-        value + localValue;
+        return value + localValue;
     };
 };
 
@@ -104,7 +104,7 @@ func nestedScopes() int {
             result = a + b + c;
         };
     };
-    result;
+    return result;
 };
 
 term.println(nestedScopes().str());

@@ -63,7 +63,7 @@ class NativeDataTest {
         val out = run(
             """
             Terminal term = new Terminal();
-            data class Point(int x, int y) { func sum() int { x + y; }; };
+            data class Point(int x, int y) { func sum() int { return x + y; }; };
             data class Seg(Point a, Point b) {};
 
             Geometry geo = new Geometry();
@@ -79,7 +79,7 @@ class NativeDataTest {
 
             PointBus bus = new PointBus();
             bus.emit(new Point(7, 8), func(Point p) void { term.println("emit ".con(p.x.str())); void });
-            Point mapped = bus.mapPoint(new Point(1, 1), func(Point p) Point { new Point(p.x + 1, p.y + 1); });
+            Point mapped = bus.mapPoint(new Point(1, 1), func(Point p) Point { return new Point(p.x + 1, p.y + 1); });
             term.println(mapped.x.str().con(",").con(mapped.y.str()));
 
             Box b = new Box("hi");

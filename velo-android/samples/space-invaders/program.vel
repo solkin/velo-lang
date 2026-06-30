@@ -278,27 +278,27 @@ Container root = page;
 
 # ---- small helpers --------------------------------------------------------------------------
 func rnd(int n) int {
-    rng.nextIntBound(n);
+    return rng.nextIntBound(n);
 };
 
 func iabs(int v) int {
-    if (v < 0) then 0 - v else v;
+    return if (v < 0) then 0 - v else v;
 };
 
 func overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) bool {
-    ax < bx + bw & ax + aw > bx & ay < by + bh & ay + ah > by;
+    return ax < bx + bw & ax + aw > bx & ay < by + bh & ay + ah > by;
 };
 
 func formX() int {
-    formXfp / 256;
+    return formXfp / 256;
 };
 
 func px(int lx) int {
-    OX + lx * SCALE / 256;
+    return OX + lx * SCALE / 256;
 };
 
 func py(int ly) int {
-    OY + ly * SCALE / 256;
+    return OY + ly * SCALE / 256;
 };
 
 # Fill a logical rectangle, snapping to pixel edges so adjacent cells tile without gaps.
@@ -335,7 +335,7 @@ func drawSprite(array[str] spr, int rows, int lx, int ly, str col) void {
 
 func screenToLogicalX(int x) int {
     int s = if (SCALE < 1) then 1 else SCALE;
-    (x - OX) * 256 / s;
+    return (x - OX) * 256 / s;
 };
 
 func clampDesired() void {
@@ -484,11 +484,11 @@ func hitBunker(int pxl, int pyl) bool {
         };
         k = k + 1;
     };
-    consumed
+    return consumed
 };
 
 func scoreOfRow(int row) int {
-    if (row == 0) then 30 else if (row <= 2) then 20 else 10;
+    return if (row == 0) then 30 else if (row <= 2) then 20 else 10;
 };
 
 func killInvader(int idx) void {
@@ -516,7 +516,7 @@ func invaderAt(int x, int y) int {
         };
         idx = idx + 1;
     };
-    res
+    return res
 };
 
 func shoot() void {

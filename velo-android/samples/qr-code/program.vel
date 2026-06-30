@@ -49,7 +49,7 @@ initGf();
 
 # Field multiply: 0 absorbs; otherwise add the logs and look the exponent back up.
 func gfMul(int a, int b) int {
-    if ((a == 0) | (b == 0)) then 0 else GF_EXP[GF_LOG[a] + GF_LOG[b]];
+    return if ((a == 0) | (b == 0)) then 0 else GF_EXP[GF_LOG[a] + GF_LOG[b]];
 };
 
 # The Reed-Solomon generator polynomial of the given degree: the product of (x - 2^i),
@@ -70,7 +70,7 @@ func rsGenerator(int degree) array[int] {
         g = ng;
         i = i + 1;
     };
-    g;
+    return g;
 };
 
 # The error-correction codewords for one data block: the remainder of the data polynomial
@@ -95,7 +95,7 @@ func rsEncode(array[int] block, int ecLen) array[int] {
         };
         i = i + 1;
     };
-    ecc;
+    return ecc;
 };
 
 # A growable byte buffer (Velo arrays are fixed-size, so we manage capacity by hand).
@@ -118,7 +118,7 @@ class ByteBuf() {
         buf[count] = b & 255;
         count = count + 1;
     };
-    func toArray() array[int] { buf.sub(0, count); };
+    func toArray() array[int] { return buf.sub(0, count); };
 };
 
 # A most-significant-bit-first bit stream that packs into whole bytes — the natural shape of
@@ -138,7 +138,7 @@ class BitBuf() {
             i = i - 1;
         };
     };
-    func bitCount() int { (bytes.count * 8) + nbits; };
+    func bitCount() int { return (bytes.count * 8) + nbits; };
     func padToByte() void {
         while (nbits != 0) {
             cur = cur.shl(1);
@@ -146,7 +146,7 @@ class BitBuf() {
             if (nbits == 8) { bytes.add(cur); cur = 0; nbits = 0; };
         };
     };
-    func toBytes() array[int] { bytes.toArray(); };
+    func toBytes() array[int] { return bytes.toArray(); };
 };
 
 # Encode a string as UTF-8 bytes (the QR byte mode is raw bytes; modern scanners read UTF-8).
@@ -187,7 +187,7 @@ func toUtf8(str s) array[int] {
         };
         i = i + 1;
     };
-    b.toArray();
+    return b.toArray();
 };
 
 # ---- error-correction characteristics, versions 1..10, levels L,M,Q,H ----------------------
@@ -236,16 +236,16 @@ int LAST_BYTES = 0;
 
 # Alignment-pattern centre coordinates per version (all pairwise combinations are used).
 func alignCoords(int version) array[int] {
-    if (version == 1) { new array[int](0); }
-    else { if (version == 2) { new array[int]{6, 18}; }
-    else { if (version == 3) { new array[int]{6, 22}; }
-    else { if (version == 4) { new array[int]{6, 26}; }
-    else { if (version == 5) { new array[int]{6, 30}; }
-    else { if (version == 6) { new array[int]{6, 34}; }
-    else { if (version == 7) { new array[int]{6, 22, 38}; }
-    else { if (version == 8) { new array[int]{6, 24, 42}; }
-    else { if (version == 9) { new array[int]{6, 26, 46}; }
-    else { new array[int]{6, 28, 50}; };
+    if (version == 1) { return new array[int](0); }
+    else { if (version == 2) { return new array[int]{6, 18}; }
+    else { if (version == 3) { return new array[int]{6, 22}; }
+    else { if (version == 4) { return new array[int]{6, 26}; }
+    else { if (version == 5) { return new array[int]{6, 30}; }
+    else { if (version == 6) { return new array[int]{6, 34}; }
+    else { if (version == 7) { return new array[int]{6, 22, 38}; }
+    else { if (version == 8) { return new array[int]{6, 24, 42}; }
+    else { if (version == 9) { return new array[int]{6, 26, 46}; }
+    else { return new array[int]{6, 28, 50}; };
     }; }; }; }; }; }; }; };
 };
 
@@ -400,7 +400,7 @@ func placeData(array[int] codewords, int remBits) void {
     };
 };
 
-func gbit(int x, int i) int { x.shr(i) & 1; };
+func gbit(int x, int i) int { return x.shr(i) & 1; };
 
 func setT(array[int] t, int r, int c, int v) void { t[(r * N) + c] = v; };
 
@@ -416,7 +416,7 @@ func maskBit(int mask, int y, int x) int {
     else { if (mask == 6) { r = (((x * y) % 2) + ((x * y) % 3)) % 2; }
     else { r = (((x + y) % 2) + ((x * y) % 3)) % 2; };
     }; }; }; }; }; };
-    if (r == 0) then 1 else 0;
+    return if (r == 0) then 1 else 0;
 };
 
 # Write the 15-bit BCH format information (EC level + mask) into both copies on matrix `t`.
@@ -479,7 +479,7 @@ func cloneApplyMask(int mask, int level, int version) array[int] {
     };
     drawFormat(t, level, mask);
     if (version >= 7) { drawVersion(t, version); };
-    t;
+    return t;
 };
 
 # Does the 11-module window at (r,c) (dir 0 = across, 1 = down) match a finder-like pattern?
@@ -493,7 +493,7 @@ func matchPattern(array[int] t, int r, int c, int dir) int {
         if (v != PAT2[k]) { m2 = false; };
         k = k + 1;
     };
-    if (m1 | m2) then 1 else 0;
+    return if (m1 | m2) then 1 else 0;
 };
 
 # The official mask penalty: long same-colour runs, 2x2 blocks, finder-like patterns, and an
@@ -582,7 +582,7 @@ func penalty(array[int] t) int {
     if (diff < 0) { diff = 0 - diff; };
     score = score + ((diff / 5) * 10);
 
-    score;
+    return score;
 };
 
 # Build the data codeword stream (mode + length + payload + padding), split it into blocks,
@@ -662,7 +662,7 @@ func buildCodewords(array[int] payload, int version, int level) array[int] {
         };
         col = col + 1;
     };
-    out;
+    return out;
 };
 
 # The whole pipeline: choose the smallest version that fits, encode, build the matrix, pick the
@@ -682,7 +682,7 @@ func encodeContent(str content, int level) int {
         v = v + 1;
     };
 
-    if (version == 0) { 0; }
+    if (version == 0) { return 0; }
     else {
         array[int] codewords = buildCodewords(payload, version, level);
 
@@ -711,7 +711,7 @@ func encodeContent(str content, int level) int {
             m = m + 1;
         };
         MOD = bestMod;
-        version;
+        return version;
     };
 };
 
@@ -719,7 +719,7 @@ func encodeContent(str content, int level) int {
 #  CONTENT TYPES — each formats its fields into the string a scanner expects
 # =====================================================================================
 
-func hex1(int v) str { "0123456789ABCDEF"[v].char(); };
+func hex1(int v) str { return "0123456789ABCDEF"[v].char(); };
 
 # Percent-encode a string for a URL query component (used by the mailto: builder).
 func urlEncode(str s) str {
@@ -734,7 +734,7 @@ func urlEncode(str s) str {
         else { out = out + "%" + hex1(b / 16) + hex1(b % 16); };
         i = i + 1;
     };
-    out;
+    return out;
 };
 
 # Backslash-escape the characters the Wi-Fi format treats specially: \ ; , : "
@@ -747,7 +747,7 @@ func escapeWifi(str s) str {
         out = out + c.char();
         i = i + 1;
     };
-    out;
+    return out;
 };
 
 # True if the string already carries a scheme (contains "://").
@@ -758,7 +758,7 @@ func hasScheme(str s) bool {
         if ((s[i] == 58) & (s[i + 1] == 47) & (s[i + 2] == 47)) { found = true; };
         i = i + 1;
     };
-    found;
+    return found;
 };
 
 # =====================================================================================
@@ -798,26 +798,26 @@ bool HAS_QR = false;
 int QR_PX = 280;     # the fixed canvas side, in dp
 
 func eccName(int level) str {
-    if (level == 0) then "L" else (if (level == 1) then "M" else (if (level == 2) then "Q" else "H"));
+    return if (level == 0) then "L" else (if (level == 1) then "M" else (if (level == 2) then "Q" else "H"));
 };
 
 # ---- per-type string builders --------------------------------------------------------------
 
 func buildWifi() str {
     str ssid = WSSID.value();
-    if (ssid.len() == 0) { ""; }
+    if (ssid.len() == 0) { return ""; }
     else {
         str enc = if (WIFI_ENC == 0) then "WPA" else (if (WIFI_ENC == 1) then "WEP" else "nopass");
         str s = "WIFI:T:" + enc + ";S:" + escapeWifi(ssid) + ";";
         if (WIFI_ENC != 2) { s = s + "P:" + escapeWifi(WPASS.value()) + ";"; };
         if (WHIDDEN.isChecked()) { s = s + "H:true;"; };
-        s + ";";
+        return s + ";";
     };
 };
 
 func buildEmail() str {
     str addr = EMAIL.value();
-    if (addr.len() == 0) { ""; }
+    if (addr.len() == 0) { return ""; }
     else {
         str s = "mailto:" + addr;
         bool has = false;
@@ -825,31 +825,31 @@ func buildEmail() str {
         if (EBODY.value().len() > 0) {
             s = s + (if (has) then "&" else "?") + "body=" + urlEncode(EBODY.value());
         };
-        s;
+        return s;
     };
 };
 
 func buildSms() str {
     str num = SNUM.value();
-    if (num.len() == 0) then "" else ("SMSTO:" + num + ":" + SBODY.value());
+    return if (num.len() == 0) then "" else ("SMSTO:" + num + ":" + SBODY.value());
 };
 
 func buildGeo() str {
     str la = GLAT.value();
     str lo = GLNG.value();
-    if ((la.len() == 0) | (lo.len() == 0)) then "" else ("geo:" + la + "," + lo);
+    return if ((la.len() == 0) | (lo.len() == 0)) then "" else ("geo:" + la + "," + lo);
 };
 
 func buildVcard() str {
     str name = VCNAME.value();
-    if (name.len() == 0) { ""; }
+    if (name.len() == 0) { return ""; }
     else {
         str s = "BEGIN:VCARD\nVERSION:3.0\n";
         s = s + "N:" + name + "\nFN:" + name + "\n";
         if (VCPHONE.value().len() > 0) { s = s + "TEL:" + VCPHONE.value() + "\n"; };
         if (VCEMAIL.value().len() > 0) { s = s + "EMAIL:" + VCEMAIL.value() + "\n"; };
         if (VCORG.value().len() > 0) { s = s + "ORG:" + VCORG.value() + "\n"; };
-        s + "END:VCARD";
+        return s + "END:VCARD";
     };
 };
 
@@ -870,7 +870,7 @@ func currentContent() str {
     else { if (MODE == 6) { out = buildGeo(); }
     else { out = buildVcard(); };
     }; }; }; }; }; };
-    out;
+    return out;
 };
 
 # ---- rendering -----------------------------------------------------------------------------
@@ -955,19 +955,19 @@ func selectWifiEnc(int i) void {
 # =====================================================================================
 
 func heading(str s) Text {
-    ui.text(s).style(styles.titleSmall()).color(colors.primary());
+    return ui.text(s).style(styles.titleSmall()).color(colors.primary());
 };
 
 func panel() Surface {
     Surface p = ui.surface().padding(16).fillWidth();
     p.corner(16);
     p.background(colors.surfaceContainer());
-    p;
+    return p;
 };
 
 # A vertical group of fields for one content type. Built for every type up front; only the
 # active one is visible, so each keeps whatever was typed when you switch away and back.
-func group() Container { ui.column().gap(8).fillWidth(); };
+func group() Container { return ui.column().gap(8).fillWidth(); };
 
 Container root = ui.column().fillWidth();
 

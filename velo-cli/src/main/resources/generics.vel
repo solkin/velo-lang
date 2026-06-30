@@ -4,10 +4,10 @@ Terminal term = new Terminal();
 
 class Pair[T, U](T first, U second) {
     func getFirst() T {
-        first;
+        return first;
     };
     func getSecond() U {
-        second;
+        return second;
     };
 };
 
@@ -19,7 +19,7 @@ term.println(p.getSecond());
 
 class Box[T](T value) {
     func get() T {
-        value;
+        return value;
     };
     func set(T newValue) void {
         value = newValue;
@@ -34,7 +34,7 @@ term.println(b.get().str());
 # --- Generic function with type inference ---
 
 func identity[T](T value) T {
-    value;
+    return value;
 };
 
 int x = identity(99);
@@ -55,11 +55,11 @@ class Stack[T]() {
     };
 
     func peek() T {
-        items[size - 1];
+        return items[size - 1];
     };
 
     func getSize() int {
-        size;
+        return size;
     };
 };
 

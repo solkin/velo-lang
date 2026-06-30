@@ -18,13 +18,13 @@ interface Shape {
 };
 
 class Square(int side) {
-    func area() int { side * side; };
-    func kind() str { "square"; };
+    func area() int { return side * side; };
+    func kind() str { return "square"; };
 };
 
 class Rect(int w, int h) {
-    func area() int { w * h; };
-    func kind() str { "rect"; };
+    func area() int { return w * h; };
+    func kind() str { return "rect"; };
 };
 
 # A `Shape` variable can hold either concrete type; `.kind()`/`.area()` dispatch at run time.
@@ -40,7 +40,7 @@ term.println("   s = Rect(3,5)  -> ".con(s.kind()).con(", area ").con(s.area().s
 # ---- 2. interface as a parameter and as array elements ------------------------------------
 # One function works for every present and future Shape.
 
-func describe(Shape x) str { x.kind().con("(").con(x.area().str()).con(")"); };
+func describe(Shape x) str { return x.kind().con("(").con(x.area().str()).con(")"); };
 term.println("2) describe(Rect(10,10)) = ".con(describe(new Rect(10, 10))));
 
 # A heterogeneous array: each element is a different concrete class behind one element type.
@@ -66,9 +66,9 @@ interface Builder {
 };
 
 class Counter(int n) {
-    func bump() Self { new Counter(n + 1); };
-    func grow() Self { new Counter(n + 1); };
-    func value() int { n; };
+    func bump() Self { return new Counter(n + 1); };
+    func grow() Self { return new Counter(n + 1); };
+    func value() int { return n; };
 };
 
 Counter c = new Counter(0);
@@ -84,8 +84,8 @@ term.println("   Builder(10).grow().grow().value() = ".con(b.grow().grow().value
 # at the class (listing the missing method) instead of at the first use.
 
 class Triangle(int base, int height) : Shape {
-    func area() int { base * height / 2; };
-    func kind() str { "triangle"; };
+    func area() int { return base * height / 2; };
+    func kind() str { return "triangle"; };
 };
 term.println("4) Triangle(6,4) as Shape -> ".con(describe(new Triangle(6, 4))));
 
@@ -94,7 +94,7 @@ term.println("4) Triangle(6,4) as Shape -> ".con(describe(new Triangle(6, 4))));
 # generic you may call the bound's methods on a `T`, and any type argument must satisfy it.
 
 class Boxed[T: Shape](T item) {
-    func areaOf() int { item.area(); };
+    func areaOf() int { return item.area(); };
 };
 Boxed[Square] bs = new Boxed[Square](new Square(5));
 Boxed[Rect] br = new Boxed[Rect](new Rect(3, 4));

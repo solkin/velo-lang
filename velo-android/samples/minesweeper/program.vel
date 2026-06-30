@@ -121,11 +121,11 @@ Container root = page;
 # ---- geometry helpers ---------------------------------------------------------------------
 
 func idx(int c, int r) int {
-    r * cols + c;
+    return r * cols + c;
 };
 
 func cellAt(int px, int py) int {
-    if (px < GRID_BORDER | py < GRID_BORDER) then 0 - 1
+    return if (px < GRID_BORDER | py < GRID_BORDER) then 0 - 1
     else {
         int c = (px - GRID_BORDER) / CELL;
         int r = (py - GRID_BORDER) / CELL;
@@ -139,7 +139,7 @@ func isSafe(int k, int safe) bool {
     if (dc < 0) { dc = 0 - dc; };
     int dr = (k / cols) - (safe / cols);
     if (dr < 0) { dr = 0 - dr; };
-    dc <= 1 & dr <= 1;
+    return dc <= 1 & dr <= 1;
 };
 
 func placeMines(int safe) void {
@@ -243,7 +243,7 @@ func bevelSunken(Canvas cv, int x, int y, int w, int h, int t, str face) void {
 # ---- drawing: board cells -----------------------------------------------------------------
 
 func numberColor(int n) str {
-    if (n == 1) then "#0000FF"
+    return if (n == 1) then "#0000FF"
     else if (n == 2) then "#008000"
     else if (n == 3) then "#FF0000"
     else if (n == 4) then "#000080"

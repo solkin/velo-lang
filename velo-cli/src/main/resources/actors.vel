@@ -8,10 +8,10 @@ actor class Counter(int start) {
 
     func bump() int {
         n += 1;
-        n;
+        return n;
     };
 
-    func value() int { n; };
+    func value() int { return n; };
 };
 
 # `new ActorClass(args)` spawns the worker, runs its constructor, and hands
@@ -38,10 +38,10 @@ term.println("first: ".con((await async counter.value()).str()));
 actor class Container() {
     actor[Counter] inner = new Counter(0);
 
-    func get() actor[Counter] { inner; };
+    func get() actor[Counter] { return inner; };
 
     func tick() int {
-        await async inner.bump();
+        return await async inner.bump();
     };
 };
 

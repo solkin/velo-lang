@@ -118,8 +118,8 @@ class HostCallbackTest {
             Terminal term = new Terminal();
             actor class Holder() {
                 int n = 0;
-                func makeAdder() func[(int) void] { func(int v) void { n = n + v; void }; };
-                func value() int { n; };
+                func makeAdder() func[(int) void] { return return func(int v) void { n = n + v; void }; };
+                func value() int { return n; };
             };
             actor class Firer() {
                 func fire(func[(int) void] cb, int v) void { cb(v); void };
@@ -174,7 +174,7 @@ class HostCallbackTest {
             """
             Terminal term = new Terminal();
             actor class Echo() {
-                func give(func[(int) void] cb) func[(int) void] { cb; };
+                func give(func[(int) void] cb) func[(int) void] { return return cb; };
             };
             actor[Echo] e = new Echo();
             func[(int) void] back = await async e.give(func(int v) void {

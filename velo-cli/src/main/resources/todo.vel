@@ -37,7 +37,7 @@ func repeat(str value, int count) str {
         result = result.con(value);
         i = i + 1;
     };
-    result;
+    return result;
 };
 
 func padRight(str value, int width) str {
@@ -45,17 +45,17 @@ func padRight(str value, int width) str {
     while (result.len() < width) {
         result = result.con(" ");
     };
-    result;
+    return result;
 };
 
 func padLeft(str value, int width) str {
     int needed = width - value.len();
-    if (needed <= 0) then value else repeat(" ", needed).con(value);
+    return if (needed <= 0) then value else repeat(" ", needed).con(value);
 };
 
 # Replace all occurrences of a substring
 func replaceAll(str s, str from, str to) str {
-    if (from.len() == 0) then s else {
+    return if (from.len() == 0) then s else {
         str result = "";
         int i = 0;
         int flen = from.len();
@@ -81,11 +81,11 @@ func replaceAll(str s, str from, str to) str {
 };
 
 func escapeTitle(str title) str {
-    replaceAll(title, "|", "||");
+    return replaceAll(title, "|", "||");
 };
 
 func unescapeTitle(str title) str {
-    replaceAll(title, "||", "|");
+    return replaceAll(title, "||", "|");
 };
 
 # Split text into lines by \n (handles \r\n)
@@ -118,11 +118,11 @@ func splitLines(str s) array[str] {
         trimmed[i] = result[i];
         i = i + 1;
     };
-    trimmed;
+    return trimmed;
 };
 
 func parseTaskLine(str line) ptr[array[str]] {
-    if (line.len() == 0) then null else {
+    return if (line.len() == 0) then null else {
         if (line[0] == 35) then null else {  # '#'
             int p1 = 0 - 1;
             int p2 = 0 - 1;
@@ -160,19 +160,19 @@ func parseTaskLine(str line) ptr[array[str]] {
 class Task(int id, str title, bool done, int created) {
 
     func toggle() Task {
-        new Task(id, title, done == false, created);
+        return new Task(id, title, done == false, created);
     };
 
     func markDone() Task {
-        new Task(id, title, true, created);
+        return new Task(id, title, true, created);
     };
 
     func markUndone() Task {
-        new Task(id, title, false, created);
+        return new Task(id, title, false, created);
     };
 
     func withTitle(str newTitle) Task {
-        new Task(id, newTitle, done, created);
+        return new Task(id, newTitle, done, created);
     };
 };
 
@@ -192,16 +192,16 @@ class TodoList(str filePath) {
                 i = i + 1;
             };
         };
-        result;
+        return result;
     };
 
     func find(int id) ptr[Task] {
         int idx = findIndex(id);
-        if (idx < 0) then null else new ptr[Task](tasks[idx]);
+        return if (idx < 0) then null else new ptr[Task](tasks[idx]);
     };
 
     func all() array[Task] {
-        tasks;
+        return tasks;
     };
 
     func pending() array[Task] {
@@ -221,7 +221,7 @@ class TodoList(str filePath) {
             trimmed[i] = result[i];
             i = i + 1;
         };
-        trimmed;
+        return trimmed;
     };
 
     func stats() dict[str:int] {
@@ -238,7 +238,7 @@ class TodoList(str filePath) {
         d["total"]   = total;
         d["done"]    = doneCount;
         d["pending"] = total - doneCount;
-        d;
+        return d;
     };
 
     # === Persistence ===
@@ -260,7 +260,7 @@ class TodoList(str filePath) {
             result = result.con(line);
             i = i + 1;
         };
-        result;
+        return result;
     };
 
     func save() void {
@@ -398,7 +398,7 @@ class TodoList(str filePath) {
 func formatTask(Task t) str {
     str status = if t.done then "[x]" else "[ ]";
     str idStr = padLeft(t.id.str(), 2);
-    status.con(" ").con(idStr).con("  ").con(t.title);
+    return status.con(" ").con(idStr).con("  ").con(t.title);
 };
 
 func renderTaskList(array[Task] tasks) void {
@@ -477,7 +477,7 @@ func parseCommand(str input) tuple[str,str] {
     };
 
     if (space < 0) {
-        new tuple(trimmed, "");
+        return new tuple(trimmed, "");
     } else {
         str cmd = trimmed.sub(0, space);
         str arg = trimmed.sub(space + 1, trimmed.len());
@@ -486,7 +486,7 @@ func parseCommand(str input) tuple[str,str] {
             start = start + 1;
         };
         arg = arg.sub(start, arg.len());
-        new tuple(cmd, arg);
+        return new tuple(cmd, arg);
     };
 };
 

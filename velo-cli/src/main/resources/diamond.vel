@@ -7,20 +7,20 @@ func toString(array[str] arr) str {
         acc = acc.con(arr[i]);
         i += 1;
     };
-    acc;
+    return acc;
 };
 func shift(array[int] arr, int v) array[str] {
-    arr.map(
+    return arr.map(
         func(int item, int index) str {
             int a = item - v;
-            if a > 0 then a.str() else " ";
+            return if a > 0 then a.str() else " ";
         }
     )
 };
 func reversed(array[any] arr) array[any] {
-    arr.map(
+    return arr.map(
         func(any item, int index) any {
-            arr[arr.len()-index-1];
+            return arr[arr.len()-index-1];
         }
     )
 };

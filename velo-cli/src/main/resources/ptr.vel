@@ -110,7 +110,7 @@ class Counter() {
     };
     
     func getValue() int {
-        valuePtr.val();
+        return valuePtr.val();
     };
     
     func setValue(int v) void {

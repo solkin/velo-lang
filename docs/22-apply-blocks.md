@@ -96,7 +96,7 @@ Line line = new Line(new Point(0, 0), new Point(0, 0)) {
 ```velo
 # Creation and initialization in a single expression
 func createConfiguredPerson() Person {
-    new Person("", 0) {
+    return new Person("", 0) {
         it.setName("Default");
         it.setAge(18);
     };

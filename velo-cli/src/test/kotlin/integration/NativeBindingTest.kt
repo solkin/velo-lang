@@ -240,7 +240,7 @@ class NativeBindingTest {
             data class Point(int x, int y) {};
 
             PointBus bus = new PointBus();
-            Point r = bus.mapPoint(new Point(3, 4), func(Point p) Point { new Point(p.x * 10, p.y * 10); });
+            Point r = bus.mapPoint(new Point(3, 4), func(Point p) Point { return new Point(p.x * 10, p.y * 10); });
             term.println(r.x.str());
             term.println(r.y.str());
             """.trimIndent()

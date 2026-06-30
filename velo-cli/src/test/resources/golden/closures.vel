@@ -14,8 +14,8 @@ Terminal term = new Terminal();
 # over it, so each adder remembers its own `n`.
 
 func makeAdder(int n) func[int] {
-    func(int x) int {
-        x + n;
+    return func(int x) int {
+        return x + n;
     };
 };
 
@@ -32,9 +32,9 @@ term.println(add5(100).str());   # 105
 
 func makeCounter() func[int] {
     int count = 0;
-    func() int {
+    return func() int {
         count = count + 1;
-        count;
+        return count;
     };
 };
 
@@ -55,9 +55,9 @@ class Pair(func[void] add, func[int] get) {};
 
 func makeAccumulator() Pair {
     int total = 0;
-    new Pair(
+    return new Pair(
         func(int v) void { total = total + v; },
-        func() int { total; }
+        func() int { return total; }
     );
 };
 
@@ -69,8 +69,8 @@ term.println(acc.get().str());  # 42
 # --- 4. Currying: function returning a function ---------------
 
 func add(int a) func[int] {
-    func(int b) int {
-        a + b;
+    return func(int b) int {
+        return a + b;
     };
 };
 

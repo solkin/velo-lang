@@ -16,15 +16,15 @@ class Stack() {
         int value = top.value;
         top = top.next;
         size = size - 1;
-        value;
+        return value;
     };
     
     func peek() int {
-        top.value;
+        return top.value;
     };
     
     func getSize() int {
-        size;
+        return size;
     };
 };
 
@@ -40,14 +40,14 @@ term.println(s.getSize().str());
 
 # Класс принимающий другой класс как параметр
 class Inner(int x) {
-    func getX() int { x; };
+    func getX() int { return x; };
 };
 
 class Outer(Inner inner) {
     int multiplier = 3;
     
     func compute() int {
-        inner.getX() * multiplier;
+        return inner.getX() * multiplier;
     };
     
     func setMultiplier(int m) void {
@@ -69,10 +69,10 @@ A a = new A(42);
 class B(A d) {
     int f = 9;
     func sumWithA(A c) int {
-        c.z + a.z;
+        return c.z + a.z;
     };
     func diff(B b) int {
-        b.f - d.z;
+        return b.f - d.z;
     };
 };
 

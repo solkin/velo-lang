@@ -194,7 +194,7 @@ Container root = page;
 
 # Walkable for any entity. The tunnel row (14) is open past the horizontal edges (warp).
 func walkable(int c, int r) bool {
-    if (r == 14 & (c < 0 | c >= COLS)) then true
+    return if (r == 14 & (c < 0 | c >= COLS)) then true
     else {
         if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then false
         else tile[r * COLS + c] != T_WALL;
@@ -265,7 +265,7 @@ func buildMaze() void {
 };
 
 func iabs(int v) int {
-    if (v < 0) then 0 - v else v;
+    return if (v < 0) then 0 - v else v;
 };
 
 func startFright() void {
@@ -286,7 +286,7 @@ func startFright() void {
 # ---- movement -----------------------------------------------------------------------------
 
 func aligned(int sx, int sy) bool {
-    sx % SPT == 0 & sy % SPT == 0;
+    return sx % SPT == 0 & sy % SPT == 0;
 };
 
 func movePac() void {
@@ -328,7 +328,7 @@ func movePac() void {
 # Target tile (tx,ty) for ghost [i] given its personality and the global mode.
 func targetC(int i) int {
     int pc = psx / SPT;
-    if (gmode[i] == 2) then gStartC[i]
+    return if (gmode[i] == 2) then gStartC[i]
     else if (globalMode == 0) then scatterC[i]
     else {
         if (i == 0) then pc
@@ -344,7 +344,7 @@ func targetC(int i) int {
 
 func targetR(int i) int {
     int pr = psy / SPT;
-    if (gmode[i] == 2) then gStartR[i]
+    return if (gmode[i] == 2) then gStartR[i]
     else if (globalMode == 0) then scatterR[i]
     else {
         if (i == 0) then pr
@@ -587,16 +587,16 @@ func nextLevel() void {
 # ---- drawing ------------------------------------------------------------------------------
 
 func cx(int sx) int {
-    (sx * TS) / SPT + TS / 2 + OX;
+    return (sx * TS) / SPT + TS / 2 + OX;
 };
 
 func cyv(int sy) int {
-    (sy * TS) / SPT + TS / 2 + HUD_TOP;
+    return (sy * TS) / SPT + TS / 2 + HUD_TOP;
 };
 
 # A wall sits on edges of a path tile that border a wall (or the outside, save the tunnel).
 func wallEdge(int c, int r) bool {
-    if (r == 14 & (c < 0 | c >= COLS)) then false
+    return if (r == 14 & (c < 0 | c >= COLS)) then false
     else {
         if (c < 0 | c >= COLS | r < 0 | r >= ROWS) then true
         else tile[r * COLS + c] == T_WALL;

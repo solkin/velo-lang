@@ -12,11 +12,11 @@ Terminal term = new Terminal();
 # --- 1. Function as argument ----------------------------------
 
 func apply(int x, func[int] f) int {
-    f(x);
+    return f(x);
 };
 
-any square = func(int x) int { x * x; };
-any inc    = func(int x) int { x + 1; };
+any square = func(int x) int { return x * x; };
+any inc    = func(int x) int { return x + 1; };
 
 term.println(apply(5, square).str());   # 25
 term.println(apply(5, inc).str());      # 6
@@ -24,7 +24,7 @@ term.println(apply(5, inc).str());      # 6
 # --- 2. twice: apply a function to its own result -------------
 
 func twice(int x, func[int] f) int {
-    f(f(x));
+    return f(f(x));
 };
 
 term.println(twice(3, inc).str());      # 5
@@ -33,8 +33,8 @@ term.println(twice(3, square).str());   # 81
 # --- 3. compose: returns a new function f ∘ g -----------------
 
 func compose(func[int] f, func[int] g) func[int] {
-    func(int x) int {
-        f(g(x));
+    return func(int x) int {
+        return f(g(x));
     };
 };
 
@@ -47,7 +47,7 @@ term.println(squareThenInc(4).str());   # 4^2 + 1 = 17
 # --- 4. Built-in array.map with a captured value --------------
 
 int factor = 10;
-func[int] scale = func(int v, int i) int { v * factor; };
+func[int] scale = func(int v, int i) int { return return v * factor; };
 
 array[int] xs = new array[int]{1, 2, 3, 4};
 array[int] ys = xs.map(scale);
@@ -69,9 +69,9 @@ func count(array[int] arr, func[bool] pred) int {
         };
         i = i + 1;
     };
-    n;
+    return n;
 };
 
 int threshold = 15;
-int big = count(ys, func(int v) bool { v > threshold; });
+int big = count(ys, func(int v) bool { return return return return return return v > threshold; });
 term.println(big.str());                # 20, 30, 40 are > 15 → 3

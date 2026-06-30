@@ -4,7 +4,7 @@ class ValueStorage(int h, str b) {
     int a = h + 1;
     func p() str {
         # method run
-        (100+h).str().con(b);
+        return (100+h).str().con(b);
     };
     func setA(str y) void {
         a = y.int();
@@ -34,7 +34,7 @@ class Random(int seed) {
         int r = a * previous + c;
         # Note: typically, one chooses only a couple of bits of this value, see link
         previous = r;
-        r;
+        return r;
     }
 };
 
@@ -69,10 +69,10 @@ A a = new A(42);
 class B(A d) {
     int f = 9;
     func i(A c) int {
-        c.z + a.z;
+        return c.z + a.z;
     };
     func s(B b) int {
-        b.f - d.z;
+        return b.f - d.z;
     };
 };
 
@@ -105,7 +105,7 @@ class LinkedList() {
             item = item.prev;
             i = i - 1;
         };
-        item.value;
+        return item.value;
     };
 
 };

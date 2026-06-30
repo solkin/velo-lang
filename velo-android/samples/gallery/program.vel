@@ -28,7 +28,7 @@ int meter = 40;
 
 # A section heading with a little colour to separate groups.
 func heading(str s) Text {
-    ui.text(s).style(styles.titleMedium()).color(colors.primary());
+    return ui.text(s).style(styles.titleMedium()).color(colors.primary());
 };
 
 # A rounded, tinted content card. Note: a rounded card clips its content, so never put an
@@ -38,7 +38,7 @@ func panel() Surface {
     p.corner(16);
     p.elevation(1);
     p.background(colors.surfaceContainer());
-    p;
+    return p;
 };
 
 # One headline-number stat tile: an icon over a big number over a caption.
@@ -47,7 +47,7 @@ func statTile(str value, str caption, str iconName) Surface {
     tile.add(ui.icon(iconName).tint(colors.primary()));
     tile.add(ui.text(value).style(styles.headlineSmall()));
     tile.add(ui.text(caption).style(styles.bodySmall()).color(colors.onSurfaceVariant()));
-    tile;
+    return tile;
 };
 
 # ---- Home -------------------------------------------------------------------------------

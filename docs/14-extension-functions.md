@@ -5,12 +5,12 @@ Extension functions allow adding methods to existing types:
 ```velo
 # Extension for int
 ext(int a) max(int b) int {
-    if (a > b) then a else b;
+    return if (a > b) then a else b;
 };
 
 # Extension for str
 ext(str a) insert(int index, str s) str {
-    a.sub(0, index).con(s).con(a.sub(index, a.len()));
+    return a.sub(0, index).con(s).con(a.sub(index, a.len()));
 };
 
 # Usage
@@ -24,11 +24,11 @@ For extension functions without parameters, parentheses are optional:
 
 ```velo
 ext(bool b) str() str {
-    if b then "true" else "false"
+    return if b then "true" else "false"
 };
 
 ext(int n) double() int {
-    n * 2
+    return n * 2
 };
 
 # Usage - both forms are valid:
@@ -45,7 +45,7 @@ int d2 = x.double;     # 10
 
 ```velo
 ext(Terminal t) printInt(int a) str {
-    t.println(a.str());
+    return t.println(a.str());
 };
 
 Terminal term = new Terminal();

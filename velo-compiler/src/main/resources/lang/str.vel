@@ -5,5 +5,5 @@ ext(str s) bytes() array[byte] {
         result[i] = s[i];
         i = i + 1;
     };
-    result
+    return result
 };

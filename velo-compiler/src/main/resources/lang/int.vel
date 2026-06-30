@@ -1,9 +1,9 @@
 ext(int a) abs() int {
-    if (a > 0) then a else 0 - a
+    return if (a > 0) then a else 0 - a
 };
 
 ext(int a) neg() int {
-    if (a < 0) then a else 0 - a
+    return if (a < 0) then a else 0 - a
 };
 
 ext (int num) format(int radix) str {
@@ -55,5 +55,5 @@ ext (int num) format(int radix) str {
         result = result.con(buffer[n].char());
         n = n + 1;
     };
-    result;
+    return result;
 };

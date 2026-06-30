@@ -37,15 +37,15 @@ Binary operators take one parameter (the right-hand operand) and return a value:
 ```velo
 class Vector(int x, int y) {
     operator +(Vector other) Vector {
-        new Vector(x + other.x, y + other.y);
+        return new Vector(x + other.x, y + other.y);
     };
 
     operator ==(Vector other) bool {
-        x == other.x & y == other.y;
+        return x == other.x & y == other.y;
     };
 
     operator <(Vector other) bool {
-        x < other.x & y < other.y;
+        return x < other.x & y < other.y;
     };
 };
 
@@ -69,7 +69,7 @@ The compiler distinguishes unary `-` from binary `-` by the number of parameters
 ```velo
 class Vector(int x, int y) {
     operator -() Vector {
-        new Vector(0 - x, 0 - y);
+        return new Vector(0 - x, 0 - y);
     };
 };
 
@@ -92,7 +92,7 @@ The read operator `[]` takes one parameter (the index/key) and returns a value. 
 ```velo
 class Vector(int x, int y) {
     operator [](int index) int {
-        if (index == 0) then x else y;
+        return if (index == 0) then x else y;
     };
 
     operator []=(int index, int value) void {
@@ -113,7 +113,7 @@ Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`) are desugared by th
 ```velo
 class Vector(int x, int y) {
     operator +(Vector other) Vector {
-        new Vector(x + other.x, y + other.y);
+        return new Vector(x + other.x, y + other.y);
     };
 };
 
@@ -152,55 +152,55 @@ Vector sum = a + a;           # OK: left is Vector, dispatches to op@+
 ```velo
 class Vector(int x, int y) {
     operator +(Vector other) Vector {
-        new Vector(x + other.x, y + other.y);
+        return new Vector(x + other.x, y + other.y);
     };
 
     operator -(Vector other) Vector {
-        new Vector(x - other.x, y - other.y);
+        return new Vector(x - other.x, y - other.y);
     };
 
     operator *(Vector other) Vector {
-        new Vector(x * other.x, y * other.y);
+        return new Vector(x * other.x, y * other.y);
     };
 
     operator /(Vector other) Vector {
-        new Vector(x / other.x, y / other.y);
+        return new Vector(x / other.x, y / other.y);
     };
 
     operator %(Vector other) Vector {
-        new Vector(x % other.x, y % other.y);
+        return new Vector(x % other.x, y % other.y);
     };
 
     operator ==(Vector other) bool {
-        x == other.x & y == other.y;
+        return x == other.x & y == other.y;
     };
 
     operator !=(Vector other) bool {
-        x != other.x | y != other.y;
+        return x != other.x | y != other.y;
     };
 
     operator <(Vector other) bool {
-        x < other.x & y < other.y;
+        return x < other.x & y < other.y;
     };
 
     operator >(Vector other) bool {
-        x > other.x & y > other.y;
+        return x > other.x & y > other.y;
     };
 
     operator <=(Vector other) bool {
-        x <= other.x & y <= other.y;
+        return x <= other.x & y <= other.y;
     };
 
     operator >=(Vector other) bool {
-        x >= other.x & y >= other.y;
+        return x >= other.x & y >= other.y;
     };
 
     operator -() Vector {
-        new Vector(0 - x, 0 - y);
+        return new Vector(0 - x, 0 - y);
     };
 
     operator [](int index) int {
-        if (index == 0) then x else y;
+        return if (index == 0) then x else y;
     };
 
     operator []=(int index, int value) void {
@@ -208,7 +208,7 @@ class Vector(int x, int y) {
     };
 
     func toString() str {
-        "(".con(x.str()).con(", ").con(y.str()).con(")");
+        return "(".con(x.str()).con(", ").con(y.str()).con(")");
     };
 };
 

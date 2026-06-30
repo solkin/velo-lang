@@ -39,7 +39,7 @@ term.println(d.vals().len().str());
 d.arr().map(
     func(tuple[int,str] e, int i) int {
         term.println(e.1.str().con(":").con(e.2));
-        i;
+        return i;
     }
 );
 
@@ -74,9 +74,9 @@ term.println((ok == 40).str());
 
 func tally(dict[str:int] m, str k) int {
     if (m.key(k)) {
-        m[k];
+        return m[k];
     } else {
-        0;
+        return 0;
     };
 };
 term.println(tally(ages, "bob").str());
@@ -86,7 +86,7 @@ term.println(tally(ages, "ghost").str());
 
 class Box[T](T item) {
     func get() T {
-        item;
+        return item;
     };
 };
 Box[dict[str:int]] boxed = new Box[dict[str:int]](ages);

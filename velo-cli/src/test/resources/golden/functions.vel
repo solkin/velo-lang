@@ -1,11 +1,11 @@
 Terminal term = new Terminal();
 
 func add(int a, int b) int {
-    a + b;
+    return a + b;
 };
 
 func multiply(int a, int b) int {
-    a * b;
+    return a * b;
 };
 
 func factorial(int n) int {
@@ -15,7 +15,7 @@ func factorial(int n) int {
         result *= i;
         i += 1;
     };
-    result;
+    return result;
 };
 
 term.println(add(10, 20).str());

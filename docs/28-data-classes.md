@@ -4,7 +4,7 @@ A **data class** is an immutable *value type*. Where a plain [`class`](13-classe
 
 ```velo
 data class Point(int x, int y) {
-    func sum() int { x + y; };
+    func sum() int { return x + y; };
 };
 
 Point p = new Point(3, 4);
@@ -47,12 +47,12 @@ A data class is [transferable](26-actors.md#what-crosses-the-boundary): passing 
 
 ```velo
 data class Point(int x, int y) {
-    func sum() int { x + y; };
+    func sum() int { return x + y; };
 };
 
 actor class Geometry() {
     func translate(Point p, int dx, int dy) Point {
-        new Point(p.x + dx, p.y + dy);
+        return new Point(p.x + dx, p.y + dy);
     };
 };
 

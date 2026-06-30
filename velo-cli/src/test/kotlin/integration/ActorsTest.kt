@@ -62,7 +62,7 @@ class ActorsTest {
                 int n = 0;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
@@ -85,7 +85,7 @@ class ActorsTest {
                 int n = start;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
@@ -120,7 +120,7 @@ class ActorsTest {
                         total = total + held[i];
                         i = i + 1;
                     };
-                    total;
+                    return total;
                 };
             };
 
@@ -146,13 +146,13 @@ class ActorsTest {
                 int n = 0;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
             actor class Container() {
                 actor[Counter] inner = new Counter();
-                func get() actor[Counter] { inner; };
+                func get() actor[Counter] { return inner; };
             };
 
             actor[Container] c = new Container();
@@ -176,7 +176,7 @@ class ActorsTest {
 
             actor class Container() {
                 actor[Counter] inner = new Counter();
-                func get() actor[Counter] { inner; };
+                func get() actor[Counter] { return inner; };
             };
 
             actor[Container] c = new Container();
@@ -200,7 +200,7 @@ class ActorsTest {
             compileOrThrow(
                 """
                 actor class A() {
-                    func ping() int { 1; };
+                    func ping() int { return 1; };
                 };
                 actor[A] a = new A();
                 int n = a.ping();
@@ -236,12 +236,12 @@ class ActorsTest {
             compileOrThrow(
                 """
                 actor class W() {
-                    func work() int { 7; };
+                    func work() int { return 7; };
                 };
                 actor class Bad() {
                     actor[W] w = new W();
                     func dispatch() future[int] {
-                        async w.work();
+                        return async w.work();
                     };
                 };
                 """.trimIndent()
@@ -259,7 +259,7 @@ class ActorsTest {
                 """
                 class Pair(int a, int b) {};
                 actor class A() {
-                    func make() Pair { new Pair(1, 2); };
+                    func make() Pair { return new Pair(1, 2); };
                 };
                 """.trimIndent()
             )
@@ -276,7 +276,7 @@ class ActorsTest {
                 """
                 class Pair(int a, int b) {};
                 actor class A() {
-                    func take(Pair p) int { p.a; };
+                    func take(Pair p) int { return p.a; };
                 };
                 """.trimIndent()
             )
@@ -308,7 +308,7 @@ class ActorsTest {
                 """
                 actor class A() {
                     func produce() func[int] {
-                        func() int { 7; };
+                        return func() int { return 7; };
                     };
                 };
                 """.trimIndent()
@@ -332,7 +332,7 @@ class ActorsTest {
                 array[int] last = new array[int]{};
                 func echo(array[int] xs, array[tuple[int,str]] tags) array[int] {
                     last = xs;
-                    last;
+                    return last;
                 };
             };
 
@@ -378,7 +378,7 @@ class ActorsTest {
                 int n = start;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
@@ -406,7 +406,7 @@ class ActorsTest {
                 Time t = new Time();
                 func nap(int ms) int {
                     t.sleep(ms);
-                    ms;
+                    return ms;
                 };
             };
 
@@ -444,7 +444,7 @@ class ActorsTest {
         // worker — the next request on the same actor still works.
         val program = """
             actor class A() {
-                func works() int { 42; };
+                func works() int { return 42; };
             };
             actor[A] a = new A();
         """.trimIndent()
@@ -477,7 +477,7 @@ class ActorsTest {
                 int n = 0;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
@@ -503,14 +503,14 @@ class ActorsTest {
             Terminal term = new Terminal();
 
             actor class Worker() {
-                func square(int x) int { x * x; };
+                func square(int x) int { return x * x; };
             };
 
             actor class Boss() {
                 actor[Worker] w = new Worker();
                 func dispatch(int n) int {
                     future[int] f = async w.square(n);
-                    await f;
+                    return await f;
                 };
             };
 
@@ -536,7 +536,7 @@ class ActorsTest {
                 int n = 0;
                 func bump() int {
                     n += 1;
-                    n;
+                    return n;
                 };
             };
 
@@ -567,7 +567,7 @@ class ActorsTest {
                 actor class A() {
                     func boom() int {
                         array[int] xs = new array[int]{};
-                        xs[0];
+                        return xs[0];
                     };
                 };
 
@@ -593,7 +593,7 @@ class ActorsTest {
         val ex = assertFails {
             compileOrThrow(
                 """
-                actor class A() { func ping() int { 1; }; };
+                actor class A() { func ping() int { return 1; }; };
                 actor[A] a = new A();
                 future[int] f = async a;
                 """.trimIndent()
@@ -608,7 +608,7 @@ class ActorsTest {
         val ex = assertFails {
             compileOrThrow(
                 """
-                actor class A() { func ping() int { 1; }; };
+                actor class A() { func ping() int { return 1; }; };
                 actor[A] a = new A();
                 future[int] f = async a.ping;
                 """.trimIndent()
@@ -622,7 +622,7 @@ class ActorsTest {
     fun `program shutdown joins actor daemon threads`() {
         val program = """
             actor class A() {
-                func ping() int { 1; };
+                func ping() int { return 1; };
             };
             actor[A] a = new A();
         """.trimIndent()
@@ -649,8 +649,8 @@ class ActorsTest {
 
             actor class Counter() {
                 int n = 0;
-                func bump() int { n += 1; n; };
-                func value() int { n; };
+                func bump() int { n += 1; return n; };
+                func value() int { return n; };
             };
 
             actor[Counter] c = new Counter();
@@ -669,7 +669,7 @@ class ActorsTest {
             Terminal term = new Terminal();
 
             actor class Echo() {
-                func id(int v) int { v; };
+                func id(int v) int { return v; };
             };
 
             actor[Echo] e = new Echo();
@@ -688,7 +688,7 @@ class ActorsTest {
 
             actor class Counter() {
                 int n = 0;
-                func bump() int { n += 1; n; };
+                func bump() int { n += 1; return n; };
             };
 
             actor[Counter] a = new Counter();
@@ -789,7 +789,7 @@ class ActorsTest {
             Time t = new Time();
             func nap(int ms) int {
                 t.sleep(ms);
-                ms;
+                return ms;
             };
         };
         actor[Sleeper] a = new Sleeper();

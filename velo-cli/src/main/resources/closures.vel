@@ -5,7 +5,7 @@ Terminal term = new Terminal();
 
 # --- 1. Captured value -----------------------------------------
 func makeAdder(int n) func[int] {
-    func(int x) int { x + n; };
+    return func(int x) int { return x + n; };
 };
 
 func[int] add5  = makeAdder(5);
@@ -17,9 +17,9 @@ term.println("add10(3) = " + add10(3).str());
 # --- 2. Captured mutable state ---------------------------------
 func makeCounter() func[int] {
     int count = 0;
-    func() int {
+    return func() int {
         count = count + 1;
-        count;
+        return count;
     };
 };
 
@@ -46,7 +46,7 @@ term.println(ok.label + " clicked " + clicks.str() + " times");
 
 # --- 4. Currying -----------------------------------------------
 func add(int a) func[int] {
-    func(int b) int { a + b; };
+    return func(int b) int { return a + b; };
 };
 
 term.println("add(3)(4) = " + add(3)(4).str());
