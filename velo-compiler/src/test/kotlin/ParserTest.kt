@@ -648,22 +648,14 @@ class ParserTest {
 
     @Test
     fun testParseLet() {
-        val parser = makeSimpleParser("let(int a = 5) { false }")
+        val parser = makeSimpleParser("let a = 5")
 
         val node = parser.parse()
 
         assertEquals(
-            expected = ScopeNode(
-                child = LetNode(
-                    vars = listOf(
-                        DefNode(
-                            name = "a",
-                            type = IntType,
-                            def = IntNode(value = 5)
-                        )
-                    ),
-                    body = BoolNode(value = false)
-                )
+            expected = LetNode(
+                name = "a",
+                value = IntNode(value = 5)
             ).wrapProgram(),
             actual = node,
         )

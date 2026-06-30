@@ -1,0 +1,27 @@
+# `let name = expr` — immutable local with an inferred type.
+Terminal term = new Terminal()
+
+let x = 42
+let name = "Velo"
+let sum = x + 8
+let pi = 3.5
+let ok = x > 10
+
+term.println(x.str)
+term.println(name)
+term.println(sum.str)
+term.println("pi = $pi, ok = $ok")
+
+# Inference flows through expressions and calls.
+func square(int n) int {
+    return n * n
+}
+let s = square(9)
+term.println("square = $s")
+
+# A let inside a loop is re-bound each iteration.
+let total = 0
+for i in 1..4 {
+    let step = i * 10
+    term.println("step = $step")
+}
