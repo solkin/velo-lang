@@ -233,17 +233,32 @@ class TokenStream(private val input: Input) {
         )
     }
 
-    private fun skipComment() {
-        readWhile(predicate = fun(ch: Char): Boolean { return ch != '\n' })
-        input.next()
+    /**
+     * Skip whitespace and `#` line comments, recording in [sawNewline] whether
+     * a line break (or comment, which ends the line) was crossed — the signal
+     * the automatic-semicolon-insertion pass keys off.
+     */
+    private fun skipWhitespaceAndComments() {
+        while (!input.eof()) {
+            val ch = input.peek()
+            when {
+                ch == '\n' -> { sawNewline = true; input.next() }
+                isWhitespace(ch) -> input.next()
+                ch == '#' -> {
+                    readWhile(predicate = fun(c: Char): Boolean { return c != '\n' })
+                    sawNewline = true
+                    if (!input.eof()) input.next()
+                }
+                else -> return
+            }
+        }
     }
 
-    private fun readNext(): Token? {
-        readWhile(predicate = ::isWhitespace)
+    private fun readRawToken(): Token? {
+        skipWhitespaceAndComments()
         if (input.eof()) return null
         val ch = input.peek()
         when {
-            ch == '#' -> return skipComment().run { readNext() }
             ch == '"' -> return readString()
             ch == '\'' -> return readChar()
             isDigit(ch) -> return readNumber()
@@ -255,14 +270,60 @@ class TokenStream(private val input: Input) {
         return null
     }
 
+    // ---- Automatic semicolon insertion ----
+    //
+    // Newlines terminate statements (Go-style): a synthetic `;` is produced
+    // when a line break separates a token that can *end* a statement from one
+    // that cannot *continue* the previous expression. Explicit `;` keeps
+    // working, and a statement may still span multiple lines as long as it
+    // breaks after an operator/`.`/`,`/open bracket (a continuer) — so no `;`
+    // is ever needed after `}`.
+
+    private var prev: Token? = null
+    private var pending: Token? = null
+    private var sawNewline = false
+
+    private val enderKeywords = setOf("true", "false", "null")
+    private val continuerKeywords = setOf("else", "then")
+
+    private fun isEnder(t: Token): Boolean = when (t.type) {
+        TokenType.NUMBER, TokenType.STRING, TokenType.VARIABLE -> true
+        TokenType.KEYWORD -> (t.value as? String) in enderKeywords
+        TokenType.PUNCTUATION -> t.value == ')' || t.value == ']' || t.value == '}'
+        else -> false
+    }
+
+    private fun isContinuer(t: Token): Boolean = when (t.type) {
+        TokenType.OPERATOR -> true
+        TokenType.KEYWORD -> (t.value as? String) in continuerKeywords
+        TokenType.PUNCTUATION ->
+            t.value == '.' || t.value == ',' || t.value == ';' ||
+                t.value == ')' || t.value == ']' || t.value == '}'
+        else -> false
+    }
+
+    private fun produce(): Token? {
+        pending?.let { pending = null; prev = it; return it }
+        sawNewline = false
+        val token = readRawToken() ?: run { prev = null; return null }
+        if (sawNewline && prev?.let { isEnder(it) } == true && !isContinuer(token)) {
+            pending = token
+            val semicolon = Token(type = TokenType.PUNCTUATION, value = ';')
+            prev = semicolon
+            return semicolon
+        }
+        prev = token
+        return token
+    }
+
     fun peek(): Token? {
-        return current ?: next()?.apply { current = this }
+        return current ?: produce()?.also { current = it }
     }
 
     fun next(): Token? {
         val token = current
         current = null
-        return token ?: readNext()
+        return token ?: produce()
     }
 
     fun eof(): Boolean {

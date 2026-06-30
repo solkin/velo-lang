@@ -428,4 +428,83 @@ class TokenStreamTest {
 
         assertNull(token)
     }
+
+    private fun tokens(source: String): List<Token> {
+        val stream = TokenStream(StringInput(source))
+        val result = mutableListOf<Token>()
+        while (!stream.eof()) {
+            result.add(stream.next() ?: break)
+        }
+        return result
+    }
+
+    @Test
+    fun testNewlineInsertsSemicolon() {
+        // A line break between a statement-ender and a fresh statement yields a `;`.
+        val toks = tokens("a\nb")
+        assertEquals(
+            listOf(
+                Token(TokenType.VARIABLE, "a"),
+                Token(TokenType.PUNCTUATION, ';'),
+                Token(TokenType.VARIABLE, "b"),
+            ),
+            toks,
+        )
+    }
+
+    @Test
+    fun testNewlineAfterBraceInsertsSemicolon() {
+        // The `};` pain point: no `;` needed after a closing brace.
+        val toks = tokens("}\nb")
+        assertEquals(
+            listOf(
+                Token(TokenType.PUNCTUATION, '}'),
+                Token(TokenType.PUNCTUATION, ';'),
+                Token(TokenType.VARIABLE, "b"),
+            ),
+            toks,
+        )
+    }
+
+    @Test
+    fun testNoSemicolonAfterOperator() {
+        // Breaking after an operator continues the expression — no `;`.
+        val toks = tokens("a +\nb")
+        assertEquals(
+            listOf(
+                Token(TokenType.VARIABLE, "a"),
+                Token(TokenType.OPERATOR, "+"),
+                Token(TokenType.VARIABLE, "b"),
+            ),
+            toks,
+        )
+    }
+
+    @Test
+    fun testNoSemicolonBeforeDot() {
+        // A leading dot continues a method chain — no `;`.
+        val toks = tokens("a\n.b")
+        assertEquals(
+            listOf(
+                Token(TokenType.VARIABLE, "a"),
+                Token(TokenType.PUNCTUATION, '.'),
+                Token(TokenType.VARIABLE, "b"),
+            ),
+            toks,
+        )
+    }
+
+    @Test
+    fun testExplicitSemicolonNotDoubled() {
+        // An explicit `;` followed by a newline does not produce a second one.
+        val toks = tokens("a;\nb")
+        assertEquals(
+            listOf(
+                Token(TokenType.VARIABLE, "a"),
+                Token(TokenType.PUNCTUATION, ';'),
+                Token(TokenType.VARIABLE, "b"),
+            ),
+            toks,
+        )
+    }
 }

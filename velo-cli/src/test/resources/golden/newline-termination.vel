@@ -1,0 +1,32 @@
+# Statements terminate at end of line (Go-style): no `;` needed, and never `};`.
+Terminal term = new Terminal()
+
+func add(int a, int b) int {
+    a + b
+}
+
+func factorial(int n) int {
+    int result = 1
+    int i = 1
+    while (i <= n) {
+        result *= i
+        i += 1
+    }
+    result
+}
+
+int x = 10
+if (x > 5) {
+    term.println("greater")
+} else {
+    term.println("not greater")
+}
+
+# A statement may still span lines by breaking after an operator or a dot.
+int sum = add(10, 20) +
+    factorial(5)
+term.println(sum
+    .str)
+
+# Explicit `;` still works for several statements on one line.
+int a = 1; int b = 2; term.println((a + b).str)
