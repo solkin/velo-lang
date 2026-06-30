@@ -1,5 +1,10 @@
 # Dictionaries
 
+`dict[K:V]` is pure syntax sugar over the standard-library `Map[K, V]` class:
+the literal and the `dict[K:V]` type desugar to `Map`, and a dict value *is* a
+`Map` — there is one type and one API (`get`, `put`, `keys`, `del`, …). Use the
+`dict` syntax for the convenient literal; everything else is the `Map` class.
+
 ## Creating Dictionaries
 
 ```velo

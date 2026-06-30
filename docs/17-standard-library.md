@@ -135,7 +135,7 @@ Class for TCP socket communication. Supports both client and server modes.
 ### Client
 
 ```velo
-Socket sock = Socket();
+Socket sock = new Socket();
 sock.connect("127.0.0.1", 9876);
 
 sock.writeLine("Hello!");
@@ -147,7 +147,7 @@ sock.close();
 ### Server
 
 ```velo
-Socket srv = Socket();
+Socket srv = new Socket();
 srv.bind(9876);
 
 Socket client = srv.accept();         # blocks until a client connects
