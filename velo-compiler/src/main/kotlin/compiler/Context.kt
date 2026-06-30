@@ -67,6 +67,27 @@ data class Context(
         return null
     }
 
+    /**
+     * Marks the body context of a loop, so a `break`/`continue` can confirm it
+     * is inside one. Set by the loop nodes on their body's [block] context.
+     */
+    var loopBody: Boolean = false
+
+    /**
+     * Whether this context lies inside a loop body *within the current
+     * function*. The walk stops at the function root (a non-[subFrame] frame),
+     * so `break`/`continue` cannot escape into an enclosing function's loop.
+     */
+    fun isInLoop(): Boolean {
+        var context: Context? = this
+        while (context != null) {
+            if (context.loopBody) return true
+            if (!context.subFrame) return false
+            context = context.parent
+        }
+        return false
+    }
+
     fun add(op: Op) {
         frame.ops.add(op)
     }
