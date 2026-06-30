@@ -21,6 +21,9 @@ data class FuncNode(
 
         // Create body frame and fork var counter
         val funcOps = ctx.extend()
+        // Mark the frame so an explicit `return` in the body (or in an inline
+        // branch/loop within it) can type-check against this return type.
+        funcOps.returnType = type
 
         // Insert function frame pointer into stack
         ctx.add(Op.Frame(num = funcOps.frame.num))

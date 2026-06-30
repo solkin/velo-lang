@@ -31,6 +31,7 @@ object VeloGrammar {
         parser.registerKeyword("await", AwaitParselet())
         parser.registerKeyword("include", IncludeParselet())
         parser.registerKeyword("operator", OperatorParselet())
+        parser.registerKeyword("return", ReturnParselet())
         
         // Type keywords (will be handled by DefParselet)
         parser.registerKeyword(BYTE, DefParselet())

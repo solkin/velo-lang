@@ -49,6 +49,24 @@ data class Context(
 
     private val frames: MutableList<CompilerFrame> = ArrayList()
 
+    /**
+     * The declared return type of the function this context belongs to, set by
+     * [compiler.nodes.FuncNode] on the function's root context. `null` on inline
+     * block/loop contexts (which chain to the function via [parent]) and at the
+     * program top level. A `return` reads it through [enclosingReturnType].
+     */
+    var returnType: Type? = null
+
+    /** The declared return type of the nearest enclosing function, or `null`. */
+    fun enclosingReturnType(): Type? {
+        var context: Context? = this
+        while (context != null) {
+            context.returnType?.let { return it }
+            context = context.parent
+        }
+        return null
+    }
+
     fun add(op: Op) {
         frame.ops.add(op)
     }

@@ -21,6 +21,7 @@ class TokenStream(private val input: Input) {
         "include",
         "operator",
         "interface",
+        "return",
     ).plus(stdTypesSet)
 
     private fun isKeyword(str: String): Boolean {
@@ -283,7 +284,7 @@ class TokenStream(private val input: Input) {
     private var pending: Token? = null
     private var sawNewline = false
 
-    private val enderKeywords = setOf("true", "false", "null")
+    private val enderKeywords = setOf("true", "false", "null", "return")
     private val continuerKeywords = setOf("else", "then")
 
     private fun isEnder(t: Token): Boolean = when (t.type) {
