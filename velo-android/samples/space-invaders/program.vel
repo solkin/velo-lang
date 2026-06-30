@@ -1,0 +1,1076 @@
+# Space Invaders — the 1978 Taito arcade classic on a Canvas, in its original style: white
+# pixel-art aliens (squid, crab, octopus) descending in a stepping formation that accelerates
+# as their ranks thin, four green erodable shield bunkers, a red mystery saucer crossing the
+# top for bonus points, the green laser cannon that fires one shot at a time, raining alien
+# bombs, lives and score. The whole game advances on one actor that repaints off the event loop.
+# Hold ◀ ▶ to move and FIRE to shoot — or drag the field to aim and tap it to fire.
+
+include "lang/random.vel";
+
+Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+Random rng = new Random(12345);
+
+# ---- palette (the authentic monochrome sprites under Taito's colour-strip overlay) ----------
+str C_BG = "#000000";
+str C_INV = "#FFFFFF";       # aliens: white
+str C_GREEN = "#27E03A";     # cannon, bunkers, ground: the green bottom strip
+str C_RED = "#FF3838";       # the mystery saucer: the red top strip
+str C_BULLET = "#FFFFFF";
+str C_BOMB = "#FFFFFF";
+str C_TEXT = "#FFFFFF";
+str C_UFOSCORE = "#FFE100";
+
+int CH_X = "X"[0];
+
+# ---- sprites (each row is run-length filled; rows may differ in length) ---------------------
+# top alien — "squid" (30 pts), two animation frames
+array[str] squidA = new array[str]{
+    "...XX...",
+    "..XXXX..",
+    ".XXXXXX.",
+    "XX.XX.XX",
+    "XXXXXXXX",
+    "..X..X..",
+    ".X.XX.X.",
+    "X.X..X.X"
+};
+array[str] squidB = new array[str]{
+    "...XX...",
+    "..XXXX..",
+    ".XXXXXX.",
+    "XX.XX.XX",
+    "XXXXXXXX",
+    ".X.XX.X.",
+    "X.X..X.X",
+    ".X....X."
+};
+# middle aliens — "crab" (20 pts)
+array[str] crabA = new array[str]{
+    "..X.....X..",
+    "...X...X...",
+    "..XXXXXXX..",
+    ".XX.XXX.XX.",
+    "XXXXXXXXXXX",
+    "X.XXXXXXX.X",
+    "X.X.....X.X",
+    "...XX.XX..."
+};
+array[str] crabB = new array[str]{
+    "..X.....X..",
+    "X..X...X..X",
+    "X.XXXXXXX.X",
+    "XXX.XXX.XXX",
+    "XXXXXXXXXXX",
+    ".XXXXXXXXX.",
+    "..X.....X..",
+    ".X.......X."
+};
+# bottom aliens — "octopus" (10 pts)
+array[str] octA = new array[str]{
+    "....XXXX....",
+    ".XXXXXXXXXX.",
+    "XXXXXXXXXXXX",
+    "XXX..XX..XXX",
+    "XXXXXXXXXXXX",
+    "..XXX..XXX..",
+    ".XX..XX..XX.",
+    "XX........XX"
+};
+array[str] octB = new array[str]{
+    "....XXXX....",
+    ".XXXXXXXXXX.",
+    "XXXXXXXXXXXX",
+    "XXX..XX..XXX",
+    "XXXXXXXXXXXX",
+    "...XX..XX...",
+    "..XX.XX.XX..",
+    ".XX......XX."
+};
+# the mystery saucer
+array[str] ufo = new array[str]{
+    "......XXXX......",
+    "....XXXXXXXX....",
+    "..XXXXXXXXXXXX..",
+    ".XX.XX.XX.XX.XX.",
+    "XXXXXXXXXXXXXXXX",
+    "..XXX..XX..XXX..",
+    "...X........X..."
+};
+# the laser cannon
+array[str] cannon = new array[str]{
+    "......X......",
+    "......X......",
+    ".....XXX.....",
+    ".XXXXXXXXXXX.",
+    "XXXXXXXXXXXXX",
+    "XXXXXXXXXXXXX",
+    "XXXXXXXXXXXXX",
+    "XXXXXXXXXXXXX"
+};
+# cannon caught by a bomb — two debris frames
+array[str] canExpA = new array[str]{
+    ".....X.X.....",
+    "..X...X...X..",
+    "X..X.XX..X..X",
+    ".X.XXX.XX.X..",
+    "XXXXXXXXXXXXX",
+    "X.XXX.XXX.X.X",
+    ".X.X.XXX.X..X",
+    "X..X..X...X.."
+};
+array[str] canExpB = new array[str]{
+    "..X...X...X..",
+    "X..X.X.X..X.X",
+    ".X..XXXX...X.",
+    "X.XXX.XX.XX.X",
+    "XXXXXXXXXXXXX",
+    ".XXX.XXX.XX.X",
+    "X.X..X.X..X.X",
+    ".X..X...X.X.."
+};
+# alien / saucer burst
+array[str] invExp = new array[str]{
+    "X..X.X.X..X",
+    ".X..XXX..X.",
+    "..XX.X.XX..",
+    ".X.XXXXX.X.",
+    "X.X.X.X.X.X"
+};
+
+# ---- field geometry (logical px; the arcade was 224 x 256) ----------------------------------
+int GW = 224;
+int GH = 256;
+int TOTAL = 55;
+int COLS_I = 11;
+int ROWS_I = 5;
+int LEFT_BOUND = 8;
+int RIGHT_BOUND = 216;
+int CANNON_TOP_Y = 208;
+int INVADE_Y = 200;
+int GROUND_Y = 224;
+int UFO_Y = 40;
+int bunkerY = 184;
+int BCOLS = 11;
+int BROWS = 8;
+int BCELL = 2;
+
+# speeds (logical px per tick) and timers (ticks; one tick ~ 33 ms)
+int TICK_MS = 33;
+int BULLET_SPD = 6;
+int BOMB_SPD = 2;
+int CANNON_SPD = 3;
+int DRAG_SPD = 6;
+# Formation pace, the authentic arcade curve: speed ≈ SPEED_K/aliveCount px/s. The arcade
+# updated one invader per frame, so the block stepped 2 px every `aliveCount` frames at 60 Hz
+# — i.e. 120/aliveCount px/s: a ~2 px/s creep at full strength that accelerates as ranks thin
+# into a frantic dash on the last alien. (The old linear pace made it ~10× too fast to clear.)
+int SPEED_K = 120;
+int READY_TICKS = 42;
+int DYING_TICKS = 36;
+int CLEAR_TICKS = 52;
+int EXP_TICKS = 11;
+int MAXBOMB = 3;
+int MAXEXP = 10;
+
+# ---- screen mapping (set on every resize so the field fills the canvas, letterboxed) --------
+int SCALE = 256;             # logical->screen ratio, fixed-point (px = OX + lx*SCALE/256)
+int OX = 0;
+int OY = 0;
+int DRAWW = GW;
+int DRAWH = GH;
+int CW = GW;
+int CH = GH;
+int TXT = 10;
+
+# ---- game state -----------------------------------------------------------------------------
+int ST_READY = 0;
+int ST_PLAY = 1;
+int ST_DYING = 2;
+int ST_OVER = 3;
+int ST_CLEAR = 4;
+int state = 0;
+int stateTimer = 0;
+int score = 0;
+int hiScore = 0;
+int lives = 3;
+int wave = 1;
+int frame = 0;
+bool paused = false;
+int loopToken = 0;
+
+# formation
+array[int] alive = new array[int](55);
+int aliveCount = 55;
+int formXfp = 0;             # formation left edge, fixed-point (x256)
+int formY = 64;
+int marchDir = 1;
+int marchBucket = 0;
+int animFrame = 0;
+
+# cannon
+int cannonX = 100;
+
+# player bullet (only one in flight)
+int bulletActive = 0;
+int bulletX = 0;
+int bulletY = 0;
+
+# alien bombs
+array[int] bombActive = new array[int](3);
+array[int] bombX = new array[int](3);
+array[int] bombY = new array[int](3);
+array[int] bombType = new array[int](3);
+array[int] bombAnim = new array[int](3);
+int bombTimer = 40;
+
+# mystery saucer
+int ufoActive = 0;
+int ufoX = 0;
+int ufoDir = 1;
+int ufoTimer = 600;
+int ufoScoreVal = 0;
+int ufoScoreX = 0;
+int ufoScoreTimer = 0;
+
+# bunkers
+array[int] bunkerX = new array[int](4);
+array[int] bun = new array[int](352);   # 4 * BCOLS * BROWS
+
+# explosions
+array[int] expX = new array[int](10);
+array[int] expY = new array[int](10);
+array[int] expT = new array[int](10);
+array[int] expType = new array[int](10);
+
+# input
+int inLeft = 0;
+int inRight = 0;
+int inFire = 0;
+bool dragActive = false;
+bool pointerMoved = false;
+int pointerStartX = 0;
+int pointerStartY = 0;
+int desiredX = 100;
+
+# ---- widgets --------------------------------------------------------------------------------
+Canvas board = ui.canvas().weight(1).fillWidth().background(C_BG);
+
+Button left = ui.tonalButton("◀").weight(1);
+Button fire = ui.button("FIRE").weight(1);
+Button right = ui.tonalButton("▶").weight(1);
+Container padRow = ui.row().fillWidth().gap(8);
+padRow.add(left);
+padRow.add(fire);
+padRow.add(right);
+Container pad = ui.column().fillWidth().padding(12);
+pad.add(padRow);
+
+Container page = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Space Invaders");
+page.add(bar);
+page.add(board);
+page.add(pad);
+Container root = page;
+
+# ---- small helpers --------------------------------------------------------------------------
+func rnd(int n) int {
+    rng.nextIntBound(n);
+};
+
+func iabs(int v) int {
+    if (v < 0) then 0 - v else v;
+};
+
+func overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) bool {
+    ax < bx + bw & ax + aw > bx & ay < by + bh & ay + ah > by;
+};
+
+func formX() int {
+    formXfp / 256;
+};
+
+func px(int lx) int {
+    OX + lx * SCALE / 256;
+};
+
+func py(int ly) int {
+    OY + ly * SCALE / 256;
+};
+
+# Fill a logical rectangle, snapping to pixel edges so adjacent cells tile without gaps.
+func frect(int lx, int ly, int lw, int lh, str col) void {
+    int x0 = px(lx);
+    int y0 = py(ly);
+    int x1 = px(lx + lw);
+    int y1 = py(ly + lh);
+    board.drawRect(x0, y0, x1 - x0, y1 - y0).color(col).fill();
+    void
+};
+
+# Draw a sprite (one logical px per sprite px) at logical (lx,ly), run-length per row.
+func drawSprite(array[str] spr, int rows, int lx, int ly, str col) void {
+    int r = 0;
+    while (r < rows) {
+        str row = spr[r];
+        int n = row.len;
+        int c = 0;
+        while (c < n) {
+            if (row[c] == CH_X) {
+                int run = 1;
+                while (c + run < n & row[c + run] == CH_X) { run = run + 1; };
+                frect(lx + c, ly + r, run, 1, col);
+                c = c + run;
+            } else {
+                c = c + 1;
+            };
+        };
+        r = r + 1;
+    };
+    void
+};
+
+func screenToLogicalX(int x) int {
+    int s = if (SCALE < 1) then 1 else SCALE;
+    (x - OX) * 256 / s;
+};
+
+func clampDesired() void {
+    if (desiredX < LEFT_BOUND) { desiredX = LEFT_BOUND; };
+    if (desiredX > RIGHT_BOUND - 13) { desiredX = RIGHT_BOUND - 13; };
+    void
+};
+
+# ---- build ----------------------------------------------------------------------------------
+func buildBunkers() void {
+    int k = 0;
+    while (k < 4) {
+        bunkerX[k] = 24 + k * 48;
+        int c = 0;
+        while (c < BCOLS) {
+            int r = 0;
+            while (r < BROWS) {
+                int s = 1;
+                # rounded top corners
+                if (r + c < 2) { s = 0; };
+                if (r + (BCOLS - 1 - c) < 2) { s = 0; };
+                # bottom-centre arch (doorway widens toward the base)
+                int mid = BCOLS / 2;
+                int dc = if (c - mid < 0) then mid - c else c - mid;
+                if (r >= BROWS - 3) {
+                    int half = (r - (BROWS - 3)) + 1;
+                    if (dc < half) { s = 0; };
+                };
+                bun[k * 88 + r * BCOLS + c] = s;
+                r = r + 1;
+            };
+            c = c + 1;
+        };
+        k = k + 1;
+    };
+    void
+};
+
+func buildWave() void {
+    aliveCount = TOTAL;
+    int i = 0;
+    while (i < TOTAL) { alive[i] = 1; i = i + 1; };
+    formXfp = 24 * 256;
+    int startY = 64 + (wave - 1) * 8;
+    if (startY > 96) { startY = 96; };
+    formY = startY;
+    marchDir = 1;
+    marchBucket = formXfp / 512;
+    animFrame = 0;
+    void
+};
+
+func resetEntities() void {
+    bulletActive = 0;
+    int b = 0;
+    while (b < MAXBOMB) { bombActive[b] = 0; b = b + 1; };
+    int e = 0;
+    while (e < MAXEXP) { expT[e] = 0; e = e + 1; };
+    cannonX = GW / 2 - 6;
+    desiredX = cannonX;
+    ufoActive = 0;
+    ufoScoreTimer = 0;
+    ufoTimer = 500 + rnd(300);
+    bombTimer = 30 + rnd(40);
+    inLeft = 0;
+    inRight = 0;
+    inFire = 0;
+    dragActive = false;
+    pointerMoved = false;
+    void
+};
+
+func newGame() void {
+    score = 0;
+    lives = 3;
+    wave = 1;
+    buildBunkers();
+    buildWave();
+    resetEntities();
+    state = ST_READY;
+    stateTimer = READY_TICKS;
+    paused = false;
+    void
+};
+
+func nextWave() void {
+    wave = wave + 1;
+    buildWave();
+    resetEntities();
+    state = ST_READY;
+    stateTimer = READY_TICKS;
+    void
+};
+
+# ---- entity logic ---------------------------------------------------------------------------
+func addExplosion(int x, int y, int type) void {
+    int e = 0;
+    bool placed = false;
+    while (e < MAXEXP) {
+        if (expT[e] <= 0 & placed == false) {
+            expX[e] = x;
+            expY[e] = y;
+            expT[e] = EXP_TICKS;
+            expType[e] = type;
+            placed = true;
+        };
+        e = e + 1;
+    };
+    void
+};
+
+# Clear the hit cell and a random scatter of its neighbours, carving a jagged crater.
+func erode(int k, int cc, int rr) void {
+    int dy = 0 - 1;
+    while (dy <= 1) {
+        int dx = 0 - 1;
+        while (dx <= 1) {
+            int nc = cc + dx;
+            int nr = rr + dy;
+            if (nc >= 0 & nc < BCOLS & nr >= 0 & nr < BROWS) {
+                if ((dx == 0 & dy == 0) | rnd(2) == 0) {
+                    bun[k * 88 + nr * BCOLS + nc] = 0;
+                };
+            };
+            dx = dx + 1;
+        };
+        dy = dy + 1;
+    };
+    void
+};
+
+func hitBunker(int pxl, int pyl) bool {
+    bool consumed = false;
+    int k = 0;
+    while (k < 4) {
+        if (consumed == false) {
+            int bx = bunkerX[k];
+            if (pxl >= bx & pxl < bx + BCOLS * BCELL & pyl >= bunkerY & pyl < bunkerY + BROWS * BCELL) {
+                int cc = (pxl - bx) / BCELL;
+                int rr = (pyl - bunkerY) / BCELL;
+                if (bun[k * 88 + rr * BCOLS + cc] == 1) {
+                    erode(k, cc, rr);
+                    consumed = true;
+                };
+            };
+        };
+        k = k + 1;
+    };
+    consumed
+};
+
+func scoreOfRow(int row) int {
+    if (row == 0) then 30 else if (row <= 2) then 20 else 10;
+};
+
+func killInvader(int idx) void {
+    int col = idx % COLS_I;
+    int row = idx / COLS_I;
+    alive[idx] = 0;
+    aliveCount = aliveCount - 1;
+    score = score + scoreOfRow(row);
+    if (score > hiScore) { hiScore = score; };
+    addExplosion(formX() + col * 16 + 8, formY + row * 16 + 4, 0);
+    void
+};
+
+func invaderAt(int x, int y) int {
+    int res = 0 - 1;
+    int fx = formX();
+    int idx = 0;
+    while (idx < TOTAL) {
+        if (alive[idx] == 1 & res < 0) {
+            int col = idx % COLS_I;
+            int row = idx / COLS_I;
+            int ix = fx + col * 16 + 2;
+            int iy = formY + row * 16;
+            if (x >= ix & x < ix + 12 & y >= iy & y < iy + 8) { res = idx; };
+        };
+        idx = idx + 1;
+    };
+    res
+};
+
+func shoot() void {
+    if (state == ST_PLAY & bulletActive == 0) {
+        bulletActive = 1;
+        bulletX = cannonX + 6;
+        bulletY = CANNON_TOP_Y - 2;
+    };
+    void
+};
+
+func playerHit() void {
+    lives = lives - 1;
+    bulletActive = 0;
+    int b = 0;
+    while (b < MAXBOMB) { bombActive[b] = 0; b = b + 1; };
+    state = ST_DYING;
+    stateTimer = DYING_TICKS;
+    if (score > hiScore) { hiScore = score; };
+    void
+};
+
+func spawnBomb() void {
+    int slot = 0 - 1;
+    int b = 0;
+    while (b < MAXBOMB) {
+        if (bombActive[b] == 0 & slot < 0) { slot = b; };
+        b = b + 1;
+    };
+    if (slot < 0) {
+        void
+    } else {
+        int col = 0 - 1;
+        int srow = 0 - 1;
+        int tries = 0;
+        while (tries < 10 & col < 0) {
+            int cc = rnd(COLS_I);
+            int r = ROWS_I - 1;
+            int found = 0 - 1;
+            while (r >= 0) {
+                if (alive[r * COLS_I + cc] == 1 & found < 0) { found = r; };
+                r = r - 1;
+            };
+            if (found >= 0) { col = cc; srow = found; };
+            tries = tries + 1;
+        };
+        if (col >= 0) {
+            bombX[slot] = formX() + col * 16 + 7;
+            bombY[slot] = formY + srow * 16 + 10;
+            bombActive[slot] = 1;
+            bombType[slot] = rnd(2);
+            bombAnim[slot] = 0;
+        };
+    };
+    void
+};
+
+# Smooth fixed-point glide; the legs animate every 2 px and the block drops 8 px at each wall.
+func updateInvaders() void {
+    int minC = COLS_I;
+    int maxC = 0 - 1;
+    int botR = 0 - 1;
+    int idx = 0;
+    while (idx < TOTAL) {
+        if (alive[idx] == 1) {
+            int col = idx % COLS_I;
+            int row = idx / COLS_I;
+            if (col < minC) { minC = col; };
+            if (col > maxC) { maxC = col; };
+            if (row > botR) { botR = row; };
+        };
+        idx = idx + 1;
+    };
+    if (maxC < 0) {
+        void
+    } else {
+        int live = if (aliveCount < 1) then 1 else aliveCount;
+        int speed = SPEED_K / live + (wave - 1) * 2;
+        int dfp = speed * 256 * TICK_MS / 1000;
+        if (dfp < 1) { dfp = 1; };
+        int nf = formXfp + marchDir * dfp;
+        int nformX = nf / 256;
+        int leftE = nformX + minC * 16;
+        int rightE = nformX + (maxC + 1) * 16;
+        if (rightE > RIGHT_BOUND | leftE < LEFT_BOUND) {
+            marchDir = 0 - marchDir;
+            formY = formY + 8;
+            animFrame = if (animFrame == 0) then 1 else 0;
+            if (formY + (botR + 1) * 16 >= INVADE_Y) {
+                state = ST_OVER;
+                if (score > hiScore) { hiScore = score; };
+            };
+        } else {
+            formXfp = nf;
+            int bucket = formXfp / 512;
+            if (bucket != marchBucket) {
+                marchBucket = bucket;
+                animFrame = if (animFrame == 0) then 1 else 0;
+            };
+        };
+    };
+    void
+};
+
+func updateBullet() void {
+    if (bulletActive == 1) {
+        bulletY = bulletY - BULLET_SPD;
+        if (bulletY <= 8) {
+            bulletActive = 0;
+        } else {
+            # mystery saucer
+            if (ufoActive == 1 & overlap(bulletX, bulletY, 1, 4, ufoX, UFO_Y, 16, 7)) {
+                int pts = if (rnd(4) == 0) then 300 else if (rnd(3) == 0) then 150 else if (rnd(2) == 0) then 100 else 50;
+                score = score + pts;
+                if (score > hiScore) { hiScore = score; };
+                ufoScoreVal = pts;
+                ufoScoreX = ufoX;
+                ufoScoreTimer = 44;
+                ufoActive = 0;
+                bulletActive = 0;
+                addExplosion(ufoX + 8, UFO_Y + 3, 1);
+            };
+            # aliens
+            if (bulletActive == 1) {
+                int hit = invaderAt(bulletX, bulletY);
+                if (hit >= 0) {
+                    killInvader(hit);
+                    bulletActive = 0;
+                };
+            };
+            # cancel an incoming bomb
+            if (bulletActive == 1) {
+                int b = 0;
+                while (b < MAXBOMB) {
+                    if (bulletActive == 1 & bombActive[b] == 1 & overlap(bulletX, bulletY, 1, 4, bombX[b] - 1, bombY[b], 4, 7)) {
+                        bombActive[b] = 0;
+                        bulletActive = 0;
+                        addExplosion(bombX[b], bombY[b] + 3, 2);
+                    };
+                    b = b + 1;
+                };
+            };
+            # shields
+            if (bulletActive == 1) {
+                if (hitBunker(bulletX, bulletY)) { bulletActive = 0; };
+            };
+        };
+    };
+    void
+};
+
+func updateBombs() void {
+    int b = 0;
+    while (b < MAXBOMB) {
+        if (bombActive[b] == 1) {
+            bombY[b] = bombY[b] + BOMB_SPD;
+            bombAnim[b] = bombAnim[b] + 1;
+            if (bombY[b] >= GROUND_Y) {
+                bombActive[b] = 0;
+                addExplosion(bombX[b], GROUND_Y - 2, 2);
+            } else {
+                if (overlap(bombX[b] - 1, bombY[b], 3, 7, cannonX, CANNON_TOP_Y, 13, 8)) {
+                    bombActive[b] = 0;
+                    playerHit();
+                } else {
+                    if (hitBunker(bombX[b], bombY[b] + 6)) { bombActive[b] = 0; };
+                };
+            };
+        };
+        b = b + 1;
+    };
+    void
+};
+
+func updateUFO() void {
+    if (ufoActive == 1) {
+        ufoX = ufoX + ufoDir;
+        if (ufoX < 0 - 18 | ufoX > GW + 2) { ufoActive = 0; };
+    };
+    if (ufoScoreTimer > 0) { ufoScoreTimer = ufoScoreTimer - 1; };
+    ufoTimer = ufoTimer - 1;
+    if (ufoTimer <= 0) {
+        if (ufoActive == 0 & aliveCount > 6) {
+            ufoActive = 1;
+            if (rnd(2) == 0) {
+                ufoX = 0 - 16;
+                ufoDir = 1;
+            } else {
+                ufoX = GW;
+                ufoDir = 0 - 1;
+            };
+        };
+        ufoTimer = 500 + rnd(400);
+    };
+    void
+};
+
+func spawnBombsMaybe() void {
+    bombTimer = bombTimer - 1;
+    if (bombTimer <= 0) {
+        spawnBomb();
+        int base = 18 + rnd(30);
+        int faster = (TOTAL - aliveCount) / 3;
+        bombTimer = base - faster;
+        if (bombTimer < 6) { bombTimer = 6; };
+    };
+    void
+};
+
+func updateExplosions() void {
+    int e = 0;
+    while (e < MAXEXP) {
+        if (expT[e] > 0) { expT[e] = expT[e] - 1; };
+        e = e + 1;
+    };
+    void
+};
+
+func applyInput() void {
+    if (dragActive & pointerMoved) {
+        int d = desiredX - cannonX;
+        if (d > DRAG_SPD) { cannonX = cannonX + DRAG_SPD; }
+        else {
+            if (d < 0 - DRAG_SPD) { cannonX = cannonX - DRAG_SPD; }
+            else { cannonX = desiredX; };
+        };
+    } else {
+        if (inLeft == 1) { cannonX = cannonX - CANNON_SPD; };
+        if (inRight == 1) { cannonX = cannonX + CANNON_SPD; };
+    };
+    if (cannonX < LEFT_BOUND) { cannonX = LEFT_BOUND; };
+    if (cannonX > RIGHT_BOUND - 13) { cannonX = RIGHT_BOUND - 13; };
+    if (inFire == 1) { shoot(); };
+    void
+};
+
+# ---- drawing --------------------------------------------------------------------------------
+func drawInvaderSprite(int row, int x, int y) void {
+    if (row == 0) {
+        if (animFrame == 0) { drawSprite(squidA, 8, x + 4, y, C_INV); }
+        else { drawSprite(squidB, 8, x + 4, y, C_INV); };
+    } else {
+        if (row <= 2) {
+            if (animFrame == 0) { drawSprite(crabA, 8, x + 2, y, C_INV); }
+            else { drawSprite(crabB, 8, x + 2, y, C_INV); };
+        } else {
+            if (animFrame == 0) { drawSprite(octA, 8, x + 2, y, C_INV); }
+            else { drawSprite(octB, 8, x + 2, y, C_INV); };
+        };
+    };
+    void
+};
+
+func drawInvaders() void {
+    int fx = formX();
+    int idx = 0;
+    while (idx < TOTAL) {
+        if (alive[idx] == 1) {
+            int col = idx % COLS_I;
+            int row = idx / COLS_I;
+            drawInvaderSprite(row, fx + col * 16, formY + row * 16);
+        };
+        idx = idx + 1;
+    };
+    void
+};
+
+func drawBunkers() void {
+    int k = 0;
+    while (k < 4) {
+        int bx = bunkerX[k];
+        int r = 0;
+        while (r < BROWS) {
+            int c = 0;
+            while (c < BCOLS) {
+                if (bun[k * 88 + r * BCOLS + c] == 1) {
+                    int run = 1;
+                    while (c + run < BCOLS & bun[k * 88 + r * BCOLS + c + run] == 1) { run = run + 1; };
+                    frect(bx + c * BCELL, bunkerY + r * BCELL, run * BCELL, BCELL, C_GREEN);
+                    c = c + run;
+                } else {
+                    c = c + 1;
+                };
+            };
+            r = r + 1;
+        };
+        k = k + 1;
+    };
+    void
+};
+
+func drawBombs() void {
+    int b = 0;
+    while (b < MAXBOMB) {
+        if (bombActive[b] == 1) {
+            int x = bombX[b];
+            int y = bombY[b];
+            int ph = (bombAnim[b] / 2) % 4;
+            int seg = 0;
+            while (seg < 7) {
+                if (bombType[b] == 0) {
+                    if (seg % 2 == 0) { frect(x - 1, y + seg, 3, 1, C_BOMB); }
+                    else { frect(x, y + seg, 1, 1, C_BOMB); };
+                } else {
+                    int m = (seg + ph) % 4;
+                    int off = if (m == 0) then 0 - 1 else if (m == 2) then 1 else 0;
+                    frect(x + off, y + seg, 1, 1, C_BOMB);
+                };
+                seg = seg + 1;
+            };
+        };
+        b = b + 1;
+    };
+    void
+};
+
+func drawExplosions() void {
+    int e = 0;
+    while (e < MAXEXP) {
+        if (expT[e] > 0) {
+            int x = expX[e];
+            int y = expY[e];
+            int t = expType[e];
+            if (t == 2) {
+                frect(x - 2, y, 1, 1, C_BULLET);
+                frect(x + 2, y, 1, 1, C_BULLET);
+                frect(x, y - 2, 1, 1, C_BULLET);
+                frect(x, y + 2, 1, 1, C_BULLET);
+                frect(x, y, 1, 1, C_BULLET);
+            } else {
+                drawSprite(invExp, 5, x - 5, y - 2, if (t == 1) then C_RED else C_INV);
+            };
+        };
+        e = e + 1;
+    };
+    void
+};
+
+func drawCannon() void {
+    drawSprite(cannon, 8, cannonX, CANNON_TOP_Y, C_GREEN);
+    void
+};
+
+func drawCannonExplosion() void {
+    if ((frame / 3) % 2 == 0) { drawSprite(canExpA, 8, cannonX, CANNON_TOP_Y, C_GREEN); }
+    else { drawSprite(canExpB, 8, cannonX, CANNON_TOP_Y, C_GREEN); };
+    void
+};
+
+func drawUFO() void {
+    if (ufoActive == 1) { drawSprite(ufo, 7, ufoX, UFO_Y, C_RED); };
+    if (ufoScoreTimer > 0) {
+        board.drawText(px(ufoScoreX), py(UFO_Y + 4), ufoScoreVal.str, TXT).color(C_UFOSCORE);
+    };
+    void
+};
+
+func drawHud() void {
+    board.drawText(px(8), py(10), "SCORE ".con(score.str), TXT).color(C_TEXT);
+    str hi = "HI ".con(hiScore.str);
+    board.drawText(px(GW / 2 - 14), py(10), hi, TXT).color(C_TEXT);
+    str wv = "WAVE ".con(wave.str);
+    board.drawText(px(GW - 58), py(10), wv, TXT).color(C_TEXT);
+    void
+};
+
+func drawGround() void {
+    frect(8, GROUND_Y, GW - 16, 1, C_GREEN);
+    int i = 0;
+    while (i < lives & i < 5) {
+        drawSprite(cannon, 8, 10 + i * 18, GROUND_Y + 5, C_GREEN);
+        i = i + 1;
+    };
+    void
+};
+
+func drawCenter(str s, str col) void {
+    int sz = TXT + 5;
+    int w = s.len * sz * 6 / 10;
+    board.drawText(OX + DRAWW / 2 - w / 2, py(GH / 2), s, sz).color(col);
+    void
+};
+
+func draw() void {
+    board.clear();
+    board.drawRect(0, 0, CW, CH).color(C_BG).fill();
+    drawHud();
+    drawGround();
+    drawBunkers();
+    drawInvaders();
+    drawUFO();
+    drawBombs();
+    if (bulletActive == 1) { frect(bulletX, bulletY, 1, 4, C_BULLET); };
+    if (state == ST_DYING) { drawCannonExplosion(); }
+    else { if (state != ST_OVER) { drawCannon(); }; };
+    drawExplosions();
+    if (paused) { drawCenter("PAUSED", C_TEXT); }
+    else {
+        if (state == ST_READY) { drawCenter("READY", C_TEXT); };
+        if (state == ST_OVER) { drawCenter("GAME OVER", C_RED); };
+        if (state == ST_CLEAR) { drawCenter("WAVE CLEAR", C_GREEN); };
+    };
+    void
+};
+
+func onResized(int w, int h) void {
+    if (w > 0 & h > 0) {
+        CW = w;
+        CH = h;
+        int sx = (w * 256) / GW;
+        int sy = (h * 256) / GH;
+        SCALE = if (sx < sy) then sx else sy;
+        if (SCALE < 1) { SCALE = 1; };
+        DRAWW = GW * SCALE / 256;
+        DRAWH = GH * SCALE / 256;
+        OX = (w - DRAWW) / 2;
+        OY = (h - DRAWH) / 2;
+        TXT = (10 * SCALE) / 256;
+        if (TXT < 7) { TXT = 7; };
+        draw();
+    };
+    void
+};
+
+# ---- timer actor (drives the loop off the event loop) ---------------------------------------
+actor class Ticker() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+actor[Ticker] ticker = new Ticker();
+
+func step() void {
+    frame = frame + 1;
+    if (state == ST_PLAY) {
+        applyInput();
+        updateInvaders();
+        updateBullet();
+        updateBombs();
+        updateUFO();
+        spawnBombsMaybe();
+        updateExplosions();
+        if (aliveCount <= 0) {
+            state = ST_CLEAR;
+            stateTimer = CLEAR_TICKS;
+        };
+    } else {
+        updateExplosions();
+        if (state == ST_READY | state == ST_DYING | state == ST_CLEAR) {
+            stateTimer = stateTimer - 1;
+            if (stateTimer <= 0) {
+                if (state == ST_READY) { state = ST_PLAY; };
+                if (state == ST_DYING) {
+                    if (lives > 0) {
+                        resetEntities();
+                        state = ST_READY;
+                        stateTimer = READY_TICKS / 2;
+                    } else {
+                        state = ST_OVER;
+                        stateTimer = 0;
+                    };
+                };
+                if (state == ST_CLEAR) { nextWave(); };
+            };
+        };
+    };
+    void
+};
+
+func tick(int token) void {
+    if (token == loopToken) {
+        if (paused == false) { step(); };
+        draw();
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x);
+            void
+        });
+    };
+    void
+};
+
+# ---- input ----------------------------------------------------------------------------------
+left.onPress(func() void { inLeft = 1; void }, func() void { inLeft = 0; void });
+right.onPress(func() void { inRight = 1; void }, func() void { inRight = 0; void });
+fire.onPress(func() void {
+    if (state == ST_OVER) { newGame(); } else { inFire = 1; };
+    void
+}, func() void { inFire = 0; void });
+
+board.onPointerDown(func(int x, int y) void {
+    if (state == ST_OVER) {
+        newGame();
+    } else {
+        pointerStartX = x;
+        pointerStartY = y;
+        pointerMoved = false;
+        dragActive = true;
+        desiredX = screenToLogicalX(x) - 6;
+        clampDesired();
+    };
+    void
+});
+
+board.onPointerMove(func(int x, int y) void {
+    if (dragActive) {
+        if (iabs(x - pointerStartX) > 6 | iabs(y - pointerStartY) > 6) { pointerMoved = true; };
+        desiredX = screenToLogicalX(x) - 6;
+        clampDesired();
+    };
+    void
+});
+
+board.onPointerUp(func(int x, int y) void {
+    dragActive = false;
+    if (pointerMoved == false & state == ST_PLAY) { shoot(); };
+    void
+});
+
+board.onResize(func(int w, int h) void {
+    onResized(w, h);
+    void
+});
+
+bar.action("Pause", icons.pause(), func() void {
+    if (state == ST_OVER) {
+        newGame();
+        paused = false;
+        bar.actionIcon("Pause", icons.pause());
+    } else {
+        paused = paused == false;
+        bar.actionIcon("Pause", if (paused) then icons.play() else icons.pause());
+    };
+    draw();
+    void
+});
+
+bar.onNav(func() void {
+    loopToken = loopToken + 1;
+    ui.close();
+    void
+});
+
+# ---- go -------------------------------------------------------------------------------------
+newGame();
+draw();
+ui.open(root);
+
+loopToken = loopToken + 1;
+async ticker.after(TICK_MS, loopToken, func(int x) void {
+    tick(x);
+    void
+});
+
+term.println("Space Invaders — hold ◀ ▶ to move, FIRE to shoot. Or drag the field to aim and tap to fire.");
