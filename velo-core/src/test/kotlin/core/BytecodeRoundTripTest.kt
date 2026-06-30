@@ -48,6 +48,7 @@ class BytecodeRoundTripTest {
         Op.Equals,
         Op.IntChar,
         Op.IntStr,
+        Op.FloatStr,
         Op.StrInt,
         Op.Hash,
         Op.StrCon,

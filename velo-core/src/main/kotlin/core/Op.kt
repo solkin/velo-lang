@@ -140,6 +140,11 @@ sealed interface Op {
         override val opcode get() = 0x15
     }
 
+    /** Stack: `[float] -> [str]` */
+    object FloatStr : Op {
+        override val opcode get() = 0x49
+    }
+
     /** Parse a decimal string. Stack: `[str] -> [int]` */
     object StrInt : Op {
         override val opcode get() = 0x40

@@ -301,6 +301,7 @@ object Bytecode {
             0x12 -> Op.If(elseSkip = inp.readInt())
             0x14 -> Op.IntChar
             0x15 -> Op.IntStr
+            0x49 -> Op.FloatStr
             0x18 -> Op.Frame(num = inp.readInt())
             0x19 -> Op.MethodLoad(name = inp.readUTF())
             0x1c -> Op.InterfaceCall(method = inp.readUTF(), args = inp.readInt())

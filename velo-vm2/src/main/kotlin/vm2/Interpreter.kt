@@ -27,6 +27,7 @@ private const val OP_HALT = 0x11
 private const val OP_IF = 0x12
 private const val OP_INTCHAR = 0x14
 private const val OP_INTSTR = 0x15
+private const val OP_FLOATSTR = 0x49
 private const val OP_FRAME = 0x18
 private const val OP_METHODLOAD = 0x19
 private const val OP_INTERFACECALL = 0x1c
@@ -251,6 +252,7 @@ class Interpreter(
                     // ---- conversions / hashing ----
                     OP_INTCHAR -> s.push(Numbers.codePointToString(Numbers.intInt(s.pop())))
                     OP_INTSTR -> s.push(Numbers.intInt(s.pop()).toString())
+                    OP_FLOATSTR -> s.push(Numbers.floatFloat(s.pop()).toString())
                     OP_STRINT -> s.push((s.pop() as String).trim().toInt())
                     OP_HASH -> s.push(Numbers.hash(s.pop()))
 

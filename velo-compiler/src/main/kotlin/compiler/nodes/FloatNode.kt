@@ -22,11 +22,23 @@ object FloatType : Numeric {
         ctx.add(Op.Push(value = 0f))
     }
 
-    override fun prop(name: String): Prop? = null
+    override fun prop(name: String): Prop? {
+        return when (name) {
+            "str" -> FloatStrProp
+            else -> null
+        }
+    }
 
     override fun log() = name()
 
     override fun vmType() = core.VmType.Float
 
     override fun name() = "float"
+}
+
+object FloatStrProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.FloatStr)
+        return StringType
+    }
 }

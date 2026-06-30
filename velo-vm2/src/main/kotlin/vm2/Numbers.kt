@@ -57,6 +57,8 @@ object Numbers {
 
     fun intInt(v: Any?): Int = toInt(v)
 
+    fun floatFloat(v: Any?): Float = toFloat(v)
+
     /** `Op.Equals`: deep structural equality of any two values. */
     fun equals(a: Any?, b: Any?, dataClasses: Map<Int, DataClassInfo>): Boolean {
         if (a is Int && b is Int) return a == b

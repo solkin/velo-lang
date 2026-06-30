@@ -28,6 +28,7 @@ object StringType : Indexable {
             "len" -> StrLenProp
             "con" -> StrConProp
             "int" -> StrIntProp
+            "str" -> StrStrProp
             else -> null
         }
     }
@@ -69,5 +70,12 @@ object StrIntProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.StrInt)
         return IntType
+    }
+}
+
+/** `str.str` is the identity — emit nothing, so interpolation can be uniform. */
+object StrStrProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        return StringType
     }
 }

@@ -381,6 +381,13 @@ object Interpreter {
             pc + 1
         }
 
+        is Op.FloatStr -> {
+            val frame = ctx.currentFrame()
+            val v = frame.subs.pop().getFloat()
+            frame.subs.push(ValueRecord(v.toString()))
+            pc + 1
+        }
+
         is Op.StrInt -> {
             val frame = ctx.currentFrame()
             val str = frame.subs.pop().getString()
