@@ -41,9 +41,9 @@ class GameOfLife(Terminal term) {
 
     func printWorld() void {
         w.map(
-            func(int index, array[int] row) array[int] {
+            func(array[int] row, int index) array[int] {
                 row.map(
-                    func(int index, int col) int {
+                    func(int col, int index) int {
                         term.print(col.str);
                         term.print(" ");
                         col;
@@ -58,9 +58,9 @@ class GameOfLife(Terminal term) {
 
     func nextGeneration() void {
         w = w.map(
-            func(int y, array[int] row) array[int] {
+            func(array[int] row, int y) array[int] {
                 row.map(
-                    func(int x, int col) int {
+                    func(int col, int x) int {
                         calc(w, x, y);
                     }
                 );

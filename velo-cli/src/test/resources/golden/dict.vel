@@ -37,7 +37,7 @@ term.println(d.val("zzz").str);
 term.println(d.keys.len.str);
 term.println(d.vals.len.str);
 d.arr.map(
-    func(int i, tuple[int,str] e) int {
+    func(tuple[int,str] e, int i) int {
         term.println(e.1.str.con(":").con(e.2));
         i;
     }

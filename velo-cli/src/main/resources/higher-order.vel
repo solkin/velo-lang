@@ -41,7 +41,7 @@ term.println(big.str + " values > " + threshold.str);
 
 # --- 4. array.map with a captured factor -----------------------
 int factor = 3;
-array[int] tripled = xs.map(func(int i, int v) int { v * factor; });
+array[int] tripled = xs.map(func(int v, int i) int { v * factor; });
 
 term.print("tripled: ");
 int j = 0;

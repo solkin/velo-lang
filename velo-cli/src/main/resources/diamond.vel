@@ -11,7 +11,7 @@ func toString(array[str] arr) str {
 };
 func shift(array[int] arr, int v) array[str] {
     arr.map(
-        func(int index, int item) str {
+        func(int item, int index) str {
             int a = item - v;
             if a > 0 then a.str else " ";
         }
@@ -19,7 +19,7 @@ func shift(array[int] arr, int v) array[str] {
 };
 func reversed(array[any] arr) array[any] {
     arr.map(
-        func(int index, any item) any {
+        func(any item, int index) any {
             arr[arr.len-index-1];
         }
     )

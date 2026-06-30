@@ -217,7 +217,7 @@ class Mapper[T]() {
     };
 };
 
-func strLen(int idx, str item) int {
+func strLen(str item, int idx) int {
     item.len;
 };
 

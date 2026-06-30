@@ -232,6 +232,16 @@ object MapArrayProp : Prop {
         type as ArrayType
         val arg = args.first() as FuncType
 
+        // Callback is `func(T value)` or `func(T value, int index)` — value
+        // first, index optional. (Index second so the common case stays short.)
+        // A loose `func[U]` (no declared params) keeps both, the back-compatible
+        // shape, since its arity isn't visible here.
+        val params = arg.args
+        if (params != null && params.size != 1 && params.size != 2) {
+            throw IllegalArgumentException("map callback takes (value) or (value, index), got ${params.size} parameters")
+        }
+        val withIndex = params == null || params.size == 2
+
         val func = ctx.def(name = "@func", type = arg)
         ctx.add(Op.Store(func.index))
 
@@ -256,17 +266,19 @@ object MapArrayProp : Prop {
 
         val exprCtx: MutableList<Op> = ArrayList()
         with(exprCtx) {
-            // index
-            add(Op.Load(i.index))
-            // item
+            // value (first parameter)
             add(Op.Load(array.index))
             add(Op.Load(i.index))
             add(Op.Push(value = 1)) // ArrLoad count
             add(Op.ArrLoad)
+            // index (optional second parameter)
+            if (withIndex) {
+                add(Op.Load(i.index))
+            }
             // func
             add(Op.Load(func.index))
             // call func
-            add(Op.Call(args = 2))
+            add(Op.Call(args = if (withIndex) 2 else 1))
             // increment i
             add(Op.Load(i.index))
             add(Op.Push(1))

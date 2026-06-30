@@ -19,7 +19,7 @@ d.keys[0];
 d.vals[1];
 
 d.arr.map(
-    func(int index, tuple[int,str] value) int {
+    func(tuple[int,str] value, int index) int {
         str v = value.1.str.con("->".con(value.2.con(if (index < d.len-1) then ", " else "")));
         term.println(v);
         index;
@@ -29,7 +29,7 @@ d.arr.map(
 term.println("--");
 
 d.keys.map(
-    func(int index, int key) int {
+    func(int key, int index) int {
         str v = key.str.con(if (index < d.len-1) then ", " else "");
         term.println(v);
         index;
@@ -39,7 +39,7 @@ d.keys.map(
 term.println("--");
 
 d.vals.map(
-    func(int index, str value) int {
+    func(str value, int index) int {
         str v = value.con(if (index < d.len-1) then ", " else "");
         term.println(v);
         index;

@@ -47,7 +47,7 @@ term.println(squareThenInc(4).str);   # 4^2 + 1 = 17
 # --- 4. Built-in array.map with a captured value --------------
 
 int factor = 10;
-func[int] scale = func(int i, int v) int { v * factor; };
+func[int] scale = func(int v, int i) int { v * factor; };
 
 array[int] xs = new array[int]{1, 2, 3, 4};
 array[int] ys = xs.map(scale);
