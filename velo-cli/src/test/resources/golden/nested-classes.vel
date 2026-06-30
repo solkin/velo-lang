@@ -32,11 +32,11 @@ Stack s = new Stack();
 s.push(10);
 s.push(20);
 s.push(30);
-term.println(s.getSize().str);
-term.println(s.peek().str);
-term.println(s.pop().str);
-term.println(s.pop().str);
-term.println(s.getSize().str);
+term.println(s.getSize().str());
+term.println(s.peek().str());
+term.println(s.pop().str());
+term.println(s.pop().str());
+term.println(s.getSize().str());
 
 # Класс принимающий другой класс как параметр
 class Inner(int x) {
@@ -57,9 +57,9 @@ class Outer(Inner inner) {
 
 Inner i = new Inner(7);
 Outer o = new Outer(i);
-term.println(o.compute().str);
+term.println(o.compute().str());
 o.setMultiplier(5);
-term.println(o.compute().str);
+term.println(o.compute().str());
 
 # Классы с взаимными ссылками
 class A(int z) {};
@@ -77,5 +77,5 @@ class B(A d) {
 };
 
 B b = new B(a);
-term.println(b.sumWithA(a).str);
-term.println(b.diff(b).str);
+term.println(b.sumWithA(a).str());
+term.println(b.diff(b).str());

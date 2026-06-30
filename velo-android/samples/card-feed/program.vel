@@ -82,8 +82,8 @@ class MetricCard(str name, int pct) : Card {
         # Build the two stat rows through the fluent Self-returning builder.
         Container stats = ui.column().fillWidth();
         new Rows(ui, stats)
-            .line("Done", pct.str.con("%"))
-            .line("Left", (100 - pct).str.con("%"));
+            .line("Done", pct.str().con("%"))
+            .line("Left", (100 - pct).str().con("%"));
         s.add(stats);
 
         Progress bar = ui.progress();
@@ -123,13 +123,13 @@ body.paddingXY(16, 16);
 body.gap(12);
 body.add(ui.text("Today").style(styles.headlineSmall()));
 
-term.println("Building a feed of ".con(cards.len.str).con(" cards through one interface..."));
+term.println("Building a feed of ".con(cards.len().str()).con(" cards through one interface..."));
 
 int i = 0;
-while (i < cards.len) {
+while (i < cards.len()) {
     Card c = cards[i];
     # `c` is statically a `Card`; the call resolves to StatCard / MetricCard / QuoteCard at run time.
-    term.println("  card ".con((i + 1).str).con(": ").con(c.title()));
+    term.println("  card ".con((i + 1).str()).con(": ").con(c.title()));
     body.add(c.render(ui));
     i += 1;
 };

@@ -56,7 +56,7 @@ class ErrorLifecycleTest {
                 Boom boom = new Boom();
                 actor class Worker() { func go() int { boom.bang(); }; };
                 actor[Worker] w = new Worker();
-                term.println((await async w.go()).str);
+                term.println((await async w.go()).str());
                 """.trimIndent(),
                 registry,
             )
@@ -73,7 +73,7 @@ class ErrorLifecycleTest {
                 """
                 Terminal term = new Terminal();
                 Boom boom = new Boom();
-                term.println(boom.bang().str);
+                term.println(boom.bang().str());
                 """.trimIndent(),
                 registry,
             )

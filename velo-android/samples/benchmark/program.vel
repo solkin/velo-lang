@@ -27,7 +27,7 @@ int totalMs = 0;
 # Right-pad a label so the timing column lines up.
 func pad(str s, int width) str {
     str r = s;
-    while (r.len < width) {
+    while (r.len() < width) {
         r = r.con(" ");
     };
     r;
@@ -35,7 +35,7 @@ func pad(str s, int width) str {
 
 # Print one result row and fold its time into the running total.
 func report(str name, int ms, int checksum) void {
-    term.println(pad(name, 12).con(pad(ms.str.con(" ms"), 12)).con("checksum=").con(checksum.str));
+    term.println(pad(name, 12).con(pad(ms.str().con(" ms"), 12)).con("checksum=").con(checksum.str()));
     totalMs = totalMs + ms;
     void
 };
@@ -97,7 +97,7 @@ func benchString() void {
     while (i < STRING_REPS) {
         s = s.con("velo");
         produced = produced + 4;
-        if (s.len >= 1024) {
+        if (s.len() >= 1024) {
             s = "";
         };
         i = i + 1;
@@ -187,5 +187,5 @@ benchDict();
 benchUi();
 
 term.println("");
-term.println(pad("TOTAL", 12).con(totalMs.str).con(" ms"));
+term.println(pad("TOTAL", 12).con(totalMs.str()).con(" ms"));
 term.println("done.");

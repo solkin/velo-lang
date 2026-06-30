@@ -67,7 +67,7 @@ class CallbacksTest {
 
             actor[Worker] w = new Worker();
             await async w.process(21, func(int v) void {
-                term.println("callback got: ".con(v.str));
+                term.println("callback got: ".con(v.str()));
                 void
             });
             term.println("main frame done");
@@ -97,7 +97,7 @@ class CallbacksTest {
             actor[Worker] w = new Worker();
             await async w.run(func(int v) void {
                 sum = sum + v;
-                term.println("sum: ".con(sum.str));
+                term.println("sum: ".con(sum.str()));
                 void
             });
             term.println("done");
@@ -138,7 +138,7 @@ class CallbacksTest {
             func[(int) void] cb = await async a.makeAdder();
             await async b.fire(cb, 5);
             await async b.fire(cb, 9);
-            term.println("a.n = ".con((await async a.value()).str));
+            term.println("a.n = ".con((await async a.value()).str()));
             """.trimIndent()
         )
         // b posts InvokeFunc into a's mailbox before fire() returns, so the
@@ -158,7 +158,7 @@ class CallbacksTest {
 
             actor[Echo] e = new Echo();
             func[(int) void] back = await async e.give(func(int v) void {
-                term.println("local: ".con(v.str));
+                term.println("local: ".con(v.str()));
                 void
             });
             back(7);
@@ -248,7 +248,7 @@ class CallbacksTest {
             Terminal term = new Terminal();
 
             func[(int, str) void] show = func(int n, str s) void {
-                term.println(s.con(": ").con(n.str));
+                term.println(s.con(": ").con(n.str()));
                 void
             };
             show(3, "n");
@@ -269,7 +269,7 @@ class CallbacksTest {
 
             bridge.register(func(int v) void {
                 bridge.mark();
-                term.println("native got: ".con(v.str));
+                term.println("native got: ".con(v.str()));
                 bridge.release();
                 void
             });
@@ -291,7 +291,7 @@ class CallbacksTest {
             $bridgeLib
 
             bridge.register(func(int v) void {
-                term.println("inline: ".con(v.str));
+                term.println("inline: ".con(v.str()));
                 void
             });
             bridge.fireInline(5);
@@ -312,7 +312,7 @@ class CallbacksTest {
 
             bridge.register(func(int v) void {
                 bridge.mark();
-                term.println("embedded got: ".con(v.str));
+                term.println("embedded got: ".con(v.str()));
                 void
             });
             term.println("embedded ready");
@@ -363,7 +363,7 @@ class CallbacksTest {
 
             actor[Worker] w = new Worker();
             await async w.process(41, func(int v) void {
-                term.println("roundtrip: ".con(v.str));
+                term.println("roundtrip: ".con(v.str()));
                 void
             });
             term.println("main done");
@@ -400,7 +400,7 @@ class CallbacksTest {
 
             actor[Doubler] d = new Doubler();
             func[(int) int] cb = await d.make();
-            term.println(cb(21).str);
+            term.println(cb(21).str());
             """.trimIndent()
         )
         assertEquals("42", output)
@@ -424,7 +424,7 @@ class CallbacksTest {
             actor[Doubler] d = new Doubler();
             actor[Worker] w = new Worker();
             func[(int) int] cb = await d.make();
-            term.println((await w.apply(cb, 50)).str);
+            term.println((await w.apply(cb, 50)).str());
             """.trimIndent()
         )
         assertEquals("100", output)
@@ -451,7 +451,7 @@ class CallbacksTest {
             int base = 21;
             actor[Worker] w = new Worker();
             int r = await async w.run(func() int { base; });
-            term.println(r.str);
+            term.println(r.str());
             """.trimIndent()
         )
         assertEquals("42", output)
@@ -475,7 +475,7 @@ class CallbacksTest {
 
             actor[Worker] w = new Worker();
             await w.process(21, func(int v) void {
-                term.println("callback got: ".con(v.str));
+                term.println("callback got: ".con(v.str()));
                 void
             });
             term.println("main frame done");

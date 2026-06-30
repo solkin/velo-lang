@@ -7,9 +7,9 @@ data class Point(int x, int y) {
 };
 
 Point p = new Point(3, 4);
-term.println(p.x.str);
-term.println(p.y.str);
-term.println(p.sum().str);
+term.println(p.x.str());
+term.println(p.y.str());
+term.println(p.sum().str());
 
 # Value equality: two points with equal fields are equal.
 Point a = new Point(1, 2);
@@ -34,6 +34,6 @@ actor class Geometry() {
 # `await receiver.method(...)` is the synchronous-call sugar — `async` is implied.
 actor[Geometry] geo = new Geometry();
 Point moved = await geo.translate(new Point(10, 20), 5, 6);
-term.println(moved.x.str);
-term.println(moved.y.str);
-term.println(moved.sum().str);
+term.println(moved.x.str());
+term.println(moved.y.str());
+term.println(moved.sum().str());

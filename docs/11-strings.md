@@ -14,7 +14,7 @@ str multiline = "Line 1\nLine 2";
 
 ```velo
 str s = "Hello";
-int length = s.len;  # 5
+int length = s.len();  # 5
 ```
 
 ### `sub(start, end)` — Substring
@@ -45,17 +45,17 @@ str combined = a.con(", ").con(b);  # "Hello, World"
 ```velo
 str s = "Hello";
 int charCode = s[0];      # Character code for 'H'
-str firstChar = s[0].char; # "H"
+str firstChar = s[0].char(); # "H"
 ```
 
 ## Type Conversion
 
 ```velo
 int num = 42;
-str numStr = num.str;     # "42"
+str numStr = num.str();     # "42"
 
 str text = "123";
-int num = text.int;       # 123
+int num = text.int();       # 123
 ```
 
 ---

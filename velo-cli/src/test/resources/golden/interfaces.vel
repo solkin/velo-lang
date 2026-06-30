@@ -21,14 +21,14 @@ class Rect(int w, int h) {
 # to the element's concrete class.
 array[Shape] shapes = new array[Shape]{ new Square(3), new Rect(2, 5), new Square(4) };
 int i = 0;
-while (i < shapes.len) {
+while (i < shapes.len()) {
     Shape s = shapes[i];
-    term.println(s.kind().con(" = ").con(s.area().str));
+    term.println(s.kind().con(" = ").con(s.area().str()));
     i += 1;
 };
 
 # An interface value passed through a function parameter.
-func describe(Shape s) str { s.kind().con("(").con(s.area().str).con(")"); };
+func describe(Shape s) str { s.kind().con("(").con(s.area().str()).con(")"); };
 term.println(describe(new Rect(10, 10)));
 
 # `Self` return: a fluent chain keeps the concrete type, then crosses to the
@@ -39,4 +39,4 @@ class Counter(int n) {
 };
 
 Counter c = new Counter(0);
-term.println(c.bump().bump().bump().value().str);
+term.println(c.bump().bump().bump().value().str());

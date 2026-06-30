@@ -702,9 +702,9 @@ func drawGhost(int i) void {
 func drawHud() void {
     int size = TS + 2;
     int ty = HUD_TOP - TS / 2;
-    board.drawText(OX + TS, ty, "SCORE ".con(score.str), size).color(TEXTW);
-    str lvl = "LEVEL ".con(level.str);
-    board.drawText(OX + COLS * TS - TS - lvl.len * size * 6 / 10, ty, lvl, size).color(TEXTY);
+    board.drawText(OX + TS, ty, "SCORE ".con(score.str()), size).color(TEXTW);
+    str lvl = "LEVEL ".con(level.str());
+    board.drawText(OX + COLS * TS - TS - lvl.len() * size * 6 / 10, ty, lvl, size).color(TEXTY);
     # remaining lives as little Pac-Men below the maze
     int ly = HUD_TOP + ROWS * TS + TS;
     int i = 0;
@@ -716,7 +716,7 @@ func drawHud() void {
 };
 
 func drawCenterText(str s, str color, int size, int dy) void {
-    int w = s.len * (size * 6) / 10;
+    int w = s.len() * (size * 6) / 10;
     board.drawText(OX + COLS * TS / 2 - w / 2, 17 * TS + HUD_TOP + dy, s, size).color(color);
     void
 };

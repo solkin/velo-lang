@@ -35,10 +35,10 @@ You can assign `null` to any pointer to nullify it:
 include "lang/bool.vel";
 
 ptr[int] p = new ptr[int](42);
-term.println(p.val.str);  # 42
+term.println(p.val.str());  # 42
 
 p = null;                  # nullify the pointer
-term.println((p == null).str); # true
+term.println((p == null).str()); # true
 ```
 
 ## Dereferencing
@@ -102,12 +102,12 @@ ptr[int] p = new ptr[int];
 if (p == null) {
     term.println("Pointer is null");
 } else {
-    term.println("Value: ".con(p.val.str));
+    term.println("Value: ".con(p.val.str()));
 };
 
 # Using bool.str extension
-term.println("Is null: ".con((p == null).str));
-term.println("Not null: ".con((p != null).str));
+term.println("Is null: ".con((p == null).str()));
+term.println("Not null: ".con((p != null).str()));
 ```
 
 ## Common Use Cases

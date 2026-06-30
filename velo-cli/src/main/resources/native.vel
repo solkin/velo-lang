@@ -5,9 +5,9 @@
 Terminal term = new Terminal();
 term.println("Hello, World!");
 term.print("input sleeping amount in sec: ");
-int sec = term.input().int;
+int sec = term.input().int();
 
 Time time = new Time();
-term.println("sleeping for ".con(sec.str).con(" sec..."));
+term.println("sleeping for ".con(sec.str()).con(" sec..."));
 time.sleep(sec * 1000);
-term.println("UNIX time is: ".con(time.unix.str));
+term.println("UNIX time is: ".con(time.unix.str()));

@@ -208,7 +208,7 @@ class Vector(int x, int y) {
     };
 
     func toString() str {
-        "(".con(x.str).con(", ").con(y.str).con(")");
+        "(".con(x.str()).con(", ").con(y.str()).con(")");
     };
 };
 

@@ -27,4 +27,4 @@ func run() int {
     sum;
 };
 
-term.println(run().str);
+term.println(run().str());

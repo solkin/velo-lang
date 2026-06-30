@@ -80,8 +80,8 @@ class Vm2OnAndroidTest {
             };
             actor[Adder] a = new Adder(100);
             actor[Adder] b = new Adder(200);
-            term.println((await async a.add(1)).str);
-            term.println((await async b.add(2)).str);
+            term.println((await async a.add(1)).str());
+            term.println((await async b.add(2)).str());
         """.trimIndent()
         val out = run(source, threaded = true).trim().lines()
         assertEquals(listOf("101", "202"), out)

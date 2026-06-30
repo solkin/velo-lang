@@ -11,7 +11,7 @@ while (true) {
     sum += i
     i += 1
 }
-term.println(sum.str)
+term.println(sum.str())
 
 # Sum only odd numbers 0..9 with continue skipping evens -> 1+3+5+7+9 = 25
 int odd = 0
@@ -24,7 +24,7 @@ while (j < 10) {
     }
     odd += cur
 }
-term.println(odd.str)
+term.println(odd.str())
 
 # Nested loops: break only exits the inner loop.
 int pairs = 0
@@ -40,4 +40,4 @@ while (a < 3) {
     }
     a += 1
 }
-term.println(pairs.str)
+term.println(pairs.str())

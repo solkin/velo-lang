@@ -18,4 +18,4 @@ func run() int {
     acc;
 };
 
-term.println(run().str);
+term.println(run().str());

@@ -190,7 +190,7 @@ class RawDeflate() {
         } else {
             int idx = 0;
             bool found = false;
-            while (idx < lengthBase.len & found == false) {
+            while (idx < lengthBase.len() & found == false) {
                 int extra = lengthExtra[idx];
                 int maxLen = lengthBase[idx] + pow2(extra) - 1;
                 if (idx == 27) {
@@ -209,7 +209,7 @@ class RawDeflate() {
     func distanceCodeIndex(int distance) int {
         int idx = 0;
         bool found = false;
-        while (idx < distanceBase.len & found == false) {
+        while (idx < distanceBase.len() & found == false) {
             int extra = distanceExtra[idx];
             int maxDistance = distanceBase[idx] + pow2(extra) - 1;
             if (distance >= distanceBase[idx] & distance <= maxDistance) {
@@ -258,7 +258,7 @@ class RawDeflate() {
             while (
                 same
                 & length < maxMatchLength
-                & pos + length < input.len
+                & pos + length < input.len()
             ) {
                 int left = byteToInt(input[pos + length]);
                 int right = byteToInt(input[pos - distance + length]);
@@ -285,13 +285,13 @@ class RawDeflate() {
     };
 
     func compressFixed(array[byte] input) array[byte] {
-        DeflateBitWriter writer = new DeflateBitWriter(fixedOutputCapacity(input.len));
+        DeflateBitWriter writer = new DeflateBitWriter(fixedOutputCapacity(input.len()));
 
         writer.writeBits(1, 1); # BFINAL=1
         writer.writeBits(1, 2); # BTYPE=01 (fixed Huffman), LSB-first
 
         int pos = 0;
-        while (pos < input.len) {
+        while (pos < input.len()) {
             DeflateMatch match = findMatch(input, pos);
             if (match.length >= minMatchLength) {
                 writeLength(writer, match.length);
@@ -323,20 +323,20 @@ class RawDeflate() {
     };
 
     func compressStored(array[byte] input) array[byte] {
-        array[byte] out = new array[byte](storedOutputLen(input.len));
+        array[byte] out = new array[byte](storedOutputLen(input.len()));
 
         int inPos = 0;
         int outPos = 0;
         bool done = false;
 
         while (done == false) {
-            int remaining = input.len - inPos;
+            int remaining = input.len() - inPos;
             int len = remaining;
             if (len > maxStoredBlock) {
                 len = maxStoredBlock;
             };
 
-            bool finalBlock = inPos + len >= input.len;
+            bool finalBlock = inPos + len >= input.len();
             outPos = writeStoredHeader(out, outPos, finalBlock, len);
 
             int i = 0;

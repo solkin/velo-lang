@@ -62,10 +62,10 @@ func buildHome(Container col) void {
     hero.add(ui.text("Good evening 👋").style(styles.headlineSmall()).color(colors.onPrimaryContainer()));
     hero.add(ui.text("Here is what happened while you were away.")
         .style(styles.bodyMedium()).color(colors.onPrimaryContainer()));
-    Button heroCta = ui.button("Like ".con(likes.str)).icon(icons.favorite());
+    Button heroCta = ui.button("Like ".con(likes.str())).icon(icons.favorite());
     heroCta.onClick(func() void {
         likes += 1;
-        heroCta.text("Like ".con(likes.str));
+        heroCta.text("Like ".con(likes.str()));
         ui.snackbar("Thanks for the love!");
         void
     });
@@ -76,7 +76,7 @@ func buildHome(Container col) void {
     Container stats = ui.row().gap(12).fillWidth();
     stats.add(statTile("12", "Projects", icons.list()));
     stats.add(statTile("87%", "Done", icons.checkCircle()));
-    stats.add(statTile(likes.str, "Likes", icons.thumbUp()));
+    stats.add(statTile(likes.str(), "Likes", icons.thumbUp()));
     col.add(stats);
 
     # Filter chips that update a label — single visible selection feel.
@@ -103,7 +103,7 @@ func buildHome(Container col) void {
     ListView carousel = ui.lazyRow().height(48);
     carousel.items(new array[str]{"  Design  ", "  Specs  ", "  Build  ", "  Review  ", "  Ship  ", "  Notes  "});
     carousel.onItemClick(func(int i) void {
-        ui.snackbar("Opened card ".con(i.str));
+        ui.snackbar("Opened card ".con(i.str()));
         void
     });
     col.add(carousel);
@@ -117,7 +117,7 @@ func buildHome(Container col) void {
     bar.indeterminate(false);
     bar.progress(meter);
     Container barWrap = ui.column().weight(1);
-    Text meterLabel = ui.text(meter.str.con("% synced")).style(styles.bodyMedium());
+    Text meterLabel = ui.text(meter.str().con("% synced")).style(styles.bodyMedium());
     barWrap.add(meterLabel);
     barWrap.add(bar);
     meterRow.add(barWrap);
@@ -128,7 +128,7 @@ func buildHome(Container col) void {
     meterSlider.onSlide(func(int v) void {
         meter = v;
         bar.progress(v);
-        meterLabel.text(v.str.con("% synced"));
+        meterLabel.text(v.str().con("% synced"));
         void
     });
     meterPanel.add(meterSlider);
@@ -295,7 +295,7 @@ func buildComponents(Container col) void {
     Button bMenu = ui.tonalButton("Menu");
     bMenu.onClick(func() void {
         ui.menu(bMenu, new array[str]{"Rename", "Duplicate", "Delete"}, func(int i) void {
-            ui.snackbar("Menu item ".con(i.str));
+            ui.snackbar("Menu item ".con(i.str()));
             void
         });
         void
@@ -363,7 +363,7 @@ func buildProfile(Container col) void {
     # Save validates the email; a missing one surfaces an inline field error.
     Button save = ui.button("Save changes").fillWidth();
     save.onClick(func() void {
-        if (emailField.value().len == 0) {
+        if (emailField.value().len() == 0) {
             emailField.error("Email is required");
         } else {
             ui.snackbar("Profile saved");

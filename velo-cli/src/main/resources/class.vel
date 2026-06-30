@@ -4,10 +4,10 @@ class ValueStorage(int h, str b) {
     int a = h + 1;
     func p() str {
         # method run
-        (100+h).str.con(b);
+        (100+h).str().con(b);
     };
     func setA(str y) void {
-        a = y.int;
+        a = y.int();
     };
     # you can run methods, use fields above, for example
     # constructor end

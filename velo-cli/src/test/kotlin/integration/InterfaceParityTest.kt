@@ -49,17 +49,17 @@ class InterfaceParityTest {
 
             class Square(int side) { func area() int { side * side; }; func kind() str { "square"; }; };
 
-            func describe(Shape s) str { s.kind().con("=").con(s.area().str); };
+            func describe(Shape s) str { s.kind().con("=").con(s.area().str()); };
 
             term.println(describe(new Square(4)));
             term.println(describe(new Widget("abc")));
 
             array[Shape] shapes = new array[Shape]{ new Square(2), new Widget("zz") };
             int i = 0;
-            while (i < shapes.len) { term.println(shapes[i].area().str); i += 1; };
+            while (i < shapes.len()) { term.println(shapes[i].area().str()); i += 1; };
 
             Builder b = new Widget("x");
-            term.println(b.padding(7).pad().str);
+            term.println(b.padding(7).pad().str());
         """.trimIndent()
 
         val f = File.createTempFile("ifaceparity", ".vel").apply { writeText(source); deleteOnExit() }

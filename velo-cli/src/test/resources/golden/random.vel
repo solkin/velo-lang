@@ -9,7 +9,7 @@ func showInts(int seed) void {
     str line = "nextInt:";
     int i = 0;
     while (i < 5) {
-        line = line.con(" ").con(r.nextInt().str);
+        line = line.con(" ").con(r.nextInt().str());
         i = i + 1;
     };
     term.println(line);
@@ -17,10 +17,10 @@ func showInts(int seed) void {
 
 func showBound(int seed, int bound) void {
     Random r = new Random(seed);
-    str line = "nextInt(".con(bound.str).con("):");
+    str line = "nextInt(".con(bound.str()).con("):");
     int i = 0;
     while (i < 8) {
-        line = line.con(" ").con(r.nextIntBound(bound).str);
+        line = line.con(" ").con(r.nextIntBound(bound).str());
         i = i + 1;
     };
     term.println(line);
@@ -31,14 +31,14 @@ func showBool(int seed) void {
     str line = "nextBoolean:";
     int i = 0;
     while (i < 8) {
-        line = line.con(" ").con(r.nextBoolean().str);
+        line = line.con(" ").con(r.nextBoolean().str());
         i = i + 1;
     };
     term.println(line);
 };
 
 func run(int seed) void {
-    term.println("seed ".con(seed.str));
+    term.println("seed ".con(seed.str()));
     showInts(seed);
     showBound(seed, 100);
     showBound(seed, 64);

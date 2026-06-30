@@ -30,13 +30,13 @@ func isPrime(int n) bool {
 
 # Функция для вывода всех простых чисел от 0 до n
 func printPrimes(int n) str {
-    term.println("Простые числа от 0 до ".con(n.str).con(":"));
+    term.println("Простые числа от 0 до ".con(n.str()).con(":"));
     
     int count = 0;
     int i = 0;
     while (i <= n) {
         if (isPrime(i)) {
-            term.print(i.str);
+            term.print(i.str());
             term.print(" ");
             count = count + 1;
             # Выводим по 10 чисел в строку для читаемости
@@ -52,7 +52,7 @@ func printPrimes(int n) str {
         term.println("");
     };
     
-    term.println("Всего найдено простых чисел: ".con(count.str));
+    term.println("Всего найдено простых чисел: ".con(count.str()));
 };
 
 # Основная программа
@@ -60,7 +60,7 @@ term.println("Введите число (от 0 до которого искат
 str input = term.input();
 
 # Преобразуем введенную строку в число
-int maxNumber = input.int;
+int maxNumber = input.int();
 
 # Проверяем корректность ввода
 if (maxNumber < 0) {

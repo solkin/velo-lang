@@ -8,8 +8,8 @@ data class Point(int x, int y) {
 };
 
 Point p = new Point(3, 4);
-term.println(p.x.str);       # 3
-term.println(p.sum().str);   # 7
+term.println(p.x.str());       # 3
+term.println(p.sum().str());   # 7
 ```
 
 ## The value-type contract
@@ -58,8 +58,8 @@ actor class Geometry() {
 
 actor[Geometry] geo = new Geometry();
 Point moved = await geo.translate(new Point(10, 20), 5, 6);
-term.println(moved.x.str);      # 15
-term.println(moved.sum().str);  # 41
+term.println(moved.x.str());      # 15
+term.println(moved.sum().str());  # 41
 ```
 
 The copy is a deep one: nested data classes and arrays of data classes travel too.
@@ -85,7 +85,7 @@ data class Point(int x, int y) {};
 
 Geometry g = new Geometry();
 Point moved = g.translate(new Point(3, 4), 10, 20);
-term.println(moved.x.str);   # 13
+term.println(moved.x.str());   # 13
 ```
 
 Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads the host value's fields (by name) and rebuilds the Velo value. Unlike a [native class](15-native-classes.md) — which travels as an opaque handle — a data class is marshalled field by field, so both sides hold plain, independent values.

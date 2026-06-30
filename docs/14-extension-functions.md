@@ -10,7 +10,7 @@ ext(int a) max(int b) int {
 
 # Extension for str
 ext(str a) insert(int index, str s) str {
-    a.sub(0, index).con(s).con(a.sub(index, a.len));
+    a.sub(0, index).con(s).con(a.sub(index, a.len()));
 };
 
 # Usage
@@ -34,7 +34,7 @@ ext(int n) double() int {
 # Usage - both forms are valid:
 bool flag = true;
 str s1 = flag.str();   # with parentheses
-str s2 = flag.str;     # without parentheses (preferred)
+str s2 = flag.str();     # without parentheses (preferred)
 
 int x = 5;
 int d1 = x.double();   # 10
@@ -45,7 +45,7 @@ int d2 = x.double;     # 10
 
 ```velo
 ext(Terminal t) printInt(int a) str {
-    t.println(a.str);
+    t.println(a.str());
 };
 
 Terminal term = new Terminal();

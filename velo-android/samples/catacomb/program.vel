@@ -695,15 +695,15 @@ func drawHud() void {
     int hw = barW * hp / 100;
     if (hw < 0) { hw = 0; };
     view.drawRect(12, y, hw, 8).color("#e23b3b").fill();
-    view.drawText(12, y - 14, "HP ".con(hp.str), 13).color("#f0e7d1");
-    view.drawText(W / 2 - 10, y - 2, "AMMO ".con(ammo.str), 14).color("#ffe066");
-    view.drawText(W - 120, y - 14, "SCORE ".con(score.str), 13).color("#b9c9d3");
-    view.drawText(W - 120, y, "GUARDS ".con(guardsLeft.str), 13).color("#ff8a8a");
+    view.drawText(12, y - 14, "HP ".con(hp.str()), 13).color("#f0e7d1");
+    view.drawText(W / 2 - 10, y - 2, "AMMO ".con(ammo.str()), 14).color("#ffe066");
+    view.drawText(W - 120, y - 14, "SCORE ".con(score.str()), 13).color("#b9c9d3");
+    view.drawText(W - 120, y, "GUARDS ".con(guardsLeft.str()), 13).color("#ff8a8a");
     void
 };
 
 func drawCenter(str s, str color, int size) void {
-    int w = s.len * size * 6 / 10;
+    int w = s.len() * size * 6 / 10;
     view.drawText(W / 2 - w / 2, HZ, s, size).color(color);
     void
 };

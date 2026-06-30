@@ -18,7 +18,7 @@ actor[Worker] w = new Worker();
 
 await w.process(21, func(int v) void {
     # Runs on the main thread, after the main frame completes.
-    term.println("callback got: ".con(v.str));
+    term.println("callback got: ".con(v.str()));
     void
 });
 
@@ -36,4 +36,4 @@ actor class Doubler() {
 
 actor[Doubler] d = new Doubler();
 func[(int) int] twice = await d.make();
-term.println("twice(21) = ".con(twice(21).str));
+term.println("twice(21) = ".con(twice(21).str()));

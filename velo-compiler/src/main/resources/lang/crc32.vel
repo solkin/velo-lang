@@ -51,7 +51,7 @@ class Crc32() {
     func checksum(array[byte] data) int {
         int crc = -1;
         int i = 0;
-        while (i < data.len) {
+        while (i < data.len()) {
             int idx = (crc ^ byteToInt(data[i])) & 255;
             crc = ushr(crc, 8) ^ table[idx];
             i = i + 1;

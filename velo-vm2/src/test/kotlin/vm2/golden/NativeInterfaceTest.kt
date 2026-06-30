@@ -52,7 +52,7 @@ class NativeInterfaceTest {
             Widget w = new Widget("hello");
             Shape s = w;
             term.println(s.kind());
-            term.println(s.area().str);
+            term.println(s.area().str());
             """.trimIndent()
         )
         assertEquals(listOf("widget:hello", "5"), out.lines())
@@ -66,7 +66,7 @@ class NativeInterfaceTest {
             interface Builder { func padding(int dp) Self; func pad() int; };
 
             Builder b = new Widget("x");
-            term.println(b.padding(8).pad().str);
+            term.println(b.padding(8).pad().str());
             """.trimIndent()
         )
         assertEquals("8", out)
@@ -80,7 +80,7 @@ class NativeInterfaceTest {
             interface Shape { func area() int; func kind() str; };
             class Square(int side) { func area() int { side * side; }; func kind() str { "square"; }; };
 
-            func describe(Shape s) str { s.kind().con("=").con(s.area().str); };
+            func describe(Shape s) str { s.kind().con("=").con(s.area().str()); };
 
             term.println(describe(new Square(3)));
             term.println(describe(new Widget("ab")));

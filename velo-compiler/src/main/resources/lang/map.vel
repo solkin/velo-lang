@@ -33,7 +33,7 @@ class Map[K, V]() {
     };
 
     func bucketIndex(K key) int {
-        int idx = key.hash % capacity;
+        int idx = key.hash() % capacity;
         if (idx < 0) {
             idx + capacity;
         } else {
@@ -86,7 +86,7 @@ class Map[K, V]() {
     func getOrDefault(K key, V defaultValue) V {
         ptr[V] result = get(key);
         if (result != null) {
-            result.val;
+            result.val();
         } else {
             defaultValue;
         };
@@ -95,7 +95,7 @@ class Map[K, V]() {
     # The value under the key; dereferences null on a missing key —
     # check with key() or use getOrDefault() when unsure.
     func at(K key) V {
-        get(key).val;
+        get(key).val();
     };
 
     func putInternal(K key, V value) void {

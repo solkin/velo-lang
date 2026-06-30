@@ -8,8 +8,8 @@ Extension functions for boolean type:
 include "lang/bool.vel";
 
 bool flag = true;
-str s = flag.str;        # "true" or "false" (parentheses optional)
-int i = flag.int;        # 1 or 0
+str s = flag.str();        # "true" or "false" (parentheses optional)
+int i = flag.int();        # 1 or 0
 bool neg = flag.not;     # Logical NOT
 ```
 
@@ -218,7 +218,7 @@ int eveAge = ages.getOrDefault("Eve", 0);  # 0
 ```velo
 bool has = ages.key("Bob");            # true
 bool empty = ages.empty();             # false
-int count = ages.len;                  # number of entries
+int count = ages.len();                  # number of entries
 
 # putIfAbsent — inserts only if key is missing, returns true if inserted
 bool added = ages.putIfAbsent("Diana", 28);     # true
@@ -239,7 +239,7 @@ array[str] k = ages.keys();     # array of all keys
 array[int] v = ages.vals();     # array of all values
 
 int i = 0;
-while (i < k.len) {
+while (i < k.len()) {
     # process k[i] and v[i]
     i = i + 1;
 };

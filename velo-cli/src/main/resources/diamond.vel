@@ -3,7 +3,7 @@ Terminal term = new Terminal();
 func toString(array[str] arr) str {
     int i = 0;
     str acc = "";
-    while(i < arr.len) {
+    while(i < arr.len()) {
         acc = acc.con(arr[i]);
         i += 1;
     };
@@ -13,14 +13,14 @@ func shift(array[int] arr, int v) array[str] {
     arr.map(
         func(int item, int index) str {
             int a = item - v;
-            if a > 0 then a.str else " ";
+            if a > 0 then a.str() else " ";
         }
     )
 };
 func reversed(array[any] arr) array[any] {
     arr.map(
         func(any item, int index) any {
-            arr[arr.len-index-1];
+            arr[arr.len()-index-1];
         }
     )
 };
@@ -28,12 +28,12 @@ any row = new array[int]{1, 2, 3, 4, 5, 6, 7, 8};
 any y = 1;
 while (y <= 9) {
     array[str] s = shift(row, 9 - y);
-    term.println(toString(s.plus(y.str).con(reversed(s))));
+    term.println(toString(s.plus(y.str()).con(reversed(s))));
     y += 1;
 };
 y = 8;
 while (y > 0) {
     any s = shift(row, 9 - y);
-    term.println(toString(s.plus(y.str).con(reversed(s))));
+    term.println(toString(s.plus(y.str()).con(reversed(s))));
     y -= 1;
 };

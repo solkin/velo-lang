@@ -15,12 +15,12 @@ d.key(5);
 d.key(50);
 d.val("c");
 d.val("r");
-d.keys[0];
-d.vals[1];
+d.keys()[0];
+d.vals()[1];
 
-d.arr.map(
+d.arr().map(
     func(tuple[int,str] value, int index) int {
-        str v = value.1.str.con("->".con(value.2.con(if (index < d.len-1) then ", " else "")));
+        str v = value.1.str().con("->".con(value.2.con(if (index < d.len-1) then ", " else "")));
         term.println(v);
         index;
     }
@@ -28,9 +28,9 @@ d.arr.map(
 
 term.println("--");
 
-d.keys.map(
+d.keys().map(
     func(int key, int index) int {
-        str v = key.str.con(if (index < d.len-1) then ", " else "");
+        str v = key.str().con(if (index < d.len-1) then ", " else "");
         term.println(v);
         index;
     }
@@ -38,7 +38,7 @@ d.keys.map(
 
 term.println("--");
 
-d.vals.map(
+d.vals().map(
     func(str value, int index) int {
         str v = value.con(if (index < d.len-1) then ", " else "");
         term.println(v);

@@ -52,7 +52,7 @@ ext (int num) format(int radix) str {
     int n = i;
     str result = "";
     while (n < 33) {
-        result = result.con(buffer[n].char);
+        result = result.con(buffer[n].char());
         n = n + 1;
     };
     result;

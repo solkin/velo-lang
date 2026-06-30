@@ -18,8 +18,8 @@ func factorial(int n) int {
     result;
 };
 
-term.println(add(10, 20).str);
-term.println(multiply(6, 7).str);
-term.println(factorial(5).str);
-term.println(factorial(10).str);
+term.println(add(10, 20).str());
+term.println(multiply(6, 7).str());
+term.println(factorial(5).str());
+term.println(factorial(10).str());
 

@@ -316,7 +316,7 @@ func drawSprite(array[str] spr, int rows, int lx, int ly, str col) void {
     int r = 0;
     while (r < rows) {
         str row = spr[r];
-        int n = row.len;
+        int n = row.len();
         int c = 0;
         while (c < n) {
             if (row[c] == CH_X) {
@@ -869,16 +869,16 @@ func drawCannonExplosion() void {
 func drawUFO() void {
     if (ufoActive == 1) { drawSprite(ufo, 7, ufoX, UFO_Y, C_RED); };
     if (ufoScoreTimer > 0) {
-        board.drawText(px(ufoScoreX), py(UFO_Y + 4), ufoScoreVal.str, TXT).color(C_UFOSCORE);
+        board.drawText(px(ufoScoreX), py(UFO_Y + 4), ufoScoreVal.str(), TXT).color(C_UFOSCORE);
     };
     void
 };
 
 func drawHud() void {
-    board.drawText(px(8), py(10), "SCORE ".con(score.str), TXT).color(C_TEXT);
-    str hi = "HI ".con(hiScore.str);
+    board.drawText(px(8), py(10), "SCORE ".con(score.str()), TXT).color(C_TEXT);
+    str hi = "HI ".con(hiScore.str());
     board.drawText(px(GW / 2 - 14), py(10), hi, TXT).color(C_TEXT);
-    str wv = "WAVE ".con(wave.str);
+    str wv = "WAVE ".con(wave.str());
     board.drawText(px(GW - 58), py(10), wv, TXT).color(C_TEXT);
     void
 };
@@ -895,7 +895,7 @@ func drawGround() void {
 
 func drawCenter(str s, str col) void {
     int sz = TXT + 5;
-    int w = s.len * sz * 6 / 10;
+    int w = s.len() * sz * 6 / 10;
     board.drawText(OX + DRAWW / 2 - w / 2, py(GH / 2), s, sz).color(col);
     void
 };

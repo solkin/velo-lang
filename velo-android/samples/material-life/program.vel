@@ -79,7 +79,7 @@ func randomCells(int seed) array[int] {
     Random rng = new Random(seed);
     array[int] out = new array[int](cols * rows);
     int i = 0;
-    while (i < out.len) {
+    while (i < out.len()) {
         out[i] = if (rng.nextIntBound(100) < 28) then 1 else 0;
         i += 1;
     };
@@ -100,10 +100,10 @@ actor class LifeEngine(int width, int height) {
     };
 
     func snapshot() array[int] {
-        array[int] out = new array[int](cells.len + 1);
+        array[int] out = new array[int](cells.len() + 1);
         out[0] = generation;
         int i = 0;
-        while (i < cells.len) {
+        while (i < cells.len()) {
             out[i + 1] = cells[i];
             i += 1;
         };
@@ -112,7 +112,7 @@ actor class LifeEngine(int width, int height) {
 
     func zero() void {
         int i = 0;
-        while (i < cells.len) {
+        while (i < cells.len()) {
             cells[i] = 0;
             i += 1;
         };
@@ -129,13 +129,13 @@ actor class LifeEngine(int width, int height) {
     # as a plain transferable array; we just copy it over the board.
     func loadCells(array[int] src) array[int] {
         generation = 0;
-        int n = if (src.len < cells.len) then src.len else cells.len;
+        int n = if (src.len() < cells.len()) then src.len() else cells.len();
         int i = 0;
         while (i < n) {
             cells[i] = src[i];
             i += 1;
         };
-        while (i < cells.len) {
+        while (i < cells.len()) {
             cells[i] = 0;
             i += 1;
         };
@@ -171,9 +171,9 @@ actor class LifeEngine(int width, int height) {
         array[int] out = new array[int](96);
         int k = 0;
         int i = 0;
-        while (i < barRows.len) {
+        while (i < barRows.len()) {
             int j = 0;
-            while (j < barCols.len) {
+            while (j < barCols.len()) {
                 out[k] = barCols[j];
                 out[k + 1] = barRows[i];
                 k += 2;
@@ -182,9 +182,9 @@ actor class LifeEngine(int width, int height) {
             i += 1;
         };
         i = 0;
-        while (i < spokeRows.len) {
+        while (i < spokeRows.len()) {
             int j = 0;
-            while (j < spokeCols.len) {
+            while (j < spokeCols.len()) {
                 out[k] = spokeCols[j];
                 out[k + 1] = spokeRows[i];
                 k += 2;
@@ -215,13 +215,13 @@ actor class LifeEngine(int width, int height) {
 
     func stamp(int id, int cx, int cy) array[int] {
         array[int] pts = pattern(id);
-        if (pts.len >= 2) {
+        if (pts.len() >= 2) {
             int minX = pts[0];
             int maxX = pts[0];
             int minY = pts[1];
             int maxY = pts[1];
             int i = 0;
-            while (i < pts.len) {
+            while (i < pts.len()) {
                 int px = pts[i];
                 int py = pts[i + 1];
                 if (px < minX) { minX = px; };
@@ -233,7 +233,7 @@ actor class LifeEngine(int width, int height) {
             int baseX = cx - (minX + (maxX - minX) / 2);
             int baseY = cy - (minY + (maxY - minY) / 2);
             int k = 0;
-            while (k < pts.len) {
+            while (k < pts.len()) {
                 int gx = baseX + pts[k];
                 int gy = baseY + pts[k + 1];
                 if (gx >= 0 & gx < w & gy >= 0 & gy < h) {
@@ -279,7 +279,7 @@ actor class LifeEngine(int width, int height) {
     # every cell has all eight neighbours, so the has* guards stay true and only
     # matter for the bounded (wrap off) mode.
     func step() array[int] {
-        int len = cells.len;
+        int len = cells.len();
         array[int] next = new array[int](len);
         array[int] out = new array[int](len + 1);
         int y = 0;
@@ -478,17 +478,17 @@ func render(array[int] snap) void {
         board.drawText(offX + 12, offY + gridH / 2 + 12, "or pick a pattern, then Play", 12).color(colors.outline());
     };
 
-    generationLabel.text(snap[0].str);
-    liveLabel.text(live.str);
+    generationLabel.text(snap[0].str());
+    liveLabel.text(live.str());
     void
 };
 
 func fieldLabel() str {
-    "Field — ".con(cols.str).con(" × ").con(rows.str).con(" cells");
+    "Field — ".con(cols.str()).con(" × ").con(rows.str()).con(" cells");
 };
 
 func updateCaption() void {
-    caption.text(genPerSec.str.con(" gen/s   ·   ").con(cols.str).con("×").con(rows.str).con("   ·   wrap ").con(if (wrap) then "on" else "off"));
+    caption.text(genPerSec.str().con(" gen/s   ·   ").con(cols.str()).con("×").con(rows.str()).con("   ·   wrap ").con(if (wrap) then "on" else "off"));
     void
 };
 
@@ -531,7 +531,7 @@ func onTimer(int token) void {
             fps = frameCount;
             frameCount = 0;
             fpsStamp = now;
-            fpsLabel.text(fps.str);
+            fpsLabel.text(fps.str());
         };
         async ticker.after(1000 / genPerSec, token, func(int t) void {
             onTimer(t);
@@ -568,13 +568,13 @@ func openSettings() void {
     Container panel = ui.column().padding(20).gap(14).fillWidth();
 
     panel.add(ui.text("Animation").style(styles.labelMedium()).color(colors.primary()));
-    Text speedLabel = ui.text("Speed — ".con(genPerSec.str).con(" gen/s")).style(styles.titleSmall());
+    Text speedLabel = ui.text("Speed — ".con(genPerSec.str()).con(" gen/s")).style(styles.titleSmall());
     panel.add(speedLabel);
     Slider speed = ui.slider(MIN_SPEED, MAX_SPEED).fillWidth();
     speed.slide(genPerSec);
     speed.onSlide(func(int v) void {
         genPerSec = if (v < MIN_SPEED) then MIN_SPEED else v;
-        speedLabel.text("Speed — ".con(genPerSec.str).con(" gen/s"));
+        speedLabel.text("Speed — ".con(genPerSec.str()).con(" gen/s"));
         updateCaption();
         void
     });

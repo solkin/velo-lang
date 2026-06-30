@@ -22,7 +22,7 @@ class Rect(int w, int h) {
 Shape s = new Square(4);
 term.println(s.kind());        # square
 s = new Rect(3, 5);
-term.println(s.area().str);    # 15
+term.println(s.area().str());    # 15
 ```
 
 Assigning a `Square` to a `Shape` variable is allowed because `Square` provides every method `Shape` declares. The call `s.kind()` is dispatched **dynamically** to the concrete class behind `s` at run time.
@@ -76,7 +76,7 @@ class Square(int side) {
 };
 
 Shape s = new Square(2);
-term.println(s.area().str);   # ok
+term.println(s.area().str());   # ok
 term.println(s.kind());       # error: kind() is not part of Shape
 ```
 
@@ -111,15 +111,15 @@ An interface is an ordinary type: use it for variables, parameters, return types
 interface Shape { func area() int; func kind() str; };
 
 # A function that works for any Shape.
-func describe(Shape s) str { s.kind().con("(").con(s.area().str).con(")"); };
+func describe(Shape s) str { s.kind().con("(").con(s.area().str()).con(")"); };
 term.println(describe(new Rect(10, 10)));   # rect(100)
 
 # A heterogeneous array — each element a different concrete class.
 array[Shape] shapes = new array[Shape]{ new Square(3), new Rect(2, 5), new Square(4) };
 int i = 0;
-while (i < shapes.len) {
+while (i < shapes.len()) {
     Shape s = shapes[i];
-    term.println(s.kind().con(" = ").con(s.area().str));
+    term.println(s.kind().con(" = ").con(s.area().str()));
     i += 1;
 };
 # square = 9
@@ -138,7 +138,7 @@ class Counter(int n) {
 };
 
 Counter c = new Counter(0);
-term.println(c.bump().bump().bump().value().str);   # 3
+term.println(c.bump().bump().bump().value().str());   # 3
 ```
 
 `Self` is resolved entirely at compile time to the receiver's type at each call site, so `c.bump()` is a `Counter` and the chain type-checks. `Self` is legal only as a **return type**, never as a parameter — that restriction is what keeps structural satisfaction sound.
@@ -157,7 +157,7 @@ class Counter(int n) {
 };
 
 Builder b = new Counter(10);
-term.println(b.grow().grow().value().str);   # 12
+term.println(b.grow().grow().value().str());   # 12
 ```
 
 ## Bounded generics
@@ -174,7 +174,7 @@ class Boxed[T: Shape](T item) {
 };
 
 Boxed[Square] a = new Boxed[Square](new Square(5));
-term.println(a.areaOf().str);   # 25
+term.println(a.areaOf().str());   # 25
 
 # Violating the bound is rejected:
 class Dot() { func draw() int { 0; }; };
@@ -193,7 +193,7 @@ interface Shape { func area() int; func kind() str; };
 Widget w = new Widget("hello");
 Shape s = w;                   # the native handle satisfies Shape
 term.println(s.kind());        # widget:hello
-term.println(s.area().str);    # 5
+term.println(s.area().str());    # 5
 ```
 
 Velo instances and native handles can sit behind the **same** interface and dispatch the same way: when the receiver is a Velo class the call enters its method, and when it is a native handle the method is resolved by name and invoked across the native boundary. The `Self` rule applies to host methods too — a fluent native method that returns itself fulfils a `Self`-returning requirement. See the **Card Feed** sample (`velo-android/samples/card-feed`) for an interface that spans Velo classes and native Material3 widgets.

@@ -67,9 +67,9 @@ class ActorsTest {
             };
 
             actor[Counter] c = new Counter();
-            term.println((await async c.bump()).str);
-            term.println((await async c.bump()).str);
-            term.println((await async c.bump()).str);
+            term.println((await async c.bump()).str());
+            term.println((await async c.bump()).str());
+            term.println((await async c.bump()).str());
             """.trimIndent()
         )
         assertEquals("1\n2\n3", output)
@@ -91,10 +91,10 @@ class ActorsTest {
 
             actor[Counter] a = new Counter(10);
             actor[Counter] b = new Counter(100);
-            term.println((await async a.bump()).str);
-            term.println((await async b.bump()).str);
-            term.println((await async a.bump()).str);
-            term.println((await async b.bump()).str);
+            term.println((await async a.bump()).str());
+            term.println((await async b.bump()).str());
+            term.println((await async a.bump()).str());
+            term.println((await async b.bump()).str());
             """.trimIndent()
         )
         assertEquals("11\n101\n12\n102", output)
@@ -128,7 +128,7 @@ class ActorsTest {
             array[int] xs = new array[int]{1, 2, 3};
             await async b.put(xs);
             xs[0] = 99;
-            term.println((await async b.sum()).str);
+            term.println((await async b.sum()).str());
             """.trimIndent()
         )
         assertEquals("6", output)
@@ -157,8 +157,8 @@ class ActorsTest {
 
             actor[Container] c = new Container();
             actor[Counter] x = await async c.get();
-            term.println((await async x.bump()).str);
-            term.println((await async x.bump()).str);
+            term.println((await async x.bump()).str());
+            term.println((await async x.bump()).str());
             """.trimIndent()
         )
         assertEquals("1\n2", output)
@@ -338,10 +338,10 @@ class ActorsTest {
 
             dict[int:str] tags = new dict[int:str]{1:"a"};
             actor[Hub] h = new Hub();
-            array[int] back = await async h.echo(new array[int]{1, 2, 3}, tags.arr);
-            term.println(back[0].str);
-            term.println(back[1].str);
-            term.println(back[2].str);
+            array[int] back = await async h.echo(new array[int]{1, 2, 3}, tags.arr());
+            term.println(back[0].str());
+            term.println(back[1].str());
+            term.println(back[2].str());
             """.trimIndent()
         )
         assertEquals("1\n2\n3", output)
@@ -386,8 +386,8 @@ class ActorsTest {
             actor[Counter] b = new Counter(100);
             future[int] fa = async a.bump();
             future[int] fb = async b.bump();
-            term.println((await fa).str);
-            term.println((await fb).str);
+            term.println((await fa).str());
+            term.println((await fb).str());
             """.trimIndent()
         )
         assertEquals("11\n101", output)
@@ -485,8 +485,8 @@ class ActorsTest {
             future[int] f = async c.bump();
             int first = await f;
             int second = await f;
-            term.println(first.str);
-            term.println(second.str);
+            term.println(first.str());
+            term.println(second.str());
             """.trimIndent()
         )
         assertEquals("1\n1", output)
@@ -515,8 +515,8 @@ class ActorsTest {
             };
 
             actor[Boss] b = new Boss();
-            term.println((await async b.dispatch(7)).str);
-            term.println((await async b.dispatch(9)).str);
+            term.println((await async b.dispatch(7)).str());
+            term.println((await async b.dispatch(9)).str());
             """.trimIndent()
         )
         assertEquals("49\n81", output)
@@ -546,8 +546,8 @@ class ActorsTest {
                 async a.bump(),
                 async b.bump()
             };
-            term.println((await (futures[0])).str);
-            term.println((await (futures[1])).str);
+            term.println((await (futures[0])).str());
+            term.println((await (futures[1])).str());
             """.trimIndent()
         )
         assertEquals("1\n1", output)
@@ -656,7 +656,7 @@ class ActorsTest {
             actor[Counter] c = new Counter();
             await c.bump();
             await c.bump();
-            term.println((await c.value()).str);
+            term.println((await c.value()).str());
             """.trimIndent()
         )
         assertEquals("2", output)
@@ -673,8 +673,8 @@ class ActorsTest {
             };
 
             actor[Echo] e = new Echo();
-            term.println((await e.id(7)).str);
-            term.println((await async e.id(7)).str);
+            term.println((await e.id(7)).str());
+            term.println((await async e.id(7)).str());
             """.trimIndent()
         )
         assertEquals("7\n7", output)
@@ -695,8 +695,8 @@ class ActorsTest {
             actor[Counter] b = new Counter();
             future[int] fa = async a.bump();
             future[int] fb = async b.bump();
-            term.println((await fa).str);
-            term.println((await fb).str);
+            term.println((await fa).str());
+            term.println((await fb).str());
             """.trimIndent()
         )
         assertEquals("1\n1", output)
@@ -753,7 +753,7 @@ class ActorsTest {
             };
             actor[Worker] w = new Worker();
             await async w.process(21, func(int v) void {
-                term.println("callback got: ".con(v.str));
+                term.println("callback got: ".con(v.str()));
                 void
             });
             term.println("main frame done");

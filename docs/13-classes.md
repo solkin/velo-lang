@@ -28,13 +28,20 @@ Point p = new Point(10, 20);
 
 ## Accessing Fields and Methods
 
+**Parentheses rule (one obvious way):** anything that *computes* — a method, a
+built-in conversion (`x.str()`, `arr.len()`), an extension call — is written
+with `()`, even when it takes no arguments. Only a *stored field* (a class
+field, a tuple element) is accessed bare. Reading a field with `()` or calling
+a method without it is a compile error.
+
 **Important:** Class fields are read-only from outside the class. To modify fields, you must use class methods.
 
 ```velo
 Point p = new Point(10, 20);
-int x = p.xCoord;        # Reading field (allowed)
+int x = p.xCoord;        # Reading a field — no parens
 # p.xCoord = 15;         # ERROR: cannot modify field from outside
-p.move(5, 5);            # Calling method to modify (correct)
+p.move(5, 5);            # Calling a method — parens (even if it took none)
+int d = p.dist();        # A zero-argument method still needs ()
 ```
 
 Example class with methods for modifying fields:

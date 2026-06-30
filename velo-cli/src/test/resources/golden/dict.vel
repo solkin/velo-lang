@@ -9,7 +9,7 @@ dict[int:str] d = new dict[int:str]{
     3:"c"
 };
 term.println(d[1]);
-term.println(d.len.str);
+term.println(d.len.str());
 
 # --- index assignment: insert and update ---
 
@@ -17,28 +17,28 @@ d[5] = "e";
 d[1] = "A";
 term.println(d[5]);
 term.println(d[1]);
-term.println(d.len.str);
+term.println(d.len.str());
 
 # --- del ---
 
-term.println(d.del(2).str);
-term.println(d.del(20).str);
-term.println(d.len.str);
+term.println(d.del(2).str());
+term.println(d.del(20).str());
+term.println(d.len.str());
 
 # --- key / val membership ---
 
-term.println(d.key(3).str);
-term.println(d.key(99).str);
-term.println(d.val("c").str);
-term.println(d.val("zzz").str);
+term.println(d.key(3).str());
+term.println(d.key(99).str());
+term.println(d.val("c").str());
+term.println(d.val("zzz").str());
 
 # --- keys / vals / arr ---
 
-term.println(d.keys.len.str);
-term.println(d.vals.len.str);
-d.arr.map(
+term.println(d.keys().len().str());
+term.println(d.vals().len().str());
+d.arr().map(
     func(tuple[int,str] e, int i) int {
-        term.println(e.1.str.con(":").con(e.2));
+        term.println(e.1.str().con(":").con(e.2));
         i;
     }
 );
@@ -47,8 +47,8 @@ d.arr.map(
 
 dict[str:int] ages = new dict[str:int]{"alice":30, "bob":25};
 ages["carol"] = 35;
-term.println(ages["alice"].str);
-term.println(ages.getOrDefault("nobody", 42).str);
+term.println(ages["alice"].str());
+term.println(ages.getOrDefault("nobody", 42).str());
 
 # --- growth across resize ---
 
@@ -58,8 +58,8 @@ while (n < 40) {
     big[n] = n * n;
     n = n + 1;
 };
-term.println(big.len.str);
-term.println(big[39].str);
+term.println(big.len.str());
+term.println(big[39].str());
 int check = 0;
 int ok = 0;
 while (check < 40) {
@@ -68,7 +68,7 @@ while (check < 40) {
     };
     check = check + 1;
 };
-term.println((ok == 40).str);
+term.println((ok == 40).str());
 
 # --- dict in function signatures ---
 
@@ -79,8 +79,8 @@ func tally(dict[str:int] m, str k) int {
         0;
     };
 };
-term.println(tally(ages, "bob").str);
-term.println(tally(ages, "ghost").str);
+term.println(tally(ages, "bob").str());
+term.println(tally(ages, "ghost").str());
 
 # --- dict as a generic type argument ---
 
@@ -90,4 +90,4 @@ class Box[T](T item) {
     };
 };
 Box[dict[str:int]] boxed = new Box[dict[str:int]](ages);
-term.println(boxed.get()["carol"].str);
+term.println(boxed.get()["carol"].str());

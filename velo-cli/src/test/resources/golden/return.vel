@@ -14,7 +14,7 @@ func sign(int x) int {
 # Early return straight out of a loop nested in an if.
 func firstEven(array[int] a) int {
     int i = 0
-    while (i < a.len) {
+    while (i < a.len()) {
         if (a[i] % 2 == 0) {
             return a[i]
         }
@@ -31,16 +31,16 @@ func greet(str name) void {
     term.println("Hi " + name)
 }
 
-term.println(sign(5).str)
-term.println(sign(-3).str)
-term.println(sign(0).str)
+term.println(sign(5).str())
+term.println(sign(-3).str())
+term.println(sign(0).str())
 
 array[int] nums = new array[int](4)
 nums[0] = 1
 nums[1] = 3
 nums[2] = 6
 nums[3] = 8
-term.println(firstEven(nums).str)
+term.println(firstEven(nums).str())
 
 greet("")
 greet("Velo")

@@ -129,7 +129,7 @@ class Boxed[T: Shape](T item) {
 };
 
 Boxed[Square] b = new Boxed[Square](new Square(5));
-term.println(b.areaOf().str);   # 25
+term.println(b.areaOf().str());   # 25
 ```
 
 The bound must be an interface — see [Interfaces → Bounded generics](29-interfaces.md#bounded-generics).
@@ -218,7 +218,7 @@ class Mapper[T]() {
 };
 
 func strLen(str item, int idx) int {
-    item.len;
+    item.len();
 };
 
 Mapper[str] m = new Mapper[str]();

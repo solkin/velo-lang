@@ -23,7 +23,7 @@ The `let` construct allows declaring local variables:
 
 ```velo
 let(any result = calculate()) {
-    term.println(result.str);
+    term.println(result.str());
 };
 ```
 

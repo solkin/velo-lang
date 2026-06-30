@@ -6,7 +6,7 @@ A **callback** is a fully-signed function value — `func[(args…) ret]` — th
 
 ```velo
 func[(int, str) void] cb = func(int code, str message) void {
-    term.println(message.con(": ").con(code.str));
+    term.println(message.con(": ").con(code.str()));
     void
 };
 ```
@@ -33,7 +33,7 @@ actor class Worker() {
 
 actor[Worker] w = new Worker();
 await async w.process(21, func(int v) void {
-    term.println("got: ".con(v.str));   # runs on the main thread
+    term.println("got: ".con(v.str()));   # runs on the main thread
     void
 });
 term.println("main frame done");        # prints AFTER "got: 42"
@@ -56,7 +56,7 @@ actor class Doubler() {
 
 actor[Doubler] d = new Doubler();
 func[(int) int] twice = await d.make();
-term.println(twice(21).str);   # 42 — ran on Doubler, value returned here
+term.println(twice(21).str());   # 42 — ran on Doubler, value returned here
 ```
 
 The deadlock caveat from requirement 3 applies: don't invoke a value-returning callback whose owner is, at that moment, blocked awaiting *you*.

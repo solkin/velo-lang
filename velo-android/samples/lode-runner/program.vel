@@ -700,16 +700,16 @@ func drawField() void {
 func drawHud() void {
     int size = TS;
     int ty = HUD_TOP - TS / 3;
-    board.drawText(OX + TS / 2, ty, "SCORE ".con(score.str), size).color(TEXTW);
-    str gtxt = "GOLD ".con(goldLeft.str);
-    board.drawText(OX + COLS * TS / 2 - gtxt.len * size * 3 / 10, ty, gtxt, size).color(TEXTY);
-    str ltxt = "MEN ".con(lives.str);
-    board.drawText(OX + COLS * TS - ltxt.len * size * 6 / 10 - TS / 2, ty, ltxt, size).color(TEXTW);
+    board.drawText(OX + TS / 2, ty, "SCORE ".con(score.str()), size).color(TEXTW);
+    str gtxt = "GOLD ".con(goldLeft.str());
+    board.drawText(OX + COLS * TS / 2 - gtxt.len() * size * 3 / 10, ty, gtxt, size).color(TEXTY);
+    str ltxt = "MEN ".con(lives.str());
+    board.drawText(OX + COLS * TS - ltxt.len() * size * 6 / 10 - TS / 2, ty, ltxt, size).color(TEXTW);
     void
 };
 
 func drawCenterText(str s, str col, int size) void {
-    int w = s.len * size * 6 / 10;
+    int w = s.len() * size * 6 / 10;
     board.drawText(OX + COLS * TS / 2 - w / 2, HUD_TOP + ROWS * TS / 2, s, size).color(col);
     void
 };

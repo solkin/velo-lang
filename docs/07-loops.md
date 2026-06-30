@@ -5,7 +5,7 @@
 ```velo
 int i = 1;
 while (i <= 5) {
-    term.println(i.str);
+    term.println(i.str());
     i = i + 1;
 };
 ```

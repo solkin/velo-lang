@@ -718,14 +718,14 @@ func drawEnemy(int sx, int sy) void {
 func drawHud() void {
     int h = TXT + 10;
     board.drawRect(0, 0, CW, h).color("#000000").alpha(58).fill();
-    str s = "SCORE ".con(score.str).con("   FIRE ").con(fireRange.str).con("   BOMB ").con(maxBombs.str).con("   LIFE ").con(lives.str).con("   FOE ").con(enemiesLeft.str);
+    str s = "SCORE ".con(score.str()).con("   FIRE ").con(fireRange.str()).con("   BOMB ").con(maxBombs.str()).con("   LIFE ").con(lives.str()).con("   FOE ").con(enemiesLeft.str());
     board.drawText(8, TXT + 1, s, TXT).color(C_TEXT);
     void
 };
 
 func drawCenter(str s, str col) void {
     int sz = TXT + 8;
-    int w = s.len * sz * 6 / 10;
+    int w = s.len() * sz * 6 / 10;
     board.drawText(CW / 2 - w / 2, CH / 2, s, sz).color(col);
     void
 };

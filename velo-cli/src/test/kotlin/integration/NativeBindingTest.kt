@@ -96,7 +96,7 @@ class NativeBindingTest {
             int sum = 0;
             k.each(func(int v) void {
                 sum = sum + v;
-                term.println(sum.str);
+                term.println(sum.str());
                 void
             });
             term.println("posted");
@@ -157,8 +157,8 @@ class NativeBindingTest {
 
             Geometry g = new Geometry();
             Point moved = g.translate(new Point(3, 4), 10, 20);
-            term.println(moved.x.str);
-            term.println(moved.y.str);
+            term.println(moved.x.str());
+            term.println(moved.y.str());
             """.trimIndent()
         )
         assertEquals("13\n24", output)
@@ -173,8 +173,8 @@ class NativeBindingTest {
 
             Geometry g = new Geometry();
             Point o = g.origin();
-            term.println(o.x.str);
-            term.println(o.y.str);
+            term.println(o.x.str());
+            term.println(o.y.str());
             """.trimIndent()
         )
         assertEquals("0\n0", output)
@@ -204,8 +204,8 @@ class NativeBindingTest {
 
             Geometry g = new Geometry();
             Point s = g.start(new Segment(new Point(1, 2), new Point(3, 4)));
-            term.println(s.x.str);
-            term.println(s.y.str);
+            term.println(s.x.str());
+            term.println(s.y.str());
             """.trimIndent()
         )
         assertEquals("1\n2", output)
@@ -222,7 +222,7 @@ class NativeBindingTest {
 
             PointBus bus = new PointBus();
             bus.emit(new Point(7, 8), func(Point p) void {
-                term.println("got ".con(p.x.str).con(",").con(p.y.str));
+                term.println("got ".con(p.x.str()).con(",").con(p.y.str()));
                 void
             });
             term.println("main done");
@@ -241,8 +241,8 @@ class NativeBindingTest {
 
             PointBus bus = new PointBus();
             Point r = bus.mapPoint(new Point(3, 4), func(Point p) Point { new Point(p.x * 10, p.y * 10); });
-            term.println(r.x.str);
-            term.println(r.y.str);
+            term.println(r.x.str());
+            term.println(r.y.str());
             """.trimIndent()
         )
         assertEquals("30\n40", output)

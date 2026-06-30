@@ -15,7 +15,7 @@ class Base64Encoder() {
     # Конструктор: инициализируем словарь декодирования
     func initDecodeMap() void {
         int i = 0;
-        while (i < base64Chars.len) {
+        while (i < base64Chars.len()) {
             decodeMap[base64Chars[i]] = i;
             i = i + 1;
         };
@@ -30,25 +30,25 @@ class Base64Encoder() {
     # @param text Исходная строка для кодирования
     # @return Закодированная строка в формате BASE64
     func encode(str text) str {
-        if (text.len == 0) {
+        if (text.len() == 0) {
             "";
         } else {
             str result = "";
             int i = 0;
-            while (i < text.len) {
+            while (i < text.len()) {
                 # Берем 3 байта (символа)
                 int byte0 = text[i];
                 int byte1 = 0;
                 int byte2 = 0;
                 int padding = 0;
                 
-                if (i + 1 < text.len) {
+                if (i + 1 < text.len()) {
                     byte1 = text[i + 1];
                 } else {
                     padding = 2; # Нужно 2 символа padding
                 };
                 
-                if (i + 2 < text.len) {
+                if (i + 2 < text.len()) {
                     byte2 = text[i + 2];
                 } else if (padding == 0) {
                     padding = 1; # Нужно 1 символ padding
@@ -92,21 +92,21 @@ class Base64Encoder() {
     # @param encoded Закодированная строка в формате BASE64
     # @return Декодированная исходная строка
     func decode(str encoded) str {
-        if (encoded.len == 0) {
+        if (encoded.len() == 0) {
             "";
         } else {
             str result = "";
             int i = 0;
-            while (i < encoded.len) {
+            while (i < encoded.len()) {
                 # Берем 4 символа
-                if (i + 3 >= encoded.len) {
+                if (i + 3 >= encoded.len()) {
                     # Недостаточно символов
-                    i = encoded.len;
+                    i = encoded.len();
                 } else {
-                    str char0 = encoded[i].char;
-                    str char1 = encoded[i + 1].char;
-                    str char2 = encoded[i + 2].char;
-                    str char3 = encoded[i + 3].char;
+                    str char0 = encoded[i].char();
+                    str char1 = encoded[i + 1].char();
+                    str char2 = encoded[i + 2].char();
+                    str char3 = encoded[i + 3].char();
                     
                     # Декодируем символы в значения
                     int val0 = decodeMap[char0];
@@ -137,12 +137,12 @@ class Base64Encoder() {
                     int byte2 = combined % 256;
                     
                     # Добавляем байты в результат
-                    result = result.con(byte0.char);
+                    result = result.con(byte0.char());
                     if (bytesToWrite >= 2) {
-                        result = result.con(byte1.char);
+                        result = result.con(byte1.char());
                     };
                     if (bytesToWrite >= 3) {
-                        result = result.con(byte2.char);
+                        result = result.con(byte2.char());
                     };
                     
                     i = i + 4;

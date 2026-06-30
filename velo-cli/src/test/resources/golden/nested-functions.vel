@@ -7,8 +7,8 @@ func[int] test = func(int a) int {
     }(a, 1);
 };
 
-term.println(test(10).str);
-term.println(test(20).str);
+term.println(test(10).str());
+term.println(test(20).str());
 
 # Множественные вложенные анонимные функции
 func compute(int a, int b) int {
@@ -17,7 +17,7 @@ func compute(int a, int b) int {
     sqA + sqB;
 };
 
-term.println(compute(3, 4).str);
+term.println(compute(3, 4).str());
 
 # Глубокая вложенность IIFE
 func level1(int a) int {
@@ -28,11 +28,11 @@ func level1(int a) int {
     }(2);
 };
 
-term.println(level1(1).str);
+term.println(level1(1).str());
 
 # Лямбда присваивается переменной и вызывается
 func[int] double = func(int x) int { x * 2; };
 func[int] triple = func(int x) int { x * 3; };
 
-term.println(double(7).str);
-term.println(triple(7).str);
+term.println(double(7).str());
+term.println(triple(7).str());

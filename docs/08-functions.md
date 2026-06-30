@@ -117,7 +117,7 @@ int r = incThenSquare(4);   # (4 + 1)^2 = 25
 func count(array[int] arr, func[bool] pred) int {
     int n = 0;
     int i = 0;
-    while (i < arr.len) {
+    while (i < arr.len()) {
         if (pred(arr[i])) {
             n = n + 1;
         };

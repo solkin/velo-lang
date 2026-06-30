@@ -15,8 +15,8 @@ data class Point(int x, int y) {
 # Construct and use like any object — fields are read-only.
 Point origin = new Point(0, 0);
 Point p = new Point(3, 4);
-term.println("p = (".con(p.x.str).con(", ").con(p.y.str).con(")"));
-term.println("p.sum() = ".con(p.sum().str));
+term.println("p = (".con(p.x.str()).con(", ").con(p.y.str()).con(")"));
+term.println("p.sum() = ".con(p.sum().str()));
 
 # Value equality: equal fields means equal value.
 Point q = new Point(3, 4);
@@ -40,5 +40,5 @@ actor class Geometry() {
 # implied. Use a bare `async` only when you want the `future[T]` for parallelism.
 actor[Geometry] geo = new Geometry();
 Point moved = await geo.translate(p, 10, 20);
-term.println("moved = (".con(moved.x.str).con(", ").con(moved.y.str).con(")"));
-term.println("moved.sum() = ".con(moved.sum().str));
+term.println("moved = (".con(moved.x.str()).con(", ").con(moved.y.str()).con(")"));
+term.println("moved.sum() = ".con(moved.sum().str()));

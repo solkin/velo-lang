@@ -123,22 +123,22 @@ func askQuestion(str question, array[str] options, int lang) int {
     term.println("");
     term.println(question);
     int i = 0;
-    while (i < options.len) {
-        term.println((i + 1).str.con(") ").con(options[i]));
+    while (i < options.len()) {
+        term.println((i + 1).str().con(") ").con(options[i]));
         i = i + 1;
     };
     str prompt = "";
     if (lang == 0) {
-        prompt = "Your choice (1-".con(options.len.str).con("): ");
+        prompt = "Your choice (1-".con(options.len().str()).con("): ");
     } else {
-        prompt = "Ваш выбор (1-".con(options.len.str).con("): ");
+        prompt = "Ваш выбор (1-".con(options.len().str()).con("): ");
     };
     term.print(prompt);
     str input = term.input();
-    int choice = input.int;
+    int choice = input.int();
     
     # Input validation
-    if (choice < 1 | choice > options.len) {
+    if (choice < 1 | choice > options.len()) {
         if (lang == 0) {
             term.println("Invalid choice, using option 1");
         } else {
@@ -158,7 +158,7 @@ term.println("1) English");
 term.println("2) Русский");
 term.print("Choose language / Выберите язык (1-2): ");
 str langInput = term.input();
-int lang = langInput.int - 1;
+int lang = langInput.int() - 1;
 if (lang < 0 | lang > 1) {
     lang = 0; # Default to English
 };
@@ -517,15 +517,15 @@ term.println("");
 
 term.println(pointsByHouse[lang]);
 if (lang == 0) {
-    term.println("   Gryffindor: ".con(results.gryffindor.str));
-    term.println("   Hufflepuff:  ".con(results.hufflepuff.str));
-    term.println("   Ravenclaw:  ".con(results.ravenclaw.str));
-    term.println("   Slytherin:   ".con(results.slytherin.str));
+    term.println("   Gryffindor: ".con(results.gryffindor.str()));
+    term.println("   Hufflepuff:  ".con(results.hufflepuff.str()));
+    term.println("   Ravenclaw:  ".con(results.ravenclaw.str()));
+    term.println("   Slytherin:   ".con(results.slytherin.str()));
 } else {
-    term.println("   Гриффиндор: ".con(results.gryffindor.str));
-    term.println("   Пуффендуй:  ".con(results.hufflepuff.str));
-    term.println("   Когтевран:  ".con(results.ravenclaw.str));
-    term.println("   Слизерин:   ".con(results.slytherin.str));
+    term.println("   Гриффиндор: ".con(results.gryffindor.str()));
+    term.println("   Пуффендуй:  ".con(results.hufflepuff.str()));
+    term.println("   Когтевран:  ".con(results.ravenclaw.str()));
+    term.println("   Слизерин:   ".con(results.slytherin.str()));
 };
 term.println("");
 

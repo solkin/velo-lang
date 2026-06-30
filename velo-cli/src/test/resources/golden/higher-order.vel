@@ -18,8 +18,8 @@ func apply(int x, func[int] f) int {
 any square = func(int x) int { x * x; };
 any inc    = func(int x) int { x + 1; };
 
-term.println(apply(5, square).str);   # 25
-term.println(apply(5, inc).str);      # 6
+term.println(apply(5, square).str());   # 25
+term.println(apply(5, inc).str());      # 6
 
 # --- 2. twice: apply a function to its own result -------------
 
@@ -27,8 +27,8 @@ func twice(int x, func[int] f) int {
     f(f(x));
 };
 
-term.println(twice(3, inc).str);      # 5
-term.println(twice(3, square).str);   # 81
+term.println(twice(3, inc).str());      # 5
+term.println(twice(3, square).str());   # 81
 
 # --- 3. compose: returns a new function f ∘ g -----------------
 
@@ -39,10 +39,10 @@ func compose(func[int] f, func[int] g) func[int] {
 };
 
 func[int] incThenSquare = compose(square, inc);
-term.println(incThenSquare(4).str);   # (4+1)^2 = 25
+term.println(incThenSquare(4).str());   # (4+1)^2 = 25
 
 func[int] squareThenInc = compose(inc, square);
-term.println(squareThenInc(4).str);   # 4^2 + 1 = 17
+term.println(squareThenInc(4).str());   # 4^2 + 1 = 17
 
 # --- 4. Built-in array.map with a captured value --------------
 
@@ -53,8 +53,8 @@ array[int] xs = new array[int]{1, 2, 3, 4};
 array[int] ys = xs.map(scale);
 
 int i = 0;
-while (i < ys.len) {
-    term.println(ys[i].str);
+while (i < ys.len()) {
+    term.println(ys[i].str());
     i = i + 1;
 };
 
@@ -63,7 +63,7 @@ while (i < ys.len) {
 func count(array[int] arr, func[bool] pred) int {
     int n = 0;
     int i = 0;
-    while (i < arr.len) {
+    while (i < arr.len()) {
         if (pred(arr[i])) {
             n = n + 1;
         };
@@ -74,4 +74,4 @@ func count(array[int] arr, func[bool] pred) int {
 
 int threshold = 15;
 int big = count(ys, func(int v) bool { v > threshold; });
-term.println(big.str);                # 20, 30, 40 are > 15 → 3
+term.println(big.str());                # 20, 30, 40 are > 15 → 3

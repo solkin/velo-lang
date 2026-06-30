@@ -1,7 +1,7 @@
 ext(str s) bytes() array[byte] {
-    array[byte] result = new array[byte](s.len);
+    array[byte] result = new array[byte](s.len());
     int i = 0;
-    while (i < s.len) {
+    while (i < s.len()) {
         result[i] = s[i];
         i = i + 1;
     };

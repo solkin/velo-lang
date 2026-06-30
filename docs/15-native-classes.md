@@ -28,8 +28,8 @@ Velo side — just use it:
 
 ```velo
 Counter c = new Counter(10);
-term.println(c.bump().str);   # 11
-term.println(c.value().str);  # 11
+term.println(c.bump().str());   # 11
+term.println(c.value().str());  # 11
 ```
 
 The CLI registers `Terminal`, `Time`, `FileSystem`, `Http` and `Socket` for
@@ -76,7 +76,7 @@ They cannot cross actor boundaries (an actor must create its own). Extension fun
 
 ```velo
 ext(Terminal t) printInt(int a) void {
-    t.println(a.str);
+    t.println(a.str());
 };
 term.printInt(42);
 ```
@@ -112,7 +112,7 @@ interface Shape { func area() int; func kind() str; };
 Widget w = new Widget("hello");
 Shape s = w;
 term.println(s.kind());        # widget:hello
-term.println(s.area().str);    # 5
+term.println(s.area().str());    # 5
 ```
 
 ## Errors

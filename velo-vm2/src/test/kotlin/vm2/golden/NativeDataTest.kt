@@ -68,19 +68,19 @@ class NativeDataTest {
 
             Geometry geo = new Geometry();
             Point moved = geo.translate(new Point(10, 20), 5, 6);
-            term.println(moved.x.str);
-            term.println(moved.y.str);
-            term.println(moved.sum().str);
+            term.println(moved.x.str());
+            term.println(moved.y.str());
+            term.println(moved.sum().str());
             term.println(geo.describe(new Point(3, 4)));
 
             Seg s = new Seg(new Point(1, 2), new Point(3, 4));
             Point st = geo.start(s);
-            term.println(st.x.str.con(",").con(st.y.str));
+            term.println(st.x.str().con(",").con(st.y.str()));
 
             PointBus bus = new PointBus();
-            bus.emit(new Point(7, 8), func(Point p) void { term.println("emit ".con(p.x.str)); void });
+            bus.emit(new Point(7, 8), func(Point p) void { term.println("emit ".con(p.x.str())); void });
             Point mapped = bus.mapPoint(new Point(1, 1), func(Point p) Point { new Point(p.x + 1, p.y + 1); });
-            term.println(mapped.x.str.con(",").con(mapped.y.str));
+            term.println(mapped.x.str().con(",").con(mapped.y.str()));
 
             Box b = new Box("hi");
             Box w = b.wrap(">> ");

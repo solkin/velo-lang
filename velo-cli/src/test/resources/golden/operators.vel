@@ -61,7 +61,7 @@ class Vector(int x, int y) {
     };
 
     func toString() str {
-        "(".con(x.str).con(", ").con(y.str).con(")");
+        "(".con(x.str()).con(", ").con(y.str()).con(")");
     };
 };
 
@@ -111,8 +111,8 @@ Vector doubled = a + a;
 term.println(doubled.toString());
 
 # --- Index read ---
-term.println(a[0].str);
-term.println(a[1].str);
+term.println(a[0].str());
+term.println(a[1].str());
 
 # --- Index write ---
 Vector c = new Vector(0, 0);

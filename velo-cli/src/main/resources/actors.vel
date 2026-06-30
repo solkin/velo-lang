@@ -22,15 +22,15 @@ actor[Counter] counter = new Counter(0);
 #   - `async receiver.method(args)` — start the call, get a `future[T]`;
 #   - `await future`               — block until the result is ready.
 # The combined `await async ...` form is the synchronous shorthand.
-term.println("start: ".con((await async counter.value()).str));
-term.println("bump:  ".con((await async counter.bump()).str));
-term.println("bump:  ".con((await async counter.bump()).str));
-term.println("now:   ".con((await async counter.value()).str));
+term.println("start: ".con((await async counter.value()).str()));
+term.println("bump:  ".con((await async counter.bump()).str()));
+term.println("bump:  ".con((await async counter.bump()).str()));
+term.println("now:   ".con((await async counter.value()).str()));
 
 # Each actor owns its own state: spawning a second Counter is fully isolated.
 actor[Counter] other = new Counter(100);
-term.println("other: ".con((await async other.bump()).str));
-term.println("first: ".con((await async counter.value()).str));
+term.println("other: ".con((await async other.bump()).str()));
+term.println("first: ".con((await async counter.value()).str()));
 
 # Composition: an actor can hold a handle to another actor and return it
 # from a method. The returned `actor[T]` is identity-preserving — repeated
@@ -46,16 +46,16 @@ actor class Container() {
 };
 
 actor[Container] box = new Container();
-term.println("box-tick: ".con((await async box.tick()).str));
-term.println("box-tick: ".con((await async box.tick()).str));
+term.println("box-tick: ".con((await async box.tick()).str()));
+term.println("box-tick: ".con((await async box.tick()).str()));
 
 actor[Counter] held = await async box.get();
-term.println("held-now: ".con((await async held.value()).str));
+term.println("held-now: ".con((await async held.value()).str()));
 
 # Real parallelism: `async` returns the future without blocking, so two
 # computations on different actors run concurrently. The total wall time
 # of the two `await`s below is roughly that of a single bump, not two.
 future[int] fa = async counter.bump();
 future[int] fb = async other.bump();
-term.println("parallel-counter: ".con((await fa).str));
-term.println("parallel-other:   ".con((await fb).str));
+term.println("parallel-counter: ".con((await fa).str()));
+term.println("parallel-other:   ".con((await fb).str()));

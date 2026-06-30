@@ -7,9 +7,9 @@ let sum = x + 8
 let pi = 3.5
 let ok = x > 10
 
-term.println(x.str)
+term.println(x.str())
 term.println(name)
-term.println(sum.str)
+term.println(sum.str())
 term.println("pi = $pi, ok = $ok")
 
 # Inference flows through expressions and calls.

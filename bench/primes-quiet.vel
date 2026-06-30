@@ -22,4 +22,4 @@ func countPrimes(int limit) int {
     count;
 };
 
-term.println(countPrimes(20000).str);
+term.println(countPrimes(20000).str());

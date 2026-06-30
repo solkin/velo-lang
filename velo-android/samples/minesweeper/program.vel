@@ -286,7 +286,7 @@ func drawMine(int x, int y, bool exploded) void {
 
 func drawNumber(int x, int y, int n) void {
     int size = (CELL * 6) / 10;
-    board.drawText(x + CELL / 2 - size / 4, y + CELL / 2 + (size * 4) / 10, n.str, size).color(numberColor(n));
+    board.drawText(x + CELL / 2 - size / 4, y + CELL / 2 + (size * 4) / 10, n.str(), size).color(numberColor(n));
     void
 };
 
@@ -303,9 +303,9 @@ func drawFlag(int x, int y) void {
     int fMid = y + (CELL * 38) / 100;
     int fLeft = px - (CELL * 30) / 100;
     int fBot = fMid + (fMid - topY);
-    board.drawPath("M ".con(px.str).con(" ").con(topY.str)
-        .con(" L ").con(fLeft.str).con(" ").con(fMid.str)
-        .con(" L ").con(px.str).con(" ").con(fBot.str).con(" Z")).color(RED).fill();
+    board.drawPath("M ".con(px.str()).con(" ").con(topY.str())
+        .con(" L ").con(fLeft.str()).con(" ").con(fMid.str())
+        .con(" L ").con(px.str()).con(" ").con(fBot.str()).con(" Z")).color(RED).fill();
     board.drawRect(px, topY, 2, botY - topY).color(BLACK).fill();
     board.drawRect(x + (CELL * 26) / 100, y + (CELL * 72) / 100, (CELL * 48) / 100, 3).color(BLACK).fill();
     void
@@ -526,7 +526,7 @@ func checkWin() void {
         };
         drawBoard();
         drawPanel();
-        term.println("[mines] cleared — time ".con(timeElapsed.str));
+        term.println("[mines] cleared — time ".con(timeElapsed.str()));
     };
     void
 };

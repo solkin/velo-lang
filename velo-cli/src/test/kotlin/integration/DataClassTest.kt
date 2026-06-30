@@ -46,9 +46,9 @@ class DataClassTest {
             };
 
             Point p = new Point(3, 4);
-            term.println(p.x.str);
-            term.println(p.y.str);
-            term.println(p.sum().str);
+            term.println(p.x.str());
+            term.println(p.y.str());
+            term.println(p.sum().str());
             """.trimIndent()
         )
         assertEquals("3\n4\n7", output)
@@ -136,9 +136,9 @@ class DataClassTest {
 
             actor[Echo] e = new Echo();
             Point r = await async e.bounce(new Point(3, 4));
-            term.println(r.x.str);
-            term.println(r.y.str);
-            term.println(r.sum().str);
+            term.println(r.x.str());
+            term.println(r.y.str());
+            term.println(r.sum().str());
             """.trimIndent()
         )
         assertEquals("3\n4\n7", output)
@@ -158,8 +158,8 @@ class DataClassTest {
 
             actor[Maker] m = new Maker();
             Pair p = await async m.make(10, 20);
-            term.println(p.a.str);
-            term.println(p.b.str);
+            term.println(p.a.str());
+            term.println(p.b.str());
             """.trimIndent()
         )
         assertEquals("10\n20", output)
@@ -180,8 +180,8 @@ class DataClassTest {
 
             actor[Echo] e = new Echo();
             Outer o = await async e.bounce(new Outer(new Inner(7), 9));
-            term.println(o.inner.v.str);
-            term.println(o.k.str);
+            term.println(o.inner.v.str());
+            term.println(o.k.str());
             """.trimIndent()
         )
         assertEquals("7\n9", output)

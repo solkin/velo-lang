@@ -22,9 +22,9 @@ func makeAdder(int n) func[int] {
 func[int] add5 = makeAdder(5);
 func[int] add10 = makeAdder(10);
 
-term.println(add5(3).str);     # 8
-term.println(add10(3).str);    # 13
-term.println(add5(100).str);   # 105
+term.println(add5(3).str());     # 8
+term.println(add10(3).str());    # 13
+term.println(add5(100).str());   # 105
 
 # --- 2. Captured mutable state: counter -----------------------
 # `count` is private to each counter instance. Two counters
@@ -41,11 +41,11 @@ func makeCounter() func[int] {
 func[int] c1 = makeCounter();
 func[int] c2 = makeCounter();
 
-term.println(c1().str);   # 1
-term.println(c1().str);   # 2
-term.println(c1().str);   # 3
-term.println(c2().str);   # 1 — independent state
-term.println(c1().str);   # 4
+term.println(c1().str());   # 1
+term.println(c1().str());   # 2
+term.println(c1().str());   # 3
+term.println(c2().str());   # 1 — independent state
+term.println(c1().str());   # 4
 
 # --- 3. Two-step capture: shared accumulator ------------------
 # A factory returns two closures sharing the same captured `total`.
@@ -64,7 +64,7 @@ func makeAccumulator() Pair {
 Pair acc = makeAccumulator();
 acc.add(7);
 acc.add(35);
-term.println(acc.get().str);  # 42
+term.println(acc.get().str());  # 42
 
 # --- 4. Currying: function returning a function ---------------
 
@@ -75,5 +75,5 @@ func add(int a) func[int] {
 };
 
 func[int] addTen = add(10);
-term.println(addTen(5).str);   # 15
-term.println(add(3)(4).str);   # 7
+term.println(addTen(5).str());   # 15
+term.println(add(3)(4).str());   # 7

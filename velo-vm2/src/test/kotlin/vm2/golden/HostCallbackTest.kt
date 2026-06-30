@@ -72,7 +72,7 @@ class HostCallbackTest {
             Bridge bridge = new Bridge();
             bridge.register(func(int v) void {
                 bridge.mark();
-                term.println("native got: ".con(v.str));
+                term.println("native got: ".con(v.str()));
                 bridge.release();
                 void
             });
@@ -90,7 +90,7 @@ class HostCallbackTest {
             """
             Terminal term = new Terminal();
             Bridge bridge = new Bridge();
-            bridge.register(func(int v) void { term.println("inline: ".con(v.str)); void });
+            bridge.register(func(int v) void { term.println("inline: ".con(v.str())); void });
             bridge.fireInline(5);
             term.println("after inline");
             bridge.release();
@@ -105,7 +105,7 @@ class HostCallbackTest {
             """
             Terminal term = new Terminal();
             Each e = new Each();
-            e.each(func(int v) void { term.println(v.str); void });
+            e.each(func(int v) void { term.println(v.str()); void });
             """.trimIndent()
         )
         assertEquals("1\n2\n3", out)
@@ -129,7 +129,7 @@ class HostCallbackTest {
             func[(int) void] cb = await async a.makeAdder();
             await async b.fire(cb, 5);
             await async b.fire(cb, 9);
-            term.println("a.n = ".con((await async a.value()).str));
+            term.println("a.n = ".con((await async a.value()).str()));
             """.trimIndent()
         )
         assertEquals("a.n = 14", out)
@@ -143,7 +143,7 @@ class HostCallbackTest {
                 """
                 Terminal term = new Terminal();
                 Bridge bridge = new Bridge();
-                bridge.register(func(int v) void { bridge.mark(); term.println("embedded got: ".con(v.str)); void });
+                bridge.register(func(int v) void { bridge.mark(); term.println("embedded got: ".con(v.str())); void });
                 term.println("embedded ready");
                 """.trimIndent()
             )
@@ -178,7 +178,7 @@ class HostCallbackTest {
             };
             actor[Echo] e = new Echo();
             func[(int) void] back = await async e.give(func(int v) void {
-                term.println("local: ".con(v.str));
+                term.println("local: ".con(v.str()));
                 void
             });
             back(7);

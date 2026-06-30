@@ -15,7 +15,7 @@ func repeat(str value, int count) str {
 
 func padRight(str value, int width) str {
     str result = value;
-    while (result.len < width) {
+    while (result.len() < width) {
         result = result.con(" ");
     };
     result;
@@ -41,13 +41,13 @@ func percentBar(int percent) str {
 func baseName(str path) str {
     int slash = 0 - 1;
     int i = 0;
-    while (i < path.len) {
+    while (i < path.len()) {
         if (path[i] == 47) {
             slash = i;
         };
         i = i + 1;
     };
-    path.sub(slash + 1, path.len);
+    path.sub(slash + 1, path.len());
 };
 
 term.println("");
@@ -58,7 +58,7 @@ term.println("");
 term.print("Input file path: ");
 str inputPath = term.input();
 
-if (inputPath.len == 0) {
+if (inputPath.len() == 0) {
     term.println("");
     term.println("error: no input path provided");
 } else if (fs.exists(inputPath) == false) {
@@ -85,7 +85,7 @@ if (inputPath.len == 0) {
     term.println("--------");
     term.println("[1/3] Reading input file...");
     array[byte] input = fs.readBytes(inputPath);
-    term.println("      read ".con(input.len.str).con(" bytes"));
+    term.println("      read ".con(input.len().str()).con(" bytes"));
 
     term.println("[2/3] Compressing with raw DEFLATE...");
     term.println("      output file is written after compression finishes");
@@ -93,23 +93,23 @@ if (inputPath.len == 0) {
 
     term.println("[3/3] Writing ZIP archive...");
     fs.writeBytes(outputPath, archive);
-    term.println("      wrote ".con(archive.len.str).con(" bytes"));
+    term.println("      wrote ".con(archive.len().str()).con(" bytes"));
 
     term.println("");
     term.println("Result");
     term.println("------");
     printKV("archive", outputPath);
-    printKV("original size", input.len.str.con(" bytes"));
-    printKV("archive size", archive.len.str.con(" bytes"));
+    printKV("original size", input.len().str().con(" bytes"));
+    printKV("archive size", archive.len().str().con(" bytes"));
 
-    if (input.len > 0) {
-        int ratio = archive.len * 100 / input.len;
+    if (input.len() > 0) {
+        int ratio = archive.len() * 100 / input.len();
         int saved = 100 - ratio;
-        printKV("ratio", ratio.str.con("% ").con(percentBar(ratio)));
+        printKV("ratio", ratio.str().con("% ").con(percentBar(ratio)));
         if (saved >= 0) {
-            printKV("space saved", saved.str.con("% ").con(percentBar(saved)));
+            printKV("space saved", saved.str().con("% ").con(percentBar(saved)));
         } else {
-            printKV("size increased", (0 - saved).str.con("%"));
+            printKV("size increased", (0 - saved).str().con("%"));
         };
     } else {
         printKV("ratio", "n/a for empty input");

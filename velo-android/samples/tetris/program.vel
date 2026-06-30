@@ -311,7 +311,7 @@ func clearLines() void {
         lines = lines + cleared;
         score = score + LINE_SCORE[cleared] * level;
         level = 1 + lines / 10;
-        term.println("[tetris] cleared ".con(cleared.str).con(" line(s); score ").con(score.str));
+        term.println("[tetris] cleared ".con(cleared.str()).con(" line(s); score ").con(score.str()));
     };
     void
 };
@@ -392,7 +392,7 @@ func drawBoard() void {
         overlay("PAUSED", "");
     } else {
         if (gameOver) {
-            overlay("GAME OVER", "Score ".con(score.str));
+            overlay("GAME OVER", "Score ".con(score.str()));
         };
     };
     void
@@ -428,9 +428,9 @@ func drawNext() void {
 };
 
 func updateStats() void {
-    scoreText.text(score.str);
-    linesText.text("Lines  ".con(lines.str));
-    levelText.text("Level  ".con(level.str));
+    scoreText.text(score.str());
+    linesText.text("Lines  ".con(lines.str()));
+    levelText.text("Level  ".con(level.str()));
     void
 };
 
@@ -472,7 +472,7 @@ func spawnNext() void {
     if (collides(curPiece, curRot, curX, curY)) {
         gameOver = true;
         started = false;
-        term.println("[tetris] game over — score ".con(score.str));
+        term.println("[tetris] game over — score ".con(score.str()));
     };
     drawNext();
     void
@@ -566,7 +566,7 @@ func onRotate() void {
         array[int] kicks = new array[int]{0, 0 - 1, 1, 0 - 2, 2};
         int i = 0;
         bool done = false;
-        while (i < kicks.len & done == false) {
+        while (i < kicks.len() & done == false) {
             if (collides(curPiece, nrot, curX + kicks[i], curY) == false) {
                 curRot = nrot;
                 curX = curX + kicks[i];

@@ -2,7 +2,7 @@ Terminal term = new Terminal();
 
 int i = 0;
 while (i < 5) {
-    term.print(i.str);
+    term.print(i.str());
     term.print(" ");
     i += 1;
 };
@@ -14,5 +14,5 @@ while (j <= 10) {
     sum += j;
     j += 1;
 };
-term.println(sum.str);
+term.println(sum.str());
 

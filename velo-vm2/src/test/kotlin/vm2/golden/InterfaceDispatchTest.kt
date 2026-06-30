@@ -72,10 +72,10 @@ class InterfaceDispatchTest {
 
             Shape s = new Square(4);
             term.println(s.kind());
-            term.println(s.area().str);
+            term.println(s.area().str());
             s = new Rect(3, 5);
             term.println(s.kind());
-            term.println(s.area().str);
+            term.println(s.area().str());
             """.trimIndent()
         )
         assertEquals(listOf("square", "16", "rect", "15"), out.lines())
@@ -93,7 +93,7 @@ class InterfaceDispatchTest {
 
             func total(Shape a, Shape b) int { a.area() + b.area(); };
 
-            term.println(total(new Square(2), new Rect(3, 4)).str);
+            term.println(total(new Square(2), new Rect(3, 4)).str());
             """.trimIndent()
         )
         assertEquals("16", out)
@@ -112,11 +112,11 @@ class InterfaceDispatchTest {
             array[Shape] shapes = new array[Shape]{ new Square(2), new Rect(3, 4), new Square(5) };
             int sum = 0;
             int i = 0;
-            while (i < shapes.len) {
+            while (i < shapes.len()) {
                 sum += shapes[i].area();
                 i += 1;
             };
-            term.println(sum.str);
+            term.println(sum.str());
             """.trimIndent()
         )
         assertEquals("41", out) // 4 + 12 + 25
@@ -134,7 +134,7 @@ class InterfaceDispatchTest {
             };
 
             Counter c = new Counter(0);
-            term.println(c.grow().grow().grow().value().str);
+            term.println(c.grow().grow().grow().value().str());
             """.trimIndent()
         )
         assertEquals("3", out)
@@ -157,7 +157,7 @@ class InterfaceDispatchTest {
             };
 
             Builder b = new Counter(10);
-            term.println(b.grow().grow().value().str);
+            term.println(b.grow().grow().value().str());
             """.trimIndent()
         )
         assertEquals("12", out)
@@ -172,7 +172,7 @@ class InterfaceDispatchTest {
                 interface Shape { func area() int; };
                 class Square(int side) : Shape { func area() int { side * side; }; };
                 Square s = new Square(3);
-                term.println(s.area().str);
+                term.println(s.area().str());
                 """.trimIndent()
             )
         )
@@ -251,8 +251,8 @@ class InterfaceDispatchTest {
 
             Boxed[Square] a = new Boxed[Square](new Square(5));
             Boxed[Rect] b = new Boxed[Rect](new Rect(3, 4));
-            term.println(a.areaOf().str);
-            term.println(b.areaOf().str);
+            term.println(a.areaOf().str());
+            term.println(b.areaOf().str());
             """.trimIndent()
         )
         assertEquals(listOf("25", "12"), out.lines())

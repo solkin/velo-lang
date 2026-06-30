@@ -26,7 +26,7 @@ if (x > 5) {
 int sum = add(10, 20) +
     factorial(5)
 term.println(sum
-    .str)
+    .str())
 
 # Explicit `;` still works for several statements on one line.
-int a = 1; int b = 2; term.println((a + b).str)
+int a = 1; int b = 2; term.println((a + b).str())

@@ -5,16 +5,16 @@ class LZW() {
         dict[str:int] dictionary = new dict[str:int]{};
         int dictSize = 0;
         while(dictSize < 256) {
-            dictionary[dictSize.char] = dictSize;
+            dictionary[dictSize.char()] = dictSize;
             dictSize += 1;
         };
 
         str w = "";
         array[int] result = new array[int](0);
         int i = 0;
-        while(i < text.len) {
+        while(i < text.len()) {
             int c = text[i];
-            str wc = w.con(c.char);
+            str wc = w.con(c.char());
             if (dictionary.key(wc)) {
                 w = wc;
             } else {
@@ -22,7 +22,7 @@ class LZW() {
                 # Add wc to the dictionary.
                 dictionary[wc] = dictSize;
                 dictSize += 1;
-                w = c.char;
+                w = c.char();
             };
             i += 1;
         };
@@ -34,23 +34,23 @@ class LZW() {
 
     func decompress(array[int] compressed) str {
         str result = "";
-        if (compressed.len > 0) {
+        if (compressed.len() > 0) {
             dict[int:str] dictionary = new dict[int:str]{};
             int dictSize = 0;
             while(dictSize < 256) {
-                dictionary[dictSize] = dictSize.char;
+                dictionary[dictSize] = dictSize.char();
                 dictSize += 1;
             };
-            str w = compressed[0].char;
+            str w = compressed[0].char();
             result = w;
             int i = 1;
-            while (i < compressed.len) {
+            while (i < compressed.len()) {
                 int k = compressed[i];
                 str entry = "";
                 if (dictionary.key(k)) {
                     entry = dictionary[k];
                 } else if (k == dictSize) {
-                    entry = w + w[0].char;
+                    entry = w + w[0].char();
                 } else {
                     term.println("Bad compressed k: ".con(k));
                 };
@@ -58,7 +58,7 @@ class LZW() {
                 result = result.con(entry);
 
                 # Add w+entry[0] to the dictionary.
-                dictionary[dictSize] = w.con(entry[0].char);
+                dictionary[dictSize] = w.con(entry[0].char());
                 dictSize += 1;
 
                 w = entry;
@@ -72,7 +72,7 @@ class LZW() {
 
 LZW lzw = new LZW();
 str text = term.input();
-if (text.len == 0) {
+if (text.len() == 0) {
     text = "TOBEORNOTTOBEORTOBEORNOT";
     term.println(text);
 };
@@ -80,9 +80,9 @@ any result = lzw.compress(text);
 int i = 0;
 str bytes = "";
 str chars = "";
-while(i < result.len) {
-    bytes = bytes.con(result[i].str.con(" "));
-    chars = chars.con(result[i].char);
+while(i < result.len()) {
+    bytes = bytes.con(result[i].str().con(" "));
+    chars = chars.con(result[i].char());
     i += 1;
 };
 term.println(chars.con(" / ").con(bytes));

@@ -6,7 +6,7 @@ class TupleWorker(Terminal term) {
         t.2 = t.2.con("_item");
     };
     func dump(tuple[int,str,float] t) void {
-        term.println(t.1.str);
+        term.println(t.1.str());
         term.println(t.2);
         void
     };

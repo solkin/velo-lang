@@ -9,7 +9,7 @@ include "lang/bool.vel";       # bool extension functions
 
 # Now you can use what the included module provides
 Terminal term = new Terminal();
-term.println(true.str);        # "true"
+term.println(true.str());        # "true"
 ```
 
 ## Standard Modules

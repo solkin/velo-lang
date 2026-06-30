@@ -31,7 +31,7 @@ arr[2] = 40;             # Change element
 
 ```velo
 array[int] arr = new array[int]{1, 2, 3};
-int length = arr.len;     # 3
+int length = arr.len();     # 3
 ```
 
 ### `sub(start, end)` — Subarray

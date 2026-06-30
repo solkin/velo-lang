@@ -11,5 +11,5 @@ actor class Doubler() {
 
 actor[Doubler] d = new Doubler();
 func[(int) int] twice = await d.make();
-term.println(twice(21).str);
-term.println(twice(50).str);
+term.println(twice(21).str());
+term.println(twice(50).str());

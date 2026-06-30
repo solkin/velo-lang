@@ -33,9 +33,9 @@ The body of an `actor class` is identical to a regular class — fields, methods
 ```velo
 actor[Counter] counter = new Counter(0);
 
-term.println((await async counter.bump()).str);  # 1
-term.println((await async counter.bump()).str);  # 2
-term.println((await async counter.value()).str); # 2
+term.println((await async counter.bump()).str());  # 1
+term.println((await async counter.bump()).str());  # 2
+term.println((await async counter.value()).str()); # 2
 ```
 
 `new Counter(0)` produces a value of type `actor[Counter]` — a typed remote handle. The `async ... .method(args)` step does three things at runtime:
@@ -53,8 +53,8 @@ A naked `counter.bump()` doesn't compile, because the type `actor[Counter]` expo
 The common case — start a call and immediately wait for it — has a one-keyword form: `await` accepts an actor method call directly, and `async` is implied.
 
 ```velo
-term.println((await counter.bump()).str);        # sugar
-term.println((await async counter.bump()).str);  # the same thing, spelled out
+term.println((await counter.bump()).str());        # sugar
+term.println((await async counter.bump()).str());  # the same thing, spelled out
 ```
 
 `await` still does just one thing — produce the result of a cross-thread operation. Reach for a bare `async` (without `await`) only when you want the `future[T]` itself, to overlap work — see [Parallel Work](#parallel-work-with-async).
@@ -241,9 +241,9 @@ actor class Counter(int start) {
 actor[Counter] a = new Counter(10);
 actor[Counter] b = new Counter(100);
 
-term.println((await async a.bump()).str);  # 11
-term.println((await async b.bump()).str);  # 101
-term.println((await async a.bump()).str);  # 12
+term.println((await async a.bump()).str());  # 11
+term.println((await async b.bump()).str());  # 101
+term.println((await async a.bump()).str());  # 12
 ```
 
 Two actors, two threads, two private `n`s — no `mutex`, no race.

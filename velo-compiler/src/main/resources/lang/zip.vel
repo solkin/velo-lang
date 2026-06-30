@@ -37,11 +37,11 @@ class Zip() {
 
     func copyBytes(array[byte] out, int pos, array[byte] data) int {
         int i = 0;
-        while (i < data.len) {
+        while (i < data.len()) {
             out[pos + i] = data[i];
             i = i + 1;
         };
-        pos + data.len;
+        pos + data.len();
     };
 
     func create(array[byte] input, str entryName) array[byte] {
@@ -50,10 +50,10 @@ class Zip() {
         int crc = crc32.checksum(input);
 
         int localHeaderOffset = 0;
-        int localHeaderSize = 30 + name.len;
-        int centralDirectoryOffset = localHeaderSize + compressed.len;
-        int centralDirectorySize = 46 + name.len;
-        int totalSize = localHeaderSize + compressed.len + centralDirectorySize + 22;
+        int localHeaderSize = 30 + name.len();
+        int centralDirectoryOffset = localHeaderSize + compressed.len();
+        int centralDirectorySize = 46 + name.len();
+        int totalSize = localHeaderSize + compressed.len() + centralDirectorySize + 22;
         int dosTime = 0;
         int dosDate = 33; # 1980-01-01
 
@@ -68,9 +68,9 @@ class Zip() {
         pos = writeU16(out, pos, dosTime);
         pos = writeU16(out, pos, dosDate);
         pos = writeU32(out, pos, crc);
-        pos = writeU32(out, pos, compressed.len);
-        pos = writeU32(out, pos, input.len);
-        pos = writeU16(out, pos, name.len);
+        pos = writeU32(out, pos, compressed.len());
+        pos = writeU32(out, pos, input.len());
+        pos = writeU16(out, pos, name.len());
         pos = writeU16(out, pos, 0);              # extra field length
         pos = copyBytes(out, pos, name);
         pos = copyBytes(out, pos, compressed);
@@ -84,9 +84,9 @@ class Zip() {
         pos = writeU16(out, pos, dosTime);
         pos = writeU16(out, pos, dosDate);
         pos = writeU32(out, pos, crc);
-        pos = writeU32(out, pos, compressed.len);
-        pos = writeU32(out, pos, input.len);
-        pos = writeU16(out, pos, name.len);
+        pos = writeU32(out, pos, compressed.len());
+        pos = writeU32(out, pos, input.len());
+        pos = writeU16(out, pos, name.len());
         pos = writeU16(out, pos, 0);              # extra field length
         pos = writeU16(out, pos, 0);              # file comment length
         pos = writeU16(out, pos, 0);              # disk number start

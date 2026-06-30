@@ -6,7 +6,7 @@ int sum = 0
 for i in 0..5 {
     sum += i
 }
-term.println(sum.str)
+term.println(sum.str())
 
 # break and continue inside a for; continue still runs the step.
 # odd numbers below 10: 1+3+5+7+9 = 25
@@ -20,7 +20,7 @@ for k in 0..100 {
     }
     odd += k
 }
-term.println(odd.str)
+term.println(odd.str())
 
 # Iterate an array's elements: 7+8+9 = 24
 array[int] xs = new array[int](3)
@@ -31,7 +31,7 @@ int total = 0
 for x in xs {
     total += x
 }
-term.println(total.str)
+term.println(total.str())
 
 # Range bound can be any expression.
 int n = 4
@@ -39,4 +39,4 @@ int fact = 1
 for f in 1..n + 1 {
     fact *= f
 }
-term.println(fact.str)
+term.println(fact.str())

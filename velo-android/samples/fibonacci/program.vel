@@ -15,4 +15,4 @@ any fib = func (int num) int {
 };
 
 term.print("Fib: ");
-term.println(fib(93).str);
+term.println(fib(93).str());

@@ -73,9 +73,9 @@ while (gameOver == false) {
     # Ask for input until a valid move is provided
     while (validMove == false) {
         term.print("Player ".con(currentPlayer).con(", enter row (0-2): "));
-        row = term.input().int;
+        row = term.input().int();
         term.print("Enter col (0-2): ");
-        col = term.input().int;
+        col = term.input().int();
 
         if (row >= 0 & row <= 2 & col >= 0 & col <= 2) {
             if (board[row][col] == " ") {

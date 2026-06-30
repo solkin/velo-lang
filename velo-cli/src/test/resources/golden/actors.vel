@@ -26,19 +26,19 @@ actor[Counter] counter = new Counter(10);
 # The compiler refuses naked `counter.bump()` because `actor[Counter]`
 # exposes no props, and refuses `await counter.bump()` because `await`
 # only consumes futures.
-term.println((await async counter.value()).str);
-term.println((await async counter.bump()).str);
-term.println((await async counter.bump()).str);
-term.println((await async counter.value()).str);
+term.println((await async counter.value()).str());
+term.println((await async counter.bump()).str());
+term.println((await async counter.bump()).str());
+term.println((await async counter.value()).str());
 
 # Spawn a second, independent counter to show that each actor owns its own state.
 actor[Counter] other = new Counter(0);
-term.println((await async other.bump()).str);
-term.println((await async counter.value()).str);
+term.println((await async other.bump()).str());
+term.println((await async counter.value()).str());
 
 # Parallel form: keep the future, await later. Both actors run concurrently
 # between the two `async` lines and the matching `await`s.
 future[int] fc = async counter.bump();
 future[int] fo = async other.bump();
-term.println((await fc).str);
-term.println((await fo).str);
+term.println((await fc).str());
+term.println((await fo).str());

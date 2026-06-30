@@ -28,7 +28,9 @@ class StringParselet : PrefixParselet {
         for (segment in value.segments) {
             val part: Node = when (segment) {
                 is StrLit -> StringNode(segment.text)
-                is StrExpr -> PropNode(name = "str", args = null, parent = subExpression(parser, segment.source))
+                // args = emptyList() (not null) so this reads as a `.str()` call,
+                // satisfying the parens rule for conversions.
+                is StrExpr -> PropNode(name = "str", args = emptyList(), parent = subExpression(parser, segment.source))
             }
             node = if (node == null) part else BinaryNode(operator = "+", left = node, right = part)
         }

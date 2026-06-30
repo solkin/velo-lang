@@ -12,7 +12,7 @@ class Pair[T, U](T first, U second) {
 };
 
 Pair[int, str] p = new Pair[int, str](42, "hello");
-term.println(p.getFirst().str);
+term.println(p.getFirst().str());
 term.println(p.getSecond());
 
 # --- Generic Box class ---
@@ -27,9 +27,9 @@ class Box[T](T value) {
 };
 
 Box[int] b = new Box[int](10);
-term.println(b.get().str);
+term.println(b.get().str());
 b.set(20);
-term.println(b.get().str);
+term.println(b.get().str());
 
 # --- Generic function with type inference ---
 
@@ -38,7 +38,7 @@ func identity[T](T value) T {
 };
 
 int x = identity(99);
-term.println(x.str);
+term.println(x.str());
 
 str s = identity("world");
 term.println(s);
@@ -67,5 +67,5 @@ Stack[str] stack = new Stack[str]();
 stack.push("a");
 stack.push("b");
 stack.push("c");
-term.println(stack.getSize().str);
+term.println(stack.getSize().str());
 term.println(stack.peek());

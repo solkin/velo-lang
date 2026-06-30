@@ -5,4 +5,4 @@ func fib(int n) int {
 };
 
 let res = fib(15);
-term.println(res.str);
+term.println(res.str());

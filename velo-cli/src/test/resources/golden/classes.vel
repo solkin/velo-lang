@@ -8,7 +8,7 @@ class Point(int x, int y) {
         y += dy;
     };
     func toString() str {
-        "(".con(x.str).con(", ").con(y.str).con(")");
+        "(".con(x.str()).con(", ").con(y.str()).con(")");
     };
 };
 
@@ -18,6 +18,6 @@ term.println(p.toString());
 p.move(5, -3);
 term.println(p.toString());
 
-term.println(p.getX().str);
-term.println(p.getY().str);
+term.println(p.getX().str());
+term.println(p.getY().str());
 

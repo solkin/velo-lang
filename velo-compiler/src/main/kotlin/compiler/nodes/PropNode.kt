@@ -13,6 +13,24 @@ data class PropNode(
         return ctx.wrapScope { scopeCtx ->
             val parentType = parent.compile(scopeCtx)
             val ext = scopeCtx.opt(parentType.name() + "@" + name)
+            // Parens rule (one obvious way): anything that computes — a method,
+            // a conversion, an extension call — is written with `()`; only a
+            // stored field (class field, tuple element) is accessed bare.
+            val hasParens = args != null
+            if (ext != null && !hasParens) {
+                throw IllegalArgumentException("'$name' is a function; call it with parentheses: $name()")
+            }
+            if (ext == null) {
+                when (classifyAccess(parentType, name, scopeCtx)) {
+                    Access.COMPUTATION -> if (!hasParens) {
+                        throw IllegalArgumentException("'$name' is a method or conversion; call it with parentheses: $name()")
+                    }
+                    Access.FIELD -> if (hasParens) {
+                        throw IllegalArgumentException("'$name' is a field; access it without parentheses: $name")
+                    }
+                    Access.UNKNOWN -> {}
+                }
+            }
             if (ext != null) {
                 val argTypes = listOf(parentType) + args.orEmpty().map { it.compile(scopeCtx) }
                 scopeCtx.add(Op.Load(ext.index))
@@ -42,6 +60,28 @@ data class PropNode(
                 prop.compile(parentType, args = argTypes, scopeCtx)
             }
         }
+    }
+
+    private enum class Access { FIELD, COMPUTATION, UNKNOWN }
+
+    /**
+     * Whether `name` on [parentType] is a bare-accessed field or a parenthesised
+     * computation. Tuple elements and a class's non-function members are fields;
+     * methods and every built-in conversion compute. UNKNOWN (e.g. a member that
+     * isn't found) defers to the normal resolution error.
+     */
+    private fun classifyAccess(parentType: Type, name: String, ctx: Context): Access = when (parentType) {
+        is TupleType -> if (name.toIntOrNull() != null) Access.FIELD else Access.COMPUTATION
+        is ClassType -> {
+            val def = ctx.opt(parentType.name)?.type as? ClassType
+            val member = def?.parent?.frame?.vars?.get(name)
+            when {
+                member == null -> Access.UNKNOWN
+                member.type is FuncType -> Access.COMPUTATION
+                else -> Access.FIELD
+            }
+        }
+        else -> Access.COMPUTATION
     }
 
     override fun compileAssignment(type: Type, ctx: Context) {

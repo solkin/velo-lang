@@ -62,19 +62,19 @@ bool hasValue = d.val("c");  # true if value exists
 ### `keys` — Array of Keys
 
 ```velo
-array[int] allKeys = d.keys;
+array[int] allKeys = d.keys();
 ```
 
 ### `vals` — Array of Values
 
 ```velo
-array[str] allValues = d.vals;
+array[str] allValues = d.vals();
 ```
 
 ### `arr` — Array of Tuples (key, value)
 
 ```velo
-array[tuple[int:str]] pairs = d.arr;
+array[tuple[int:str]] pairs = d.arr();
 ```
 
 ---

@@ -4,10 +4,10 @@ int port = 9876;
 
 Socket srv = Socket();
 srv.bind(port);
-term.println("Echo server listening on port " + port.str);
+term.println("Echo server listening on port " + port.str());
 
 Socket client = srv.accept();
-term.println("Client connected: " + client.remoteAddress() + ":" + client.remotePort().str);
+term.println("Client connected: " + client.remoteAddress() + ":" + client.remotePort().str());
 
 int running = 1;
 while (running == 1) {

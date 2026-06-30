@@ -58,11 +58,11 @@ func rsGenerator(int degree) array[int] {
     array[int] g = new array[int]{1};
     int i = 0;
     while (i < degree) {
-        array[int] ng = new array[int](g.len + 1);
+        array[int] ng = new array[int](g.len() + 1);
         int z = 0;
-        while (z < ng.len) { ng[z] = 0; z = z + 1; };
+        while (z < ng.len()) { ng[z] = 0; z = z + 1; };
         int j = 0;
-        while (j < g.len) {
+        while (j < g.len()) {
             ng[j] = ng[j] ^ g[j];                              # multiply by x
             ng[j + 1] = ng[j + 1] ^ gfMul(g[j], GF_EXP[i]);    #  + by the root 2^i
             j = j + 1;
@@ -81,7 +81,7 @@ func rsEncode(array[int] block, int ecLen) array[int] {
     int z = 0;
     while (z < ecLen) { ecc[z] = 0; z = z + 1; };
     int i = 0;
-    while (i < block.len) {
+    while (i < block.len()) {
         int factor = block[i] ^ ecc[0];
         int j = 0;
         while (j < ecLen - 1) { ecc[j] = ecc[j + 1]; j = j + 1; };
@@ -104,8 +104,8 @@ class ByteBuf() {
     int count = 0;
 
     func ensure(int need) void {
-        if (need > buf.len) {
-            int ncap = buf.len * 2;
+        if (need > buf.len()) {
+            int ncap = buf.len() * 2;
             while (ncap < need) { ncap = ncap * 2; };
             array[int] nb = new array[int](ncap);
             int i = 0;
@@ -154,7 +154,7 @@ class BitBuf() {
 func toUtf8(str s) array[int] {
     ByteBuf b = new ByteBuf();
     int i = 0;
-    int n = s.len;
+    int n = s.len();
     while (i < n) {
         int c = s[i];
         if (c < 128) {
@@ -326,11 +326,11 @@ func drawAlign(int cr, int cc) void {
 
 func placeAlignment(int version) void {
     array[int] coords = alignCoords(version);
-    int last = coords.len - 1;
+    int last = coords.len() - 1;
     int a = 0;
-    while (a < coords.len) {
+    while (a < coords.len()) {
         int b = 0;
-        while (b < coords.len) {
+        while (b < coords.len()) {
             # Every coordinate pairing carries an alignment pattern except the three that would
             # sit on the finder patterns: the top-left, top-right and bottom-left corners. (The
             # patterns on the timing lines — e.g. (6, mid) — are kept: their centre row/column
@@ -365,7 +365,7 @@ func buildStructure(int version) void {
 # Walk the final codeword bits up the matrix in the standard two-column boustrophedon, skipping
 # the vertical timing column and every function module.
 func placeData(array[int] codewords, int remBits) void {
-    int bitLen = (codewords.len * 8) + remBits;
+    int bitLen = (codewords.len() * 8) + remBits;
     int bi = 0;
     int col = N - 1;
     int up = 1;
@@ -382,7 +382,7 @@ func placeData(array[int] codewords, int remBits) void {
                     int bit = 0;
                     if (bi < bitLen) {
                         int byteIndex = bi / 8;
-                        if (byteIndex < codewords.len) {
+                        if (byteIndex < codewords.len()) {
                             int bitInByte = 7 - (bi % 8);
                             bit = codewords[byteIndex].shr(bitInByte) & 1;
                         };
@@ -599,9 +599,9 @@ func buildCodewords(array[int] payload, int version, int level) array[int] {
 
     BitBuf bb = new BitBuf();
     bb.push(4, 4);                    # byte mode indicator
-    bb.push(payload.len, cci);        # character count
+    bb.push(payload.len(), cci);        # character count
     int i = 0;
-    while (i < payload.len) { bb.push(payload[i], 8); i = i + 1; };
+    while (i < payload.len()) { bb.push(payload[i], 8); i = i + 1; };
 
     int capBits = totalData * 8;
     int termLen = capBits - bb.bitCount();
@@ -613,9 +613,9 @@ func buildCodewords(array[int] payload, int version, int level) array[int] {
     array[int] dataCW = new array[int](totalData);
     int j = 0;
     while (j < totalData) {
-        if (j < pre.len) { dataCW[j] = pre[j]; }
+        if (j < pre.len()) { dataCW[j] = pre[j]; }
         else {
-            int padPos = j - pre.len;
+            int padPos = j - pre.len();
             dataCW[j] = if ((padPos % 2) == 0) then 236 else 17;   # 0xEC / 0x11
         };
         j = j + 1;
@@ -647,7 +647,7 @@ func buildCodewords(array[int] payload, int version, int level) array[int] {
     while (col < maxW) {
         int k = 0;
         while (k < totalBlocks) {
-            if (col < dblocks[k].len) { out[ri] = dblocks[k][col]; ri = ri + 1; };
+            if (col < dblocks[k].len()) { out[ri] = dblocks[k][col]; ri = ri + 1; };
             k = k + 1;
         };
         col = col + 1;
@@ -669,7 +669,7 @@ func buildCodewords(array[int] payload, int version, int level) array[int] {
 # best mask, and leave the result in MOD/FUN/N. Returns the version, or 0 if it does not fit.
 func encodeContent(str content, int level) int {
     array[int] payload = toUtf8(content);
-    LAST_BYTES = payload.len;
+    LAST_BYTES = payload.len();
 
     int version = 0;
     int v = 1;
@@ -677,7 +677,7 @@ func encodeContent(str content, int level) int {
         int idx = ((v - 1) * 4) + level;
         int cap = (G1_BLOCKS[idx] * G1_WORDS[idx]) + (G2_BLOCKS[idx] * G2_WORDS[idx]);
         int cci = if (v <= 9) then 8 else 16;
-        int needBytes = ((4 + cci + (8 * payload.len)) + 7) / 8;
+        int needBytes = ((4 + cci + (8 * payload.len())) + 7) / 8;
         if (needBytes <= cap) { version = v; };
         v = v + 1;
     };
@@ -719,18 +719,18 @@ func encodeContent(str content, int level) int {
 #  CONTENT TYPES — each formats its fields into the string a scanner expects
 # =====================================================================================
 
-func hex1(int v) str { "0123456789ABCDEF"[v].char; };
+func hex1(int v) str { "0123456789ABCDEF"[v].char(); };
 
 # Percent-encode a string for a URL query component (used by the mailto: builder).
 func urlEncode(str s) str {
     array[int] bytes = toUtf8(s);
     str out = "";
     int i = 0;
-    while (i < bytes.len) {
+    while (i < bytes.len()) {
         int b = bytes[i];
         bool unreserved = ((b >= 65) & (b <= 90)) | ((b >= 97) & (b <= 122)) | ((b >= 48) & (b <= 57))
             | (b == 45) | (b == 95) | (b == 46) | (b == 126);
-        if (unreserved) { out = out + b.char; }
+        if (unreserved) { out = out + b.char(); }
         else { out = out + "%" + hex1(b / 16) + hex1(b % 16); };
         i = i + 1;
     };
@@ -741,10 +741,10 @@ func urlEncode(str s) str {
 func escapeWifi(str s) str {
     str out = "";
     int i = 0;
-    while (i < s.len) {
+    while (i < s.len()) {
         int c = s[i];
         if ((c == 92) | (c == 59) | (c == 44) | (c == 58) | (c == 34)) { out = out + "\\"; };
-        out = out + c.char;
+        out = out + c.char();
         i = i + 1;
     };
     out;
@@ -754,7 +754,7 @@ func escapeWifi(str s) str {
 func hasScheme(str s) bool {
     bool found = false;
     int i = 0;
-    while (i < s.len - 2) {
+    while (i < s.len() - 2) {
         if ((s[i] == 58) & (s[i + 1] == 47) & (s[i + 2] == 47)) { found = true; };
         i = i + 1;
     };
@@ -805,7 +805,7 @@ func eccName(int level) str {
 
 func buildWifi() str {
     str ssid = WSSID.value();
-    if (ssid.len == 0) { ""; }
+    if (ssid.len() == 0) { ""; }
     else {
         str enc = if (WIFI_ENC == 0) then "WPA" else (if (WIFI_ENC == 1) then "WEP" else "nopass");
         str s = "WIFI:T:" + enc + ";S:" + escapeWifi(ssid) + ";";
@@ -817,12 +817,12 @@ func buildWifi() str {
 
 func buildEmail() str {
     str addr = EMAIL.value();
-    if (addr.len == 0) { ""; }
+    if (addr.len() == 0) { ""; }
     else {
         str s = "mailto:" + addr;
         bool has = false;
-        if (ESUBJ.value().len > 0) { s = s + "?subject=" + urlEncode(ESUBJ.value()); has = true; };
-        if (EBODY.value().len > 0) {
+        if (ESUBJ.value().len() > 0) { s = s + "?subject=" + urlEncode(ESUBJ.value()); has = true; };
+        if (EBODY.value().len() > 0) {
             s = s + (if (has) then "&" else "?") + "body=" + urlEncode(EBODY.value());
         };
         s;
@@ -831,24 +831,24 @@ func buildEmail() str {
 
 func buildSms() str {
     str num = SNUM.value();
-    if (num.len == 0) then "" else ("SMSTO:" + num + ":" + SBODY.value());
+    if (num.len() == 0) then "" else ("SMSTO:" + num + ":" + SBODY.value());
 };
 
 func buildGeo() str {
     str la = GLAT.value();
     str lo = GLNG.value();
-    if ((la.len == 0) | (lo.len == 0)) then "" else ("geo:" + la + "," + lo);
+    if ((la.len() == 0) | (lo.len() == 0)) then "" else ("geo:" + la + "," + lo);
 };
 
 func buildVcard() str {
     str name = VCNAME.value();
-    if (name.len == 0) { ""; }
+    if (name.len() == 0) { ""; }
     else {
         str s = "BEGIN:VCARD\nVERSION:3.0\n";
         s = s + "N:" + name + "\nFN:" + name + "\n";
-        if (VCPHONE.value().len > 0) { s = s + "TEL:" + VCPHONE.value() + "\n"; };
-        if (VCEMAIL.value().len > 0) { s = s + "EMAIL:" + VCEMAIL.value() + "\n"; };
-        if (VCORG.value().len > 0) { s = s + "ORG:" + VCORG.value() + "\n"; };
+        if (VCPHONE.value().len() > 0) { s = s + "TEL:" + VCPHONE.value() + "\n"; };
+        if (VCEMAIL.value().len() > 0) { s = s + "EMAIL:" + VCEMAIL.value() + "\n"; };
+        if (VCORG.value().len() > 0) { s = s + "ORG:" + VCORG.value() + "\n"; };
         s + "END:VCARD";
     };
 };
@@ -858,13 +858,13 @@ func currentContent() str {
     if (MODE == 0) { out = TXT.value(); }
     else { if (MODE == 1) {
         str u = URLF.value();
-        if (u.len == 0) { out = ""; } else { out = if (hasScheme(u)) then u else ("https://" + u); };
+        if (u.len() == 0) { out = ""; } else { out = if (hasScheme(u)) then u else ("https://" + u); };
     }
     else { if (MODE == 2) { out = buildWifi(); }
     else { if (MODE == 3) { out = buildEmail(); }
     else { if (MODE == 4) {
         str p = PHONE.value();
-        out = if (p.len == 0) then "" else ("tel:" + p);
+        out = if (p.len() == 0) then "" else ("tel:" + p);
     }
     else { if (MODE == 5) { out = buildSms(); }
     else { if (MODE == 6) { out = buildGeo(); }
@@ -901,7 +901,7 @@ func drawQr() void {
 
 func generate() void {
     str content = currentContent();
-    if (content.len == 0) {
+    if (content.len() == 0) {
         HAS_QR = false;
         C.clear();
         STATUS.text("Fill in the fields above, then tap Generate.");
@@ -917,8 +917,8 @@ func generate() void {
         } else {
             HAS_QR = true;
             drawQr();
-            STATUS.text("Version " + v.str + "  ·  ECC " + eccName(ECC) + "  ·  "
-                + N.str + "×" + N.str + " modules  ·  " + LAST_BYTES.str + " bytes");
+            STATUS.text("Version " + v.str() + "  ·  ECC " + eccName(ECC) + "  ·  "
+                + N.str() + "×" + N.str() + " modules  ·  " + LAST_BYTES.str() + " bytes");
             STATUS.color(colors.onSurfaceVariant());
         };
     };
