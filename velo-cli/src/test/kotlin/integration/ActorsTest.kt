@@ -730,7 +730,7 @@ class ActorsTest {
             ?: error("Method '$methodName' not found on actor '${classType.name}'")
 
         val frames = ctx.frames().map {
-            SerializedFrame(num = it.num, ops = it.ops, vars = it.vars.map { v -> v.value.index })
+            SerializedFrame(num = it.num, ops = it.ops, vars = (it.varBase until it.varCounter.get()).toList())
         }
         val (vmCtx, executor) = startProgram(frames)
         return Triple(vmCtx, executor, methodVar.index)
@@ -858,7 +858,7 @@ class ActorsTest {
                     SerializedFrame(
                         num = it.num,
                         ops = it.ops,
-                        vars = it.vars.map { v -> v.value.index },
+                        vars = (it.varBase until it.varCounter.get()).toList(),
                     )
                 },
                 dataClasses = shared.dataClasses.toList(),

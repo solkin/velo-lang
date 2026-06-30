@@ -1,7 +1,6 @@
 package compiler.parser.parselets.statements
 
 import compiler.nodes.Node
-import compiler.nodes.ScopeNode
 import compiler.nodes.WhileNode
 import compiler.parser.parselets.ExpressionParser
 import compiler.parser.parselets.PrefixParselet
@@ -18,9 +17,11 @@ class WhileParselet : PrefixParselet {
             1 -> body[0]
             else -> compiler.nodes.ProgramNode(prog = body)
         }
+        // The body compiles inline (not wrapped in a closure) so a
+        // `break`/`continue` inside it can jump out of the loop directly.
         return WhileNode(
             cond = cond,
-            expr = ScopeNode(bodyNode),
+            expr = bodyNode,
         )
     }
 }

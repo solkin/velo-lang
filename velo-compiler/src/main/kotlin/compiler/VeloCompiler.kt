@@ -104,10 +104,13 @@ class VeloCompiler(
             return SerializedProgram(
                 natives = shared.nativePool.toList(),
                 frames = ctx.frames().map {
+                    // A frame's local slots span [varBase, varCounter): counting
+                    // from the counter (not the name map) captures slots declared
+                    // in inline blocks, whose names live in their own scopes.
                     SerializedFrame(
                         num = it.num,
                         ops = it.ops,
-                        vars = it.vars.map { i -> i.value.index }
+                        vars = (it.varBase until it.varCounter.get()).toList()
                     )
                 },
                 dataClasses = shared.dataClasses.toList(),

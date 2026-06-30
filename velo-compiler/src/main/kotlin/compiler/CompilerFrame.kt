@@ -10,6 +10,15 @@ data class CompilerFrame(
     val ops: MutableList<Op>,
     val vars: MutableMap<String, Var>,
     val varCounter: AtomicInteger,
+    /**
+     * The first variable slot this frame owns — the [varCounter] value when the
+     * frame was created. A frame's local slots span `[varBase, varCounter)`,
+     * which is what sizes its runtime variable array. Counting from the counter
+     * (not the name map) is essential: inline blocks (`if`/`while` bodies) draw
+     * slots from this same counter but keep their names in their own maps, so
+     * their slots would otherwise be invisible to serialization.
+     */
+    val varBase: Int = 0,
 ) {
 
     fun def(name: String, type: Type, immutable: Boolean = false): Var {

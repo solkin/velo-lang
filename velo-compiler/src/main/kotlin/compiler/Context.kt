@@ -79,13 +79,15 @@ data class Context(
     }
 
     fun extend(): Context {
+        val base = frame.varCounter.get()
         return Context(
             parent = this,
             frame = CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
                 vars = mutableMapOf(),
-                varCounter = AtomicInteger(frame.varCounter.get()),
+                varCounter = AtomicInteger(base),
+                varBase = base,
             ),
             frameCounter,
             shared = shared,
@@ -93,13 +95,15 @@ data class Context(
     }
 
     fun discrete(parent: Context? = null): Context {
+        val base = frame.varCounter.get()
         return Context(
             parent = parent,
             frame = CompilerFrame(
                 num = frameCounter.incrementAndGet(),
                 ops = mutableListOf(),
                 vars = mutableMapOf(),
-                varCounter = AtomicInteger(frame.varCounter.get()),
+                varCounter = AtomicInteger(base),
+                varBase = base,
             ),
             frameCounter,
             shared = shared,
@@ -114,6 +118,31 @@ data class Context(
                 ops = mutableListOf(),
                 vars = frame.vars,
                 varCounter = frame.varCounter,
+                varBase = frame.varBase,
+            ),
+            frameCounter,
+            subFrame = true,
+            shared = shared,
+        )
+    }
+
+    /**
+     * A lexical block within the current VM frame: ops merge inline (so jumps
+     * like `if`/`while`/`break`/`return` stay in one frame), variable slots are
+     * drawn from the same [CompilerFrame.varCounter] (one VM variable array),
+     * but names live in a fresh map chained to the parent — so a block-local
+     * declaration shadows without leaking out of the block, the scoping a
+     * closure used to provide before control flow was inlined.
+     */
+    fun block(): Context {
+        return Context(
+            parent = this,
+            frame = CompilerFrame(
+                num = frame.num,
+                ops = mutableListOf(),
+                vars = mutableMapOf(),
+                varCounter = frame.varCounter,
+                varBase = frame.varBase,
             ),
             frameCounter,
             subFrame = true,

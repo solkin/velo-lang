@@ -246,7 +246,7 @@ class DataClassTest {
             SerializedProgram(
                 natives = shared.nativePool.toList(),
                 frames = ctx.frames().map {
-                    SerializedFrame(num = it.num, ops = it.ops, vars = it.vars.map { v -> v.value.index })
+                    SerializedFrame(num = it.num, ops = it.ops, vars = (it.varBase until it.varCounter.get()).toList())
                 },
                 dataClasses = shared.dataClasses.toList(),
             )

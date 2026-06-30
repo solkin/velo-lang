@@ -93,7 +93,7 @@ class GoldenTest {
                     SerializedFrame(
                         num = it.num,
                         ops = it.ops,
-                        vars = it.vars.map { v -> v.value.index }
+                        vars = (it.varBase until it.varCounter.get()).toList()
                     )
                 },
                 dataClasses = shared.dataClasses.toList(),

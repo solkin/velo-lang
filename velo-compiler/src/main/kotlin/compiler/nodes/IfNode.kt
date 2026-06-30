@@ -10,25 +10,33 @@ data class IfNode(
     val elseNode: Node?,
 ) : Node() {
     override fun compile(ctx: Context): Type {
-        val thenCtx = ctx.extend()
-        val thenType = thenNode.compile(thenCtx)
-        thenCtx.add(Op.Ret)
-
-        val elseCtx = ctx.extend()
-        val elseType = elseNode?.compile(elseCtx)
-        elseCtx.add(Op.Ret)
-
-        val returnType = if (elseType == null || thenType.sameAs(elseType)) thenType else AnyType
-
+        // Branches compile inline (sub-frames sharing the enclosing function
+        // frame), not as closures invoked by Call. Keeping the branch ops in
+        // the same frame is what lets a `return`/`break`/`continue` inside a
+        // branch jump straight out — a closure boundary would trap the exit.
         condNode.compile(ctx)
 
-        ctx.add(Op.If(elseSkip = 2))
-        ctx.add(Op.Frame(thenCtx.frame.num))
-        ctx.add(Op.Move(count = 1))
-        ctx.add(Op.Frame(elseCtx.frame.num))
-        ctx.add(Op.Call(args = 0))
+        val thenCtx = ctx.block()
+        val thenType = thenNode.compile(thenCtx)
+
+        if (elseNode != null) {
+            val elseCtx = ctx.block()
+            val elseType = elseNode.compile(elseCtx)
+
+            // [cond] If(then+1) [then] Move(else) [else]
+            // cond true  -> run then, then Move skips else
+            // cond false -> If skips then + the Move, lands on else
+            ctx.add(Op.If(elseSkip = thenCtx.size() + 1))
+            ctx.merge(thenCtx)
+            ctx.add(Op.Move(count = elseCtx.size()))
+            ctx.merge(elseCtx)
+
+            return if (thenType.sameAs(elseType)) thenType else AnyType
+        }
+
+        // No else: skip the then-block when the condition is false.
+        ctx.add(Op.If(elseSkip = thenCtx.size()))
         ctx.merge(thenCtx)
-        ctx.merge(elseCtx)
-        return returnType
+        return thenType
     }
 }
