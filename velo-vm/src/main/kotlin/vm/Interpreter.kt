@@ -64,6 +64,27 @@ object Interpreter {
 
         is Op.Move -> pc + op.count + 1
 
+        is Op.ScopeEnter -> {
+            val frame = ctx.currentFrame()
+            // A fresh per-iteration environment for the loop body's locals,
+            // chained to the current scope; closures created in the body capture
+            // this (Op.Frame captures `frame.vars`), giving each iteration its own
+            // binding. Control flow is unaffected — same call frame.
+            frame.vars = Vars(
+                base = op.base,
+                slots = Array(op.count) { EmptyRecord },
+                parent = frame.vars,
+                frameNum = frame.vars.frameNum,
+            )
+            pc + 1
+        }
+
+        is Op.ScopeLeave -> {
+            val frame = ctx.currentFrame()
+            frame.vars = frame.vars.parent ?: frame.vars
+            pc + 1
+        }
+
         /*
          * The callable on top of the stack is a FuncRecord (plain function),
          * a CallbackRecord (function owned by another actor), or — legacy

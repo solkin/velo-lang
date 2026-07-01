@@ -46,6 +46,8 @@ class BytecodeRoundTripTest {
         Op.Shr,
         Op.More,
         Op.Equals,
+        Op.ScopeEnter(base = 3, count = 2),
+        Op.ScopeLeave,
         Op.IntChar,
         Op.IntStr,
         Op.FloatStr,

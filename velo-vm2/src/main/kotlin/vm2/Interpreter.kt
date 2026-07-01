@@ -34,6 +34,8 @@ private const val OP_INTERFACECALL = 0x1c
 private const val OP_SUB = 0x1a
 private const val OP_MORE = 0x1b
 private const val OP_MOVE = 0x1d
+private const val OP_SCOPE_ENTER = 0x22
+private const val OP_SCOPE_LEAVE = 0x23
 private const val OP_MUL = 0x1e
 private const val OP_OR = 0x21
 private const val OP_ADD = 0x26
@@ -220,11 +222,17 @@ class Interpreter(
                 val s = fiber.vs
                 when (spec.tags[i]) {
                     // ---- hottest: locals, arithmetic, branches ----
-                    OP_LOAD -> s.push(act.load((ops[i] as Op.Load).index))
-                    OP_STORE -> act.store((ops[i] as Op.Store).index, s.pop())
+                    OP_LOAD -> s.push(act.scope.load((ops[i] as Op.Load).index))
+                    OP_STORE -> act.scope.store((ops[i] as Op.Store).index, s.pop())
                     OP_PUSH -> { val v = (ops[i] as Op.Push).value; s.push(if (v === NullPtr) NullPtrValue else v) }
                     OP_IF -> if (!(s.pop() as Boolean)) act.ip = i + 1 + (ops[i] as Op.If).elseSkip
                     OP_MOVE -> act.ip = i + 1 + (ops[i] as Op.Move).count
+                    OP_SCOPE_ENTER -> {
+                        val op = ops[i] as Op.ScopeEnter
+                        // Push a fresh per-iteration environment; execution stays on `act`.
+                        act.scope = Frame(FrameSpec(-1, emptyList(), op.base, op.count), parent = act.scope)
+                    }
+                    OP_SCOPE_LEAVE -> { act.scope = act.scope.parent!! }
 
                     OP_ADD -> binary(s) { a, b -> Numbers.add(a, b) }
                     OP_SUB -> binary(s) { a, b -> Numbers.sub(a, b) }
@@ -300,15 +308,15 @@ class Interpreter(
                     }
 
                     // ---- frames / instances (capture the current frame as a scope) ----
-                    OP_FRAME -> { val num = (ops[i] as Op.Frame).num; s.push(FuncValue(frames[num] ?: error("No frame #$num"), act)) }
-                    OP_INSTANCE -> { s.push(heap.track(Instance(act, spec.num))); afterAlloc() }
+                    OP_FRAME -> { val num = (ops[i] as Op.Frame).num; s.push(FuncValue(frames[num] ?: error("No frame #$num"), act.scope)) }
+                    OP_INSTANCE -> { s.push(heap.track(Instance(act.scope, spec.num))); afterAlloc() }
                     OP_METHODLOAD -> s.push(methodLoad(act, (ops[i] as Op.MethodLoad).name))
 
                     // ---- pointers ----
                     OP_PTRNEW -> s.push(BoxPtr(s.pop()))
                     OP_PTRLOAD -> s.push((s.pop() as Ptr).get())
                     OP_PTRSTORE -> { val p = s.pop() as Ptr; p.set(s.pop()) }
-                    OP_PTRREF -> s.push(VarPtr(act, (ops[i] as Op.PtrRef).varIndex))
+                    OP_PTRREF -> s.push(VarPtr(act.scope, (ops[i] as Op.PtrRef).varIndex))
                     OP_PTRREFINDEX -> {
                         val index = Numbers.intInt(s.pop()); val array = s.pop() as VArray
                         s.push(ArrayPtr(array, index))
@@ -341,7 +349,7 @@ class Interpreter(
         val vs = fiber.vs
         for (j in 0 until vs.top) yield(vs.a[j])      // every active frame's operands live here
         for (act in fiber.callStack) {
-            var s: Frame? = act
+            var s: Frame? = act.scope
             while (s != null) {
                 for (v in s.localValues()) yield(v)
                 s = s.parent

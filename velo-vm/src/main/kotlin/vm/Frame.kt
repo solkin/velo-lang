@@ -14,7 +14,10 @@ import core.Op
 data class Frame(
     var pc: Int,
     val subs: Stack<Record>,
-    val vars: Vars,
+    // Mutable so a loop body can push/pop a fresh per-iteration scope
+    // (Op.ScopeEnter/Op.ScopeLeave) without a call frame — the environment
+    // changes, control does not.
+    var vars: Vars,
     val ops: List<Op>,
     val num: Int = -1,
 )

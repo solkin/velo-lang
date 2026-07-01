@@ -8,28 +8,15 @@ import java.util.concurrent.atomic.AtomicInteger
 private val forCounter = AtomicInteger(0)
 
 /**
- * Backpatch a loop body's `break`/`continue` placeholders, given the body's op
- * list and the lengths of the increment step that follows it. `break` lands
- * past the body + increment + back-jump; `continue` lands at the increment (so
- * the step always runs, the key difference from a hand-written `while`).
- */
-private fun backpatchLoopBody(ctx: Context, bodyLen: Int, incrLen: Int) {
-    val body = ctx.operations()
-    for (i in body.indices) {
-        val op = body[i]
-        if (op is Op.Move && op.count == LOOP_BREAK_MARKER) {
-            ctx.replace(i, Op.Move(count = bodyLen + incrLen - i))
-        } else if (op is Op.Move && op.count == LOOP_CONTINUE_MARKER) {
-            ctx.replace(i, Op.Move(count = bodyLen - i - 1))
-        }
-    }
-}
-
-/**
  * `for name in start .. end { body }` — an ascending integer range, `end`
- * exclusive. Lowers to: init `name = start`, then a loop whose layout is
- * `[cond] If [body] [incr] back-jump`, with `continue` directed at `incr`.
- * The loop variable is scoped to the `for`.
+ * exclusive (evaluated once). The loop is driven by a hidden counter in the
+ * enclosing frame; each iteration binds `name` **fresh** in the body's
+ * per-iteration scope (initialised from the counter), so a closure capturing
+ * `name` sees that iteration's value — the modern for-in semantics.
+ *
+ * Layout: `[cond] If [PRE] [body] [POST] [incr] back`, where PRE/POST are the
+ * per-iteration `ScopeEnter`/`ScopeLeave` (or no-ops when the body makes no
+ * closure), and `continue` targets `incr` so the step always runs.
  */
 data class ForRangeNode(
     val name: String,
@@ -39,51 +26,60 @@ data class ForRangeNode(
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val scope = ctx.block()
+        val tag = forCounter.getAndIncrement()
 
-        // init: name = start
+        // Hidden counter + bound (enclosing frame — persist across iterations).
         start.compile(scope)
-        val loopVar = scope.def(name, IntType)
-        scope.add(Op.Store(loopVar.index))
+        val counter = scope.def("\$for_h_$tag", IntType)
+        scope.add(Op.Store(counter.index))
+        end.compile(scope)
+        val bound = scope.def("\$for_e_$tag", IntType)
+        scope.add(Op.Store(bound.index))
 
-        // cond: name < end
+        // cond: counter < bound
         val condCtx = scope.block()
-        condCtx.add(Op.Load(loopVar.index))
-        end.compile(condCtx)
+        condCtx.add(Op.Load(counter.index))
+        condCtx.add(Op.Load(bound.index))
         condCtx.add(Op.Swap)
         condCtx.add(Op.More)
         val condLen = condCtx.size()
 
-        // body
+        // body: the loop variable and any body locals form the per-iteration scope.
+        val scopeBase = ctx.frame.varCounter.get()
         val bodyCtx = scope.block()
         bodyCtx.loopBody = true
+        val loopVar = bodyCtx.def(name, IntType)
+        bodyCtx.add(Op.Load(counter.index)) // name = counter
+        bodyCtx.add(Op.Store(loopVar.index))
         body.compile(bodyCtx)
         val bodyLen = bodyCtx.size()
+        val scopeCount = ctx.frame.varCounter.get() - scopeBase
+        val scoped = bodyCtx.operations().any { it is Op.Frame }
 
-        // incr: name = name + 1
+        // incr: counter = counter + 1
         val incrCtx = scope.block()
-        incrCtx.add(Op.Load(loopVar.index))
+        incrCtx.add(Op.Load(counter.index))
         incrCtx.add(Op.Push(1))
         incrCtx.add(Op.Add)
-        incrCtx.add(Op.Store(loopVar.index))
+        incrCtx.add(Op.Store(counter.index))
         val incrLen = incrCtx.size()
 
-        backpatchLoopBody(bodyCtx, bodyLen, incrLen)
+        backpatchLoop(
+            bodyCtx, scoped,
+            breakDist = { m -> bodyLen + incrLen - m + 1 },
+            contDist = { m -> bodyLen - m },
+        )
 
-        scope.merge(condCtx)
-        scope.add(Op.If(elseSkip = bodyLen + incrLen + 1))
-        scope.merge(bodyCtx)
-        scope.merge(incrCtx)
-        scope.add(Op.Move(count = -(condLen + bodyLen + incrLen + 2)))
-
+        assembleLoop(scope, condCtx, bodyCtx, incrCtx, condLen, bodyLen, incrLen, scoped, scopeBase, scopeCount)
         ctx.merge(scope)
         return VoidType
     }
 }
 
 /**
- * `for name in array { body }` — iterates an `array[T]` in order, binding
- * `name` to each element. Lowers like [ForRangeNode] over a hidden index, with
- * the array evaluated once into a hidden slot.
+ * `for name in array { body }` — iterates an `array[T]` in order (evaluated
+ * once), binding `name` fresh per iteration in the body's scope, exactly like
+ * [ForRangeNode] but over a hidden index.
  */
 data class ForEachNode(
     val name: String,
@@ -94,7 +90,6 @@ data class ForEachNode(
         val scope = ctx.block()
         val tag = forCounter.getAndIncrement()
 
-        // Evaluate the array once and stash it, plus a zero index.
         val collType = collection.compile(scope)
         if (collType !is ArrayType) {
             throw IllegalArgumentException("'for .. in' expects an array, got ${collType.log()}")
@@ -114,17 +109,20 @@ data class ForEachNode(
         condCtx.add(Op.More)
         val condLen = condCtx.size()
 
-        // body: name = coll[idx]; <body>
+        // body: name = coll[idx] (per-iteration), then the user body.
+        val scopeBase = ctx.frame.varCounter.get()
         val bodyCtx = scope.block()
         bodyCtx.loopBody = true
+        val elemVar = bodyCtx.def(name, collType.derived)
         bodyCtx.add(Op.Load(collVar.index))
         bodyCtx.add(Op.Load(idxVar.index))
         bodyCtx.add(Op.Push(1))
         bodyCtx.add(Op.ArrLoad)
-        val elemVar = bodyCtx.def(name, collType.derived)
         bodyCtx.add(Op.Store(elemVar.index))
         body.compile(bodyCtx)
         val bodyLen = bodyCtx.size()
+        val scopeCount = ctx.frame.varCounter.get() - scopeBase
+        val scoped = bodyCtx.operations().any { it is Op.Frame }
 
         // incr: idx = idx + 1
         val incrCtx = scope.block()
@@ -134,15 +132,36 @@ data class ForEachNode(
         incrCtx.add(Op.Store(idxVar.index))
         val incrLen = incrCtx.size()
 
-        backpatchLoopBody(bodyCtx, bodyLen, incrLen)
+        backpatchLoop(
+            bodyCtx, scoped,
+            breakDist = { m -> bodyLen + incrLen - m + 1 },
+            contDist = { m -> bodyLen - m },
+        )
 
-        scope.merge(condCtx)
-        scope.add(Op.If(elseSkip = bodyLen + incrLen + 1))
-        scope.merge(bodyCtx)
-        scope.merge(incrCtx)
-        scope.add(Op.Move(count = -(condLen + bodyLen + incrLen + 2)))
-
+        assembleLoop(scope, condCtx, bodyCtx, incrCtx, condLen, bodyLen, incrLen, scoped, scopeBase, scopeCount)
         ctx.merge(scope)
         return VoidType
     }
+}
+
+/** Emit the shared `[cond] If [PRE] [body] [POST] [incr] back` for a `for`. */
+private fun assembleLoop(
+    scope: Context,
+    condCtx: Context,
+    bodyCtx: Context,
+    incrCtx: Context,
+    condLen: Int,
+    bodyLen: Int,
+    incrLen: Int,
+    scoped: Boolean,
+    scopeBase: Int,
+    scopeCount: Int,
+) {
+    scope.merge(condCtx)
+    scope.add(Op.If(elseSkip = bodyLen + incrLen + 3))
+    scope.add(if (scoped) Op.ScopeEnter(scopeBase, scopeCount) else Op.Move(count = 0))
+    scope.merge(bodyCtx)
+    scope.add(if (scoped) Op.ScopeLeave else Op.Move(count = 0))
+    scope.merge(incrCtx)
+    scope.add(Op.Move(count = -(condLen + bodyLen + incrLen + 4)))
 }

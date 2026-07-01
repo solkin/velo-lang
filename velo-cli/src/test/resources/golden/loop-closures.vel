@@ -1,0 +1,65 @@
+Terminal term = new Terminal()
+
+# while + body-local capture -> per-iteration
+array[func[int]] wf = new array[func[int]](3)
+int i = 0
+while (i < 3) {
+    int cap = i
+    wf[i] = func() int { return cap }
+    i += 1
+}
+term.println(wf[0]().str() + wf[1]().str() + wf[2]().str())
+
+# for-range loop variable capture -> per-iteration
+array[func[int]] rf = new array[func[int]](3)
+for k in 0..3 {
+    rf[k] = func() int { return k }
+}
+term.println(rf[0]().str() + rf[1]().str() + rf[2]().str())
+
+# for-each element capture -> per-iteration
+array[str] names = new array[str]{"a", "b", "c"}
+array[func[str]] ef = new array[func[str]](3)
+int ei = 0
+for n in names {
+    ef[ei] = func() str { return n }
+    ei += 1
+}
+term.println(ef[0]() + ef[1]() + ef[2]())
+
+# closures capture the loop-local by iteration, but a function-level var stays shared
+int total = 0
+array[func[void]] acc = new array[func[void]](3)
+int ai = 0
+for a in 1..4 {
+    int amt = a
+    acc[ai] = func() void { total = total + amt }
+    ai += 1
+}
+acc[0]()
+acc[1]()
+acc[2]()
+term.println(total.str())
+
+# break / continue still work with a per-iteration scope
+int sum = 0
+for b in 0..10 {
+    int t = b
+    func() int { return t }
+    if (b >= 5) { break }
+    if (b % 2 == 0) { continue }
+    sum += t
+}
+term.println(sum.str())
+
+# nested loops each keep their own per-iteration binding
+array[func[int]] nf = new array[func[int]](4)
+int ni = 0
+for x in 0..2 {
+    for y in 0..2 {
+        int v = x * 10 + y
+        nf[ni] = func() int { return v }
+        ni += 1
+    }
+}
+term.println(nf[0]().str() + " " + nf[1]().str() + " " + nf[2]().str() + " " + nf[3]().str())

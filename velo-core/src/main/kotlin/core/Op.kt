@@ -241,6 +241,25 @@ sealed interface Op {
         override val opcode get() = 0x1d
     }
 
+    /**
+     * Enter a fresh lexical scope for a loop body: push a new variable scope
+     * holding [count] slots starting at index [base], chained to the current
+     * scope. This is an **environment** change only — no call frame, no control
+     * transfer — so jumps and returns still act on the enclosing frame. The loop
+     * re-executes it each iteration, giving the body's locals a fresh binding per
+     * iteration (what a closure created in the body then captures). Emitted only
+     * when the body creates a closure; otherwise the body stays flat.
+     * Stack: `[] -> []`
+     */
+    data class ScopeEnter(val base: Int, val count: Int) : Op {
+        override val opcode get() = 0x22
+    }
+
+    /** Leave the innermost scope pushed by [ScopeEnter]. Stack: `[] -> []` */
+    object ScopeLeave : Op {
+        override val opcode get() = 0x23
+    }
+
     /** Stop the whole program. */
     object Halt : Op {
         override val opcode get() = 0x11

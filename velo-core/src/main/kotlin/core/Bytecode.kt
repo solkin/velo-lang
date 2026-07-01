@@ -109,6 +109,7 @@ object Bytecode {
             is Op.Store -> out.writeInt(op.index)
             is Op.If -> out.writeInt(op.elseSkip)
             is Op.Move -> out.writeInt(op.count)
+            is Op.ScopeEnter -> { out.writeInt(op.base); out.writeInt(op.count) }
             is Op.Frame -> out.writeInt(op.num)
             is Op.MethodLoad -> out.writeUTF(op.name)
             is Op.InterfaceCall -> {
@@ -308,6 +309,8 @@ object Bytecode {
             0x1a -> Op.Sub
             0x1b -> Op.More
             0x1d -> Op.Move(count = inp.readInt())
+            0x22 -> Op.ScopeEnter(base = inp.readInt(), count = inp.readInt())
+            0x23 -> Op.ScopeLeave
             0x1e -> Op.Mul
             0x21 -> Op.Or
             0x26 -> Op.Add

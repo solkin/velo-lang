@@ -70,6 +70,26 @@ acc.add(35);
 acc.get();   # 42
 ```
 
+## Closures Created in a Loop
+
+A closure created inside a loop captures the **per-iteration** binding of the
+loop body's locals — a `for` variable, or any variable declared in the body —
+so each closure keeps its own iteration's value, not the final one:
+
+```velo
+array[func[int]] fns = new array[func[int]](3);
+for i in 0..3 {
+    fns[i] = func() int { return i; };
+};
+fns[0]();  # 0
+fns[1]();  # 1  (each closure kept its iteration's i)
+fns[2]();  # 2
+```
+
+Variables declared **outside** the loop stay shared — closures that mutate them
+all see the same one. See [Loops](07-loops.md#the-loop-variable-is-fresh-each-iteration)
+for `while` (whose counter is shared) versus `for`.
+
 ## Currying
 
 A function that returns another function lets you bind arguments one at a time:

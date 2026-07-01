@@ -79,6 +79,15 @@ class Frame(@JvmField val spec: FrameSpec, @JvmField val parent: Frame?) {
 
     @JvmField var ip: Int = 0
 
+    /**
+     * The innermost **environment** scope currently active in this call — the
+     * frame itself, or a per-iteration loop scope pushed by `Op.ScopeEnter`.
+     * Locals, closure capture and address-of resolve through `scope`; execution
+     * (ip, operands) stays on the frame. This is what separates environment from
+     * control, so a loop body can rebind its locals per iteration without a call.
+     */
+    @JvmField var scope: Frame = this
+
     /** Start of this frame's operand window in its fiber's [ValueStack]. */
     @JvmField var opBase: Int = 0
 
