@@ -19,7 +19,7 @@ rules first — most mistakes come from breaking one of them.
 4. **Types are explicit** on every declaration and signature. The one exception:
    `let name = expr` declares an **immutable, type-inferred** local.
 5. **Logical vs bitwise are separate.** `&&` `||` `!` are logical (short-circuit);
-   `&` `|` `^` are bitwise on ints. Use `!x`, not `x == false`.
+   `&` `|` `^` are bitwise on ints. Negate a bool with `!x`.
 6. **String interpolation** is Kotlin-style: `"$name ${expr}"`. Write `\$` for a
    literal dollar sign. Convert values with `.str()` when concatenating with `+`.
 7. **Declare before use.** The program runs top-to-bottom; a function must be defined
@@ -197,4 +197,4 @@ for k in keys {
 
 ---
 
-[Previous: Interfaces ←](29-interfaces.md) | [Back to README →](README.md)
+[Previous: Interfaces ←](29-interfaces.md) | [Next: Grammar →](31-grammar.md)

@@ -32,6 +32,7 @@
 28. [Data Classes](28-data-classes.md)
 29. [Interfaces](29-interfaces.md)
 30. [LLM Guide (cheat-sheet)](30-llm-guide.md)
+31. [Grammar & Precedence](31-grammar.md)
 
 ---
 
