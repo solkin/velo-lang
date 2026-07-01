@@ -60,6 +60,37 @@ class ImportTest {
     }
 
     @Test
+    fun `import as ns namespaces a module, disambiguating clashes and reaching members qualified`() {
+        val dir = File.createTempFile("imp", "").let { it.delete(); it.mkdirs(); it }
+        // Two modules that both export `square`, plus a namespaced class whose
+        // methods and helpers reference the module's own top-level names.
+        File(dir, "geom.vel").writeText(
+            """
+            func square(int n) int { return n * n }
+            func cube(int n) int { return square(n) * n }
+            class Vec(int x, int y) { func mag() int { return square(x) + square(y) } }
+            func makeVec(int a, int b) Vec { return new Vec(a, b) }
+            """.trimIndent()
+        )
+        File(dir, "other.vel").writeText("func square(int n) int { return n + n }\n")
+        File(dir, "main.vel").writeText(
+            """
+            Terminal term = new Terminal()
+            import "geom" as g
+            import "other" as o
+            term.println(g.square(5).str())   # 25 — geom
+            term.println(o.square(5).str())   # 10 — other, no clash
+            term.println(g.cube(3).str())     # 27 — internal ref cube -> square
+            g.Vec v = new g.Vec(3, 4)
+            term.println(v.mag().str())       # 25 — method -> module helper
+            """.trimIndent()
+        )
+
+        assertEquals("25\n10\n27\n25", run(File(dir, "main.vel")))
+        dir.deleteRecursively()
+    }
+
+    @Test
     fun `a name clash across modules is a clear error, not a silent override`() {
         val dir = File.createTempFile("imp", "").let { it.delete(); it.mkdirs(); it }
         File(dir, "a.vel").writeText("class Widget(int x) { func get() int { return x } }\n")

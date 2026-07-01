@@ -17,7 +17,14 @@ class NewParselet : PrefixParselet {
             "dict" -> parseDictInit(parser)
             "ptr" -> parsePtrInit(parser)
             else -> {
-                val className = tok.value as String
+                val raw = tok.value as String
+                // `new ns.Foo(...)` (namespaced) or a module-local class name.
+                val className = if (parser.context.isNamespace(raw) && parser.match(TokenType.PUNCTUATION, '.')) {
+                    parser.consume(TokenType.PUNCTUATION, '.')
+                    "$raw\$${parser.consume(TokenType.VARIABLE).value}"
+                } else {
+                    parser.context.localRef(raw)
+                }
                 val classType = parser.context.getClassType(className)
                 val typeArgs = if (classType != null && classType.typeParams.isNotEmpty()
                     && parser.match(TokenType.PUNCTUATION, '[')

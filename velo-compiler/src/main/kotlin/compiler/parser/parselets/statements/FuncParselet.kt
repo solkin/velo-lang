@@ -14,7 +14,9 @@ import compiler.parser.Token
 class FuncParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val name = if (parser.match(TokenType.VARIABLE)) {
-            parser.consume(TokenType.VARIABLE).value as? String
+            // In a namespaced module (`import "x" as ns`) a top-level name is
+            // mangled to `ns$name`, reached from outside as `ns.name`.
+            (parser.consume(TokenType.VARIABLE).value as? String)?.let { parser.context.declareName(it) }
         } else {
             null
         }

@@ -36,7 +36,8 @@ class PrattParser(
 
     override fun parseExpression(precedence: Int): Node {
         var token = stream.next() ?: throw ParseException("Unexpected end of input")
-        
+        token = rewriteNamespace(token)
+
         // Check for keyword first
         val prefix = when (token.type) {
             TokenType.KEYWORD -> {
@@ -87,6 +88,28 @@ class PrattParser(
         }
 
         return left
+    }
+
+    /**
+     * Namespaced-import resolution at the point an identifier is read:
+     *  - `ns.member` (outside a namespaced module) → the mangled name `ns$member`;
+     *  - a reference to the current namespaced module's own top-level name → its
+     *    mangled form. Everything else passes through unchanged.
+     */
+    private fun rewriteNamespace(token: Token): Token {
+        if (token.type != TokenType.VARIABLE) return token
+        val name = token.value as? String ?: return token
+        if (context.isNamespace(name)) {
+            val dot = stream.peek()
+            if (dot?.type == TokenType.PUNCTUATION && dot.value == '.') {
+                stream.next()
+                val member = stream.next()?.value as? String
+                    ?: throw ParseException("Expected a name after '$name.'")
+                return Token(TokenType.VARIABLE, "$name\$$member")
+            }
+        }
+        val mangled = context.localRef(name)
+        return if (mangled == name) token else Token(TokenType.VARIABLE, mangled)
     }
 
     override fun parseExpression(allowApply: Boolean): Node {

@@ -34,6 +34,7 @@ Terminal term = new Terminal()
 # Import a module — `.vel` optional; `std/…` is the standard library,
 # any other path is relative to this file.
 import "std/bool"
+import "geom" as g               # namespaced: reach members as g.area(), new g.Point()
 
 # Immutable inferred local (preferred for locals):
 let x = 42                       # int, cannot be reassigned

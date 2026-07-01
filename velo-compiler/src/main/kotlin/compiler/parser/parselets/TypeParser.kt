@@ -13,13 +13,14 @@ object TypeParser {
                 value != null && stdTypesSet.contains(value)
             }
             TokenType.VARIABLE -> {
-                val value = token.value as? String
-                value != null && (
-                    parser.context.isClassType(value) ||
-                        parser.context.isInterfaceType(value) ||
-                        parser.context.isGenericType(value) ||
-                        parser.context.isNativeType(value)
-                    )
+                val raw = token.value as? String ?: return false
+                // `ns.Foo` (namespaced class) and a module-local class both begin a type.
+                if (parser.context.isNamespace(raw)) return true
+                val value = parser.context.localRef(raw)
+                parser.context.isClassType(value) ||
+                    parser.context.isInterfaceType(value) ||
+                    parser.context.isGenericType(value) ||
+                    parser.context.isNativeType(value)
             }
             else -> false
         }
@@ -85,8 +86,15 @@ object TypeParser {
                 FutureType(derived)
             }
             else -> {
-                val className = value as? String
+                val raw = value as? String
                     ?: throw IllegalArgumentException("Unknown type value: $value")
+                // Namespaced (`ns.Foo`) or module-local class name -> its mangled form.
+                val className = if (parser.context.isNamespace(raw) && parser.match(TokenType.PUNCTUATION, '.')) {
+                    parser.consume(TokenType.PUNCTUATION, '.')
+                    "$raw\$${parser.consume(TokenType.VARIABLE).value}"
+                } else {
+                    parser.context.localRef(raw)
+                }
                 parser.context.getGenericType(className)?.let { return it }
                 parser.context.getInterfaceType(className)?.let { return it }
                 parser.context.getNativeType(className)?.let { return it }

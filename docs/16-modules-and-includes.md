@@ -23,7 +23,35 @@ Rules:
 - **Each module is loaded once** per compilation, keyed by its real path — the
   same file reached two ways (directly and transitively) is not re-imported.
 - **A name clash between modules is a compile error**, not a silent override.
-  Rename one of the declarations to resolve it.
+  Rename one of the declarations to resolve it, or import under a namespace (below).
+
+## Namespaced imports (`as`)
+
+`import "path" as ns` brings a module's declarations in under the prefix `ns`
+instead of into the top-level scope. Reach every top-level function and class of
+that module qualified as `ns.name`:
+
+```velo
+import "geom" as g
+import "shapes" as s          # both modules may define `area` — no clash
+
+term.println(g.area(3).str())
+g.Point p = new g.Point(1, 2) # a namespaced class is a type AND a constructor
+```
+
+Rules:
+
+- **Members are reached qualified** — `ns.func(...)`, `new ns.Class(...)`, and
+  the type `ns.Class` (e.g. `g.Point p = ...`). Bare `func()` / `Class` do not
+  see a namespaced module's names.
+- **Namespacing sidesteps clashes** — two modules that both export `area` can be
+  imported `as a` / `as b` and used as `a.area()` / `b.area()`.
+- **Inside the module nothing changes** — its own functions, methods, and class
+  references resolve to each other normally; the namespace is only how *callers*
+  see it.
+- **One alias per module** — a module already loaded (by any import) keeps its
+  first binding; importing the same file again under a different alias is a
+  no-op.
 
 ## Standard modules
 

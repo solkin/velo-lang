@@ -29,6 +29,41 @@ class ParserContext(
      */
     var dictUsed = false
 
+    // ---- namespaced imports (`import "x" as ns`) ----
+    // A namespaced module's top-level names are mangled to `ns$name`, reached
+    // from outside as `ns.name`. `currentNamespace`/`currentModuleLocals` are the
+    // active module's mangling state during its (isolated) sub-parse.
+    private val namespaces = mutableSetOf<String>()
+    var currentNamespace: String? = null
+    val currentModuleLocals = mutableSetOf<String>()
+
+    /**
+     * Whether a declared name should be namespace-mangled. True at a module's top
+     * level; a class body sets it false so **methods** keep their plain names
+     * (they resolve through the class, not the module namespace).
+     */
+    var mangleDeclarations = true
+
+    fun registerNamespace(name: String) {
+        namespaces.add(name)
+    }
+
+    fun isNamespace(name: String): Boolean = name in namespaces
+
+    /** Mangle a name being *declared* at a namespaced module's top level (and record it). */
+    fun declareName(name: String): String {
+        val ns = currentNamespace ?: return name
+        if (!mangleDeclarations) return name
+        currentModuleLocals.add(name)
+        return "$ns\$$name"
+    }
+
+    /** Mangle a *reference* to one of the current namespaced module's own names. */
+    fun localRef(name: String): String {
+        val ns = currentNamespace ?: return name
+        return if (name in currentModuleLocals) "$ns\$$name" else name
+    }
+
     fun registerClass(name: String, type: ClassType) {
         if (classTypes.containsKey(name)) {
             throw IllegalStateException(

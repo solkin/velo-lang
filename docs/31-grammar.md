@@ -47,7 +47,9 @@ statement      = import
                | if | while | for | return | "break" | "continue"
                | expression ;
 
-import         = "import" STRING ;   (* .vel optional; std/ = stdlib; else relative to file *)
+import         = "import" STRING [ "as" IDENT ] ;
+                                     (* .vel optional; std/ = stdlib; else relative to file.
+                                        `as ns` namespaces members: ns.func(), new ns.Class() *)
 
 typedDecl      = type IDENT [ "=" expression ] ;           (* explicit type; mutable *)
 letDecl        = "let" IDENT "=" expression ;              (* inferred type; immutable *)

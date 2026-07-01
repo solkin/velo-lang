@@ -25,7 +25,7 @@ class ClassParselet : PrefixParselet {
     override fun parse(parser: ExpressionParser, token: Token): Node {
         val isActor = token.value == "actor"
         val isData = token.value == "data"
-        val className = TypeParser.parseVarname(parser)
+        val className = parser.context.declareName(TypeParser.parseVarname(parser))
         val typeParamList = parseTypeParams(parser)
         val typeParams = typeParamList.map { it.name }
         val savedGenerics = parser.context.saveGenericTypes()
@@ -34,6 +34,9 @@ class ClassParselet : PrefixParselet {
             className,
             ClassType(name = className, isActor = isActor, isData = isData, typeParams = typeParams),
         )
+        // Methods keep their plain names — they belong to the class, not the module namespace.
+        val savedMangle = parser.context.mangleDeclarations
+        parser.context.mangleDeclarations = false
         val defsNodes = parser.parseDelimited('(', ')', ',') {
             TypeParser.parseDef(parser)
         }
@@ -65,6 +68,7 @@ class ClassParselet : PrefixParselet {
             1 -> bodyList[0]
             else -> ProgramNode(prog = bodyList)
         }
+        parser.context.mangleDeclarations = savedMangle
         parser.context.restoreGenericTypes(savedGenerics)
         return ClassNode(
             name = className,
