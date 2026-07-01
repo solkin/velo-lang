@@ -227,4 +227,4 @@ To send structured data to an actor, use a transferable type — a primitive, an
 
 ---
 
-[Previous: Data Classes ←](28-data-classes.md)
+[Previous: Data Classes ←](28-data-classes.md) | [Next: LLM Guide →](30-llm-guide.md)
