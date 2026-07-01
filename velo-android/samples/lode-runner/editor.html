@@ -272,7 +272,7 @@ const TILES = [
   { key: "solid",  ch: "@", name: "Concrete",       desc: "indestructible" },
   { key: "ladder", ch: "H", name: "Ladder",         desc: "climb" },
   { key: "rope",   ch: "-", name: "Rope",           desc: "hang & slide" },
-  { key: "gold",   ch: "$", name: "Gold",           desc: "collect" },
+  { key: "gold",   ch: "*", name: "Gold",           desc: "collect" },
   { key: "hidden", ch: "S", name: "Escape ladder",  desc: "appears when gold cleared" },
   { key: "player", ch: "P", name: "Player start",   desc: "unique" },
   { key: "guard",  ch: "G", name: "Guard",          desc: "max 4" },
@@ -294,18 +294,18 @@ function blank(c, r) { return Array.from({length: r}, () => Array(c).fill(" "));
 function defaultLevel() {
   const LV = [
     "##########S#######S#########",
-    "#   H $   S-------S   $H   #",
+    "#   H *   S-------S   *H   #",
     "####H#####S   H   S####H####",
     "#   H     H   H   H    H   #",
     "####H##  #H###H###H#  #H####",
     "#   H     H   H   H    H   #",
-    "# $ H     HG  H   H   $H   #",
+    "# * H     HG  H   H   *H   #",
     "####H  ###H###H  #H####H####",
     "#   H-----H   H   H    H   #",
-    "#   H     HG  H $ H    H   #",
+    "#   H     HG  H * H    H   #",
     "####H#  ##H###H###H##  H####",
     "#   H     H   H   H    H   #",
-    "#   H $   H   H   H   $H   #",
+    "#   H *   H   H   H   *H   #",
     "####H#####H   H###H####H####",
     "#   H     H   H   H   PH   #",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
@@ -365,7 +365,7 @@ function drawTile(ch, c, r) {
       ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x + s, y + 2); ctx.stroke();
       break;
     }
-    case "$": drawGold(x, y, s); break;
+    case "*": drawGold(x, y, s); break;
     case "S": {
       drawLadder(x, y, s, C.hidden);
       ctx.strokeStyle = "#244a24"; ctx.lineWidth = 1;
@@ -532,7 +532,7 @@ function drawTileTo(g, ch, x, y, s) {
     case "-":
       g.strokeStyle = C.rope; g.lineWidth = 3;
       g.beginPath(); g.moveTo(x, y+s/2); g.lineTo(x+s, y+s/2); g.stroke(); break;
-    case "$": {
+    case "*": {
       const bL=x+3,bR=x+s-3,bY=y+s-4,mid=x+s/2,pk=y+5;
       g.fillStyle=C.gold; g.beginPath(); g.moveTo(bL,bY); g.lineTo(mid,pk); g.lineTo(bR,bY); g.closePath(); g.fill();
       break; }
@@ -568,7 +568,7 @@ function selectTile(key) {
 // ── status + output ──────────────────────────────────────────────────────────
 function updateStatus() {
   document.getElementById("lblSize").textContent = cols + " × " + rows;
-  document.getElementById("lblGold").textContent = "Gold " + countCh("$");
+  document.getElementById("lblGold").textContent = "Gold " + countCh("*");
   const p = countCh("P");
   const pEl = document.getElementById("lblP");
   pEl.textContent = p === 1 ? "Player ✓" : (p === 0 ? "No player" : "Player ×" + p);

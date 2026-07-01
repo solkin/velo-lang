@@ -17,16 +17,16 @@ Icons icons = new Icons();
 
 array[str] LV = new array[str]{
     "#    S         #",
-    "#  $ S         #",
+    "#  * S         #",
     "#####H######S  #",
-    "#    H------S$ #",
+    "#    H------S* #",
     "#    HG #H  #H##",
-    "##H###  #H  \$H #",
+    "##H###  #H  *H #",
     "# H     ###H####",
     "# H  G     H   #",
     "#####H#####H   #",
     "#    H     H   #",
-    "#   \$H-----H$  #",
+    "#   *H-----H*  #",
     "# H###     ###H#",
     "# H         P H#",
     "################",
@@ -39,7 +39,7 @@ int CH_BRICK = "#"[0];
 int CH_SOLID = "@"[0];
 int CH_LAD = "H"[0];
 int CH_ROPE = "-"[0];
-int CH_GOLD = "$"[0];
+int CH_GOLD = "*"[0];
 int CH_HID = "S"[0];
 int CH_P = "P"[0];
 int CH_G = "G"[0];
