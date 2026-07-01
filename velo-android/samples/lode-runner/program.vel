@@ -21,12 +21,12 @@ array[str] LV = new array[str]{
     "#####H######S  #",
     "#    H------S$ #",
     "#    HG #H  #H##",
-    "##H###  #H  $H #",
+    "##H###  #H  \$H #",
     "# H     ###H####",
     "# H  G     H   #",
     "#####H#####H   #",
     "#    H     H   #",
-    "#   $H-----H$  #",
+    "#   \$H-----H$  #",
     "# H###     ###H#",
     "# H         P H#",
     "################",
@@ -806,7 +806,11 @@ func tick(int token) void {
 # ---- input --------------------------------------------------------------------------------
 
 func restartIfOver() bool {
-    if (state == 3) { newGame(); true; } else false;
+    if (state == 3) {
+        newGame();
+        return true;
+    };
+    return false;
 };
 
 digL.onClick(func() void { if (restartIfOver() == false) { digAt(0 - 1); }; void });
