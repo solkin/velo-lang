@@ -75,7 +75,14 @@ func[int] callback = square;
 int y = callback(7);   # 49
 ```
 
-`func[T]` parameters do not check argument count or types at compile time — calls through them are permissive. Use the full signature when you want strict checking; use the loose form for higher-order code where the function value travels across boundaries.
+> **The loose form `func[T]` is an unchecked escape hatch.** It declares only the
+> return type, so calls through such a value are **not** checked for argument count
+> or types at compile time — `f(1, 2, 3)` compiles even when `f` actually takes two
+> arguments, and the mistake only surfaces at run time. Prefer the full signature
+> `func[(<args>) <ret>]` by default; it checks calls and is the only form that may
+> cross an actor or native boundary. Reach for `func[T]` only for internal
+> higher-order helpers that must accept callbacks of varying arity (e.g. a `map`
+> that takes either `(value)` or `(value, index)`).
 
 ## Higher-Order Functions
 
