@@ -1,0 +1,349 @@
+# program.vel — an arcade cockpit racer built on the pseudo-3D road engine.
+#
+# You sit behind the wheel of a car looking down a winding mountain highway: hold one finger on the
+# screen to accelerate, and how far it sits from the centre steers the wheel. Curves throw the car
+# to the outside, drifting onto the grass slows you down, and the dashboard (analogue speedometer +
+# tachometer, gear and a turning wheel) lives at the bottom of the windscreen.
+
+import "engine"
+
+Terminal term = new Terminal()
+Time time = new Time()
+Ui ui = new Ui()
+Icons icons = new Icons()
+
+# ---- tuning ------------------------------------------------------------------------------
+let MAXSEG = 1600
+let MAXSPD = 1000      # top speed, world z per tick
+let ACCEL = 16         # throttle gain
+let BRAKE = 16         # coast-down when the throttle is released
+let STEER = 60         # steering authority at full finger deflection
+let CENT2 = 100000     # centrifugal divisor; the push grows with speed SQUARED, so you must steer
+                       # against it through curves and brake for the sharp ones (smaller = stronger)
+let MAXKMH = 300
+
+# ---- track buffers -----------------------------------------------------------------------
+array[int] tCurve = new array[int](MAXSEG)
+array[int] tHy = new array[int](MAXSEG)
+array[int] tSprT = new array[int](MAXSEG)
+array[int] tSprS = new array[int](MAXSEG)
+int segN = 0
+int lastY = 0
+
+Track track = new Track()
+Camera cam = new Camera()
+
+# ---- car + input state -------------------------------------------------------------------
+int position = 0       # distance along the track
+int speed = 0
+int playerX = 0        # lateral world offset (0 = centre, +-ROADW = edges)
+int steerInput = 0     # -1000..1000, from the finger
+int bg = 0             # parallax accumulator for the mountains
+int shake = 0
+bool gas = false
+bool paused = false
+bool started = false
+int loopToken = 0
+
+int W = 360
+int H = 600
+
+# ---- widgets -----------------------------------------------------------------------------
+Canvas view = ui.canvas().weight(1).fillWidth().background("#0b0d12")
+Renderer r = new Renderer(view)
+
+Container page = ui.column().fillWidth().fillHeight()
+AppBar bar = ui.appBar("Mountain Drive")
+page.add(bar)
+page.add(view)
+Container root = page
+
+# ---- track generation --------------------------------------------------------------------
+func addSeg(int cvv, int yy) void {
+    int st = 0
+    int ss = 0
+    # scatter roadside scenery
+    if (segN % 6 == 0) {
+        let h = iabs(segN * 37 + 13)
+        st = 1 + h % 4
+        let mag = 1 + h % 2
+        ss = if (h % 2 == 0) then 0 - mag else mag
+    }
+    tCurve[segN] = cvv
+    tHy[segN] = yy
+    tSprT[segN] = st
+    tSprS[segN] = ss
+    segN = segN + 1
+}
+
+func interp(int a, int b, int i, int total) int {
+    return a + (b - a) * i / total
+}
+
+# One stretch of road: ease a curve in over [enter] segments, hold it for [hold], ease out over
+# [leave]; meanwhile the hill height ramps from the current height to +hillH across the whole run.
+func addRoad(int enter, int hold, int leave, int curveAmt, int hillH) void {
+    let startY = lastY
+    let endY = startY + hillH
+    let total = enter + hold + leave
+    int k = 0
+    while (k < enter) {
+        addSeg(curveAmt * k / enter, interp(startY, endY, k, total))
+        k = k + 1
+    }
+    int j = 0
+    while (j < hold) {
+        addSeg(curveAmt, interp(startY, endY, enter + j, total))
+        j = j + 1
+    }
+    int m = 0
+    while (m < leave) {
+        addSeg(curveAmt - curveAmt * m / leave, interp(startY, endY, enter + hold + m, total))
+        m = m + 1
+    }
+    lastY = endY
+}
+
+func buildTrack() void {
+    segN = 0
+    lastY = 0
+    addRoad(30, 60, 30, 0, 0)            # start straight
+    addRoad(24, 40, 24, 14, 1000)        # gentle bend, climb
+    addRoad(24, 50, 24, 0 - 18, 0)       # long left
+    addRoad(30, 60, 30, 0, 0 - 1200)     # straight descent
+    addRoad(16, 26, 16, 30, 600)         # hairpin right up
+    addRoad(24, 44, 24, 0 - 14, 0)       # sweeping left
+    addRoad(20, 34, 20, 22, 0 - 500)     # right, dip
+    addRoad(30, 70, 30, 0, 0)            # long straight
+    addRoad(18, 30, 18, 0 - 26, 400)     # sharp left, rise
+    addRoad(24, 40, 24, 12, 0 - lastY)   # ease hill back to 0 to close the loop
+    track.init(segN, tCurve, tHy, tSprT, tSprS)
+}
+
+# ---- game state --------------------------------------------------------------------------
+func newGame() void {
+    position = 0
+    speed = 0
+    playerX = 0
+    steerInput = 0
+    bg = 0
+    shake = 0
+    gas = false
+    started = false
+}
+
+func displaySpeed() int {
+    return speed * MAXKMH / MAXSPD
+}
+
+func gearOf() int {
+    if (speed < MAXSPD * 22 / 100) { return 1 }
+    if (speed < MAXSPD * 44 / 100) { return 2 }
+    if (speed < MAXSPD * 66 / 100) { return 3 }
+    if (speed < MAXSPD * 85 / 100) { return 4 }
+    return 5
+}
+
+func tachValue() int {
+    let g = gearOf()
+    let band = MAXSPD / 5
+    let lo = (g - 1) * band
+    let frac = (speed - lo) * 100 / band
+    return 32 + frac * 68 / 100
+}
+
+# ---- physics -----------------------------------------------------------------------------
+func stepCar() void {
+    let base = (position % track.len) / SEGLEN
+    let curveHere = track.curveAt(base)
+
+    if (gas) {
+        speed = speed + ACCEL
+        if (speed > MAXSPD) { speed = MAXSPD }
+    } else {
+        speed = speed - BRAKE
+        if (speed < 0) { speed = 0 }
+    }
+
+    # steering: proportional to finger offset, effective with speed (finger right -> car right)
+    playerX = playerX - steerInput * STEER * speed / (MAXSPD * 1000)
+    # centrifugal drift to the outside of a curve — grows with the square of speed, so holding the
+    # wheel centred no longer keeps you on a bend; you steer into it, and slow down for hairpins
+    playerX = playerX - curveHere * speed * speed / CENT2
+
+    # off the tarmac: grass drags the speed down and rattles the view
+    bool off = iabs(playerX) > ROADW
+    if (off) {
+        if (speed > MAXSPD * 35 / 100) { speed = speed - BRAKE * 2 }
+        shake = 4
+    } else {
+        if (shake > 0) { shake = shake - 1 }
+    }
+    # never let it slide completely off the world
+    if (playerX > ROADW * 2) { playerX = ROADW * 2 }
+    if (playerX < 0 - ROADW * 2) { playerX = 0 - ROADW * 2 }
+
+    position = position + speed
+    if (position >= track.len) { position = position - track.len }
+    bg = bg + curveHere * speed / 1600
+}
+
+# ---- cockpit -----------------------------------------------------------------------------
+func tri(int ax, int ay, int bx, int by, int ex, int ey, str col) void {
+    let spec = "M ".con(ax.str()).con(" ").con(ay.str())
+        .con(" L ").con(bx.str()).con(" ").con(by.str())
+        .con(" L ").con(ex.str()).con(" ").con(ey.str()).con(" Z")
+    view.drawPath(spec).color(col).fill()
+}
+
+func drawGauge(int cx, int cy, int rad, int val, int maxv, str label) void {
+    view.drawCircle(cx, cy, rad + 3).color("#05070a").fill()
+    view.drawCircle(cx, cy, rad).color("#12151c").fill()
+    let start = 427
+    let span = 683
+    int t = 0
+    while (t <= 8) {
+        let a = start + span * t / 8
+        let x0 = cx + cosT(a) * (rad * 68 / 100) / 1024
+        let y0 = cy + sinT(a) * (rad * 68 / 100) / 1024
+        let x1 = cx + cosT(a) * (rad * 90 / 100) / 1024
+        let y1 = cy + sinT(a) * (rad * 90 / 100) / 1024
+        let tc = if (t >= 7) then "#ff5a5a" else "#8a97a8"
+        view.drawLine(x0, y0, x1, y1).color(tc).stroke(2)
+        t = t + 1
+    }
+    let cl = if (val > maxv) then maxv else if (val < 0) then 0 else val
+    let na = start + span * cl / maxv
+    let nx = cx + cosT(na) * (rad * 74 / 100) / 1024
+    let ny = cy + sinT(na) * (rad * 74 / 100) / 1024
+    view.drawLine(cx, cy, nx, ny).color("#ff6a3c").stroke(3).cap("round")
+    view.drawCircle(cx, cy, rad * 14 / 100).color("#ff6a3c").fill()
+    view.drawText(cx - 16, cy + rad * 62 / 100, label, 9).color("#8a97a8")
+}
+
+func drawSpoke(int cx, int cy, int len, int a) void {
+    let ex = cx + cosT(a) * len / 1024
+    let ey = cy + sinT(a) * len / 1024
+    view.drawLine(cx, cy, ex, ey).color("#2b2f39").stroke(6).cap("round")
+}
+
+func drawWheel(int cx, int cy, int rad) void {
+    view.drawCircle(cx, cy, rad).color("#20242c").fill()
+    view.drawCircle(cx, cy, rad * 80 / 100).color("#1a1d24").fill()
+    let a = 256 + steerInput * 150 / 1000
+    drawSpoke(cx, cy, rad * 78 / 100, a)
+    drawSpoke(cx, cy, rad * 78 / 100, a + 341)
+    drawSpoke(cx, cy, rad * 78 / 100, a + 683)
+    view.drawCircle(cx, cy, rad * 20 / 100).color("#2f333d").fill()
+}
+
+func drawCockpit() void {
+    # a slim dashboard strip along the bottom — no roof, pillars or bonnet eating the view
+    let dashTop = H * 74 / 100
+    let dh = H - dashTop
+    view.drawRect(0, dashTop, W, dh).color("#1a1d24").fill()
+    view.drawRect(0, dashTop, W, 4).color("#2b2f39").fill()
+
+    # gauges: tacho left, speedo right
+    let gr = dh * 40 / 100
+    let gy = dashTop + gr + 6
+    drawGauge(W * 24 / 100, gy, gr, tachValue(), 100, "x1000 rpm")
+    drawGauge(W * 76 / 100, gy, gr, displaySpeed(), MAXKMH, "km/h")
+
+    # gear indicator between the dials
+    view.drawRoundRect(W / 2 - 15, gy - 16, 30, 32, 6).color("#08090c").fill()
+    view.drawText(W / 2 - 6, gy + 8, gearOf().str(), 22).color("#7CFC9A")
+
+    # steering wheel, most of it below the screen
+    drawWheel(W / 2, H + dh * 30 / 100, dh * 92 / 100)
+}
+
+func drawHint() void {
+    view.drawText(W / 2 - 128, H * 34 / 100, "Hold to accelerate — steer with your finger", 13).color("#f3f7fb")
+}
+
+func drawPause() void {
+    view.drawRect(0, 0, W, H).color("#05070a").alpha(46).fill()
+    view.drawText(W / 2 - 44, H * 30 / 100, "PAUSED", 24).color("#ffd23f")
+}
+
+# ---- frame -------------------------------------------------------------------------------
+func draw() void {
+    r.render(cam, track, position, playerX, bg)
+    drawCockpit()
+    if (started == false && paused == false) { drawHint() }
+    if (paused) { drawPause() }
+}
+
+# ---- game loop ---------------------------------------------------------------------------
+actor class Ticker() {
+    Time t = new Time()
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis)
+        done(token)
+    }
+}
+actor[Ticker] ticker = new Ticker()
+let TICK_MS = 33
+
+func step() void {
+    if (paused == false) { stepCar() }
+    draw()
+}
+
+func tick(int token) void {
+    if (token == loopToken) {
+        step()
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x)
+        })
+    }
+}
+
+# ---- input & app bar ---------------------------------------------------------------------
+view.onPointerDown(func(int x, int y) void {
+    gas = true
+    started = true
+    steerInput = (x - W / 2) * 2000 / W
+})
+view.onPointerMove(func(int x, int y) void {
+    if (gas) { steerInput = (x - W / 2) * 2000 / W }
+})
+view.onPointerUp(func(int x, int y) void {
+    gas = false
+    steerInput = 0
+})
+
+view.onResize(func(int w, int h) void {
+    if (w > 0 && h > 0) {
+        W = w
+        H = h
+        r.resize(w, h)
+        draw()
+    }
+})
+
+bar.action("Pause", icons.pause(), func() void {
+    paused = paused == false
+})
+bar.action("Restart", icons.refresh(), func() void {
+    newGame()
+    paused = false
+})
+bar.onNav(func() void {
+    loopToken = loopToken + 1
+    ui.close()
+})
+
+# ---- go ----------------------------------------------------------------------------------
+buildTrack()
+newGame()
+draw()
+ui.open(root)
+
+loopToken = loopToken + 1
+async ticker.after(TICK_MS, loopToken, func(int x) void {
+    tick(x)
+})
+
+term.println("Mountain Drive — hold to accelerate, steer with your finger; lean into the curves and brake for the hairpins.")

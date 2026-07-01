@@ -1,0 +1,303 @@
+# engine.vel — a fixed-point pseudo-3D road renderer in the classic arcade-racer style (the road
+# is a ribbon of trapezoid segments that shift left/right for curves and up/down for hills, exactly
+# the Pole Position / Out Run technique). No floats, no trig natives: a baked sine table drives the
+# cockpit gauges, and the road is pure integer projection — far cheaper than a raycaster.
+#
+# The game (program.vel) owns the track data, the car physics and the cockpit; this file only knows
+# how to project and paint a Track from a camera position.
+
+# ---- fixed-point scales -------------------------------------------------------------------
+let ANG = 1024        # angle units in a full turn
+let TRIG = 1024       # sine / cosine amplitude
+
+# ---- pseudo-3D projection constants -------------------------------------------------------
+let SEGLEN = 400      # world length of one road segment (z units)
+let ROADW = 2200      # half road width in world units
+let CAMH = 620        # camera height above the road (low, like sitting in a sports car)
+let DEPTH = 170       # focal length as a percent (bigger = narrower field of view)
+let CAMMIN = 90       # nearest projectable depth (world units in front of the eye)
+let DRAW = 90         # how many segments to walk each frame (maxy clipping usually stops sooner)
+let RUMBLE = 3        # segments per light/dark stripe
+
+# ---- baked quarter-wave sine table (index 0..256, scaled by 1024) -------------------------
+array[int] SINQ = new array[int]{
+    0, 6, 13, 19, 25, 31, 38, 44, 50, 57, 63, 69, 75, 82, 88, 94,
+    100, 107, 113, 119, 125, 132, 138, 144, 150, 156, 163, 169, 175, 181, 187, 194,
+    200, 206, 212, 218, 224, 230, 237, 243, 249, 255, 261, 267, 273, 279, 285, 291,
+    297, 303, 309, 315, 321, 327, 333, 339, 345, 351, 357, 363, 369, 374, 380, 386,
+    392, 398, 403, 409, 415, 421, 426, 432, 438, 443, 449, 455, 460, 466, 472, 477,
+    483, 488, 494, 499, 505, 510, 516, 521, 526, 532, 537, 543, 548, 553, 558, 564,
+    569, 574, 579, 584, 590, 595, 600, 605, 610, 615, 620, 625, 630, 635, 640, 645,
+    650, 654, 659, 664, 669, 674, 678, 683, 688, 692, 697, 702, 706, 711, 715, 720,
+    724, 729, 733, 737, 742, 746, 750, 755, 759, 763, 767, 771, 775, 779, 784, 788,
+    792, 796, 799, 803, 807, 811, 815, 819, 822, 826, 830, 834, 837, 841, 844, 848,
+    851, 855, 858, 862, 865, 868, 872, 875, 878, 882, 885, 888, 891, 894, 897, 900,
+    903, 906, 909, 912, 915, 917, 920, 923, 926, 928, 931, 934, 936, 939, 941, 944,
+    946, 948, 951, 953, 955, 958, 960, 962, 964, 966, 968, 970, 972, 974, 976, 978,
+    980, 982, 983, 985, 987, 989, 990, 992, 993, 995, 996, 998, 999, 1000, 1002, 1003,
+    1004, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1016, 1017, 1018, 1018,
+    1019, 1020, 1020, 1021, 1021, 1022, 1022, 1022, 1023, 1023, 1023, 1024, 1024, 1024, 1024, 1024,
+    1024
+}
+
+func sinT(int a) int {
+    a = a % ANG
+    if (a < 0) { a = a + ANG }
+    return if (a < 256) then SINQ[a]
+    else if (a < 512) then SINQ[512 - a]
+    else if (a < 768) then 0 - SINQ[a - 512]
+    else 0 - SINQ[1024 - a]
+}
+
+func cosT(int a) int {
+    return sinT(a + 256)
+}
+
+func iabs(int v) int {
+    return if (v < 0) then 0 - v else v
+}
+
+# A tiny holder the game can hand around; the road engine ignores heading, the cockpit uses it.
+class Camera() {
+    int x = 0
+    int y = 0
+    int ang = 0
+    func set(int nx, int ny, int na) void { x = nx; y = ny; ang = na }
+}
+
+# ---- the track: per-segment curvature, hill height and a roadside sprite -------------------
+# Codes for sprType: 0 none, 1 tree, 2 rock, 3 sign, 4 lamp post. sprSide < 0 left, > 0 right; the
+# magnitude is an extra world offset out from the road edge.
+class Track() {
+    int n = 0
+    int len = 0
+    array[int] curve = new array[int](1)
+    array[int] hy = new array[int](1)
+    array[int] sprType = new array[int](1)
+    array[int] sprSide = new array[int](1)
+
+    func init(int cnt, array[int] cv, array[int] yy, array[int] st, array[int] ss) void {
+        n = cnt
+        curve = cv
+        hy = yy
+        sprType = st
+        sprSide = ss
+        len = cnt * SEGLEN
+    }
+
+    func curveAt(int i) int { return curve[i % n] }
+    func hyAt(int i) int { return hy[i % n] }
+}
+
+# ---- the renderer -------------------------------------------------------------------------
+class Renderer(Canvas cv) {
+    int W = 360
+    int H = 600
+    int HZ = 300               # horizon y — kept at the road's vanishing point (H/2)
+    int kx = 306               # DEPTH * W / 200, baked on resize (avoids per-project overflow)
+    int ky = 510               # DEPTH * H / 200
+
+    # projection scratch (filled by project)
+    int pX = 0
+    int pY = 0
+    int pW = 0
+
+    # per-drawn-segment records (for the sprite pass, far-to-near)
+    array[int] spX = new array[int](256)
+    array[int] spY = new array[int](256)
+    array[int] spW = new array[int](256)
+    array[int] spT = new array[int](256)
+    array[int] spS = new array[int](256)
+    int spN = 0
+
+    func resize(int w, int h) void {
+        W = w
+        H = h
+        HZ = h * 50 / 100
+        kx = DEPTH * W / 200
+        ky = DEPTH * H / 200
+    }
+
+    # Project a road point (world x is always 0 — the centre-line — offset by camX) at depth z and
+    # hill height y into screen space. Fills pX / pY / pW; returns false when it is behind the eye.
+    func project(int worldZ, int worldY, int camX, int position, int camBaseY) bool {
+        let camZ = worldZ - position
+        if (camZ < CAMMIN) {
+            return false
+        }
+        let camY = worldY - camBaseY
+        pW = ROADW * kx / camZ
+        pX = W / 2 + (0 - camX) * kx / camZ
+        pY = H / 2 - camY * ky / camZ
+        return true
+    }
+
+    func fillQuad(int ax, int ay, int bx, int by, int ex, int ey, int gx, int gy, str col) void {
+        let spec = "M ".con(ax.str()).con(" ").con(ay.str())
+            .con(" L ").con(bx.str()).con(" ").con(by.str())
+            .con(" L ").con(ex.str()).con(" ").con(ey.str())
+            .con(" L ").con(gx.str()).con(" ").con(gy.str()).con(" Z")
+        cv.drawPath(spec).color(col).fill()
+    }
+
+    # One road band between a near edge (x1,y1,w1) and a far edge (x2,y2,w2): grass, tarmac, the two
+    # coloured rumble strips and, on light stripes, a dashed centre line.
+    func renderSegment(int i, int x1, int y1, int w1, int x2, int y2, int w2) void {
+        bool light = (i / RUMBLE) % 2 == 0
+        # the backdrop already lays down light grass; only the dark stripe needs a per-band fill,
+        # which is what makes the ground appear to rush past
+        if (light == false) {
+            cv.drawRect(0, y2, W, y1 - y2).color("#2f9a33").fill()
+        }
+        let road = if (light) then "#9a9a9e" else "#8f8f93"
+        # rumble strips only when the road is wide enough for them to read (near segments)
+        if (w1 >= 8) {
+            let rum = if (light) then "#d9dde4" else "#b23030"
+            let r1 = w1 / 5
+            let r2 = w2 / 5
+            fillQuad(x1 - w1 - r1, y1, x1 - w1, y1, x2 - w2, y2, x2 - w2 - r2, y2, rum)
+            fillQuad(x1 + w1, y1, x1 + w1 + r1, y1, x2 + w2 + r2, y2, x2 + w2, y2, rum)
+        }
+        fillQuad(x1 - w1, y1, x1 + w1, y1, x2 + w2, y2, x2 - w2, y2, road)
+        if (light && w1 >= 14) {
+            let l1 = w1 / 22
+            let l2 = w2 / 22
+            if (l1 >= 1) {
+                fillQuad(x1 - l1, y1, x1 + l1, y1, x2 + l2, y2, x2 - l2, y2, "#e6e6ea")
+            }
+        }
+    }
+
+    # A roadside billboard sprite, its base sitting at (baseX,baseY) on the ground, sized by scale
+    # (the projected half-road width in px at that depth).
+    func drawSprite(int cx, int baseY, int scale, int type, int side) void {
+        # place the sprite out beyond the road edge, on the given side
+        let off = side * (ROADW + ROADW / 2)
+        let x = cx + off * scale / ROADW
+        if (type == 1) {
+            # tree: brown trunk + stacked green canopy
+            let th = scale * 170 / 100
+            let tw = scale * 55 / 100
+            if (tw >= 2) {
+                cv.drawRect(x - tw / 8, baseY - th / 3, tw / 4, th / 3).color("#5a3d24").fill()
+                cv.drawCircle(x, baseY - th / 2, tw / 2).color("#1f7a2e").fill()
+                cv.drawCircle(x, baseY - th * 72 / 100, tw * 42 / 100).color("#268a36").fill()
+                cv.drawCircle(x, baseY - th * 90 / 100, tw * 30 / 100).color("#2f9a3f").fill()
+            }
+        } else if (type == 2) {
+            # rock
+            let rw = scale * 60 / 100
+            let rh = scale * 42 / 100
+            if (rw >= 2) {
+                cv.drawRoundRect(x - rw / 2, baseY - rh, rw, rh, rh / 3).color("#7d7f86").fill()
+                cv.drawRoundRect(x - rw / 2, baseY - rh, rw, rh / 2, rh / 3).color("#9a9ca3").fill()
+            }
+        } else if (type == 3) {
+            # sign: post + board
+            let sh = scale * 130 / 100
+            let sw = scale * 70 / 100
+            if (sw >= 2) {
+                cv.drawRect(x - sw / 12, baseY - sh, sw / 6, sh).color("#6b6b70").fill()
+                cv.drawRoundRect(x - sw / 2, baseY - sh, sw, sw * 62 / 100, sw / 8).color("#d8a12a").fill()
+                cv.drawRoundRect(x - sw / 2 + sw / 10, baseY - sh + sw / 10, sw * 8 / 10, sw * 42 / 100, sw / 10).color("#33312c").fill()
+            }
+        } else {
+            # lamp post
+            let lh = scale * 200 / 100
+            let lw = scale * 18 / 100
+            if (lw >= 1) {
+                cv.drawRect(x - lw / 2, baseY - lh, lw, lh).color("#565961").fill()
+                cv.drawCircle(x, baseY - lh, lw * 2).color("#ffe6a0").fill()
+            }
+        }
+    }
+
+    # --- sky, distant mountains and sun ----------------------------------------------------
+    func drawRange(int shift, int baseY, int peakH, str col) void {
+        let stepx = W / 3
+        int k = 0 - 1
+        while (k <= 4) {
+            let cx = k * stepx - (shift % (stepx * 2))
+            let h = peakH + (k % 2) * (peakH / 3)
+            fillQuad(cx - stepx, baseY, cx, baseY - h, cx, baseY - h, cx + stepx, baseY, col)
+            k = k + 1
+        }
+    }
+
+    func renderBackdrop(Camera cam, int bgShift) void {
+        cv.drawRect(0, 0, W, HZ + 4).gradient(0, 0, 0, HZ + 4, "#4aa0e6", "#bfe6ff").fill()
+        cv.drawRect(0, HZ, W, H - HZ).color("#2f9a33").fill()
+        # sun
+        cv.drawCircle(W * 3 / 4, HZ * 45 / 100, HZ / 6).color("#fff2c4").fill()
+        # two parallax mountain ranges made of overlapping triangles
+        drawRange(bgShift / 3, HZ, HZ * 55 / 100, "#7f9bbf")
+        drawRange(bgShift / 2, HZ, HZ * 72 / 100, "#5f7ba0")
+    }
+
+    # --- the public entry point: paint the road from the camera --------------------------------
+    # position is the car's distance along the track; playerRoadX is its lateral world offset.
+    func render(Camera cam, Track track, int position, int playerRoadX, int bgShift) void {
+        cv.clear()                 # frame boundary: publishes the finished frame (double buffering)
+        renderBackdrop(cam, bgShift)
+
+        int pos = position % track.len
+        if (pos < 0) { pos = pos + track.len }
+        let base = pos / SEGLEN
+        let basePct = pos - base * SEGLEN
+
+        # camera rides CAMH above the road surface right under the car, so the car keeps a constant
+        # height over the tarmac as the road hills up and down (rather than bobbing).
+        let camBaseY = CAMH + track.hyAt(base) + (track.hyAt(base + 1) - track.hyAt(base)) * basePct / SEGLEN
+
+        int x = 0
+        int dx = 0 - (track.curveAt(base) * basePct / SEGLEN)
+        int maxy = H
+        spN = 0
+
+        int n = 0
+        while (n < DRAW) {
+            let i = (base + n) % track.n
+            let zNear = (base + n) * SEGLEN
+            let zFar = (base + n + 1) * SEGLEN
+
+            bool okN = project(zNear, track.hyAt(i), x - playerRoadX, pos, camBaseY)
+            int x1 = pX
+            int y1 = pY
+            int w1 = pW
+            bool okF = project(zFar, track.hyAt(i + 1), x + dx - playerRoadX, pos, camBaseY)
+            int x2 = pX
+            int y2 = pY
+            int w2 = pW
+
+            x = x + dx
+            dx = dx + track.curveAt(i)
+
+            if (okN && okF) {
+                # The road band needs the near edge below the far edge (y1 > y2) and to clear the
+                # hill line (y2 < maxy). A sprite, though, is collected whenever both edges project
+                # in front of the eye — the y1>y2 test flips across a hill crest, and gating sprites
+                # on it (or on maxy) is exactly what made the lamp posts blink frame to frame.
+                if (y1 > y2 && y2 < maxy) {
+                    renderSegment(i, x1, y1, w1, x2, y2, w2)
+                    maxy = y2
+                }
+                if (track.sprType[i] != 0 && spN < 256 && w1 >= 2) {
+                    spX[spN] = x1
+                    spY[spN] = y1
+                    spW[spN] = w1
+                    spT[spN] = track.sprType[i]
+                    spS[spN] = track.sprSide[i]
+                    spN = spN + 1
+                }
+            }
+            n = n + 1
+        }
+
+        # sprites, far-to-near, so nearer ones overlap correctly
+        int s = spN - 1
+        while (s >= 0) {
+            drawSprite(spX[s], spY[s], spW[s], spT[s], spS[s])
+            s = s - 1
+        }
+    }
+}
