@@ -37,3 +37,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+### Local / session ###
+local.properties
+.claude/
