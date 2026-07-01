@@ -50,6 +50,13 @@ data class BinaryNode(
             }
         }
         if (!leftType.sameAs(rightType)) {
+            if (operator == "+" && (leftType is StringType || rightType is StringType)) {
+                val other = if (leftType is StringType) rightType else leftType
+                throw IllegalArgumentException(
+                    "Cannot join str with ${other.log()}. Convert the value with .str() " +
+                        "(e.g. \"count = \" + n.str()) or use string interpolation (\"count = \$n\")."
+                )
+            }
             throw IllegalArgumentException("Binary operation with different types $leftType [$operator] $rightType")
         }
         return when (operator) {

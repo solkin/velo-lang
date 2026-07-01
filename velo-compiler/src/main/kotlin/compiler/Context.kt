@@ -209,7 +209,10 @@ data class Context(
 
     fun opt(name: String): Var? = lookup(name)?.frame?.vars?.get(name)
 
-    fun get(name: String): Var = opt(name) ?: throw IllegalArgumentException("Undefined variable $name on get")
+    fun get(name: String): Var = opt(name) ?: throw IllegalArgumentException(
+        "Undefined name '$name'. Declare it above this line — a Velo program runs top to bottom, " +
+            "so variables, functions and classes must be defined before they are used."
+    )
 
     fun retype(name: String, type: Type) {
         lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name on retype")

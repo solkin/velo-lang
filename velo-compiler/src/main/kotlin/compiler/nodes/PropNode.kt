@@ -56,10 +56,22 @@ data class PropNode(
                 val argTypes = args.orEmpty().reversed().map { it.compile(scopeCtx) }
                 // Try type property, else common any-type property, else throw exception
                 val prop = parentType.prop(name) ?: AnyType.prop(name)
-                    ?: throw IllegalArgumentException("Property '$name' of ${parentType.log()} is not supported")
+                    ?: throw IllegalArgumentException(propHint(parentType, name))
                 prop.compile(parentType, args = argTypes, scopeCtx)
             }
         }
+    }
+
+    private fun propHint(parentType: Type, name: String): String {
+        val base = "Property '$name' of ${parentType.log()} is not supported"
+        // A pointer's only members are the dereference (`*p` / `p.val()`); reaching
+        // for `.str()` etc. on a pointer usually means a `dict.get()` result wasn't
+        // dereferenced — dict/array indexing (`d[k]`) returns the value directly.
+        if (parentType is PtrType) {
+            return "$base. A pointer has no properties — dereference it first with " +
+                "*p or p.val(), or index the collection directly (d[key], a[i])."
+        }
+        return base
     }
 
     private enum class Access { FIELD, COMPUTATION, UNKNOWN }

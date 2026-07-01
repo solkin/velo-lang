@@ -150,8 +150,7 @@ term.println(v.str())
 | `func f() int { a + b }` | `func f() int { return a + b }` | explicit return required |
 | `x.str` , `arr.len` | `x.str()` , `arr.len()` | conversions/methods need `()` |
 | `map.len()` | `map.len` | `len` is a stored field → bare |
-| `if !p.done == false` | `if !p.done` | use `!`, `&&`, `||` |
-| `p != null & p.ok` | `p != null && p.ok` | `&&` short-circuits; `&` is bitwise |
+| `dict.get(k).str()` | `dict[k].str()` | index returns the value; `get` returns a `ptr` |
 | `"total " + n` | `"total " + n.str()` or `"total $n"` | convert / interpolate |
 | `var x = 5` | `let x = 5` or `int x = 5` | no `var`; `let` = immutable inferred |
 | `list.map(func(int i, int v){...})` | `list.map(func(int v){...})` | callback is value-first, index optional |

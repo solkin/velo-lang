@@ -15,7 +15,13 @@ data class DefNode(
             type
         }
         if (!type.sameAs(defType) && !type.sameAs(AnyType)) {
-            throw IllegalArgumentException("Illegal assign type $defType != $type")
+            if (type is StringType && defType !is StringType) {
+                throw IllegalArgumentException(
+                    "Cannot assign ${defType.log()} to '$name' of type str. Convert it with .str() " +
+                        "(e.g. str $name = value.str()) or use string interpolation."
+                )
+            }
+            throw IllegalArgumentException("Cannot assign ${defType.log()} to '$name' of type ${type.log()}")
         }
         // An interface-typed declaration keeps the interface as the variable's
         // static type (so dispatch stays dynamic and only interface methods are
