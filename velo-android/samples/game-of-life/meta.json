@@ -1,6 +1,6 @@
 {
   "id": "game-of-life",
   "name": "Game of Life",
-  "description": "Conway's Game of Life. Asks how many generations to simulate.",
+  "description": "Conway's Game of Life; asks how many generations to simulate.",
   "interactive": true
 }

@@ -104,7 +104,7 @@ data class FutureType(val derived: Type) : Type {
  * rather than as an opaque runtime failure inside `await`.
  */
 fun Type.isTransferable(): Boolean = when (this) {
-    ByteType, IntType, FloatType, StringType, BoolType, VoidType -> true
+    ByteType, IntType, LongType, FloatType, StringType, BoolType, VoidType -> true
     is ArrayType -> derived.isTransferable()
     is TupleType -> types.all { it.isTransferable() }
     is ActorBoundType -> true

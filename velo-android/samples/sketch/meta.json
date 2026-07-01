@@ -1,6 +1,6 @@
 {
   "id": "sketch",
   "name": "Sketch",
-  "description": "A finger-painting app: pick a colour from the palette, set the brush size, draw on the canvas, and erase or clear. Shows the Velo canvas and pointer events.",
+  "description": "A finger-painting app — pick a colour and brush size, draw on the canvas, erase or clear.",
   "interactive": true
 }

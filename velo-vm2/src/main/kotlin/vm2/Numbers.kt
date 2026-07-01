@@ -6,56 +6,90 @@ import core.DataClassInfo
  * Numeric promotion, comparison, structural equality and hashing.
  *
  * The instruction set has one set of arithmetic ops for all numeric kinds;
- * promotion is by value: if either operand is a `Float` the operation is in
- * float, otherwise integer (a `Byte` participates as its int value — byte
+ * promotion is by value along the rank `Float > Long > Int`: if either operand
+ * is a `Float` the operation is in float, otherwise if either is a `Long` it is
+ * in long, otherwise integer (a `Byte` participates as its int value — byte
  * values mostly originate from string indexing and flow as ints).
  */
 object Numbers {
 
     private fun isFloat(v: Any?) = v is Float || v is Double
+    private fun isLong(v: Any?) = v is Long
 
     private fun toInt(v: Any?): Int = when (v) {
         is Int -> v
         is Byte -> v.toInt()
+        is Long -> v.toInt()
         is Float -> v.toInt()
         is Boolean -> if (v) 1 else 0
         else -> throw IllegalStateException("Not an integer value: $v")
+    }
+
+    private fun toLong(v: Any?): Long = when (v) {
+        is Long -> v
+        is Int -> v.toLong()
+        is Byte -> v.toLong()
+        is Float -> v.toLong()
+        is Boolean -> if (v) 1L else 0L
+        else -> throw IllegalStateException("Not a long value: $v")
     }
 
     private fun toFloat(v: Any?): Float = when (v) {
         is Float -> v
         is Int -> v.toFloat()
         is Byte -> v.toFloat()
+        is Long -> v.toFloat()
         else -> throw IllegalStateException("Not a float value: $v")
     }
 
     // Int+Int is by far the hottest case (loop counters, indices, integer math),
     // so each op tries it first — two `is Int` checks and a direct primitive op —
-    // before falling back to the mixed/float promotion path.
+    // before falling back to the mixed/long/float promotion path.
     fun add(a: Any?, b: Any?): Any = if (a is Int && b is Int) a + b else addSlow(a, b)
     fun sub(a: Any?, b: Any?): Any = if (a is Int && b is Int) a - b else subSlow(a, b)
     fun mul(a: Any?, b: Any?): Any = if (a is Int && b is Int) a * b else mulSlow(a, b)
     fun div(a: Any?, b: Any?): Any = if (a is Int && b is Int) a / b else divSlow(a, b)
     fun rem(a: Any?, b: Any?): Any = if (a is Int && b is Int) a % b else remSlow(a, b)
 
-    private fun addSlow(a: Any?, b: Any?): Any = if (isFloat(a) || isFloat(b)) toFloat(a) + toFloat(b) else toInt(a) + toInt(b)
-    private fun subSlow(a: Any?, b: Any?): Any = if (isFloat(a) || isFloat(b)) toFloat(a) - toFloat(b) else toInt(a) - toInt(b)
-    private fun mulSlow(a: Any?, b: Any?): Any = if (isFloat(a) || isFloat(b)) toFloat(a) * toFloat(b) else toInt(a) * toInt(b)
-    private fun divSlow(a: Any?, b: Any?): Any = if (isFloat(a) || isFloat(b)) toFloat(a) / toFloat(b) else toInt(a) / toInt(b)
-    private fun remSlow(a: Any?, b: Any?): Any = if (isFloat(a) || isFloat(b)) toFloat(a) % toFloat(b) else toInt(a) % toInt(b)
+    private fun addSlow(a: Any?, b: Any?): Any =
+        if (isFloat(a) || isFloat(b)) toFloat(a) + toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) + toLong(b)
+        else toInt(a) + toInt(b)
+    private fun subSlow(a: Any?, b: Any?): Any =
+        if (isFloat(a) || isFloat(b)) toFloat(a) - toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) - toLong(b)
+        else toInt(a) - toInt(b)
+    private fun mulSlow(a: Any?, b: Any?): Any =
+        if (isFloat(a) || isFloat(b)) toFloat(a) * toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) * toLong(b)
+        else toInt(a) * toInt(b)
+    private fun divSlow(a: Any?, b: Any?): Any =
+        if (isFloat(a) || isFloat(b)) toFloat(a) / toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) / toLong(b)
+        else toInt(a) / toInt(b)
+    private fun remSlow(a: Any?, b: Any?): Any =
+        if (isFloat(a) || isFloat(b)) toFloat(a) % toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) % toLong(b)
+        else toInt(a) % toInt(b)
 
     /** `Op.More`: `[a, b] -> [a > b]`. */
     fun more(a: Any?, b: Any?): Boolean =
         if (a is Int && b is Int) a > b
-        else if (isFloat(a) || isFloat(b)) toFloat(a) > toFloat(b) else toInt(a) > toInt(b)
+        else if (isFloat(a) || isFloat(b)) toFloat(a) > toFloat(b)
+        else if (isLong(a) || isLong(b)) toLong(a) > toLong(b)
+        else toInt(a) > toInt(b)
 
-    fun and(a: Any?, b: Any?): Int = toInt(a) and toInt(b)
-    fun or(a: Any?, b: Any?): Int = toInt(a) or toInt(b)
-    fun xor(a: Any?, b: Any?): Int = toInt(a) xor toInt(b)
-    fun shl(a: Any?, b: Any?): Int = toInt(a) shl toInt(b)
-    fun shr(a: Any?, b: Any?): Int = toInt(a) shr toInt(b)
+    // Bitwise/shift ops stay in long when a long is involved, else int. A shift's
+    // width is taken from the left operand's kind; the shift amount is an int.
+    fun and(a: Any?, b: Any?): Any = if (isLong(a) || isLong(b)) toLong(a) and toLong(b) else toInt(a) and toInt(b)
+    fun or(a: Any?, b: Any?): Any = if (isLong(a) || isLong(b)) toLong(a) or toLong(b) else toInt(a) or toInt(b)
+    fun xor(a: Any?, b: Any?): Any = if (isLong(a) || isLong(b)) toLong(a) xor toLong(b) else toInt(a) xor toInt(b)
+    fun shl(a: Any?, b: Any?): Any = if (a is Long) a shl toInt(b) else toInt(a) shl toInt(b)
+    fun shr(a: Any?, b: Any?): Any = if (a is Long) a shr toInt(b) else toInt(a) shr toInt(b)
 
     fun intInt(v: Any?): Int = toInt(v)
+
+    fun longLong(v: Any?): Long = toLong(v)
 
     fun floatFloat(v: Any?): Float = toFloat(v)
 
@@ -73,7 +107,9 @@ object Numbers {
             return info.fields.all { equals(a.scope.load(it.index), b.scope.load(it.index), dataClasses) }
         }
         if (a is Number && b is Number) {
-            return if (isFloat(a) || isFloat(b)) toFloat(a) == toFloat(b) else toInt(a) == toInt(b)
+            return if (isFloat(a) || isFloat(b)) toFloat(a) == toFloat(b)
+            else if (isLong(a) || isLong(b)) toLong(a) == toLong(b)
+            else toInt(a) == toInt(b)
         }
         return a == b
     }
@@ -89,6 +125,7 @@ object Numbers {
         null -> 0
         is Int -> v
         is Byte -> v.toInt()
+        is Long -> (v xor (v ushr 32)).toInt()
         is Boolean -> if (v) 1231 else 1237
         is Float -> v.toRawBits()
         is String -> { var h = 0; for (c in v) h = 31 * h + c.code; h }

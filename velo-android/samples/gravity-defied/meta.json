@@ -1,0 +1,6 @@
+{
+  "id": "gravity-defied",
+  "name": "Gravity Defied",
+  "description": "A faithful port of the GPL J2ME motorcycle-trials game: exact 16.16 fixed-point mass-spring physics and all 30 original tracks, drawn from Canvas primitives.",
+  "interactive": true
+}

@@ -95,6 +95,7 @@ internal fun vmTypeToType(vmType: VmType, ctx: Context): Type = when (vmType) {
     is VmType.Any -> AnyType
     is VmType.Byte -> ByteType
     is VmType.Int -> IntType
+    is VmType.Long -> LongType
     is VmType.Float -> FloatType
     is VmType.Str -> StringType
     is VmType.Bool -> BoolType

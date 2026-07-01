@@ -39,6 +39,7 @@ object VeloGrammar {
         // Type keywords (will be handled by DefParselet)
         parser.registerKeyword(BYTE, DefParselet())
         parser.registerKeyword(INT, DefParselet())
+        parser.registerKeyword(LONG, DefParselet())
         parser.registerKeyword(FLOAT, DefParselet())
         parser.registerKeyword(STR, DefParselet())
         parser.registerKeyword(BOOL, DefParselet())

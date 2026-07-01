@@ -1,6 +1,6 @@
 {
   "id": "tetris",
   "name": "Tetris",
-  "description": "The classic falling-blocks game on a Canvas well, with stock Material3 buttons as the D-pad. Autonomous gravity runs on a second actor that repaints off the event loop; 7-bag pieces, a landing ghost, a next preview, line-clear scoring, levels, pause and game-over.",
+  "description": "Classic Tetris on a Canvas well with Material3 controls: 7-bag pieces, a landing ghost, next preview, scoring, levels and pause.",
   "interactive": true
 }

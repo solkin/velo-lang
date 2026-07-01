@@ -27,6 +27,10 @@ sealed class VmType {
         override fun toString() = "int"
     }
 
+    object Long : VmType() {
+        override fun toString() = "long"
+    }
+
     object Float : VmType() {
         override fun toString() = "float"
     }

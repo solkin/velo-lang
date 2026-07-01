@@ -26,6 +26,7 @@ object FloatType : Numeric {
         return when (name) {
             "str" -> FloatStrProp
             "float" -> NumIdentityProp
+            "long" -> FloatToLongProp
             "int" -> FloatToIntProp
             "byte" -> FloatToByteProp
             else -> null

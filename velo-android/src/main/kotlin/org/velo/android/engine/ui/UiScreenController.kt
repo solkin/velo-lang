@@ -172,10 +172,13 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
             } else {
                 bars.bottom
             }
-            // App bar absorbs the top inset itself, so its colour reaches under the status bar.
-            val appBar = appBarOf(screen)
-            appBar?.updatePadding(top = bars.top)
-            val screenTop = if (appBar != null) 0 else bars.top
+            // App bar(s) absorb the top inset themselves, so their colour reaches under the
+            // status bar. A screen may hold more than one app bar (e.g. a program that swaps
+            // between a menu body and a game body, each with its own bar); inset every one so
+            // whichever is currently visible is placed correctly.
+            val appBars = appBarsOf(screen)
+            appBars.forEach { it.updatePadding(top = bars.top) }
+            val screenTop = if (appBars.isNotEmpty()) 0 else bars.top
             val scroller = scrollableOf(screen)
             if (scroller != null) {
                 scroller.clipToPadding = false
@@ -204,6 +207,15 @@ class UiScreenController(private val activity: AppCompatActivity) : UiHost {
             }
         }
         return null
+    }
+
+    /** Every app bar in the tree — a screen may hold more than one (swapped bodies). */
+    private fun appBarsOf(view: View, out: MutableList<AppBarLayout> = mutableListOf()): MutableList<AppBarLayout> {
+        if (view is AppBarLayout) out.add(view)
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) appBarsOf(view.getChildAt(i), out)
+        }
+        return out
     }
 
     /** The screen's bottom navigation bar, if the program placed one as the last root child. */

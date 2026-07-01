@@ -28,6 +28,7 @@ object ByteType : Numeric {
             "char" -> ByteCharProp
             "byte" -> NumIdentityProp
             "int" -> ByteToIntProp
+            "long" -> IntToLongProp
             "float" -> IntToFloatProp
             else -> null
         }

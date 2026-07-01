@@ -1,6 +1,6 @@
 {
   "id": "bomberman",
   "name": "Bomberman",
-  "description": "The maze-bombing arcade classic in its original style on a wide scrolling Canvas arena (31x15, larger than the screen — it scrolls as the hero walks). A lattice of solid pillars between destructible bricks, bombs that burst in a cross of flame and chain off each other, power-ups hidden under bricks (extra fire range, extra bombs), wandering enemies and a hidden exit. The whole game advances on one actor that repaints off the event loop. Hold the D-pad to walk, tap BOMB or the field to drop a bomb.",
+  "description": "Bomberman on a wide scrolling Canvas arena: chain-detonating bombs, destructible bricks, hidden power-ups, roaming enemies and an exit.",
   "interactive": true
 }

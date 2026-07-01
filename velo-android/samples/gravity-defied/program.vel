@@ -1,0 +1,547 @@
+# Gravity Defied — the game shell around the physics engine in engine.vel.
+#
+# The engine owns an exact 16.16 fixed-point port of the original J2ME mass-spring
+# motorcycle; this file drives it at the original 30 ms tick, follows the bike with
+# a chase camera, and paints the track polyline, the two wheels and the frame from
+# Canvas primitives (the original's raster sprites are redrawn as simple vectors).
+# Controls mirror the J2ME layout: GAS / BRAKE and LEAN ◄ / ► (rider balance).
+
+import "engine"
+
+Terminal term = new Terminal()
+Time time = new Time()
+Ui ui = new Ui()
+Icons icons = new Icons()
+
+# ---- world ----------------------------------------------------------------------------------
+Track track = new Track()
+Physics phys = new Physics(track)
+
+int level = 0
+int league = 0   # selected bike league (0..3), chosen in the menu
+int W = 360
+int H = 600
+int camPX = 0
+int camPY = 0
+int camCx = 0    # camera (bike-body) position in point space, for the perspective fan
+int camCy = 0
+
+# Rider pose tables (8 skeleton points × 2), verbatim from Physics (m_wcaaI/m_DaaI/m_MaaI).
+# The sitting pose is WC; leaning interpolates WC<->DA (lean back) or WC<->MA (lean forward).
+array[int] POSE_WC = new array[int]{ 0x2cccc, 0 - 39321, 0x40000, 0xfffe0000, 0x60000, 0xffff0000, 0x70000, 0 - 39321, 0x48000, 6553, 16384, 0xfffdcccd, 13107, 0xfffecccd, 0x46666, 0x14ccc }
+array[int] POSE_DA = new array[int]{ 0x2e666, 0xfffe999a, 0x3e666, 0xfffc6667, 0x51999, 0xfffe4000, 0x60000, 0 - 42598, 0x49999, 6553, 0x10000, 0xfffecccd, 13107, 0xfffecccd, 0x46666, 0x14ccc }
+array[int] POSE_MA = new array[int]{ 0x26666, 13107, 0x48000, 0 - 13107, 0x59999, 0x19999, 0x63333, 0x2b333, 0x54ccc, 0x11999, 39321, 0xfffe8000, 13107, 0 - 52428, 0x46666, 0x14ccc }
+
+# input state
+bool gas = false
+bool brake = false
+bool leanF = false
+bool leanB = false
+
+bool paused = false
+bool started = false
+bool over = false        # run ended (crashed or finished) — physics frozen, awaiting a tap
+bool finished = false    # the run ended by crossing the finish line (vs a crash)
+bool running = true      # the tick loop is live; cleared when leaving the game
+bool inGame = false      # showing the game body (vs the menu body) on the single screen
+int state = 0  # last step() code
+int startMs = 0
+int finishMs = 0
+int pausedMs = 0     # total wall-clock ms spent paused, excluded from the run time
+int pauseStart = 0   # when the current pause began
+int loopToken = 0
+
+# ---- widgets: ONE screen, two bodies (menu / game) — flip visibility, no screen stack -------
+# Re-pushing a popped screen crashes on Android (a View keeps its old parent), so instead of a
+# screen stack we keep one screen and swap which body is visible. Each body has its OWN app bar
+# (the host now insets every app bar), so the game's Pause/Restart never appear on the menu.
+Container root = ui.column().fillWidth().fillHeight()
+Container menuBody = ui.column().fillWidth().fillHeight()   # filled near the end
+Container gameBody = ui.column().fillWidth().fillHeight()
+root.add(menuBody)
+root.add(gameBody)
+
+# game body: its app bar (Pause/Restart, back → menu), the canvas, and the control row
+AppBar gameBar = ui.appBar("Gravity Defied")
+gameBody.add(gameBar)
+Canvas view = ui.canvas().weight(1).fillWidth().background("#ffffff")
+gameBody.add(view)
+Button bGas = ui.tonalButton("GAS").weight(1)
+Button bBrake = ui.tonalButton("BRAKE").weight(1)
+Button bLeanL = ui.tonalButton("◄").weight(1)
+Button bLeanR = ui.tonalButton("►").weight(1)
+Container padRow = ui.row().fillWidth().padding(8).gap(8)
+padRow.add(bLeanL)
+padRow.add(bBrake)
+padRow.add(bGas)
+padRow.add(bLeanR)
+gameBody.add(padRow)
+gameBody.visible(false)                                     # start on the menu
+
+# menu body: its own (action-free) app bar and a scroller for the content
+AppBar menuBar = ui.appBar("Gravity Defied")
+menuBody.add(menuBar)
+Container menuScroll = ui.scroll().weight(1).fillWidth()
+menuBody.add(menuScroll)
+Container menuContent = ui.column().fillWidth()
+menuScroll.add(menuContent)
+
+# ---- coordinate transform (world -> screen) -------------------------------------------------
+# Bike nodes live in doubled fixed-point space; screen = pos>>14 recentred on the camera.
+# The world is y-up; the screen is y-down, so the vertical axis is negated (else the
+# bike would render upside down, below the track).
+func sxNode(int wx) int { return wx.shr(14) - camPX + W / 2 }
+func syNode(int wy) int { return camPY - wy.shr(14) + H / 2 }
+# Track points are single (un-doubled) space, so shift one less.
+func sxPt(int px) int { return px.shr(13) - camPX + W / 2 }
+func syPt(int py) int { return camPY - py.shr(13) + H / 2 }
+
+# ---- rendering (faithful perspective road, ported from Level._aiIV) --------------------------
+# The terrain is drawn as TWO curves: the surface polyline, and an upper curve where every
+# point is displaced toward an elevated vanishing point (the camera/bike, lifted by ELEV).
+# A rung joins the surface to the upper curve at every track point (denser where the track
+# bends, because the source data has more points on bends). The bike rides between the two.
+let ELEV = 0x320000            # vanishing-point height above the camera (point space)
+let ROADCOL = "#0aa00a"        # the original's (0,170,0) green
+
+# length of the point->vanishing-point vector (Physics._doIII), floored so we never /0.
+func perspK(int px, int py, int cx, int cy) int {
+    int r = hyp(cx - px, (cy + ELEV) - py)
+    if (r < 4) { r = 4 }
+    return r
+}
+# upper-curve screen coords for track point i (surface point + perspective offset).
+func upX(int i, int cx, int cy) int {
+    int r = perspK(track.px[i], track.py[i], cx, cy)
+    return sxPt(track.px[i] + fdiv(cx - track.px[i], r.shr(2)))
+}
+func upY(int i, int cx, int cy) int {
+    int r = perspK(track.px[i], track.py[i], cx, cy)
+    return syPt(track.py[i] + fdiv((cy + ELEV) - track.py[i], r.shr(2)))
+}
+
+func flagP(int i, int cx, int cy, str col) void {
+    int fx = upX(i, cx, cy)
+    int fy = upY(i, cx, cy)
+    view.drawLine(fx, fy, fx, fy - 40).color("#8a8f98").stroke(2)
+    view.drawRect(fx, fy - 40, 18, 12).color(col).fill()
+}
+
+func drawTrack() void {
+    view.drawRect(0, 0, W, H).color("#ffffff").fill()
+    # camera = bike body centre (point space); the perspective fans out from there.
+    int cx = phys.aaan[0].x.shr(1)
+    int cy = phys.aaan[0].y.shr(1)
+    # every segment overlapping the screen (the collision window is far too narrow to draw from).
+    int k = 0
+    while (k < track.count - 1) {
+        int sx0 = sxPt(track.px[k])
+        int sx1 = sxPt(track.px[k + 1])
+        if (sx1 >= 0 - 48 && sx0 <= W + 48) {
+            int sy0 = syPt(track.py[k])
+            int sy1 = syPt(track.py[k + 1])
+            int ux0 = upX(k, cx, cy)
+            int uy0 = upY(k, cx, cy)
+            int ux1 = upX(k + 1, cx, cy)
+            int uy1 = upY(k + 1, cx, cy)
+            view.drawLine(ux0, uy0, ux1, uy1).color(ROADCOL).stroke(2)   # upper curve
+            view.drawLine(sx0, sy0, ux0, uy0).color(ROADCOL).stroke(1)   # rung at this point
+            view.drawLine(sx0, sy0, sx1, sy1).color(ROADCOL).stroke(2)   # surface curve
+        }
+        k = k + 1
+    }
+    flagP(track.gotoIdx, cx, cy, "#1565c0")
+    flagP(track.finIdx, cx, cy, "#c62828")
+}
+
+# ---- bike: mid-road perspective placement + line art (ports _aiIIV/_doiV/_ifiIIV) -----------
+# A bike point is a world (node-space) coord; biX/biY drop it to point space, shift it HALF the
+# road depth toward the vanishing point (so the bike rides in the MIDDLE of the road, not on the
+# near edge), then project to screen.
+func biX(int wx, int wy) int {
+    int px = wx.shr(1)
+    int py = wy.shr(1)
+    int r = perspK(px, py, camCx, camCy)
+    return sxPt(px + fdiv(camCx - px, r.shr(2)).shr(1))
+}
+func biY(int wx, int wy) int {
+    int px = wx.shr(1)
+    int py = wy.shr(1)
+    int r = perspK(px, py, camCx, camCy)
+    return syPt(py + fdiv((camCy + ELEV) - py, r.shr(2)).shr(1))
+}
+func bl(int x0, int y0, int x1, int y1, str col, int w) void {
+    view.drawLine(biX(x0, y0), biY(x0, y0), biX(x1, y1), biY(x1, y1)).color(col).stroke(w)
+}
+
+# _doiV: a wheel = rim circle + 5 spokes that spin with the wheel's angle.
+func drawWheelP(int nx, int ny, int ang, str spokeCol) void {
+    int l1 = fm(FORA[0], 58982)      # spoke length = radius * 0.9
+    int i2 = 0
+    int c = fcos(ang)
+    int s = fsin(ang)
+    int i3 = l1
+    l1 = fm(c, l1) - fm(s, i2)
+    i2 = fm(s, i3) + fm(c, i2)
+    int c2 = fcos(0x141b2)           # 72 degrees between spokes
+    int s2 = fsin(0x141b2)
+    int k = 0
+    while (k < 5) {
+        bl(nx, ny, nx + l1, ny + i2, spokeCol, 1)
+        i3 = l1
+        l1 = fm(c2, l1) - fm(s2, i2)
+        i2 = fm(s2, i3) + fm(c2, i2)
+        k = k + 1
+    }
+    view.drawCircle(biX(nx, ny), biY(nx, ny), FORA[0].shr(14)).color("#111111").stroke(2)
+    view.drawCircle(biX(nx, ny), biY(nx, ny), 2).color("#111111").fill()
+}
+
+# _aiIIV: the bike frame (swingarm, forks, seat, handlebar) from the node positions.
+func drawFrame(int fdx, int fdy, int pdx, int pdy) void {
+    int rwx = phys.aaan[2].x
+    int rwy = phys.aaan[2].y
+    int k2 = rwx + fm(pdx, 32768)
+    int l2 = rwy + fm(pdy, 32768)
+    int i3 = rwx - fm(pdx, 32768)
+    int j3 = rwy - fm(pdy, 32768)
+    int k3 = phys.aaan[0].x + fm(fdx, 32768)
+    int l3 = phys.aaan[0].y + fm(fdy, 32768)
+    int i4 = k3 - fm(fdx, 0x20000)
+    int j4 = l3 - fm(fdy, 0x20000)
+    int k4 = i4 + fm(pdx, 0x10000)
+    int l4 = j4 + fm(pdy, 0x10000)
+    int i5 = i4 + fm(fdx, 49152) + fm(pdx, 49152)
+    int j5 = j4 + fm(fdy, 49152) + fm(pdy, 49152)
+    int i6 = phys.aaan[1].x
+    int j6 = phys.aaan[1].y
+    int k6 = phys.aaan[4].x - fm(fdx, 49152)
+    int l6 = phys.aaan[4].y - fm(fdy, 49152)
+    int i7 = k6 - fm(pdx, 32768)
+    int j7 = l6 - fm(pdy, 32768)
+    int k7 = (k6 - fm(fdx, 0x20000)) + fm(pdx, 16384)
+    int l7 = (l6 - fm(fdy, 0x20000)) + fm(pdy, 16384)
+    int i8 = phys.aaan[3].x
+    int j8 = phys.aaan[3].y
+    int i9 = (i8 + fm(pdx, 0x1c000)) - fm(fdx, 32768)
+    int j9 = (j8 + fm(pdy, 0x1c000)) - fm(fdy, 32768)
+    if (phys.IZ == false) {
+        bl(k2, l2, k4, l4, "#20242c", 2)
+        bl(i3, j3, i4, j4, "#20242c", 2)
+    }
+    bl(k3, l3, i4, j4, "#20242c", 2)
+    bl(k3, l3, i8, j8, "#20242c", 2)
+    bl(i5, j5, i8, j8, "#20242c", 2)
+    if (phys.IZ == false) {
+        bl(i8, j8, i6, j6, "#20242c", 2)
+        bl(i9, j9, i6, j6, "#20242c", 2)
+    }
+    bl(k4, l4, i7, j7, "#20242c", 2)
+    bl(i5, j5, k6, l6, "#20242c", 2)
+    bl(k6, l6, k7, l7, "#20242c", 2)
+    bl(i7, j7, k7, l7, "#20242c", 2)
+}
+
+# _ifiIIV (sitting pose): 8 skeleton points interpolated by lean (TI), drawn as lines.
+func drawRider(int fdx, int fdy, int pdx, int pdy) void {
+    int bx = phys.aaan[0].x
+    int by = phys.aaan[0].y
+    int ti = phys.TI
+    array[int] rx = new array[int](8)
+    array[int] ry = new array[int](8)
+    int k = 0
+    while (k < 8) {
+        int poseX = POSE_WC[k * 2]
+        int poseY = POSE_WC[k * 2 + 1]
+        if (ti < 32768) {
+            int t = fm(ti, 0x20000)
+            poseX = fm(POSE_DA[k * 2], 0x10000 - t) + fm(POSE_WC[k * 2], t)
+            poseY = fm(POSE_DA[k * 2 + 1], 0x10000 - t) + fm(POSE_WC[k * 2 + 1], t)
+        } else if (ti > 32768) {
+            int t = fm(ti - 32768, 0x20000)
+            poseX = fm(POSE_WC[k * 2], 0x10000 - t) + fm(POSE_MA[k * 2], t)
+            poseY = fm(POSE_WC[k * 2 + 1], 0x10000 - t) + fm(POSE_MA[k * 2 + 1], t)
+        }
+        rx[k] = bx + fm(pdx, poseX) + fm(fdx, poseY)
+        ry[k] = by + fm(pdy, poseX) + fm(fdy, poseY)
+        k = k + 1
+    }
+    # 5=hip 0=knee 1=seat 2=shoulder 4=elbow 7=hand ; 3=head
+    bl(rx[5], ry[5], rx[0], ry[0], "#111111", 3)     # lower leg
+    bl(rx[0], ry[0], rx[1], ry[1], "#111111", 3)     # upper leg
+    bl(rx[1], ry[1], rx[2], ry[2], "#20408a", 4)     # torso
+    bl(rx[2], ry[2], rx[4], ry[4], "#20408a", 3)     # upper arm
+    bl(rx[4], ry[4], rx[7], ry[7], "#111111", 3)     # forearm to bars
+    int hx = biX(rx[3], ry[3])
+    int hy = biY(rx[3], ry[3])
+    view.drawCircle(hx, hy, 4).color("#c62828").fill()
+    view.drawCircle(hx, hy, 4).color("#111111").stroke(1)
+}
+
+func drawBike() void {
+    # forward axis (node3 - node4) and its perpendicular, normalized.
+    int fdx = phys.aaan[3].x - phys.aaan[4].x
+    int fdy = phys.aaan[3].y - phys.aaan[4].y
+    int fl = hyp(fdx, fdy)
+    if (fl != 0) { fdx = fdiv(fdx, fl); fdy = fdiv(fdy, fl) }
+    int pdx = 0 - fdy
+    int pdy = fdx
+    drawWheelP(phys.aaan[1].x, phys.aaan[1].y, phys.aaan[1].wang, "#555555")
+    drawWheelP(phys.aaan[2].x, phys.aaan[2].y, phys.aaan[2].wang, "#555555")
+    drawFrame(fdx, fdy, pdx, pdy)
+    drawRider(fdx, fdy, pdx, pdy)
+}
+
+func drawHud() void {
+    # progress bar
+    int pr = phys.progress()
+    int barW = pr.shr(16) * W
+    barW = fm(pr, W * ONE).shr(16)
+    view.drawRect(0, 0, W, 4).color("#e0e0e0").fill()
+    view.drawRect(0, 0, barW, 4).color("#29aa27").fill()
+    # timer — frozen while over (finish/crash) and while paused (paused ms are excluded)
+    int t = 0
+    if (started && startMs > 0) {
+        int endMs = finishMs
+        if (endMs == 0) { endMs = time.millis() }
+        int adj = pausedMs
+        if (paused) { adj = adj + (time.millis() - pauseStart) }
+        t = (endMs - startMs - adj) / 10
+    }
+    view.drawText(8, 22, "TIME " + t.str(), 15).color("#111111")
+    view.drawText(W - 96, 22, track.trackName(level), 13).color("#666666")
+    # end-of-run overlay
+    if (over) {
+        str big = "CRASHED"
+        str col = "#c62828"
+        str sub = "tap to restart"
+        if (finished) {
+            big = "FINISH!  " + t.str()
+            col = "#1565c0"
+            sub = "tap for next track"
+        }
+        view.drawRect(0, H / 2 - 44, W, 88).color("#ffffff").alpha(80).fill()
+        view.drawText(W / 2 - big.len() * 5, H / 2 - 14, big, 26).color(col)
+        view.drawText(W / 2 - sub.len() * 3, H / 2 + 20, sub, 14).color("#333333")
+    } else if (paused) {
+        view.drawRect(0, H / 2 - 44, W, 88).color("#ffffff").alpha(80).fill()
+        view.drawText(W / 2 - 52, H / 2 - 6, "PAUSED", 26).color("#1565c0")
+        view.drawText(W / 2 - 54, H / 2 + 26, "tap to resume", 14).color("#333333")
+    }
+}
+
+func draw() void {
+    # Frame boundary: publish the previous frame and reset the op list (double buffering).
+    # Without this the draw ops accumulate every tick — flicker, smearing, then a freeze.
+    view.clear()
+    phys.publish()
+    camPX = phys.camX()
+    camPY = phys.camY()
+    camCx = phys.aaan[0].x.shr(1)   # camera (bike body) in point space, for the perspective fan
+    camCy = phys.aaan[0].y.shr(1)
+    # the physics step already advanced the active [ea, fa] window during collision
+    drawTrack()
+    drawBike()
+    drawHud()
+}
+
+# ---- game loop ------------------------------------------------------------------------------
+actor class Ticker() {
+    Time t = new Time()
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis)
+        done(token)
+    }
+}
+actor[Ticker] ticker = new Ticker()
+let TICK_MS = 30
+let STEPS_PER_TICK = 2   # physics updates per rendered frame — matches the original
+
+func applyInput() void {
+    int j = 0
+    if (gas) { j = 1 } else if (brake) { j = 0 - 1 }
+    int i = 0
+    if (leanF) { i = 1 } else if (leanB) { i = 0 - 1 }
+    phys.lean(j, i)
+    phys.setButtons(if (gas) then 1 else 0)
+    if (gas || brake) {
+        started = true
+        if (startMs == 0) { startMs = time.millis() }
+    }
+}
+
+func step() void {
+    if (paused == false && over == false) {
+        applyInput()
+        # Advance the physics several times per rendered frame — the original ran the
+        # simulation ~2x a frame, so one step per frame felt half-speed.
+        int n = 0
+        while (n < STEPS_PER_TICK && over == false) {
+            state = phys.step()
+            phys.snap()
+            # 1/2 = crossed the finish line, 3/5 = crashed or stuck. Either ends the run;
+            # freeze the physics and wait for a tap (restart, or advance on a finish).
+            if (state == 1 || state == 2) {
+                if (finishMs == 0) { finishMs = time.millis() }
+                over = true
+                finished = true
+            } else if (state == 3 || state == 5) {
+                if (finishMs == 0) { finishMs = time.millis() }   # freeze the clock on a crash too
+                over = true
+                finished = false
+            }
+            n = n + 1
+        }
+    }
+    draw()
+}
+
+func tick(int token) void {
+    if (running && token == loopToken) {
+        # Schedule the NEXT tick before running this frame, so a transient error inside
+        # step()/draw() can't break the chain and freeze the loop.
+        async ticker.after(TICK_MS, token, func(int x) void {
+            tick(x)
+        })
+        step()
+    }
+}
+
+func newGame() void {
+    phys.setLeague(league)   # bike difficulty chosen in the menu
+    phys.loadLevel(level)
+    started = false
+    over = false
+    finished = false
+    paused = false
+    startMs = 0
+    finishMs = 0
+    pausedMs = 0
+    pauseStart = 0
+    state = 0
+    gas = false; brake = false; leanF = false; leanB = false
+}
+
+# Pause/resume, accumulating the paused wall-clock so it is excluded from the run time.
+func setPaused(bool p) void {
+    if (p == paused) { return }
+    if (p) { pauseStart = time.millis() }
+    else { pausedMs = pausedMs + (time.millis() - pauseStart) }
+    paused = p
+}
+
+# (Re)start the tick loop on a fresh generation. Bumping loopToken retires any loop that is
+# still alive, so this is safe to call whether or not one is running — every game start,
+# restart and "next track" goes through here, so the loop can never be left dead.
+func startLoop() void {
+    running = true
+    loopToken = loopToken + 1
+    tick(loopToken)
+}
+
+# ---- input ----------------------------------------------------------------------------------
+bGas.onPress(func() void { gas = true }, func() void { gas = false })
+bBrake.onPress(func() void { brake = true }, func() void { brake = false })
+bLeanL.onPress(func() void { leanB = true }, func() void { leanB = false })
+bLeanR.onPress(func() void { leanF = true }, func() void { leanF = false })
+
+# When the run is over, a tap anywhere on the track restarts (after a crash) or
+# advances to the next level (after a finish).
+view.onPointerDown(func(int x, int y) void {
+    if (over) {
+        if (finished) { level = (level + 1) % track.count }
+        newGame()
+        startLoop()
+    } else if (paused) {
+        setPaused(false)        # tap the play button to resume
+    }
+})
+
+view.onResize(func(int w, int h) void {
+    if (w > 0 && h > 0) {
+        W = w
+        H = h
+        draw()
+    }
+})
+
+# ---- switch between the menu and the game (no screen push/pop) -------------------------------
+func toMenu() void {
+    running = false
+    loopToken = loopToken + 1     # kill any in-flight tick so the loop truly stops
+    inGame = false
+    gameBody.visible(false)
+    menuBody.visible(true)
+}
+
+func startLevel(int idx) void {
+    level = idx
+    newGame()
+    inGame = true
+    menuBody.visible(false)
+    gameBody.visible(true)
+    startLoop()
+}
+
+# Game app bar: Pause/Restart, and the arrow returns to the menu.
+gameBar.action("Pause", icons.pause(), func() void {
+    if (over == false) { setPaused(paused == false) }
+})
+gameBar.action("Restart", icons.refresh(), func() void {
+    newGame()
+    startLoop()
+})
+gameBar.onNav(func() void { toMenu() })
+# Menu app bar arrow leaves the app.
+menuBar.onNav(func() void { ui.close() })
+
+# ---- menu body content: pick a league and a level (native Material3) -------------------------
+Container leagueSection = ui.column().fillWidth().padding(16).gap(10)
+leagueSection.add(ui.text("Bike league"))
+Container leagueRow = ui.row().fillWidth().gap(8)
+Chip lg0 = ui.chip("League 1").checkable(true).checked(true)
+Chip lg1 = ui.chip("League 2").checkable(true)
+Chip lg2 = ui.chip("League 3").checkable(true)
+Chip lg3 = ui.chip("League 4").checkable(true)
+func pickLeague(int n) void {
+    league = n
+    lg0.checked(n == 0)
+    lg1.checked(n == 1)
+    lg2.checked(n == 2)
+    lg3.checked(n == 3)
+}
+lg0.onClick(func() void { pickLeague(0) })
+lg1.onClick(func() void { pickLeague(1) })
+lg2.onClick(func() void { pickLeague(2) })
+lg3.onClick(func() void { pickLeague(3) })
+leagueRow.add(lg0)
+leagueRow.add(lg1)
+leagueRow.add(lg2)
+leagueRow.add(lg3)
+leagueSection.add(leagueRow)
+leagueSection.add(ui.text("Select level"))
+menuContent.add(leagueSection)
+
+# Tappable Material list items (edge-to-edge, ripple on tap).
+int levelCount = track.totalTracks()
+int li = 0
+while (li < levelCount) {
+    int idx = li
+    ListItem row = ui.listItem((li + 1).str() + ".  " + track.trackName(li))
+    row.supporting("League " + (track.trackLeague(li) + 1).str())
+    row.fillWidth()
+    row.onClick(func() void { startLevel(idx) })
+    menuContent.add(row)
+    li = li + 1
+}
+
+# ---- go -------------------------------------------------------------------------------------
+phys.init()      # allocate the node/spring/render vectors and the track collision thresholds
+ui.open(root)
+# System (hardware) back. Once a handler is registered the host stops auto-popping, so the
+# menu case must close the screen itself; the game case just returns to the menu.
+ui.onBack(func() void {
+    if (inGame) { toMenu() } else { ui.close() }
+})
+
+term.println("Gravity Defied — pick a league and a level to ride.")

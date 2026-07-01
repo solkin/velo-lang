@@ -31,6 +31,7 @@ object IntType : Numeric {
             "str" -> IntStrProp
             "char" -> IntCharProp
             "int" -> NumIdentityProp
+            "long" -> IntToLongProp
             "float" -> IntToFloatProp
             "byte" -> IntToByteProp
             else -> null

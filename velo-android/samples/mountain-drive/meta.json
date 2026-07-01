@@ -1,6 +1,6 @@
 {
   "id": "mountain-drive",
   "name": "Mountain Drive",
-  "description": "A first-person arcade racer down a winding mountain highway, built on a from-scratch fixed-point pseudo-3D road engine (no floats, no trig natives — the road is a ribbon of trapezoid segments that shift for curves and hills, the classic arcade technique). Sky, parallax mountains and roadside scenery scroll past as you drive; the dashboard below the windscreen has an analogue speedometer, tachometer, gear and a wheel that turns as you steer. Hold one finger to accelerate and steer by how far it sits from centre — lean into the curves and brake for the hairpins.",
+  "description": "A first-person arcade racer on a from-scratch fixed-point pseudo-3D road engine, with curves, hills, scrolling scenery and a live dashboard.",
   "interactive": true
 }

@@ -40,6 +40,7 @@ object TypeParser {
         return when (val value = token.value) {
             BYTE -> ByteType
             INT -> IntType
+            LONG -> LongType
             FLOAT -> FloatType
             STR -> StringType
             BOOL -> BoolType

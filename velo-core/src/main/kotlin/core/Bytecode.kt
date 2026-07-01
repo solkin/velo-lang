@@ -18,7 +18,7 @@ object Bytecode {
 
     const val MAGIC = 0x5e10
     const val VERSION_MAJOR = 0x0b
-    const val VERSION_MINOR = 0x02
+    const val VERSION_MINOR = 0x03
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -27,6 +27,7 @@ object Bytecode {
     private const val TYPE_BYTE = 0x02
     private const val TYPE_INT = 0x03
     private const val TYPE_FLOAT = 0x04
+    private const val TYPE_LONG = 0x0e
     private const val TYPE_STR = 0x05
     private const val TYPE_BOOL = 0x06
     private const val TYPE_TUPLE = 0x07
@@ -150,6 +151,10 @@ object Bytecode {
                 out.writeByte(TYPE_INT)
                 out.writeInt(value)
             }
+            is Long -> {
+                out.writeByte(TYPE_LONG)
+                out.writeLong(value)
+            }
             is Float -> {
                 out.writeByte(TYPE_FLOAT)
                 out.writeFloat(value)
@@ -175,6 +180,7 @@ object Bytecode {
             is VmType.Any -> out.writeByte(TYPE_ANY)
             is VmType.Byte -> out.writeByte(TYPE_BYTE)
             is VmType.Int -> out.writeByte(TYPE_INT)
+            is VmType.Long -> out.writeByte(TYPE_LONG)
             is VmType.Float -> out.writeByte(TYPE_FLOAT)
             is VmType.Str -> out.writeByte(TYPE_STR)
             is VmType.Bool -> out.writeByte(TYPE_BOOL)
@@ -305,6 +311,11 @@ object Bytecode {
             0x16 -> Op.IntToFloat
             0x17 -> Op.FloatToInt
             0x1f -> Op.IntToByte
+            0x4a -> Op.IntToLong
+            0x4b -> Op.LongToInt
+            0x4c -> Op.LongToFloat
+            0x4d -> Op.FloatToLong
+            0x4e -> Op.LongStr
             0x49 -> Op.FloatStr
             0x18 -> Op.Frame(num = inp.readInt())
             0x19 -> Op.MethodLoad(name = inp.readUTF())
@@ -361,6 +372,7 @@ object Bytecode {
         return when (val tag = inp.readByte().toInt()) {
             TYPE_BYTE -> inp.readByte()
             TYPE_INT -> inp.readInt()
+            TYPE_LONG -> inp.readLong()
             TYPE_FLOAT -> inp.readFloat()
             TYPE_STR -> inp.readUTF()
             TYPE_BOOL -> inp.readBoolean()
@@ -375,6 +387,7 @@ object Bytecode {
             TYPE_ANY -> VmType.Any
             TYPE_BYTE -> VmType.Byte
             TYPE_INT -> VmType.Int
+            TYPE_LONG -> VmType.Long
             TYPE_FLOAT -> VmType.Float
             TYPE_STR -> VmType.Str
             TYPE_BOOL -> VmType.Bool

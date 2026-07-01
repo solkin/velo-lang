@@ -48,6 +48,12 @@ data class FuncNode(
                 funcOps.add(Op.Load(index = v.index))
                 funcOps.add(Op.IntToFloat)
                 funcOps.add(Op.Store(index = v.index))
+            } else if (v.type === LongType) {
+                // A long parameter may be passed a narrower int/byte argument; normalise
+                // it to a genuine long on entry (no-op when it is already a long).
+                funcOps.add(Op.Load(index = v.index))
+                funcOps.add(Op.IntToLong)
+                funcOps.add(Op.Store(index = v.index))
             }
         }
         body.compile(funcOps)

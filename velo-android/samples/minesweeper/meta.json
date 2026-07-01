@@ -1,6 +1,6 @@
 {
   "id": "minesweeper",
   "name": "Minesweeper",
-  "description": "The classic Windows-XP Minesweeper, drawn pixel-for-pixel on a Canvas: beveled silver cells, the red LED mine counter and timer, and the yellow smiley reset button. Tap to open, long-press to cycle flag → ? → clear; flood-fill reveal, a safe first click, classic colored numbers, win/lose faces and Beginner/Intermediate boards.",
+  "description": "Classic Windows Minesweeper on a Canvas: beveled cells, LED counter and timer, smiley reset, flood-fill reveal and flags.",
   "interactive": true
 }

@@ -76,6 +76,17 @@ class TokenStream(private val input: Input) {
         STD, FLOAT, HEX, BIN
     }
 
+    // A decimal magnitude keeps `int` when it fits a signed 32-bit int, otherwise widens to `long`.
+    private fun narrowIntOrLong(v: Long): Any =
+        if (v in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()) v.toInt() else v
+
+    // Hex/bin magnitudes up to 32 bits collapse to the signed `int` with that bit pattern
+    // (matching Java `0xFFFFFFFF == -1`); anything wider stays `long`.
+    private fun radixIntOrLong(digits: String, radix: Int): Any {
+        val v = digits.toLong(radix)
+        return if (v in 0..0xFFFFFFFFL) v.toInt() else v
+    }
+
     private fun readNumber(): Token {
         var format = NumberFormat.STD
         var rawNumber = ""
@@ -120,17 +131,19 @@ class TokenStream(private val input: Input) {
                 }
 
                 'b' -> {
-                    val prefix = rawNumber.take(rawNumber.length - 1)
-                    if (format != NumberFormat.STD) {
-                        // Number format is already non-standard - stop accumulating number
-                        return false
-                    }
-                    if (Integer.parseInt(prefix) == 0) {
-                        format = NumberFormat.BIN
-                        return true
-                    } else {
-                        // Invalid prefix - stop accumulating number
-                        return false
+                    // A leading `0b` starts a binary literal, but `b` is also a hex digit:
+                    // inside a HEX number (e.g. 0x4b00000) it must be accepted, not treated
+                    // as a prefix. Only run the binary-prefix logic while still in STD form;
+                    // otherwise fall through to the format-based digit check below.
+                    if (format == NumberFormat.STD) {
+                        val prefix = rawNumber.take(rawNumber.length - 1)
+                        if (Integer.parseInt(prefix) == 0) {
+                            format = NumberFormat.BIN
+                            return true
+                        } else {
+                            // Invalid prefix - stop accumulating number
+                            return false
+                        }
                     }
                 }
 
@@ -143,14 +156,17 @@ class TokenStream(private val input: Input) {
             }
         }).replace("_", "")
         val value =  when (format) {
-            NumberFormat.STD -> number.toInt()
+            // Decimal literals that overflow a 32-bit int become `long`; the rest stay `int`.
+            NumberFormat.STD -> narrowIntOrLong(number.toLong())
             NumberFormat.FLOAT -> number.toFloat()
+            // Hex/bin up to 32 bits keep the Java int bit pattern (so 0xfffd8000 is a negative
+            // int, not a positive long); wider values become `long`.
             NumberFormat.HEX -> number.substringAfter('x')
                 .takeIf { !it.isEmpty() }
-                ?.toInt(radix = 16) ?: 0
+                ?.let { radixIntOrLong(it, 16) } ?: 0
             NumberFormat.BIN -> number.substringAfter('b')
                 .takeIf { !it.isEmpty() }
-                ?.toInt(radix = 2) ?: 0
+                ?.let { radixIntOrLong(it, 2) } ?: 0
         }
         return Token(
             type = TokenType.NUMBER,
@@ -413,6 +429,7 @@ class TokenStream(private val input: Input) {
 
 const val BYTE = "byte"
 const val INT = "int"
+const val LONG = "long"
 const val FLOAT = "float"
 const val STR = "str"
 const val BOOL = "bool"
@@ -432,6 +449,7 @@ const val SELF = "Self"
 val stdTypesSet = setOf(
     BYTE,
     INT,
+    LONG,
     FLOAT,
     STR,
     BOOL,

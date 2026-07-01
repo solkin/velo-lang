@@ -1,6 +1,6 @@
 {
   "id": "benchmark",
   "name": "VM Benchmark",
-  "description": "A console benchmark that times the core things the VM does — integer arithmetic, recursion, array read/write, string building, object allocation and hash-map churn — then opens a Material UI screen, paints many canvas shapes and closes it to time the UI bridge. The same workload runs as a Java sample on nanovm for a side-by-side comparison.",
+  "description": "A console micro-benchmark timing the VM's core operations and the UI bridge; a matching Java/nanovm sample runs side by side.",
   "interactive": false
 }

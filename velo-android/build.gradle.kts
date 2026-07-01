@@ -143,8 +143,14 @@ abstract class CompileVeloSamplesTask : DefaultTask() {
 
         for (dir in sampleDirs) {
             val id = dir.name
-            val vel = dir.listFiles()?.firstOrNull { it.isFile && it.extension == "vel" }
-                ?: error("sample '$id' has no .vel source")
+            // A sample may split its sources across several .vel files (an engine plus the game,
+            // say) that pull each other in via `import`. The compile entry point is `program.vel`
+            // when present, else the sole .vel file — imported siblings resolve relative to it and
+            // are bundled into the one program.vbc.
+            val vels = dir.listFiles()?.filter { it.isFile && it.extension == "vel" }.orEmpty()
+            val vel = vels.firstOrNull { it.name == "program.vel" }
+                ?: vels.singleOrNull()
+                ?: error("sample '$id' needs a program.vel (or a single .vel source)")
             val sampleOut = samplesOut.resolve(id).apply { mkdirs() }
             val vbc = sampleOut.resolve("program.vbc")
 

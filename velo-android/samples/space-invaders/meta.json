@@ -1,6 +1,6 @@
 {
   "id": "space-invaders",
   "name": "Space Invaders",
-  "description": "The 1978 Taito arcade classic in its original style: white pixel-art aliens (squid, crab, octopus) descending in a stepping formation that accelerates as their ranks thin, four green erodable shield bunkers, a red mystery saucer crossing the top for bonus points, the green laser cannon firing one shot at a time, raining alien bombs, waves, lives and score. The whole game advances on one actor that repaints off the event loop. Hold the buttons to move and fire, or drag the field to aim and tap to shoot.",
+  "description": "The 1978 Space Invaders: an accelerating alien formation, erodable bunkers, a mystery saucer, waves and score, on a repainting actor.",
   "interactive": true
 }

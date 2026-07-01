@@ -96,11 +96,12 @@ fun assignableArg(target: Type, source: Type): Boolean =
 fun numericRank(t: Type): Int? = when (t) {
     ByteType -> 0
     IntType -> 1
-    FloatType -> 2
+    LongType -> 2
+    FloatType -> 3
     else -> null
 }
 
-/** Does a value of [source] widen losslessly to [target] (byte -> int -> float)? */
+/** Does a value of [source] widen losslessly to [target] (byte -> int -> long -> float)? */
 fun numWidens(target: Type, source: Type): Boolean {
     val tr = numericRank(target) ?: return false
     val sr = numericRank(source) ?: return false
@@ -123,9 +124,15 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
     val tr = numericRank(target) ?: return null
     val sr = numericRank(source) ?: return null
     if (sr == tr) return target
-    if (sr < tr) {                                  // widening
-        if (target === FloatType) ctx.add(Op.IntToFloat)  // int/byte -> float
-        return target                               // byte -> int flows as int already
+    if (sr < tr) {                                  // widening (byte -> int -> long -> float)
+        when (target) {
+            LongType -> ctx.add(Op.IntToLong)              // int/byte -> long
+            FloatType ->                                   // -> float
+                if (source === LongType) ctx.add(Op.LongToFloat)
+                else ctx.add(Op.IntToFloat)                // int/byte -> float
+            else -> {}                                     // byte -> int flows as int already
+        }
+        return target
     }
     if (intLiteral != null && target === ByteType) { // int literal -> byte
         if (intLiteral !in -128..255) {
@@ -181,6 +188,47 @@ object FloatToByteProp : Prop {
 /** `byte.int()` — a byte already flows as its int value, so no conversion op. */
 object ByteToIntProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type = IntType
+}
+
+/** `int.long()` / `byte.long()` — widen to a 64-bit long. */
+object IntToLongProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.IntToLong)
+        return LongType
+    }
+}
+
+/** `long.int()` — take the low 32 bits. */
+object LongToIntProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.LongToInt)
+        return IntType
+    }
+}
+
+/** `long.float()` — widen to float (may lose precision). */
+object LongToFloatProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.LongToFloat)
+        return FloatType
+    }
+}
+
+/** `float.long()` — truncate toward zero to a 64-bit long. */
+object FloatToLongProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.FloatToLong)
+        return LongType
+    }
+}
+
+/** `long.byte()` — narrow to the low 32 bits then the low 8 bits. */
+object LongToByteProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.LongToInt)
+        ctx.add(Op.IntToByte)
+        return ByteType
+    }
 }
 
 fun inferTypeBindings(

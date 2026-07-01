@@ -160,6 +160,31 @@ sealed interface Op {
         override val opcode get() = 0x1f
     }
 
+    /** Widen an int (or byte) to a long. Stack: `[int] -> [long]` */
+    object IntToLong : Op {
+        override val opcode get() = 0x4a
+    }
+
+    /** Narrow a long to an int (low 32 bits). Stack: `[long] -> [int]` */
+    object LongToInt : Op {
+        override val opcode get() = 0x4b
+    }
+
+    /** Widen a long to a float. Stack: `[long] -> [float]` */
+    object LongToFloat : Op {
+        override val opcode get() = 0x4c
+    }
+
+    /** Narrow a float to a long, truncating toward zero. Stack: `[float] -> [long]` */
+    object FloatToLong : Op {
+        override val opcode get() = 0x4d
+    }
+
+    /** Stack: `[long] -> [str]` */
+    object LongStr : Op {
+        override val opcode get() = 0x4e
+    }
+
     /** Parse a decimal string. Stack: `[str] -> [int]` */
     object StrInt : Op {
         override val opcode get() = 0x40

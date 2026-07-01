@@ -22,6 +22,7 @@ data class UnaryNode(
                 }
                 when (operandType) {
                     is ByteType -> ctx.add(Op.Push(0.toByte()))
+                    is LongType -> ctx.add(Op.Push(0L))
                     is FloatType -> ctx.add(Op.Push(0f))
                     else -> ctx.add(Op.Push(0))
                 }

@@ -348,41 +348,46 @@ object Interpreter {
 
         is Op.And -> {
             val frame = ctx.currentFrame()
-            val val1 = frame.subs.pop().getInt()
-            val val2 = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(val1.and(val2)))
+            val val1 = frame.subs.pop().getNumber()
+            val val2 = frame.subs.pop().getNumber()
+            val res: Any = if (val1 is Long || val2 is Long) val1.toLong().and(val2.toLong()) else val1.toInt().and(val2.toInt())
+            frame.subs.push(ValueRecord(res))
             pc + 1
         }
 
         is Op.Or -> {
             val frame = ctx.currentFrame()
-            val val1 = frame.subs.pop().getInt()
-            val val2 = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(val1.or(val2)))
+            val val1 = frame.subs.pop().getNumber()
+            val val2 = frame.subs.pop().getNumber()
+            val res: Any = if (val1 is Long || val2 is Long) val1.toLong().or(val2.toLong()) else val1.toInt().or(val2.toInt())
+            frame.subs.push(ValueRecord(res))
             pc + 1
         }
 
         is Op.Xor -> {
             val frame = ctx.currentFrame()
-            val val1 = frame.subs.pop().getInt()
-            val val2 = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(val1.xor(val2)))
+            val val1 = frame.subs.pop().getNumber()
+            val val2 = frame.subs.pop().getNumber()
+            val res: Any = if (val1 is Long || val2 is Long) val1.toLong().xor(val2.toLong()) else val1.toInt().xor(val2.toInt())
+            frame.subs.push(ValueRecord(res))
             pc + 1
         }
 
         is Op.Shl -> {
             val frame = ctx.currentFrame()
-            val bits = frame.subs.pop().getInt()
-            val value = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(value.shl(bits)))
+            val bits = frame.subs.pop().getNumber().toInt()
+            val value = frame.subs.pop().getNumber()
+            val res: Any = if (value is Long) value.shl(bits) else value.toInt().shl(bits)
+            frame.subs.push(ValueRecord(res))
             pc + 1
         }
 
         is Op.Shr -> {
             val frame = ctx.currentFrame()
-            val bits = frame.subs.pop().getInt()
-            val value = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(value.shr(bits)))
+            val bits = frame.subs.pop().getNumber().toInt()
+            val value = frame.subs.pop().getNumber()
+            val res: Any = if (value is Long) value.shr(bits) else value.toInt().shr(bits)
+            frame.subs.push(ValueRecord(res))
             pc + 1
         }
 
@@ -424,6 +429,37 @@ object Interpreter {
         is Op.IntToByte -> {
             val frame = ctx.currentFrame()
             frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toByte()))
+            pc + 1
+        }
+
+        is Op.IntToLong -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toLong()))
+            pc + 1
+        }
+
+        is Op.LongToInt -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toInt()))
+            pc + 1
+        }
+
+        is Op.LongToFloat -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toFloat()))
+            pc + 1
+        }
+
+        is Op.FloatToLong -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toLong()))
+            pc + 1
+        }
+
+        is Op.LongStr -> {
+            val frame = ctx.currentFrame()
+            val v = frame.subs.pop().getLong()
+            frame.subs.push(ValueRecord(v.toString()))
             pc + 1
         }
 

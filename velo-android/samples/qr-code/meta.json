@@ -1,6 +1,6 @@
 {
   "id": "qr-code",
   "name": "QR Generator",
-  "description": "A native-style Material3 app that turns text into a scannable QR code, with the whole QR standard — Reed-Solomon error correction, data masking and BCH format codes — implemented in Velo. Switch between content types (Text, URL, Wi-Fi, Email, Phone, SMS, Geo, Contact) and pick an error-correction level.",
+  "description": "A Material3 app that turns text into a scannable QR code, with the full QR standard (Reed-Solomon, masking, BCH) implemented in Velo.",
   "interactive": true
 }

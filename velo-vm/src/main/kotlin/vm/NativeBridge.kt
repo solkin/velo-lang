@@ -174,6 +174,7 @@ internal fun VmType.toBoxedJvm(): Class<*> = when (this) {
     is VmType.Any -> Any::class.java
     is VmType.Byte -> java.lang.Byte::class.java
     is VmType.Int -> java.lang.Integer::class.java
+    is VmType.Long -> java.lang.Long::class.java
     is VmType.Float -> java.lang.Float::class.java
     is VmType.Bool -> java.lang.Boolean::class.java
     is VmType.Str -> String::class.java

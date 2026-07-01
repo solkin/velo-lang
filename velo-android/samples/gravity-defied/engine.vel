@@ -1,0 +1,1070 @@
+# Gravity Defied — physics engine, transcribed 1:1 from the GPL J2ME game
+# (github.com/evgenyzinoviev/gravitydefied, decompiled Java: Game/Physics.java,
+# Game/FPMath.java, Levels/{Loader,Level}.java).
+#
+# The bike is a 6-node mass-spring rig integrated at a fixed 30 ms tick with an
+# adaptive sub-step that backs off and retries whenever a node would tunnel
+# through the track polyline. All maths is 16.16 fixed-point exactly as in the
+# original; the products of two 16.16 values need a 64-bit intermediate before
+# the `>> 16` renormalisation, which is why this sample requires Velo's `long`.
+#
+# Field-name key (the original names are obfuscated single letters):
+#   Vec  : a physics vector, reused for nodes AND springs
+#          x,y = position        e,d   = velocity (vx,vy)
+#          fx,fy = force accum    wv    = wheel angular velocity
+#          wa  = wheel torque     wang  = wheel angle
+#          (spring reuse: x = stiffness, y = rest length, wang = damping)
+#   Node : a point mass — rad=radius, radIdx=radius index, invm=inv-mass*grav,
+#          torque=wheel drive factor, s[6] = six Vec state slots (double buffered)
+
+import "tracks"
+
+# ---- fixed-point core (16.16) ---------------------------------------------------------------
+let ONE = 65536  # 1.0 in 16.16
+let HALF_PI = 0x19220
+let PI = 0x3243f
+
+func iabs(int v) int { return if (v < 0) then 0 - v else v }
+
+# (int)((long)a * (long)b >> 16) — the fixed-point multiply.
+func fm(int a, int b) int {
+    return (a.long() * b.long()).shr(16).int()
+}
+
+# (int)(((long)a << 32) / (long)b >> 16) — 16.16 divide a/b (== FPMath.divide).
+func fdiv(int a, int b) int {
+    return (a.long().shl(32) / b.long()).shr(16).int()
+}
+
+# Physics._doIII: a fast |(j, i1)| length approximation (no sqrt).
+func hyp(int j, int i1) int {
+    int aj = iabs(j)
+    int ai = iabs(i1)
+    int l1 = aj
+    int i2 = ai
+    if (ai >= aj) { l1 = ai; i2 = aj }
+    return (64448.long() * l1.long()).shr(16).int() + (28224.long() * i2.long()).shr(16).int()
+}
+
+# ---- baked quarter sine table (index 0..64, scaled by 65536) --------------------------------
+# FPMath.sin(i) returns round(sin(i / 65536.0) * 65536); i is a 16.16 radian angle.
+# Table samples sin over [0, HALF_PI] at 64 steps; range reduction wraps the input.
+array[int] SINQ = new array[int]{
+    0, 1608, 3215, 4821, 6423, 8022, 9616, 11204, 12785, 14359,
+    15923, 17479, 19024, 20557, 22078, 23586, 25079, 26557, 28020, 29465,
+    30893, 32302, 33692, 35061, 36409, 37736, 39039, 40319, 41575, 42806,
+    44011, 45189, 46340, 47464, 48558, 49624, 50660, 51665, 52639, 53581,
+    54491, 55368, 56212, 57022, 57797, 58538, 59243, 59913, 60547, 61144,
+    61705, 62228, 62714, 63162, 63571, 63943, 64276, 64571, 64826, 65043,
+    65220, 65358, 65457, 65516, 65536
+}
+
+let TWO_PI = 0x6487f  # 2*PI in 16.16
+let QUARTER = 0x19220  # HALF_PI
+
+# sin over [0, HALF_PI] by interpolating the 64-step quarter table.
+func sinQ(int a) int {
+    int idx = fdiv(a, QUARTER)  # 0..ONE fraction of the quarter
+    int p = fm(idx, 64 * ONE).shr(16)  # 0..64 table position (16.16 -> int index)
+    if (p < 0) { p = 0 }
+    if (p >= 64) { return SINQ[64] }
+    int frac = fm(idx, 64 * ONE) - p.shl(16)
+    int lo = SINQ[p]
+    int hi = SINQ[p + 1]
+    return lo + fm(hi - lo, frac)
+}
+
+# sin of a 16.16 radian angle, via the quarter table with quadrant reflection.
+func fsin(int a) int {
+    a = a % TWO_PI
+    if (a < 0) { a = a + TWO_PI }
+    if (a <= QUARTER) { return sinQ(a) }
+    if (a <= PI) { return sinQ(PI - a) }
+    if (a <= PI + QUARTER) { return 0 - sinQ(a - PI) }
+    return 0 - sinQ(TWO_PI - a)
+}
+
+func fcos(int a) int { return fsin(a + HALF_PI) }
+
+# ---- physics vector (SimpleMenuElement, used as a node state slot or a spring) --------------
+class Vec() {
+    int x = 0
+    int y = 0
+    int e = 0  # velocity x (m_eI)
+    int d = 0  # velocity y (m_dI)
+    int fx = 0  # force accumulator x (m_nullI)
+    int fy = 0  # force accumulator y (m_longI)
+    int wv = 0  # wheel angular velocity (m_gotoI)
+    int wa = 0  # wheel torque/accel (m_fI)
+    int wang = 0  # wheel angle; spring damping (m_bI)
+
+    func reset() void {
+        x = 0; y = 0; e = 0; d = 0; fx = 0; fy = 0; wv = 0; wa = 0; wang = 0
+    }
+
+    # Velo fields are read-only from outside the owner, so the simulation mutates
+    # a Vec through these setters (reads stay as plain field access).
+    func setX(int v) void { x = v }
+    func setY(int v) void { y = v }
+    func setE(int v) void { e = v }
+    func setD(int v) void { d = v }
+    func setFx(int v) void { fx = v }
+    func setFy(int v) void { fy = v }
+    func setWv(int v) void { wv = v }
+    func setWa(int v) void { wa = v }
+    func setWang(int v) void { wang = v }
+}
+
+# ---- a bike node (k) ------------------------------------------------------------------------
+class Node() {
+    int rad = 0  # radius (m_aI)
+    int radIdx = 0  # radius index into FORA (m_intI)
+    int invm = 0  # inverse mass * gravity coefficient (m_forI)
+    int torque = 0  # wheel drive factor (m_newI)
+    array[Vec] s = new array[Vec](6)  # six state slots (m_ifan)
+
+    func init() void {
+        int i = 0
+        while (i < 6) { s[i] = new Vec(); i = i + 1 }
+    }
+    func reset() void {
+        rad = 0; invm = 0; torque = 0
+        int i = 0
+        while (i < 6) { s[i].reset(); i = i + 1 }
+    }
+    func setRad(int v) void { rad = v }
+    func setRadIdx(int v) void { radIdx = v }
+    func setInvm(int v) void { invm = v }
+    func setTorque(int v) void { torque = v }
+}
+
+# node radii by index (m_foraI): 0 = wheels, 1 = body, 2 = rider head
+array[int] FORA = new array[int]{ 0x1c000, 0x10000, 32768 }
+
+# ---- the track (Loader + Level merged) ------------------------------------------------------
+class Track() {
+    int startX = 0
+    int startY = 0
+    int finishX = 0xc80000
+    int finishY = 0
+    int gotoIdx = 0  # start-flag point index (m_gotoI)
+    int finIdx = 0  # finish-flag point index (m_forI)
+    int count = 0  # point count
+    array[int] px = new array[int](1)
+    array[int] py = new array[int](1)
+    array[int] nx = new array[int](1)  # segment normals (m_saaI[k][0])
+    array[int] ny = new array[int](1)  # (m_saaI[k][1])
+
+    # active visible-point window [ea, fa] and its cached x bounds (a,k)
+    int ea = 0
+    int fa = 0
+    int winA = 0
+    int winK = 0
+
+    # per-radius squared thresholds (outer m_haI, inner m_vaI)
+    array[int] haI = new array[int](3)
+    array[int] vaI = new array[int](3)
+
+    # collision output normal (Loader.m_eI / m_dI)
+    int eOut = 0
+    int dOut = 0
+    # The original raises the collision probe by ONE to match its faux-3D perspective
+    # draw; our render is flat, so keep it off or the bike floats a wheel-radius high.
+    bool perspective = false
+
+    # culling scratch used by the renderer (Level private m_eI/m_bI/m_gI)
+    int cullE = 0
+    int cullB = 0
+    int cullG = 0
+
+    func init() void {
+        int j = 0
+        while (j < 3) {
+            int a = (FORA[j] + 19660).shr(1)
+            int b = (FORA[j] - 19660).shr(1)
+            haI[j] = (a.long() * a.long()).shr(16).int()
+            vaI[j] = (b.long() * b.long()).shr(16).int()
+            j = j + 1
+        }
+    }
+
+    func buildNormals() void {
+        nx = new array[int](count)
+        ny = new array[int](count)
+        int k = 0
+        while (k < count) {
+            int i1 = px[(k + 1) % count] - px[k]
+            int j1 = py[(k + 1) % count] - py[k]
+            int k1 = 0 - j1
+            int i2 = i1
+            int j2 = hyp(k1, i2)
+            nx[k] = fdiv(k1, j2)
+            ny[k] = fdiv(i2, j2)
+            if (gotoIdx == 0 && px[k] > startX) { gotoIdx = k + 1 }
+            if (finIdx == 0 && px[k] > finishX) { finIdx = k }
+            k = k + 1
+        }
+    }
+
+    func trackName(int i) str {
+        Tracks tr = new Tracks()
+        return tr.name(i)
+    }
+
+    func totalTracks() int {
+        Tracks tr = new Tracks()
+        return tr.count()
+    }
+
+    func trackLeague(int i) int {
+        Tracks tr = new Tracks()
+        return tr.league(i)
+    }
+
+    func load(int idx) void {
+        Tracks tr = new Tracks()
+        array[int] raw = tr.trackData(idx)
+        startX = raw[1]
+        startY = raw[2]
+        finishX = raw[3]
+        finishY = raw[4]
+        int pc = raw[5]
+        gotoIdx = 0
+        finIdx = 0
+        px = new array[int](pc)
+        py = new array[int](pc)
+        count = 0
+        # Some tracks (e.g. Slope) put a stray first point to the RIGHT of the real start, so
+        # the strictly-increasing-x rule would reject most of the track. Begin from the leftmost
+        # (min-x) source point — the true start — then keep the monotonic run from there.
+        int minIdx = 0
+        int minX = raw[6]
+        int s = 1
+        while (s < pc) {
+            if (raw[6 + s * 2] < minX) { minX = raw[6 + s * 2]; minIdx = s }
+            s = s + 1
+        }
+        int i = minIdx
+        while (i < pc) {
+            int rx = raw[6 + i * 2]
+            int ry = raw[6 + i * 2 + 1]
+            int sx = (rx.shl(16)).shr(3)
+            int sy = (ry.shl(16)).shr(3)
+            # addPoint keeps only strictly-increasing x (matches the original)
+            if (count == 0 || px[count - 1] < sx) {
+                px[count] = sx
+                py[count] = sy
+                count = count + 1
+            }
+            i = i + 1
+        }
+        buildNormals()
+        # If the finish x lies beyond every point, put the finish flag at the last point.
+        if (finIdx <= 0) { finIdx = count - 1 }
+    }
+
+    func spawnX() int { return startX.shl(1) }
+
+    # Surface y (point space) at a given point-space x, by scanning segments.
+    func surfaceAtPoint(int x) int {
+        int result = py[0]
+        int k = 0
+        bool found = false
+        while (k < count - 1 && found == false) {
+            if (px[k] <= x && x <= px[k + 1]) {
+                int dx = px[k + 1] - px[k]
+                if (dx < 1) { result = py[k] }
+                else { result = py[k] + (py[k + 1] - py[k]) * (x - px[k]) / dx }
+                found = true
+            }
+            k = k + 1
+        }
+        return result
+    }
+
+    # Some tracks (e.g. "Slope") store a start Y far above the terrain, so the bike is dropped
+    # from a great height and shatters on the first hard landing. Clamp the spawn so the bike
+    # never starts more than a gentle hop above the actual surface under the start point.
+    func spawnY() int {
+        # During the very first build (before a track is loaded) count is 0 and the point
+        # arrays are uninitialised — skip the clamp then.
+        if (count < 2) { return startY.shl(1) }
+        int surf = surfaceAtPoint(startX)
+        int y = startY
+        let MAXDROP = 0x30000     # ~24 raw above the surface, like the easy tracks
+        if (y - surf > MAXDROP) { y = surf + MAXDROP }
+        return y.shl(1)
+    }
+
+    func startPointX() int { return px[gotoIdx].shl(1) }
+
+    func finishPointX() int { return px[finIdx].shl(1) }
+
+    func progressAt(int j) int {
+        int x = j.shr(1)
+        int k = x - px[gotoIdx]
+        int i1 = px[finIdx] - px[gotoIdx]
+        if (iabs(i1) < 3 || k > i1) { return ONE }
+        return fdiv(k, i1)
+    }
+
+    func window(int jIn, int kIn) void {
+        int j = jIn.shr(1)
+        int k = kIn.shr(1)
+        if (fa >= count - 1) { fa = count - 1 }
+        if (ea < 0) { ea = 0 }
+        # The original advances with pre-increment (points[++faI]) — so faI ends at the
+        # first point at/after the bike's right edge, one PAST the segment under the bike.
+        # Since collide() scans [ea, fa), that segment must be inside the window; a naive
+        # `k > px[fa+1]` post-check lands fa one short and leaves the wheel's own segment
+        # unchecked (bike floats then punches through when fa finally catches up).
+        if (k > winK) {
+            bool go = true
+            while (fa < count - 1 && go) {
+                fa = fa + 1
+                if (k > px[fa]) {} else { go = false }
+            }
+        } else {
+            if (j < winA) {
+                bool go2 = true
+                while (ea > 0 && go2) {
+                    ea = ea - 1
+                    if (j < px[ea]) {} else { go2 = false }
+                }
+            } else {
+                bool go3 = true
+                while (ea < count - 1 && go3) {
+                    ea = ea + 1
+                    if (j > px[ea]) {} else { go3 = false }
+                }
+                if (ea > 0) { ea = ea - 1 }
+                bool go4 = true
+                while (fa > 0 && go4) {
+                    fa = fa - 1
+                    if (k < px[fa]) {} else { go4 = false }
+                }
+                if (fa + 1 >= count - 1) { fa = count - 1 } else { fa = fa + 1 }
+            }
+        }
+        winA = px[ea]
+        winK = px[fa]
+    }
+
+    func collide(Vec n1, int radIdx) int {
+        int k3 = 0
+        int byte1 = 2
+        int l3 = n1.x.shr(1)
+        int i4 = n1.y.shr(1)
+        if (perspective) { i4 = i4 - ONE }
+        int j4 = 0
+        int k4 = 0
+        int l4 = ea
+        int result = -1  # set to a return value when we must exit early
+        while (l4 < fa && result < 0) {
+            int k = px[l4]
+            int i1 = py[l4]
+            int j1 = px[l4 + 1]
+            int k1 = py[l4 + 1]
+            if (l3 - haI[radIdx] > j1 || l3 + haI[radIdx] < k) {
+                # segment out of reach — skip
+            } else {
+                int l1 = k - j1
+                int i2 = i1 - k1
+                int j2 = fm(l1, l1) + fm(i2, i2)
+                int k2 = fm(l3 - k, 0 - l1) + fm(i4 - i1, 0 - i2)
+                int l2 = 0
+                if (iabs(j2) >= 3) {
+                    l2 = fdiv(k2, j2)
+                } else {
+                    int sgnK = if (k2 <= 0) then -1 else 1
+                    int sgnJ = if (j2 <= 0) then -1 else 1
+                    l2 = sgnK * sgnJ * 0x7fffffff
+                }
+                if (l2 < 0) { l2 = 0 }
+                if (l2 > ONE) { l2 = ONE }
+                int i3 = k + fm(l2, 0 - l1)
+                int j3 = i1 + fm(l2, 0 - i2)
+                l1 = l3 - i3
+                i2 = i4 - j3
+                int l5 = fm(l1, l1) + fm(i2, i2)
+                int byte0 = 2
+                if (l5 < haI[radIdx]) {
+                    if (l5 >= vaI[radIdx]) { byte0 = 1 } else { byte0 = 0 }
+                }
+                int dot = fm(nx[l4], n1.e) + fm(ny[l4], n1.d)
+                if (byte0 == 0 && dot < 0) {
+                    eOut = nx[l4]
+                    dOut = ny[l4]
+                    result = 0
+                } else {
+                    if (byte0 == 1 && dot < 0) {
+                        k3 = k3 + 1
+                        byte1 = 1
+                        if (k3 == 1) { j4 = nx[l4]; k4 = ny[l4] }
+                        else { j4 = j4 + nx[l4]; k4 = k4 + ny[l4] }
+                    }
+                }
+            }
+            l4 = l4 + 1
+        }
+        if (result >= 0) { return result }
+        if (byte1 == 1) {
+            if (fm(j4, n1.e) + fm(k4, n1.d) >= 0) { return 2 }
+            eOut = j4
+            dOut = k4
+        }
+        return byte1
+    }
+
+    # Level._aIIV(3-arg) — cache the node span the collision pass looks at.
+    func setCull3(int e, int b, int g) void {
+        cullE = e
+        cullB = b
+        cullG = g
+    }
+
+    # Level._aIIV(2-arg) — cache the camera-cull x bounds (halved).
+    func setCull2(int j, int k) void {
+        cullE = j.shr(1)
+        cullB = k.shr(1)
+    }
+
+    # Loader._aIIV(3-arg) — the collision pass's per-node call: refresh the render
+    # cull span AND advance the active [ea, fa] window that collide() scans.
+    func advanceWindow(int j, int k, int i1) void {
+        setCull3((j + 0x18000).shr(1), (k - 0x18000).shr(1), i1.shr(1))
+        window(j, k)
+    }
+
+}
+
+# ---- the simulation (Physics) ---------------------------------------------------------------
+class Physics(Track lf) {
+    array[Node] hak = new array[Node](6)  # the 6 bike nodes (m_Hak)
+    array[Vec] ian = new array[Vec](10)  # the 10 springs (m_ian)
+    array[Vec] aaan = new array[Vec](6)  # render snapshot (m_aaan)
+
+    int vaI = 0  # current state slot
+    int waI = 1  # next state slot
+    int xaI = -1  # index of the node that last collided
+    int cI = 0  # engine torque accumulator (m_cI)
+    int EI = 0  # cached contact normal x (m_EI)
+    int CI = 0  # cached contact normal y (m_CI)
+
+    bool IZ = false  # bike broken / flipped (wheel span out of range)
+    bool mZ = false  # rider head hit ground -> dead
+    int TI = 32768  # lean/balance meter (m_TI)
+    int kI = 0  # signed body-turn magnitude (m_kI)
+    bool vZ = false  # menu/preview mode (m_vZ)
+    bool bZ = false
+    bool afZ = false
+    int tI = 0
+    int zI = 0
+
+    # input flags
+    bool elseZ = false  # rider stand pose (m_elseZ)
+    bool UZ = false  # throttle pedal held (m_UZ)
+    bool ifZ = false  # lean forward (m_ifZ)  -> working copy dZ
+    bool sZ = false  # brake (m_sZ)          -> FZ
+    bool rZ = false  # tilt up  (m_rZ)       -> wZ
+    bool OZ = false  # tilt down (m_OZ)      -> XZ
+    bool dZ = false
+    bool FZ = false
+    bool XZ = false
+    bool wZ = false
+    bool RZ = false  # a collision occurred this step (m_RZ)
+    bool NZ = false  # front wheel touched (m_NZ)
+    bool doZ = true  # camera smoothing on
+
+    int oI = 0  # camera x smoothing (m_oI)
+    int nI = 0  # camera y smoothing (m_nI)
+    int GI = 0xa0000  # camera offset clamp (m_GI)
+
+    # league / tuning constants
+    int hI = 0
+    int YI = 1310  # sub-step budget (m_YI)
+    int voidI = 0x190000  # gravity (m_voidI)
+    int gI = 45875
+    int fI = 13107
+    int eI = 39321
+    int yI = 0x140000
+    int xI = 0x40000
+    int jI = 6553
+    int aeI = 32768
+    int adI = 32768
+    int maxSpin = 0x110000  # m_PI
+    int QI = 0x3e80000
+    int charI = 0x320000
+    int abI = 6553
+    int WI = 26214
+    int AI = 26214
+    int longI = 0x50000
+    int qI = 0x12c0000
+
+    func akk(Node k1, Vec n1, Node k2, int j, int i1) void {
+        Vec n2 = k1.s[j]
+        Vec n3 = k2.s[j]
+        int j1 = n2.x - n3.x
+        int l1 = n2.y - n3.y
+        int i2 = hyp(j1, l1)
+        if (iabs(i2) >= 3) {
+            j1 = fdiv(j1, i2)
+            l1 = fdiv(l1, i2)
+            int j2 = i2 - n1.y
+            int stiff = fm(j2, n1.x)
+            int l2 = fm(j1, stiff)
+            int i3 = fm(l1, stiff)
+            int j3 = n2.e - n3.e
+            int k3 = n2.d - n3.d
+            int l3 = fm(fm(j1, j3) + fm(l1, k3), n1.wang)
+            l2 = l2 + fm(j1, l3)
+            i3 = i3 + fm(l1, l3)
+            l2 = fm(l2, i1)
+            i3 = fm(i3, i1)
+            n2.setFx(n2.fx - l2)
+            n2.setFy(n2.fy - i3)
+            n3.setFx(n3.fx + l2)
+            n3.setFy(n3.fy + i3)
+        }
+    }
+
+    func deriv(int j, int i1, int j1) void {
+        int l1 = 0
+        while (l1 < 6) {
+            Vec n1 = hak[l1].s[j]
+            Vec n2 = hak[l1].s[i1]
+            n2.setX(fm(n1.e, j1))
+            n2.setY(fm(n1.d, j1))
+            int k1 = fm(j1, hak[l1].invm)
+            n2.setE(fm(n1.fx, k1))
+            n2.setD(fm(n1.fy, k1))
+            l1 = l1 + 1
+        }
+    }
+
+    func combine(int j, int i1, int j1) void {
+        int k1 = 0
+        while (k1 < 6) {
+            Vec n1 = hak[k1].s[j]
+            Vec n2 = hak[k1].s[i1]
+            Vec n3 = hak[k1].s[j1]
+            n1.setX(n2.x + n3.x.shr(1))
+            n1.setY(n2.y + n3.y.shr(1))
+            n1.setE(n2.e + n3.e.shr(1))
+            n1.setD(n2.d + n3.d.shr(1))
+            k1 = k1 + 1
+        }
+    }
+
+    func force(int j) void {
+        int i1 = 0
+        while (i1 < 6) {
+            Vec n1 = hak[i1].s[j]
+            n1.setFx(0)
+            n1.setFy(0)
+            n1.setWa(0)
+            n1.setFy(n1.fy - fdiv(voidI, hak[i1].invm))
+            i1 = i1 + 1
+        }
+        if (IZ == false) {
+            akk(hak[0], ian[1], hak[2], j, ONE)
+            akk(hak[0], ian[0], hak[1], j, ONE)
+            akk(hak[2], ian[6], hak[4], j, 0x20000)
+            akk(hak[1], ian[5], hak[3], j, 0x20000)
+        }
+        akk(hak[0], ian[2], hak[3], j, ONE)
+        akk(hak[0], ian[3], hak[4], j, ONE)
+        akk(hak[3], ian[4], hak[4], j, ONE)
+        akk(hak[5], ian[8], hak[3], j, ONE)
+        akk(hak[5], ian[7], hak[4], j, ONE)
+        akk(hak[5], ian[9], hak[0], j, ONE)
+
+        Vec n2 = hak[2].s[j]
+        cI = fm(cI, ONE - jI)
+        n2.setWa(cI)
+        if (n2.wv > maxSpin) { n2.setWv(maxSpin)}
+        if (n2.wv < 0 - maxSpin) { n2.setWv(0 - maxSpin)}
+
+        int j1 = 0
+        int l1 = 0
+        int i2 = 0
+        while (i2 < 6) {
+            j1 = j1 + hak[i2].s[j].e
+            l1 = l1 + hak[i2].s[j].d
+            i2 = i2 + 1
+        }
+        j1 = fdiv(j1, 0x60000)
+        l1 = fdiv(l1, 0x60000)
+        int j3 = 0
+        int k3 = 0
+        while (k3 < 6) {
+            int j2 = hak[k3].s[j].e - j1
+            int k2 = hak[k3].s[j].d - l1
+            j3 = hyp(j2, k2)
+            if (j3 > 0x1e0000) {
+                int l2 = fdiv(j2, j3)
+                int i3 = fdiv(k2, j3)
+                hak[k3].s[j].setE(hak[k3].s[j].e - l2)
+                hak[k3].s[j].setD(hak[k3].s[j].d - i3)
+            }
+            k3 = k3 + 1
+        }
+        int byte0 = if (hak[2].s[j].y - hak[0].s[j].y < 0) then -1 else 1
+        int byte1 = if (hak[2].s[j].e - hak[0].s[j].e < 0) then -1 else 1
+        if (byte0 * byte1 > 0) { kI = j3 } else { kI = 0 - j3 }
+    }
+
+    func substep(int j) void {
+        force(vaI)
+        deriv(vaI, 2, j)
+        combine(4, vaI, 2)
+        force(4)
+        deriv(4, 3, j.shr(1))
+        combine(4, vaI, 3)
+        combine(waI, vaI, 2)
+        combine(waI, waI, 3)
+        int i1 = 1
+        while (i1 <= 2) {
+            Vec n1 = hak[i1].s[vaI]
+            Vec n2 = hak[i1].s[waI]
+            n2.setWang(n1.wang + fm(j, n1.wv))
+            n2.setWv(n1.wv + fm(j, fm(hak[i1].torque, n1.wa)))
+            i1 = i1 + 1
+        }
+    }
+
+    func detect(int j) int {
+        int byte0 = 2
+        int i1 = hak[1].s[j].x
+        if (hak[2].s[j].x > i1) { i1 = hak[2].s[j].x }
+        if (hak[5].s[j].x > i1) { i1 = hak[5].s[j].x }
+        int j1 = hak[1].s[j].x
+        if (hak[2].s[j].x < j1) { j1 = hak[2].s[j].x }
+        if (hak[5].s[j].x < j1) { j1 = hak[5].s[j].x }
+        lf.advanceWindow(j1 - FORA[0], i1 + FORA[0], hak[5].s[j].y)
+        int k1 = hak[1].s[j].x - hak[2].s[j].x
+        int l1 = hak[1].s[j].y - hak[2].s[j].y
+        int i2 = hyp(k1, l1)
+        k1 = fdiv(k1, i2)
+        int j2 = 0 - fdiv(l1, i2)
+        int k2 = k1
+        int l2 = 0
+        bool stop = false
+        while (l2 < 6 && stop == false) {
+            if (l2 == 4 || l2 == 3) {
+                # skip: these nodes never probe the ground
+            } else {
+                Vec n1 = hak[l2].s[j]
+                if (l2 == 0) { n1.setX(n1.x + fm(j2, ONE)); n1.setY(n1.y + fm(k2, ONE))}
+                int i3 = lf.collide(n1, hak[l2].radIdx)
+                if (l2 == 0) { n1.setX(n1.x - fm(j2, ONE)); n1.setY(n1.y - fm(k2, ONE))}
+                EI = lf.eOut
+                CI = lf.dOut
+                if (l2 == 5 && i3 != 2) { mZ = true }
+                if (l2 == 1 && i3 != 2) { NZ = true }
+                if (i3 == 1) { xaI = l2; byte0 = 1 }
+                else {
+                    if (i3 == 0) { xaI = l2; byte0 = 0; stop = true }
+                }
+            }
+            l2 = l2 + 1
+        }
+        return byte0
+    }
+
+    func resolve(int j) void {
+        Vec n1 = hak[xaI].s[j]
+        n1.setX(n1.x + fm(EI, 3276))
+        n1.setY(n1.y + fm(CI, 3276))
+        int i1 = 0
+        int j1 = 0
+        int l1 = 0
+        int i2 = 0
+        int j2 = 0
+        if (FZ && (xaI == 2 || xaI == 1) && n1.wv < 6553) {
+            i1 = gI - WI
+            j1 = 13107
+            l1 = 39321
+            i2 = 26214 - WI
+            j2 = 26214 - WI
+        } else {
+            i1 = gI
+            j1 = fI
+            l1 = eI
+            i2 = aeI
+            j2 = adI
+        }
+        int k2 = hyp(EI, CI)
+        EI = fdiv(EI, k2)
+        CI = fdiv(CI, k2)
+        int l2 = n1.e
+        int i3 = n1.d
+        int j3 = 0 - (fm(l2, EI) + fm(i3, CI))
+        int k3 = 0 - (fm(l2, 0 - CI) + fm(i3, EI))
+        int l3 = fm(i1, n1.wv) - fm(j1, fdiv(k3, hak[xaI].rad))
+        int i4 = fm(i2, k3) - fm(l1, fm(n1.wv, hak[xaI].rad))
+        int j4 = 0 - fm(j2, j3)
+        int k4 = fm(0 - i4, 0 - CI)
+        int l4 = fm(0 - i4, EI)
+        int i5 = fm(0 - j4, EI)
+        int j5 = fm(0 - j4, CI)
+        n1.setWv(l3)
+        n1.setE(k4 + i5)
+        n1.setD(l4 + j5)
+    }
+
+    func finishOut() bool {
+        return hak[1].s[waI].x > lf.finishPointX() || hak[2].s[waI].x > lf.finishPointX()
+    }
+
+    func backAtStart() bool {
+        return hak[1].s[vaI].x < lf.startPointX()
+    }
+
+    func pvv() void {
+        int j = hak[1].s[vaI].x - hak[2].s[vaI].x
+        int i1 = hak[1].s[vaI].y - hak[2].s[vaI].y
+        int j1 = hyp(j, i1)
+        i1 = fdiv(i1, j1)
+        FZ = false
+        if (i1 < 0) { XZ = true; wZ = false }
+        else if (i1 > 0) { wZ = true; XZ = false }
+        int s0 = if (hak[2].s[vaI].y - hak[0].s[vaI].y <= 0) then -1 else 1
+        int s1 = if (hak[2].s[vaI].e - hak[0].s[vaI].e <= 0) then -1 else 1
+        bool flag = (s0 * s1) > 0
+        if ((flag && wZ) || (flag == false && XZ)) { dZ = true } else { dZ = false }
+    }
+
+    func qvv() void {
+        if (IZ) { return }
+        int j = hak[1].s[vaI].x - hak[2].s[vaI].x
+        int i1 = hak[1].s[vaI].y - hak[2].s[vaI].y
+        int j1 = hyp(j, i1)
+        j = fdiv(j, j1)
+        i1 = fdiv(i1, j1)
+        if (dZ && cI >= 0 - QI) { cI = cI - charI }
+        if (FZ) {
+            cI = 0
+            hak[1].s[vaI].setWv(fm(hak[1].s[vaI].wv, ONE - abI))
+            hak[2].s[vaI].setWv(fm(hak[2].s[vaI].wv, ONE - abI))
+            if (hak[1].s[vaI].wv < 6553) { hak[1].s[vaI].setWv(0)}
+            if (hak[2].s[vaI].wv < 6553) { hak[2].s[vaI].setWv(0)}
+        }
+        hak[0].setInvm(fm(11915, yI))
+        hak[4].setInvm(fm(18724, yI))
+        hak[3].setInvm(fm(18724, yI))
+        hak[1].setInvm(fm(43690, yI))
+        hak[2].setInvm(fm(11915, yI))
+        hak[5].setInvm(fm(14563, yI))
+        if (XZ) {
+            hak[0].setInvm(fm(18724, yI))
+            hak[4].setInvm(fm(14563, yI))
+            hak[3].setInvm(fm(18724, yI))
+            hak[1].setInvm(fm(43690, yI))
+            hak[2].setInvm(fm(10082, yI))
+        } else if (wZ) {
+            hak[0].setInvm(fm(18724, yI))
+            hak[4].setInvm(fm(18724, yI))
+            hak[3].setInvm(fm(14563, yI))
+            hak[1].setInvm(fm(26214, yI))
+            hak[2].setInvm(fm(11915, yI))
+        }
+        if (XZ || wZ) {
+            int k1 = 0 - i1
+            int l1 = j
+            if (XZ && kI > 0 - longI) {
+                int i2 = ONE
+                if (kI < 0) { i2 = fdiv(longI - iabs(kI), longI) }
+                int k2 = fm(AI, i2)
+                int i3 = fm(k1, k2)
+                int k3 = fm(l1, k2)
+                int i4 = fm(j, k2)
+                int k4 = fm(i1, k2)
+                if (TI > 32768) { TI = if (TI - 1638 >= 0) then TI - 1638 else 0 }
+                else { TI = if (TI - 3276 >= 0) then TI - 3276 else 0 }
+                hak[4].s[vaI].setE(hak[4].s[vaI].e - i3)
+                hak[4].s[vaI].setD(hak[4].s[vaI].d - k3)
+                hak[3].s[vaI].setE(hak[3].s[vaI].e + i3)
+                hak[3].s[vaI].setD(hak[3].s[vaI].d + k3)
+                hak[5].s[vaI].setE(hak[5].s[vaI].e - i4)
+                hak[5].s[vaI].setD(hak[5].s[vaI].d - k4)
+            }
+            if (wZ && kI < longI) {
+                int j2 = ONE
+                if (kI > 0) { j2 = fdiv(longI - kI, longI) }
+                int l2 = fm(AI, j2)
+                int j3 = fm(k1, l2)
+                int l3 = fm(l1, l2)
+                int j4 = fm(j, l2)
+                int l4 = fm(i1, l2)
+                if (TI > 32768) { TI = if (TI + 1638 >= ONE) then ONE else TI + 1638 }
+                else { TI = if (TI + 3276 >= ONE) then ONE else TI + 3276 }
+                hak[4].s[vaI].setE(hak[4].s[vaI].e + j3)
+                hak[4].s[vaI].setD(hak[4].s[vaI].d + l3)
+                hak[3].s[vaI].setE(hak[3].s[vaI].e - j3)
+                hak[3].s[vaI].setD(hak[3].s[vaI].d - l3)
+                hak[5].s[vaI].setE(hak[5].s[vaI].e + j4)
+                hak[5].s[vaI].setD(hak[5].s[vaI].d + l4)
+            }
+        } else {
+            if (TI < 26214) { TI = TI + 3276 }
+            else if (TI > 39321) { TI = TI - 3276 }
+            else { TI = 32768 }
+        }
+    }
+
+    func integrate(int j) int {
+        bool flag = RZ
+        int i1 = 0
+        int j1 = j
+        int ret = -1
+        int guard = 0
+        while (ret == -1) {
+            guard = guard + 1
+            if (guard > 4000) { ret = 5 }   # safety: never spin forever
+            if (i1 >= j) {
+                ret = 999
+            } else {
+                substep(j1 - i1)
+                int k1 = 0
+                if (flag == false && finishOut()) { k1 = 3 } else { k1 = detect(waI) }
+                if (flag == false && RZ) {
+                    ret = if (k1 == 3) then 1 else 2
+                } else {
+                    if (k1 == 0) {
+                        j1 = (i1 + j1).shr(1)
+                        if (iabs(j1 - i1) < 65) { ret = 5 }
+                    } else if (k1 == 3) {
+                        RZ = true
+                        j1 = (i1 + j1).shr(1)
+                    } else {
+                        bool broke5 = false
+                        if (k1 == 1) {
+                            int i2 = -1
+                            int rg = 0
+                            while (i2 != 2 && broke5 == false) {
+                                resolve(waI)
+                                int jj = detect(waI)
+                                i2 = jj
+                                if (jj == 0) { ret = 5; broke5 = true }
+                                rg = rg + 1
+                                if (rg > 48) { i2 = 2 }   # safety: give up resolving, accept the step
+                            }
+                        }
+                        if (broke5 == false) {
+                            i1 = j1
+                            j1 = j
+                            vaI = if (vaI != 1) then 1 else 0
+                            waI = if (waI != 1) then 1 else 0
+                        }
+                    }
+                }
+            }
+        }
+        if (ret == 999) {
+            int dx = hak[1].s[vaI].x - hak[2].s[vaI].x
+            int dy = hak[1].s[vaI].y - hak[2].s[vaI].y
+            int l1 = fm(dx, dx) + fm(dy, dy)
+            if (l1 < 0xf0000) { IZ = true }
+            if (l1 > 0x460000) { IZ = true }
+            return 0
+        }
+        return ret
+    }
+
+    func build(int x, int y) void {
+        int j1 = 0
+        while (j1 < 6) {
+            int radIdx = 0
+            int l1 = 0
+            int jx = 0
+            int ky = 0
+            int torque = 0
+            if (j1 == 0) { radIdx = 1; l1 = 0x58000; jx = 0; ky = 0 }
+            else if (j1 == 4) { radIdx = 1; l1 = 0x38000; jx = 0xfffe0000; ky = 0x30000 }
+            else if (j1 == 3) { radIdx = 1; l1 = 0x38000; jx = 0x20000; ky = 0x30000 }
+            else if (j1 == 1) { radIdx = 0; l1 = 0x18000; jx = 0x38000; ky = 0 }
+            else if (j1 == 2) { radIdx = 0; l1 = 0x58000; jx = 0xfffc8000; ky = 0; torque = 21626 }
+            else { radIdx = 2; l1 = 0x48000; jx = 0; ky = 0x50000 }
+
+            hak[j1].reset()
+            hak[j1].setRad(FORA[radIdx])
+            hak[j1].setRadIdx(radIdx)
+            int inner = (0x1000000000000 / l1.long()).shr(16).int()
+            hak[j1].setInvm(fm(inner, yI))
+            hak[j1].setTorque(torque)
+            hak[j1].s[vaI].setX(x + jx)
+            hak[j1].s[vaI].setY(y + ky)
+            hak[j1].s[5].setX(x + jx)
+            hak[j1].s[5].setY(y + ky)
+            j1 = j1 + 1
+        }
+
+        int k1 = 0
+        while (k1 < 10) {
+            ian[k1].reset()
+            ian[k1].setX(qI)
+            ian[k1].setWang(xI)
+            k1 = k1 + 1
+        }
+        ian[0].setY(0x38000)
+        ian[1].setY(0x38000)
+        ian[2].setY(0x39b05)
+        ian[3].setY(0x39b05)
+        ian[4].setY(0x40000)
+        ian[5].setY(0x35aa6)
+        ian[6].setY(0x35aa6)
+        ian[7].setY(0x2d413)
+        ian[8].setY(0x2d413)
+        ian[9].setY(0x50000)
+        ian[5].setWang(fm(xI, 45875))
+        ian[6].setX(fm(6553, qI))
+        ian[5].setX(fm(6553, qI))
+        ian[9].setX(fm(0x11999, qI))
+        ian[8].setX(fm(0x11999, qI))
+        ian[7].setX(fm(0x11999, qI))
+    }
+
+    func snap() void {
+        int j = 0
+        while (j < 6) {
+            hak[j].s[5].setX(hak[j].s[vaI].x)
+            hak[j].s[5].setY(hak[j].s[vaI].y)
+            hak[j].s[5].setWang(hak[j].s[vaI].wang)
+            j = j + 1
+        }
+        hak[0].s[5].setE(hak[0].s[vaI].e)
+        hak[0].s[5].setD(hak[0].s[vaI].d)
+        hak[2].s[5].setWv(hak[2].s[vaI].wv)
+    }
+
+    func reset() void {
+        tI = 0
+        build(lf.spawnX(), lf.spawnY())
+        cI = 0
+        kI = 0
+        IZ = false; mZ = false; RZ = false; NZ = false; vZ = false; bZ = false; afZ = false
+        lf.setCull2((hak[2].s[5].x + 0x18000) - FORA[0], (hak[1].s[5].x - 0x18000) + FORA[0])
+    }
+
+    func setLeague(int j) void {
+        hI = j
+        gI = 45875
+        fI = 13107
+        eI = 39321
+        yI = 0x140000
+        xI = 0x40000
+        jI = 6553
+        if (j == 3) {
+            aeI = 32768; adI = 32768; maxSpin = 0x160000; QI = 0x4b00000; charI = 0x360000
+            abI = 6553; WI = 26214; AI = 0x10000; longI = 0x140000; qI = 0x14a0000
+        } else if (j == 2) {
+            aeI = 32768; adI = 32768; maxSpin = 0x140000; QI = 0x47e0000; charI = 0x350000
+            abI = 6553; WI = 26214; AI = 39321; longI = 0x50000; qI = 0x14a0000
+        } else if (j == 1) {
+            aeI = 32768; adI = 32768; maxSpin = 0x110000; QI = 0x3e80000; charI = 0x320000
+            abI = 6553; WI = 26214; AI = 26214; longI = 0x50000; qI = 0x12c0000
+        } else {
+            aeI = 19660; adI = 19660; maxSpin = 0x110000; QI = 0x3200000; charI = 0x320000
+            abI = 327; WI = 0; AI = 32768; longI = 0x50000; qI = 0x12c0000
+        }
+        reset()
+    }
+
+    func publish() void {
+        int j = 0
+        while (j < 6) {
+            aaan[j].setX(hak[j].s[5].x)
+            aaan[j].setY(hak[j].s[5].y)
+            aaan[j].setWang(hak[j].s[5].wang)
+            j = j + 1
+        }
+        aaan[0].setE(hak[0].s[5].e)
+        aaan[0].setD(hak[0].s[5].d)
+        aaan[2].setWv(hak[2].s[5].wv)
+    }
+
+    func camX() int {
+        if (doZ) { oI = fdiv(aaan[0].e, 0x180000) + fm(oI, 57344) } else { oI = 0 }
+        if (oI > GI) { oI = GI }
+        if (oI < 0 - GI) { oI = 0 - GI }
+        return (aaan[0].x + oI).shl(2).shr(16)
+    }
+
+    func camY() int {
+        if (doZ) { nI = fdiv(aaan[0].d, 0x180000) + fm(nI, 57344) } else { nI = 0 }
+        if (nI > GI) { nI = GI }
+        if (nI < 0 - GI) { nI = 0 - GI }
+        return (aaan[0].y + nI).shl(2).shr(16)
+    }
+
+    func progress() int {
+        int j = if (aaan[1].x >= aaan[2].x) then aaan[1].x else aaan[2].x
+        if (IZ) { return lf.progressAt(aaan[0].x) }
+        return lf.progressAt(j)
+    }
+
+    func setButtons(int j) void {  # _doIV: bit1 = throttle, bit2 = stand
+        elseZ = false
+        UZ = false
+        if ((j & 2) != 0) { elseZ = true }
+        if ((j & 1) != 0) { UZ = true }
+    }
+
+    func lean(int j, int i1) void {  # _aIIV: j = fwd/back, i1 = up/down
+        if (vZ == false) {
+            ifZ = false; sZ = false; rZ = false; OZ = false
+            if (j > 0) { ifZ = true } else if (j < 0) { sZ = true }
+            if (i1 > 0) { rZ = true } else if (i1 < 0) { OZ = true }
+        }
+    }
+
+    func release() void { ifZ = false; sZ = false; rZ = false; OZ = false }
+
+    func step() int {
+        dZ = ifZ
+        FZ = sZ
+        XZ = OZ
+        wZ = rZ
+        if (vZ) { pvv() }
+        qvv()
+        int j = integrate(YI)
+        if (j == 5 || mZ) { return 5 }
+        if (IZ) { return 3 }
+        if (backAtStart()) { NZ = false; return 4 }
+        return j
+    }
+
+    func loadLevel(int idx) void {
+        lf.load(idx)
+        reset()
+        snap()
+    }
+
+    func restart() void {
+        reset()
+        snap()
+    }
+
+    func start(int league) void {
+        YI = 1310
+        voidI = 0x190000
+        setLeague(league)  # ends by calling reset()/build
+        snap()  # _charvV
+    }
+
+    func init() void {
+        int i = 0
+        while (i < 6) {
+            hak[i] = new Node()
+            hak[i].init()
+            aaan[i] = new Vec()
+            i = i + 1
+        }
+        i = 0
+        while (i < 10) { ian[i] = new Vec(); i = i + 1 }
+        lf.init()
+        start(1)
+    }
+
+}
