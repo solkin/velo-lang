@@ -145,6 +145,21 @@ sealed interface Op {
         override val opcode get() = 0x49
     }
 
+    /** Widen an int (or byte) to a float. Stack: `[int] -> [float]` */
+    object IntToFloat : Op {
+        override val opcode get() = 0x16
+    }
+
+    /** Narrow a float to an int, truncating toward zero. Stack: `[float] -> [int]` */
+    object FloatToInt : Op {
+        override val opcode get() = 0x17
+    }
+
+    /** Narrow an int to a byte (low 8 bits, sign-extended). Stack: `[int] -> [byte]` */
+    object IntToByte : Op {
+        override val opcode get() = 0x1f
+    }
+
     /** Parse a decimal string. Stack: `[str] -> [int]` */
     object StrInt : Op {
         override val opcode get() = 0x40

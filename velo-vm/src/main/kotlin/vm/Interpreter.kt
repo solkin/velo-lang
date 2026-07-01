@@ -409,6 +409,24 @@ object Interpreter {
             pc + 1
         }
 
+        is Op.IntToFloat -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toFloat()))
+            pc + 1
+        }
+
+        is Op.FloatToInt -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toInt()))
+            pc + 1
+        }
+
+        is Op.IntToByte -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toByte()))
+            pc + 1
+        }
+
         is Op.StrInt -> {
             val frame = ctx.currentFrame()
             val str = frame.subs.pop().getString()

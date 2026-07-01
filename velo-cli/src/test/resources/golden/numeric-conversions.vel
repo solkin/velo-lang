@@ -1,0 +1,39 @@
+Terminal term = new Terminal()
+
+# Widening on initialization: an int literal in a float slot is a real float,
+# so division is float division (not integer).
+float half = 5
+term.println((half / 2).str())            # 2.5
+
+# Widening from a variable: int -> float keeps float semantics.
+int n = 7
+float q = n
+term.println((q / 2).str())               # 3.5
+
+# Mixed arithmetic promotes to the wider type.
+float g = 5.0
+term.println((g / 2).str())               # 2.5
+term.println((n + g).str())               # 12.0
+
+# A float parameter accepts a narrower int argument (widened on entry).
+func scale(float x) float {
+    return x / 2
+}
+term.println(scale(9).str())              # 4.5
+
+# Explicit narrowing conversions.
+float pi = 3.75
+term.println(pi.int().str())              # 3
+int code = 322
+term.println(code.byte().str())           # 66 (322 wraps to a byte)
+
+# A byte literal comes from an in-range int literal; widen it back to int.
+byte b = 65
+term.println(b.int().str())               # 65
+term.println(b.char())                    # A
+
+# Return-type widening: an int result flows into a float return.
+func toFloat(int v) float {
+    return v
+}
+term.println((toFloat(3) / 2).str())      # 1.5

@@ -40,6 +40,16 @@ data class FuncNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
+        // A float parameter may be passed a narrower int/byte argument (widening
+        // is allowed at the call site); normalise it to a genuine float on entry
+        // so arithmetic in the body promotes correctly.
+        args.forEach { v ->
+            if (v.type === FloatType) {
+                funcOps.add(Op.Load(index = v.index))
+                funcOps.add(Op.IntToFloat)
+                funcOps.add(Op.Store(index = v.index))
+            }
+        }
         body.compile(funcOps)
         // Returns are explicit (each `return` is type-checked against `type` by
         // ReturnNode). A non-void function must therefore return on every path —

@@ -49,7 +49,13 @@ data class BinaryNode(
                 throw IllegalArgumentException("Operator '$operator' is not defined for class '${leftType.name}'")
             }
         }
-        if (!leftType.sameAs(rightType)) {
+        // Mixed numeric operands (e.g. int + float) are allowed: the VM promotes
+        // by value at runtime, and the static result is the wider of the two.
+        val leftRank = numericRank(leftType)
+        val rightRank = numericRank(rightType)
+        val bothNumeric = leftRank != null && rightRank != null
+        val numWider = if (bothNumeric && leftRank!! < rightRank!!) rightType else leftType
+        if (!bothNumeric && !leftType.sameAs(rightType)) {
             if (operator == "+" && (leftType is StringType || rightType is StringType)) {
                 val other = if (leftType is StringType) rightType else leftType
                 throw IllegalArgumentException(
@@ -66,27 +72,27 @@ data class BinaryNode(
                 } else {
                     ctx.add(Op.Add)
                 }
-                leftType
+                numWider
             }
 
             "-" -> {
                 ctx.add(Op.Sub)
-                leftType
+                numWider
             }
 
             "*" -> {
                 ctx.add(Op.Mul)
-                leftType
+                numWider
             }
 
             "/" -> {
                 ctx.add(Op.Div)
-                leftType
+                numWider
             }
 
             "%" -> {
                 ctx.add(Op.Rem)
-                leftType
+                numWider
             }
 
             "<" -> {

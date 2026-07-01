@@ -13,7 +13,10 @@ data class ArrayNode(
             listOf != null -> {
                 listOf.forEach {
                     val itemType = it.compile(ctx)
-                    if (!assignableArg(type, itemType)) {
+                    // Each element is on top right after it compiles, so a numeric
+                    // widening (e.g. int literal into a float array) converts in place.
+                    val coerced = coerceNumeric(ctx, type, itemType, (it as? IntNode)?.value, "array element")
+                    if (coerced == null && !assignableArg(type, itemType)) {
                         throw Exception("Array element \"$it\" type ${itemType.log()} is differ from array type ${type.log()}")
                     }
                 }
@@ -29,7 +32,7 @@ data class ArrayNode(
 
             length != null -> {
                 val lengthType = length.compile(ctx)
-                if (!lengthType.sameAs(IntType)) {
+                if (!numWidens(IntType, lengthType)) {
                     throw Exception("Array length must be int, but \"$lengthType\" type is provided")
                 }
                 ctx.add(Op.ArrNew)

@@ -52,34 +52,6 @@ class ParserTest {
     }
 
     @Test
-    fun testParseFloatPostfixNum() {
-        val parser = makeSimpleParser("123f")
-
-        val node = parser.parse()
-
-        assertEquals(
-            expected = FloatNode(
-                value = 123f,
-            ).wrapProgram(),
-            actual = node,
-        )
-    }
-
-    @Test
-    fun testParseByteNum() {
-        val parser = makeSimpleParser("123y")
-
-        val node = parser.parse()
-
-        assertEquals(
-            expected = ByteNode(
-                value = 123.toByte(),
-            ).wrapProgram(),
-            actual = node,
-        )
-    }
-
-    @Test
     fun testParseIntNum() {
         val parser = makeSimpleParser("123")
 

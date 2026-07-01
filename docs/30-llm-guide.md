@@ -24,6 +24,10 @@ rules first — most mistakes come from breaking one of them.
    literal dollar sign. Convert values with `.str()` when concatenating with `+`.
 7. **Declare before use.** The program runs top-to-bottom; a function must be defined
    above the code that calls it.
+8. **Numbers widen implicitly, narrow explicitly.** `byte`→`int`→`float` is automatic
+   (`float f = 5` holds `5.0`, so `f / 2` is `2.5`). Going the other way loses data and
+   is a compile error — convert with `.int()` (truncates) or `.byte()`. No literal
+   suffixes: an int literal takes its target's type; a `.` makes a literal a float.
 
 ## Syntax at a glance
 

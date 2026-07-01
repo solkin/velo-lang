@@ -15,7 +15,7 @@ data class ByteNode(
 
 object ByteType : Numeric {
     override fun sameAs(type: Type): Boolean {
-        return type is Numeric
+        return type is ByteType
     }
 
     override fun default(ctx: Context) {
@@ -26,6 +26,9 @@ object ByteType : Numeric {
         return when (name) {
             "str" -> ByteStrProp
             "char" -> ByteCharProp
+            "byte" -> NumIdentityProp
+            "int" -> ByteToIntProp
+            "float" -> IntToFloatProp
             else -> null
         }
     }

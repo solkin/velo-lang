@@ -16,17 +16,38 @@ int binary = 0b101010;    # Binary notation
 ```velo
 float pi = 3.14;
 float e = 2.71828;
-float negative = -1.5f;   # Negative float
-float withSuffix = 3.0f;  # Explicit type specification
+float negative = -1.5;    # A '.' makes a literal a float
+float whole = 5;          # An int literal widens to a float (-> 5.0)
 ```
 
 ### Bytes (`byte`)
 
 ```velo
-byte b = 65;
-byte negative = -5y;      # Negative byte
-byte withSuffix = 2y;     # Explicit type specification
+byte b = 65;              # An int literal in range (-128..255) fits a byte
+byte negative = -5;
 ```
+
+> Numeric literals have no type suffixes (`2y`, `3.0f` are gone). A literal takes
+> the type of its target: an int literal widens to `float` or fits into a `byte`
+> (out-of-range values are a compile error). A `.` makes a literal a `float`.
+
+### Numeric conversions
+
+Widening is implicit and lossless — a `byte` flows into an `int`, and a `byte`
+or `int` into a `float` (so `float f = 5` really holds `5.0` and `f / 2` is
+`2.5`, not `2`). Mixed arithmetic promotes to the wider type.
+
+Narrowing loses data, so it must be explicit:
+
+```velo
+float pi = 3.75;
+int   i  = pi.int();      # 3 — truncates toward zero
+byte  b  = 322.byte();    # 66 — low 8 bits
+float f  = i.float();     # widen back (i.float() also works implicitly)
+```
+
+`int x = pi` (float → int) and `byte b = someInt` (int → byte) are **compile
+errors** that tell you to convert with `.int()` / `.byte()`.
 
 ### Strings (`str`)
 

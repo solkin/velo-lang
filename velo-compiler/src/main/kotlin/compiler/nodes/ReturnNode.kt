@@ -27,13 +27,20 @@ data class ReturnNode(
         }
 
         val type = value.compile(ctx)
+        // A numeric result widens to the declared return type (byte/int -> float);
+        // narrowing is rejected here, matching variable initialization.
+        val coerced = if (expected !is SelfType) {
+            coerceNumeric(ctx, expected, type, (value as? IntNode)?.value, "the function return")
+        } else {
+            null
+        }
         // `Self` returns are resolved at the call site, like a fall-through body.
-        if (expected !is SelfType && !type.sameAs(expected) && !expected.sameAs(AnyType)) {
+        if (coerced == null && expected !is SelfType && !type.sameAs(expected) && !expected.sameAs(AnyType)) {
             throw IllegalStateException(
                 "return type ${type.log()} does not match function return type ${expected.log()}"
             )
         }
         ctx.add(Op.Ret)
-        return type
+        return coerced ?: type
     }
 }

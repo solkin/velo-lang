@@ -280,6 +280,8 @@ class TokenStreamTest {
 
     @Test
     fun testBytePostfix() {
+        // Numeric suffixes were removed: a trailing letter is a separate token,
+        // not a byte marker — `123y` lexes as the int 123 followed by `y`.
         val input = StringInput("123y")
         val tokenStream = TokenStream(input)
 
@@ -288,13 +290,14 @@ class TokenStreamTest {
         assertEquals(
             Token(
                 type = TokenType.NUMBER,
-                value = 123.toByte()
+                value = 123
             ), token
         )
     }
 
     @Test
     fun testFloatPostfix() {
+        // Likewise `123f` is the int 123 followed by `f`, not a float suffix.
         val input = StringInput("123f")
         val tokenStream = TokenStream(input)
 
@@ -303,7 +306,7 @@ class TokenStreamTest {
         assertEquals(
             Token(
                 type = TokenType.NUMBER,
-                value = 123f
+                value = 123
             ), token
         )
     }

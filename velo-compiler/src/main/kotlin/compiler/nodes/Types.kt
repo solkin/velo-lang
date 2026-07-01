@@ -88,7 +88,100 @@ data class GenericType(val name: String, val bound: InterfaceType? = null) : Typ
  * behaviour for every other target type.
  */
 fun assignableArg(target: Type, source: Type): Boolean =
-    source.sameAs(target) || (target is InterfaceType && target.sameAs(source))
+    numWidens(target, source) ||
+        source.sameAs(target) ||
+        (target is InterfaceType && target.sameAs(source))
+
+/** Widening order of the primitive numeric types; `null` for anything else. */
+fun numericRank(t: Type): Int? = when (t) {
+    ByteType -> 0
+    IntType -> 1
+    FloatType -> 2
+    else -> null
+}
+
+/** Does a value of [source] widen losslessly to [target] (byte -> int -> float)? */
+fun numWidens(target: Type, source: Type): Boolean {
+    val tr = numericRank(target) ?: return false
+    val sr = numericRank(source) ?: return false
+    return sr <= tr
+}
+
+/**
+ * Coerce the value on top of the stack from [source] to [target] where a value
+ * of [target] is expected (variable init, assignment, return, element, arg).
+ *
+ * Widening (byte -> int -> float) is inserted automatically; an integer literal
+ * ([intLiteral] non-null) additionally adapts *down* to a range-checked byte, so
+ * `byte b = 65` and `float f = 5` both work. Any other narrowing is rejected —
+ * the caller must convert explicitly with `.int()` / `.byte()`.
+ *
+ * Returns [target] when it handled a numeric coercion, or `null` when the two
+ * types are not both numeric (the caller then applies its own type check).
+ */
+fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, what: String): Type? {
+    val tr = numericRank(target) ?: return null
+    val sr = numericRank(source) ?: return null
+    if (sr == tr) return target
+    if (sr < tr) {                                  // widening
+        if (target === FloatType) ctx.add(Op.IntToFloat)  // int/byte -> float
+        return target                               // byte -> int flows as int already
+    }
+    if (intLiteral != null && target === ByteType) { // int literal -> byte
+        if (intLiteral !in -128..255) {
+            throw IllegalArgumentException("Byte literal $intLiteral is out of range for $what (-128..255)")
+        }
+        ctx.add(Op.IntToByte)
+        return target
+    }
+    throw IllegalArgumentException(
+        "Cannot assign ${source.log()} to $what of type ${target.log()} without losing data. " +
+            "Convert explicitly with .${target.name()}() (e.g. value.${target.name()}())."
+    )
+}
+
+/** `.int()`/`.float()`/`.byte()` no-op conversion — keeps the receiver's type. */
+object NumIdentityProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type = type
+}
+
+/** `int.float()` / `byte.float()` — widen to float. */
+object IntToFloatProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.IntToFloat)
+        return FloatType
+    }
+}
+
+/** `float.int()` — truncate toward zero. */
+object FloatToIntProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.FloatToInt)
+        return IntType
+    }
+}
+
+/** `int.byte()` — take the low 8 bits. */
+object IntToByteProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.IntToByte)
+        return ByteType
+    }
+}
+
+/** `float.byte()` — truncate then take the low 8 bits. */
+object FloatToByteProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.FloatToInt)
+        ctx.add(Op.IntToByte)
+        return ByteType
+    }
+}
+
+/** `byte.int()` — a byte already flows as its int value, so no conversion op. */
+object ByteToIntProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type = IntType
+}
 
 fun inferTypeBindings(
     typeParams: List<String>,

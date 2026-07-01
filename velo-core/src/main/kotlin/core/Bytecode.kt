@@ -18,7 +18,7 @@ object Bytecode {
 
     const val MAGIC = 0x5e10
     const val VERSION_MAJOR = 0x0b
-    const val VERSION_MINOR = 0x01
+    const val VERSION_MINOR = 0x02
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -302,6 +302,9 @@ object Bytecode {
             0x12 -> Op.If(elseSkip = inp.readInt())
             0x14 -> Op.IntChar
             0x15 -> Op.IntStr
+            0x16 -> Op.IntToFloat
+            0x17 -> Op.FloatToInt
+            0x1f -> Op.IntToByte
             0x49 -> Op.FloatStr
             0x18 -> Op.Frame(num = inp.readInt())
             0x19 -> Op.MethodLoad(name = inp.readUTF())

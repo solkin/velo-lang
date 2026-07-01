@@ -1,5 +1,5 @@
 ext(float a) mul() int {
-    return a * 100
+    return (a * 100).int()
 };
 
 ext(int a) max(int b) int {

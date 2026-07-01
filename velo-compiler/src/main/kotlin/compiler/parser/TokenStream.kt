@@ -73,7 +73,7 @@ class TokenStream(private val input: Input) {
     }
 
     private enum class NumberFormat{
-        STD, FLOAT, BYTE, HEX, BIN
+        STD, FLOAT, HEX, BIN
     }
 
     private fun readNumber(): Token {
@@ -134,24 +134,10 @@ class TokenStream(private val input: Input) {
                     }
                 }
 
-                'y' -> {
-                    format = NumberFormat.BYTE
-                    input.next()
-                    return false
-                }
-
-                'f' -> {
-                    if (format == NumberFormat.STD || format == NumberFormat.FLOAT) {
-                        format = NumberFormat.FLOAT
-                        input.next()
-                        return false
-                    }
-                }
             }
             return when (format) {
                 NumberFormat.STD -> isDigit(ch)
                 NumberFormat.FLOAT -> isDigit(ch)
-                NumberFormat.BYTE -> isDigit(ch)
                 NumberFormat.HEX -> isHexDigit(ch)
                 NumberFormat.BIN -> isBinDigit(ch)
             }
@@ -159,7 +145,6 @@ class TokenStream(private val input: Input) {
         val value =  when (format) {
             NumberFormat.STD -> number.toInt()
             NumberFormat.FLOAT -> number.toFloat()
-            NumberFormat.BYTE -> number.toByte()
             NumberFormat.HEX -> number.substringAfter('x')
                 .takeIf { !it.isEmpty() }
                 ?.toInt(radix = 16) ?: 0

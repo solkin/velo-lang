@@ -14,8 +14,10 @@ data class IntNode(
 }
 
 object IntType : Numeric {
+    // Strict: cross-numeric flows are opt-in (widening is inserted by
+    // `coerceNumeric` at value sites, narrowing needs an explicit `.int()`).
     override fun sameAs(type: Type): Boolean {
-        return type is Numeric
+        return type is IntType
     }
 
     override fun default(ctx: Context) {
@@ -28,6 +30,9 @@ object IntType : Numeric {
             "shr" -> IntShrProp
             "str" -> IntStrProp
             "char" -> IntCharProp
+            "int" -> NumIdentityProp
+            "float" -> IntToFloatProp
+            "byte" -> IntToByteProp
             else -> null
         }
     }

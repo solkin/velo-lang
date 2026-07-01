@@ -287,6 +287,11 @@ class GoldenTest {
         runGoldenTest("callbacks-result")
     }
 
+    @Test
+    fun `golden - numeric conversions`() {
+        runGoldenTest("numeric-conversions")
+    }
+
     // ========== Utility Methods ==========
 
     /**

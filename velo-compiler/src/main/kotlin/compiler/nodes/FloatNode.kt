@@ -15,7 +15,7 @@ data class FloatNode(
 
 object FloatType : Numeric {
     override fun sameAs(type: Type): Boolean {
-        return type is Numeric
+        return type is FloatType
     }
 
     override fun default(ctx: Context) {
@@ -25,6 +25,9 @@ object FloatType : Numeric {
     override fun prop(name: String): Prop? {
         return when (name) {
             "str" -> FloatStrProp
+            "float" -> NumIdentityProp
+            "int" -> FloatToIntProp
+            "byte" -> FloatToByteProp
             else -> null
         }
     }

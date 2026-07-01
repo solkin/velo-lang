@@ -22,14 +22,18 @@ data class VarNode(
         if (v.immutable) {
             throw IllegalArgumentException("Cannot reassign immutable '$name' (a `let` binding and data class fields are immutable)")
         }
-        if (!v.type.sameAs(type)) {
+        // A numeric RHS widens to the variable's declared type; narrowing needs
+        // an explicit .int()/.byte() (matching variable initialization).
+        val coerced = coerceNumeric(ctx, v.type, type, null, "'$name'")
+        if (coerced == null && !v.type.sameAs(type)) {
             throw IllegalArgumentException("Illegal var assign type $type != ${v.type}")
         }
+        val newType = coerced ?: type
         // Clarify the variable type from the right-hand side — but not for an
         // interface-typed variable (it must keep its interface type so dispatch
         // stays dynamic), and never collapse a pointer to NullType.
-        if (type !is NullType && v.type !is InterfaceType) {
-            ctx.retype(name, type)
+        if (newType !is NullType && v.type !is InterfaceType) {
+            ctx.retype(name, newType)
         }
         ctx.add(Op.Store(v.index))
     }

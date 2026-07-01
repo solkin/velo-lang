@@ -22,10 +22,9 @@ IDENT          = ( LETTER | "_" ) { LETTER | DIGIT | "_" } ;
 LETTER         = "a".."z" | "A".."Z" ;
 DIGIT          = "0".."9" ;
 
-NUMBER         = INT_LIT | FLOAT_LIT | BYTE_LIT | HEX_LIT | BIN_LIT ;
-INT_LIT        = DIGIT { DIGIT | "_" } ;
-FLOAT_LIT      = DIGIT { DIGIT | "_" } ( "." DIGIT { DIGIT } [ "f" ] | "f" ) ;
-BYTE_LIT       = DIGIT { DIGIT } "y" ;
+NUMBER         = INT_LIT | FLOAT_LIT | HEX_LIT | BIN_LIT ;   (* no type suffixes *)
+INT_LIT        = DIGIT { DIGIT | "_" } ;   (* widens to float / fits a byte by context *)
+FLOAT_LIT      = DIGIT { DIGIT | "_" } "." DIGIT { DIGIT } ;
 HEX_LIT        = "0x" HEXDIGIT { HEXDIGIT | "_" } ;
 BIN_LIT        = "0b" ( "0" | "1" ) { "0" | "1" | "_" } ;
 CHAR_LIT       = "'" ( CHARACTER | ESCAPE ) "'" ;           (* value is its code point *)
