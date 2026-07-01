@@ -1,6 +1,6 @@
-include "lang/deflate.vel";
-include "lang/crc32.vel";
-include "lang/str.vel";
+import "std/deflate";
+import "std/crc32";
+import "std/str";
 
 class Zip() {
     func ushr1(int value) int {

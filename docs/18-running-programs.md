@@ -9,9 +9,9 @@ Pass the path to a `.vel` file (paths resolve from the repository root):
 ./gradlew run --args="velo-cli/src/main/resources/primes-range.vel"
 ```
 
-`include` paths are resolved relative to the program's own directory, so a
-program that includes a standard library module (e.g. `include "lang/map.vel"`)
-needs a `lang/` directory next to it — the bundled examples already have one.
+`import` paths are resolved relative to the importing file; standard-library
+modules (`import "std/map"`) are bundled with the compiler, so they need no
+files next to your program.
 
 ## Compiling to Bytecode
 

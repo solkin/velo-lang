@@ -30,6 +30,12 @@ class ParserContext(
     var dictUsed = false
 
     fun registerClass(name: String, type: ClassType) {
+        if (classTypes.containsKey(name)) {
+            throw IllegalStateException(
+                "Class '$name' is already defined — an imported module already declares it. " +
+                    "Rename one, or import the other module under a namespace (import \"...\" as x)."
+            )
+        }
         classTypes[name] = type
     }
 

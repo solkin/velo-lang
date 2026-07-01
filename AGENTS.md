@@ -14,11 +14,11 @@ Notable language features:
 - Strict typing with generics (no variance annotations, no type constraints)
 - Higher-order functions, lambdas, and lexical closures
 - Classes with operator overloading and nested classes; extension functions
-- `dict[K:V]` is pure compiler sugar over the stdlib `Map` class (`lang/map.vel`) — the VM has no dict; the parser auto-includes the implementation when dict syntax is used
+- `dict[K:V]` is pure compiler sugar over the stdlib `Map` class (`std/map.vel`) — the VM has no dict; the parser auto-imports the implementation when dict syntax is used
 - Actor concurrency model with `async`/`await` and `future[T]`; values cross actor boundaries only if transferable (primitives, arrays, tuples — a dict travels as `d.arr` → `array[tuple[K,V]]`)
 - Native class binding by registration: types synthesized from plain JVM classes, two-way callbacks via `VeloFunction`
 - Pointer types (`ptr[T]`) with address-of and dereference operators
-- Standard library written in pure Velo (`lang/*.vel`, bundled with the compiler) plus native bindings for Terminal, Time, HTTP, FileSystem and Socket
+- Standard library written in pure Velo (`std/*.vel`, bundled with the compiler) plus native bindings for Terminal, Time, HTTP, FileSystem and Socket
 
 ## Technology Stack
 
@@ -38,7 +38,7 @@ Minimal external dependencies: Kotlin stdlib and JUnit only.
 velo-core      Shared contracts: Op (48 opcodes), VmType, Bytecode (.vbc read/write),
                SerializedProgram/SerializedFrame, NativeRegistry/NativeDescriptor/NativeLinker
 velo-compiler  Front-end (depends on core): lexer, Pratt parser, AST nodes, type system,
-               codegen; stdlib sources in src/main/resources/lang/
+               codegen; stdlib sources in src/main/resources/std/
 velo-vm        Back-end (depends on core): interpreter, records/memory, actors,
                NativeBridge, VeloRuntime (embedding API)
 velo-cli       CLI (depends on compiler + vm): Main.kt, default native classes
@@ -66,10 +66,10 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 4. **Codegen** — `Context.kt` + `CompilerFrame.kt` manage frames, scopes and op emission.
 5. **API** — `VeloCompiler.kt`: `.vel` → `SerializedProgram`, native classes registered against a `NativeRegistry`.
 
-### Stdlib and includes
+### Stdlib and imports
 
-- `include "name.vel";` loads dependencies through `DependencyLoader` (`compiler/parser/FileInput.kt`). Names under `lang/` resolve from the **compiler classpath** (`velo-compiler/src/main/resources/lang/`); everything else resolves from the file system relative to the compiled file. Every dependency loads at most once per compilation (include-guard).
-- Dict lowering: `dict[K:V]` parses as `ClassType("Map", [K,V])` (`TypeParser.kt`), literals desugar to `Map()` + `put` calls (`nodes/DictNode.kt`), and `Parser.parse()` prepends the auto-included `lang/map.vel` when dict syntax was used. The hardcoded type-param names `["K","V"]` must match the `class Map[K, V]` declaration in `lang/map.vel`.
+- `import "path"` loads a module through `DependencyLoader` (`compiler/parser/FileInput.kt`); the `.vel` extension is optional. `std/` names resolve from the **compiler classpath** (`velo-compiler/src/main/resources/std/`); other paths resolve from the file system **relative to the importing file** (threaded via `PrattParser.currentDir`). Each module loads once, keyed by canonical path. A module is parsed **in isolation** (its own `TokenStream`, sharing the `ParserContext`) by `ImportParselet`, not spliced into the token stream — so newline/`;` termination in the two files never interferes.
+- Dict lowering: `dict[K:V]` parses as `ClassType("Map", [K,V])` (`TypeParser.kt`), literals desugar to `Map()` + `put` calls (`nodes/DictNode.kt`), and `Parser.parse()` prepends the auto-imported `std/map.vel` when dict syntax was used. The hardcoded type-param names `["K","V"]` must match the `class Map[K, V]` declaration in `std/map.vel`.
 
 ## Virtual Machine (`velo-vm`)
 
@@ -100,7 +100,7 @@ One workflow (`.github/workflows/pages.yml`): regenerates the site from `site/` 
 ## Code Style
 
 - Kotlin Official style; no star imports.
-- Velo source conventions (`docs/20-best-practices.md`): lowercase functions, uppercase classes, prefer explicit types over `any`, split large programs with `include`.
+- Velo source conventions (`docs/20-best-practices.md`): lowercase functions, uppercase classes, prefer explicit types over `any`, split large programs with `import`.
 
 ## Security Considerations
 
@@ -111,7 +111,7 @@ One workflow (`.github/workflows/pages.yml`): regenerates the site from `site/` 
 ## Tips for Agents
 
 - New AST node: extend `Node`, implement `compile(ctx): Type`; register a parselet in `VeloGrammar.kt` (precedence in `Precedence.kt`).
-- New VM op: add to `core/Op.kt` (pick a free opcode byte), handle it in `vm/Interpreter.kt`, add read/write support in `core/Bytecode.kt`, list it in `BytecodeRoundTripTest`. Think twice — the project goal is a *minimal* ISA; prefer expressing features in pure Velo stdlib (`velo-compiler/src/main/resources/lang/`) like dict/Map does.
-- New stdlib module: put `name.vel` under `velo-compiler/src/main/resources/lang/`; users get it via `include "lang/name.vel"`.
+- New VM op: add to `core/Op.kt` (pick a free opcode byte), handle it in `vm/Interpreter.kt`, add read/write support in `core/Bytecode.kt`, list it in `BytecodeRoundTripTest`. Think twice — the project goal is a *minimal* ISA; prefer expressing features in pure Velo stdlib (`velo-compiler/src/main/resources/std/`) like dict/Map does.
+- New stdlib module: put `name.vel` under `velo-compiler/src/main/resources/std/`; users get it via `import "std/name";`.
 - Changing the `.vbc` layout or opcode bytes: bump `Bytecode.VERSION_MAJOR`.
 - `docs/` holds the language reference (27 chapters); `site/` is the generated website.

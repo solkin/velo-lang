@@ -6,7 +6,7 @@
 # (which rebuilds the grid live) and the wrap / grid options. The board is toroidal, so
 # gliders that leave one edge re-enter the opposite one. Simulation state lives in an actor.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

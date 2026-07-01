@@ -1,7 +1,7 @@
 Terminal term = new Terminal();
-include "lang/bool.vel";
-include "lang/str.vel";
-include "lang/array.vel";
+import "std/bool";
+import "std/str";
+import "std/array";
 
 # str -> array[byte]
 str hello = "Hello";

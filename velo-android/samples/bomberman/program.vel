@@ -5,7 +5,7 @@
 # bombs), wandering enemies and a hidden exit. The whole game advances on one actor that repaints
 # off the event loop. Hold the D-pad to walk, tap BOMB (or the field) to drop one.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

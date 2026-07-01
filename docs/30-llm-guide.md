@@ -31,6 +31,10 @@ rules first — most mistakes come from breaking one of them.
 # Comment. Native objects are constructed with `new`.
 Terminal term = new Terminal()
 
+# Import a module — `.vel` optional; `std/…` is the standard library,
+# any other path is relative to this file.
+import "std/bool"
+
 # Immutable inferred local (preferred for locals):
 let x = 42                       # int, cannot be reassigned
 let name = "Velo"                # str

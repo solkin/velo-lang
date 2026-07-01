@@ -5,7 +5,7 @@
 # bombs, lives and score. The whole game advances on one actor that repaints off the event loop.
 # Hold ◀ ▶ to move and FIRE to shoot — or drag the field to aim and tap it to fire.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

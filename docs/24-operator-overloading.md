@@ -247,7 +247,7 @@ bool check = (a + b) == new Vector(4, 6); # true
 Operator overloading works with generic classes. The standard library `Map[K, V]` uses index operators for key-based access:
 
 ```velo
-include "lang/map.vel";
+import "std/map";
 
 Map[str, str] map = new Map[str, str]();
 map["name"] = "Velo";        # calls operator []=

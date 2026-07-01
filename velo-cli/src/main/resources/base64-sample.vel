@@ -1,5 +1,5 @@
 Terminal term = new Terminal();
-include "lang/base64.vel";
+import "std/base64";
 
 term.println("=== BASE64 Кодирование и Декодирование (чистый Velo Lang) ===");
 term.println("");

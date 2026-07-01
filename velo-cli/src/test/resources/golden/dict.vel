@@ -1,5 +1,5 @@
 Terminal term = new Terminal();
-include "lang/bool.vel";
+import "std/bool";
 
 # --- literal + index read ---
 

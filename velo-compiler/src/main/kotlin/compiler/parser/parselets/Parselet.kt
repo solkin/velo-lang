@@ -27,4 +27,7 @@ interface ExpressionParser {
     fun eof(): Boolean
     val context: ParserContext
     val depLoader: DependencyLoader
+
+    /** The directory this source resolves its imports against (`null` for the root/classpath base). */
+    val currentDir: java.io.File?
 }

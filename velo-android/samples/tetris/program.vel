@@ -9,7 +9,7 @@
 # Pieces come from a 7-bag randomizer (each appears once per bag), with a next preview, line-clear
 # scoring and levels.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

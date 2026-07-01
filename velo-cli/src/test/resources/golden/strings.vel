@@ -1,5 +1,5 @@
 Terminal term = new Terminal();
-include "lang/bool.vel";
+import "std/bool";
 
 str s1 = "Hello";
 str s2 = "World";

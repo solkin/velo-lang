@@ -40,14 +40,14 @@ ESCAPE         = "\" ( "n" | "t" | "\" | '"' | "$" | "'" ) ;
 A statement is any of these forms or a bare `expression`.
 
 ```ebnf
-statement      = include
+statement      = import
                | typedDecl | letDecl
                | funcDecl  | extDecl  | operatorDecl
                | classDecl | dataDecl | actorDecl | interfaceDecl
                | if | while | for | return | "break" | "continue"
                | expression ;
 
-include        = "include" STRING ;
+import         = "import" STRING ;   (* .vel optional; std/ = stdlib; else relative to file *)
 
 typedDecl      = type IDENT [ "=" expression ] ;           (* explicit type; mutable *)
 letDecl        = "let" IDENT "=" expression ;              (* inferred type; immutable *)

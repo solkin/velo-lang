@@ -1,5 +1,5 @@
 Terminal term = new Terminal();
-include "lang/zip.vel";
+import "std/zip";
 
 FileSystem fs = new FileSystem();
 

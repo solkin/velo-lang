@@ -8,7 +8,8 @@ import compiler.parser.parselets.PrefixParselet
 class PrattParser(
     private val stream: TokenStream,
     override val context: ParserContext,
-    override val depLoader: DependencyLoader
+    override val depLoader: DependencyLoader,
+    override var currentDir: java.io.File? = null,
 ) : ExpressionParser {
 
     private val prefixParselets = mutableMapOf<TokenType, PrefixParselet>()

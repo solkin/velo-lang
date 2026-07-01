@@ -19,7 +19,7 @@
 ## Modularity
 
 - Break large programs into modules
-- Use `include` for code reuse
+- Use `import` for code reuse
 
 ---
 

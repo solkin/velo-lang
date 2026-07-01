@@ -758,9 +758,9 @@ class ParserTest {
     }
 
     @Test
-    fun testSingleInclude() {
+    fun testSingleImport() {
         val parser = makeSimpleParser(
-            str = "include \"test/abc.vel\";",
+            str = "import \"test/abc\";",
             deps = mapOf(
                 "test/abc.vel" to "int a;"
             )
@@ -769,15 +769,16 @@ class ParserTest {
         val node = parser.parse()
 
         assertEquals(
-            expected = (DefNode(name = "a", type = IntType, def = null)).wrapProgram(),
+            // Each import contributes its module's statements as a nested ProgramNode.
+            expected = ProgramNode(prog = listOf(DefNode(name = "a", type = IntType, def = null))).wrapProgram(),
             actual = node,
         )
     }
 
     @Test
-    fun testMultipleInclude() {
+    fun testMultipleImport() {
         val parser = makeSimpleParser(
-            str = "include \"test/abc.vel\"; include \"test/xyz.vel\";",
+            str = "import \"test/abc\"; import \"test/xyz\";",
             deps = mapOf(
                 "test/abc.vel" to "int a;",
                 "test/xyz.vel" to "a = 1;",
@@ -789,8 +790,8 @@ class ParserTest {
         assertEquals(
             expected = ProgramNode(
                 prog = listOf(
-                    DefNode(name = "a", type = IntType, def = null),
-                    AssignNode(left = VarNode(name = "a"), right = IntNode(value = 1))
+                    ProgramNode(prog = listOf(DefNode(name = "a", type = IntType, def = null))),
+                    ProgramNode(prog = listOf(AssignNode(left = VarNode(name = "a"), right = IntNode(value = 1)))),
                 )
             ),
             actual = node,

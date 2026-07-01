@@ -18,7 +18,7 @@ class TokenStream(private val input: Input) {
         "true",
         "false",
         "null",
-        "include",
+        "import",
         "operator",
         "interface",
         "return",

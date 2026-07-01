@@ -5,7 +5,7 @@
 # across, lives and score. Tile-based movement is interpolated in sub-tile steps; the whole game
 # advances on one actor that repaints off the event loop. Swipe the maze (or use the D-pad) to turn.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

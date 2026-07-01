@@ -7,7 +7,7 @@
 # game. The countdown timer runs on its own actor, and long-press detection on another — both
 # repaint off the event loop, the Velo way of animating without blocking input.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Ui ui = new Ui();

@@ -7,7 +7,7 @@
 # stage. Hold the D-pad to move, tap the dig buttons. Tile movement is interpolated in sub-steps;
 # the whole game advances on one actor that repaints off the event loop.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

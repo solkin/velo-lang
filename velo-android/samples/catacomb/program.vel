@@ -7,7 +7,7 @@
 # chase on line-of-sight and bite on contact; the pistol fires on a tap (which also aims toward
 # the tapped column). Hold the D-pad to move and turn. Clear every guard to win.
 
-include "lang/random.vel";
+import "std/random";
 
 Terminal term = new Terminal();
 Time time = new Time();

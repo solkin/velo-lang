@@ -1,6 +1,6 @@
 # Random reproduces java.util.Random bit-for-bit; these values match the JVM.
-include "lang/random.vel";
-include "lang/bool.vel";
+import "std/random";
+import "std/bool";
 
 Terminal term = new Terminal();
 

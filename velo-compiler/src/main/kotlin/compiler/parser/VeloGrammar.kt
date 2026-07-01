@@ -30,7 +30,7 @@ object VeloGrammar {
         parser.registerKeyword("interface", InterfaceParselet())
         parser.registerKeyword("async", AsyncParselet())
         parser.registerKeyword("await", AwaitParselet())
-        parser.registerKeyword("include", IncludeParselet())
+        parser.registerKeyword("import", ImportParselet())
         parser.registerKeyword("operator", OperatorParselet())
         parser.registerKeyword("return", ReturnParselet())
         parser.registerKeyword("break", BreakParselet())

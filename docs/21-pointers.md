@@ -32,7 +32,7 @@ ptr[int] nullPtr3 = null;
 You can assign `null` to any pointer to nullify it:
 
 ```velo
-include "lang/bool.vel";
+import "std/bool";
 
 ptr[int] p = new ptr[int](42);
 term.println(p.val.str());  # 42
@@ -95,7 +95,7 @@ p.val = 999;
 Use `== null` or `!= null` to check if a pointer is null:
 
 ```velo
-include "lang/bool.vel";
+import "std/bool";
 
 ptr[int] p = new ptr[int];
 

@@ -5,7 +5,7 @@
 Extension functions for boolean type:
 
 ```velo
-include "lang/bool.vel";
+import "std/bool";
 
 bool flag = true;
 str s = flag.str();        # "true" or "false" (parentheses optional)
@@ -18,7 +18,7 @@ bool neg = flag.not;     # Logical NOT
 Extension functions for integer type:
 
 ```velo
-include "lang/int.vel";
+import "std/int";
 
 int x = -42;
 int absVal = x.abs();           # 42
@@ -32,7 +32,7 @@ str bin = (10).format(2);       # "1010"
 Extension functions for string type:
 
 ```velo
-include "lang/str.vel";
+import "std/str";
 
 str text = "Hello";
 array[byte] bytes = text.bytes();    # [72, 101, 108, 108, 111]
@@ -43,7 +43,7 @@ array[byte] bytes = text.bytes();    # [72, 101, 108, 108, 111]
 Extension functions for array type:
 
 ```velo
-include "lang/array.vel";
+import "std/array";
 
 array[byte] bytes = new array[byte]{72, 101, 108, 108, 111};
 str text = bytes.str();              # "Hello"
@@ -52,7 +52,7 @@ str text = bytes.str();              # "Hello"
 Both extensions enable roundtrip conversion: `text.bytes().str() == text`.
 
 The classes below — Terminal, Time, Http, FileSystem, Socket — are native
-classes provided by the runtime, so using them needs no `include`; the
+classes provided by the runtime, so using them needs no `import`; the
 compiler knows their types from the registration. Just construct one. The
 examples use `term` as the conventional name for a `Terminal` instance.
 
@@ -104,7 +104,7 @@ str content = fs.read("file.txt");
 fs.append("file.txt", "\nMore content");
 
 # Reading and writing byte arrays
-include "lang/str.vel";
+import "std/str";
 array[byte] data = "binary data".bytes();
 fs.writeBytes("file.bin", data);
 array[byte] loaded = fs.readBytes("file.bin");
@@ -185,7 +185,7 @@ A generic hash map (`Map[K, V]`) with separate chaining and automatic resizing. 
 ### Creating and Populating
 
 ```velo
-include "lang/map.vel";
+import "std/map";
 
 Map[str, int] ages = new Map[str, int]();
 
@@ -294,7 +294,7 @@ linear congruential generator (multiplier `0x5DEECE66D`, addend `0xB`, modulus
 `2^48`), so a given seed produces **exactly** the same sequence as the JVM.
 
 ```velo
-include "lang/random.vel";
+import "std/random";
 
 Random r = new Random(42);          # seed it like java.util.Random(long)
 r.nextInt();                        # -1170105035 (same as the JVM)
@@ -322,5 +322,5 @@ rather than overloading `nextInt`.
 
 ---
 
-[Previous: Modules and Includes ←](16-modules-and-includes.md) | [Next: Running Programs →](18-running-programs.md)
+[Previous: Modules and Imports ←](16-modules-and-includes.md) | [Next: Running Programs →](18-running-programs.md)
 

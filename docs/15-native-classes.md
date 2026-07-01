@@ -35,7 +35,7 @@ term.println(c.value().str());  # 11
 The CLI registers `Terminal`, `Time`, `FileSystem`, `Http` and `Socket` for
 every program it runs; an embedding application picks its own set. A program
 just constructs what it needs (`Terminal term = new Terminal();`) — native
-classes have no `include`.
+classes need no `import`.
 
 ## How It Works
 
