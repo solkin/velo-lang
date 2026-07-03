@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Programs — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="running-programs">Running Programs</h1>
+<h2 id="running-from-file">Running from File</h2>
+<p>Pass the path to a <code>.vel</code> file (paths resolve from the repository root):</p>
+<pre class="code"><code>./gradlew run --args="velo-cli/src/main/resources/hello.vel"
+./gradlew run --args="velo-cli/src/main/resources/primes-range.vel"</code></pre>
+<p><code>import</code> paths are resolved relative to the importing file; standard-library modules (<code>import "std/map"</code>) are bundled with the compiler, so they need no files next to your program.</p>
+<h2 id="compiling-to-bytecode">Compiling to Bytecode</h2>
+<p>A second argument compiles the program to a <code>.vbc</code> bytecode file instead of running it; a <code>.vbc</code> file as the first argument runs pre-compiled bytecode:</p>
+<pre class="code"><code>./gradlew run --args="velo-cli/src/main/resources/hello.vel hello.vbc"
+./gradlew run --args="hello.vbc"</code></pre>
+<h2 id="example-programs">Example Programs</h2>
+<p>The project includes many examples in <code>velo-cli/src/main/resources/</code>:</p>
+<ul><li><code>hello.vel</code> — Hello, World</li><li><code>fibonacci-recursive.vel</code> — Recursive Fibonacci algorithm</li><li><code>primes-range.vel</code> — Prime number search</li><li><code>lzw.vel</code> — LZW compression algorithm</li><li><code>huffman.vel</code> — Huffman compression algorithm</li><li><code>class.vel</code> — Class usage examples</li><li><code>ext.vel</code> — Extension function examples</li><li><code>http-example.vel</code> — HTTP request examples</li><li><code>filesystem-example.vel</code> — File operations examples</li></ul>
+<hr>
+<p><a href="17-standard-library.html">Previous: Standard Library ←</a> | <a href="19-language-features.html">Next: Language Features →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

@@ -35,10 +35,10 @@ d[3] = "c";              # Add/change
 int count = d.len;
 ```
 
-### `set(key, value)` — Set Value
+### `put(key, value)` — Set Value
 
 ```velo
-d.set(5, "e");
+d.put(5, "e");
 ```
 
 ### `del(key)` — Delete Element
@@ -74,7 +74,7 @@ array[str] allValues = d.vals();
 ### `arr` — Array of Tuples (key, value)
 
 ```velo
-array[tuple[int:str]] pairs = d.arr();
+array[tuple[int, str]] pairs = d.arr();
 ```
 
 ---

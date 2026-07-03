@@ -23,7 +23,7 @@ LETTER         = "a".."z" | "A".."Z" ;
 DIGIT          = "0".."9" ;
 
 NUMBER         = INT_LIT | FLOAT_LIT | HEX_LIT | BIN_LIT ;   (* no type suffixes *)
-INT_LIT        = DIGIT { DIGIT | "_" } ;   (* widens to float / fits a byte by context *)
+INT_LIT        = DIGIT { DIGIT | "_" } ;   (* int; auto-long if > 32-bit; widens to float / fits a byte by context *)
 FLOAT_LIT      = DIGIT { DIGIT | "_" } "." DIGIT { DIGIT } ;
 HEX_LIT        = "0x" HEXDIGIT { HEXDIGIT | "_" } ;
 BIN_LIT        = "0b" ( "0" | "1" ) { "0" | "1" | "_" } ;
@@ -83,7 +83,7 @@ typeList       = type { "," type } ;
 ## Types
 
 ```ebnf
-type           = "byte" | "int" | "float" | "str" | "bool"
+type           = "byte" | "int" | "long" | "float" | "str" | "bool"
                | "void" | "any" | "Self"
                | "array" "[" type "]"
                | "tuple" "[" type { "," type } "]"

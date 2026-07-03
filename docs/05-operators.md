@@ -59,34 +59,39 @@ bool ge = a >= b;     # Greater than or equal
 
 ## Logical Operators
 
-**Important:** Velo Lang uses the `&` operator for logical "AND", which **always evaluates both operands** (no short-circuit evaluation like `&&`).
+Velo has short-circuit logical operators `&&`, `||`, and the unary `!`:
 
 ```velo
 bool a = true;
 bool b = false;
 
-bool and = a & b;     # false (always evaluates both operands)
-bool or = a | b;      # true
-bool xor = a ^ b;     # true
+bool and = a && b;    # false (short-circuits: b only evaluated if a is true)
+bool or  = a || b;    # true  (short-circuits: b only evaluated if a is false)
+bool neg = !a;        # false
 ```
 
-**Negation:** Velo Lang does not have a unary `!` operator. For negation, use comparison with `false`:
-
-```velo
-bool value = true;
-if (value == false) {
-    # Will execute if value == false
-};
-```
+`&` and `|` also work on booleans as short-circuit aliases of `&&` / `||`, but
+prefer `&&` / `||` for clarity.
 
 ## Bitwise Operators
+
+`&`, `|`, `^` are bitwise operators on `int` and `long`:
 
 ```velo
 int a = 5;
 int b = 3;
 
-int shl = a << 1;     # Left shift
-int shr = a >> 1;     # Right shift
+int band = a & b;     # 1  (bitwise AND)
+int bor  = a | b;     # 7  (bitwise OR)
+int bxor = a ^ b;     # 6  (bitwise XOR)
+```
+
+There are **no shift operators** (`<<` / `>>`). Shift with the `.shl(n)` /
+`.shr(n)` methods instead:
+
+```velo
+int shl = a.shl(1);   # 10 (left shift by 1)
+int shr = a.shr(1);   # 2  (right shift by 1)
 ```
 
 ## Operator Overloading

@@ -18,9 +18,11 @@ int maxValue = 5.max(10);  # 10
 str result = "Hello".insert(5, " World");  # "Hello World"
 ```
 
-## Extensions Without Parameters
+## No-Argument Extensions
 
-For extension functions without parameters, parentheses are optional:
+An extension with no parameters is still called with `()`. Like every method and
+conversion, the parentheses are **required** — bare access is only for stored
+fields:
 
 ```velo
 ext(bool b) str() str {
@@ -31,21 +33,20 @@ ext(int n) double() int {
     return n * 2
 };
 
-# Usage - both forms are valid:
+# Usage — parentheses are required:
 bool flag = true;
-str s1 = flag.str();   # with parentheses
-str s2 = flag.str();     # without parentheses (preferred)
+str s = flag.str();    # "true"
 
 int x = 5;
-int d1 = x.double();   # 10
-int d2 = x.double;     # 10
+int d = x.double();    # 10
+# int bad = x.double;  # ERROR: 'double' is a function; call it with parentheses: double()
 ```
 
 ## Extension for Classes
 
 ```velo
-ext(Terminal t) printInt(int a) str {
-    return t.println(a.str());
+ext(Terminal t) printInt(int a) void {
+    t.println(a.str());
 };
 
 Terminal term = new Terminal();

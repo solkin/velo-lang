@@ -3,67 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velo by Example</title>
+    <title>Documentation — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="index-page">
-        <div class="index-header">
-            <h1>Velo by Example</h1>
+    <header class="topbar">
+        <div class="topbar-inner">
+            
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+        <div class="hero">
+            <h1>Velo Lang</h1>
             <p class="tagline">Simple. Embeddable. Yours.</p>
+            <p class="lead">A functional, strictly-typed, compilable language that runs on a
+            lightweight stack-based virtual machine — strict typing, higher-order functions,
+            generics, actors, and easy embedding into JVM applications.</p>
         </div>
-        <div class="index-intro">
-            <p>
-                <a href="https://github.com/solkin/velo-lang">Velo Lang</a> is a functional,
-                strictly-typed, compilable programming language that runs on a lightweight stack-based
-                virtual machine. It features strict typing, higher-order functions, generics, and
-                easy embedding into JVM applications.
-            </p>
-            <p>
-                <em>Velo by Example</em> is a hands-on introduction to Velo using annotated example programs.
-                Check out the <a href="examples/hello-world.html">first example</a>
-                or browse the full list below.
-            </p>
-        </div>
-        <ul class="example-list">
-        <li><a href="examples/hello-world.html">Hello World</a></li>
-        <li><a href="examples/values.html">Values</a></li>
-        <li><a href="examples/variables.html">Variables</a></li>
-        <li><a href="examples/operators.html">Operators</a></li>
-        <li><a href="examples/conditionals.html">If/Else</a></li>
-        <li><a href="examples/loops.html">While Loops</a></li>
-        <li><a href="examples/functions.html">Functions</a></li>
-        <li><a href="examples/lambdas.html">Lambda Functions</a></li>
-        <li><a href="examples/recursion.html">Recursion</a></li>
-        <li><a href="examples/higher-order-functions.html">Higher-Order Functions</a></li>
-        <li><a href="examples/closures.html">Closures</a></li>
-        <li><a href="examples/actors.html">Actors</a></li>
-        <li><a href="examples/data-classes.html">Data Classes</a></li>
-        <li><a href="examples/arrays.html">Arrays</a></li>
-        <li><a href="examples/dictionaries.html">Dictionaries</a></li>
-        <li><a href="examples/strings.html">Strings</a></li>
-        <li><a href="examples/tuples.html">Tuples</a></li>
-        <li><a href="examples/classes.html">Classes</a></li>
-        <li><a href="examples/extension-functions.html">Extension Functions</a></li>
-        <li><a href="examples/pointers.html">Pointers</a></li>
-        <li><a href="examples/generics.html">Generics</a></li>
-        <li><a href="examples/apply-blocks.html">Apply Blocks</a></li>
-        <li><a href="examples/operator-overloading.html">Operator Overloading</a></li>
-        <li><a href="examples/modules.html">Modules</a></li>
-        <li><a href="examples/let-bindings.html">Let Bindings</a></li>
-        <li><a href="examples/type-conversions.html">Type Conversions</a></li>
-        <li><a href="examples/terminal-io.html">Terminal I/O</a></li>
-        <li><a href="examples/file-system.html">File System</a></li>
-        <li><a href="examples/http.html">HTTP Client</a></li>
-        <li><a href="examples/sockets.html">TCP Sockets</a></li>
-        <li><a href="examples/hash-map.html">Hash Map</a></li>
-        <li><a href="examples/native-classes.html">Native Classes</a></li>
-        </ul>
-        <div class="index-footer">
-            <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-            <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-            <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
-        </div>
-    </div>
+<h1 id="velo-lang---complete-documentation">Velo Lang - Complete Documentation</h1>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol><li><a href="01-introduction.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables and Assignment</a></li><li><a href="05-operators.html">Operators</a></li><li><a href="06-conditionals.html">Conditional Statements</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li><li><a href="13-classes.html">Classes</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="16-modules-and-includes.html">Modules and Imports</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="21-pointers.html">Pointers</a></li><li><a href="22-apply-blocks.html">Apply Blocks</a></li><li><a href="23-generics.html">Generics</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="25-closures.html">Closures</a></li><li><a href="26-actors.html">Actors</a></li><li><a href="27-callbacks.html">Callbacks</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="30-llm-guide.html">LLM Guide (cheat-sheet)</a></li><li><a href="31-grammar.html">Grammar &amp; Precedence</a></li></ol>
+<hr>
+<h2 id="license">License</h2>
+<p>MIT License</p>
+<p>Copyright (c) 2025 Igor Solkin</p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
 </body>
 </html>

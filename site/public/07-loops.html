@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loops — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="loops">Loops</h1>
+<h2 id="while-loop">While Loop</h2>
+<pre class="code"><code><span class="ty">int</span> i <span class="op">=</span> <span class="nu">1</span>;
+<span class="kw">while</span> (i <span class="op">&lt;=</span> <span class="nu">5</span>) {
+    term.println(i.<span class="ty">str</span>());
+    i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
+};</code></pre>
+<p>An infinite loop is <code>while (true) { ... }</code> — exit it with <code>break</code> or <code>return</code>.</p>
+<h2 id="for-loops">For Loops</h2>
+<p><code>for</code> iterates an integer <strong>range</strong> (<code>start .. end</code>, end exclusive) or the elements of an <strong>array</strong>:</p>
+<pre class="code"><code><span class="cm"># Range: prints 0 1 2 3 4</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..5</span> {
+    term.println(i.<span class="ty">str</span>());
+};
+
+<span class="cm"># The bounds are ordinary expressions, evaluated once:</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">1..</span>n <span class="op">+</span> <span class="nu">1</span> {
+    fact <span class="op">=</span> fact <span class="op">*</span> i;
+};
+
+<span class="cm"># Array iteration binds each element in turn:</span>
+<span class="ty">array</span>[<span class="ty">str</span>] names <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">str</span>]{<span class="st">"ada"</span>, <span class="st">"bob"</span>, <span class="st">"cid"</span>};
+<span class="kw">for</span> name <span class="kw">in</span> names {
+    term.println(name);
+};</code></pre>
+<h2 id="break-and-continue">break and continue</h2>
+<p><code>break</code> leaves the innermost loop; <code>continue</code> skips to the next iteration (in a <code>for</code>, the increment still runs):</p>
+<pre class="code"><code><span class="ty">int</span> sum <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..100</span> {
+    <span class="kw">if</span> (i <span class="op">&gt;=</span> <span class="nu">10</span>) { <span class="kw">break</span>; }       <span class="cm"># stop once i reaches 10</span>
+    <span class="kw">if</span> (i <span class="op">%</span> <span class="nu">2</span> <span class="op">==</span> <span class="nu">0</span>) { <span class="kw">continue</span>; } <span class="cm"># skip even numbers</span>
+    sum <span class="op">=</span> sum <span class="op">+</span> i;
+};                                <span class="cm"># sum = 1+3+5+7+9 = 25</span></code></pre>
+<h2 id="the-loop-variable-is-fresh-each-iteration">The loop variable is fresh each iteration</h2>
+<p>A <code>for</code> loop's variable is a <strong>new binding on every iteration</strong>, so a closure created in the body captures that iteration's value (the same rule as <code>let</code> in JavaScript, or <code>for</code> in Kotlin/Swift):</p>
+<pre class="code"><code><span class="ty">array</span>[<span class="kw">func</span>[<span class="ty">int</span>]] handlers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="kw">func</span>[<span class="ty">int</span>]](<span class="nu">3</span>);
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..3</span> {
+    handlers[i] <span class="op">=</span> <span class="kw">func</span>() <span class="ty">int</span> { <span class="kw">return</span> i; };
+};
+term.println(handlers[<span class="nu">0</span>]().<span class="ty">str</span>());   <span class="cm"># 0</span>
+term.println(handlers[<span class="nu">1</span>]().<span class="ty">str</span>());   <span class="cm"># 1  (not 2!)</span>
+term.println(handlers[<span class="nu">2</span>]().<span class="ty">str</span>());   <span class="cm"># 2</span></code></pre>
+<p>A <code>while</code> loop has no loop variable — its counter is an ordinary variable you declare outside, so it is <strong>shared</strong> across iterations. To capture per iteration, bind a fresh local inside the body:</p>
+<pre class="code"><code><span class="ty">int</span> j <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (j <span class="op">&lt;</span> <span class="nu">3</span>) {
+    <span class="ty">int</span> cur <span class="op">=</span> j;                              <span class="cm"># fresh each iteration</span>
+    handlers[j] <span class="op">=</span> <span class="kw">func</span>() <span class="ty">int</span> { <span class="kw">return</span> cur; }; <span class="cm"># captures 0, 1, 2</span>
+    j <span class="op">=</span> j <span class="op">+</span> <span class="nu">1</span>;
+};</code></pre>
+<hr>
+<p><a href="06-conditionals.html">Previous: Conditional Statements ←</a> | <a href="08-functions.html">Next: Functions →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

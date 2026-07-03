@@ -9,8 +9,8 @@ class Point(int x, int y) {
     int yCoord = y;
     
     # Methods
-    func distance() float {
-        return (xCoord * xCoord + yCoord * yCoord).float.sqrt();
+    func distanceSquared() int {
+        return xCoord * xCoord + yCoord * yCoord;
     };
     
     func move(int dx, int dy) void {
@@ -41,7 +41,7 @@ Point p = new Point(10, 20);
 int x = p.xCoord;        # Reading a field — no parens
 # p.xCoord = 15;         # ERROR: cannot modify field from outside
 p.move(5, 5);            # Calling a method — parens (even if it took none)
-int d = p.dist();        # A zero-argument method still needs ()
+int d = p.distanceSquared();   # A zero-argument method still needs ()
 ```
 
 Example class with methods for modifying fields:

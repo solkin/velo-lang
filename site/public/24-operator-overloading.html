@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Overloading — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="operator-overloading">Operator Overloading</h1>
+<p>Velo supports operator overloading for user-defined classes using the <code>operator</code> keyword. This allows instances of your classes to work with built-in operators like <code>+</code>, <code>-</code>, <code>[]</code>, and others.</p>
+<h2 id="syntax">Syntax</h2>
+<p>Operator declarations are placed inside a class body using the <code>operator</code> keyword followed by the operator symbol, parameter list, return type, and body:</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">MyClass</span>() {
+    <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">MyClass</span> other) <span class="ty">MyClass</span> {
+        <span class="cm"># return a new MyClass combining self and other</span>
+    };
+};</code></pre>
+<h2 id="supported-operators">Supported Operators</h2>
+<h3 id="binary-operators">Binary Operators</h3>
+<p>Binary operators take one parameter (the right-hand operand) and return a value:</p>
+<div class="table-wrap"><table><thead><tr><th>Operator</th><th>Internal Name</th><th>Description</th></tr></thead><tbody><tr><td><code>+</code></td><td><code>op@+</code></td><td>Addition</td></tr><tr><td><code>-</code></td><td><code>op@-</code></td><td>Subtraction</td></tr><tr><td><code>*</code></td><td><code>op@*</code></td><td>Multiplication</td></tr><tr><td><code>/</code></td><td><code>op@/</code></td><td>Division</td></tr><tr><td><code>%</code></td><td><code>op@%</code></td><td>Modulo</td></tr><tr><td><code>==</code></td><td><code>op@==</code></td><td>Equality</td></tr><tr><td><code>!=</code></td><td><code>op@!=</code></td><td>Inequality</td></tr><tr><td><code>&lt;</code></td><td><code>op@&lt;</code></td><td>Less than</td></tr><tr><td><code>&gt;</code></td><td><code>op@&gt;</code></td><td>Greater than</td></tr><tr><td><code>&lt;=</code></td><td><code>op@&lt;=</code></td><td>Less than or equal</td></tr><tr><td><code>&gt;=</code></td><td><code>op@&gt;=</code></td><td>Greater than or equal</td></tr></tbody></table></div>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">==</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">==</span> other.x <span class="op">&amp;</span> y <span class="op">==</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&lt;</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">&lt;</span> other.x <span class="op">&amp;</span> y <span class="op">&lt;</span> other.y;
+    };
+};
+
+<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+<span class="ty">Vector</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">4</span>);
+<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> b;          <span class="cm"># Vector(4, 6)</span>
+<span class="ty">bool</span> same <span class="op">=</span> a <span class="op">==</span> a;          <span class="cm"># true</span>
+<span class="ty">bool</span> less <span class="op">=</span> a <span class="op">&lt;</span> b;           <span class="cm"># true</span></code></pre>
+<h3 id="unary-operators">Unary Operators</h3>
+<p>The unary negation operator takes no parameters:</p>
+<div class="table-wrap"><table><thead><tr><th>Operator</th><th>Internal Name</th><th>Description</th></tr></thead><tbody><tr><td><code>-</code></td><td><code>op@neg</code></td><td>Negation</td></tr></tbody></table></div>
+<p>The compiler distinguishes unary <code>-</code> from binary <code>-</code> by the number of parameters: zero parameters means unary negation, one parameter means binary subtraction.</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">-</span>() <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span> <span class="op">-</span> x, <span class="nu">0</span> <span class="op">-</span> y);
+    };
+};
+
+<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+<span class="ty">Vector</span> neg <span class="op">=</span> <span class="op">-</span>a;             <span class="cm"># Vector(-1, -2)</span>
+<span class="ty">Vector</span> dneg <span class="op">=</span> <span class="op">-</span>(<span class="op">-</span>a);         <span class="cm"># Vector(1, 2)</span></code></pre>
+<h3 id="index-operators">Index Operators</h3>
+<p>Index operators enable bracket-based access on class instances:</p>
+<div class="table-wrap"><table><thead><tr><th>Operator</th><th>Internal Name</th><th>Description</th></tr></thead><tbody><tr><td><code>[]</code></td><td><code>op@[]</code></td><td>Index read</td></tr><tr><td><code>[]=</code></td><td><code>op@[]=</code></td><td>Index write</td></tr></tbody></table></div>
+<p>The read operator <code>[]</code> takes one parameter (the index/key) and returns a value. The write operator <code>[]=</code> takes two parameters (the index/key and the value to assign):</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> [](<span class="ty">int</span> index) <span class="ty">int</span> {
+        <span class="kw">return</span> <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="kw">else</span> y;
+    };
+
+    <span class="kw">operator</span> []<span class="op">=</span>(<span class="ty">int</span> index, <span class="ty">int</span> value) <span class="kw">void</span> {
+        <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="op">=</span> value <span class="kw">else</span> y <span class="op">=</span> value;
+    };
+};
+
+<span class="ty">Vector</span> v <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span>, <span class="nu">0</span>);
+v[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">10</span>;                   <span class="cm"># calls operator []=</span>
+v[<span class="nu">1</span>] <span class="op">=</span> <span class="nu">20</span>;                   <span class="cm"># calls operator []=</span>
+<span class="ty">int</span> first <span class="op">=</span> v[<span class="nu">0</span>];            <span class="cm"># calls operator [], returns 10</span></code></pre>
+<h2 id="compound-assignment">Compound Assignment</h2>
+<p>Compound assignment operators (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code>) are desugared by the compiler into regular binary operations. For example, <code>a += b</code> becomes <code>a = a + b</code>. This means defining <code>operator +</code> is sufficient for <code>+=</code> to work:</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y);
+    };
+};
+
+<span class="ty">Vector</span> v <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+v <span class="op">=</span> v <span class="op">+</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">10</span>, <span class="nu">10</span>);  <span class="cm"># v is now (11, 12)</span></code></pre>
+<p>Index-based compound expressions also work:</p>
+<pre class="code"><code><span class="ty">Vector</span> v <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">5</span>, <span class="nu">10</span>);
+v[<span class="nu">0</span>] <span class="op">=</span> v[<span class="nu">0</span>] <span class="op">+</span> <span class="nu">15</span>;            <span class="cm"># v.x is now 20</span></code></pre>
+<h2 id="operator-precedence">Operator Precedence</h2>
+<p>Overloaded operators follow the same precedence rules as built-in operators. Multiplication binds tighter than addition, comparisons bind looser, and so on:</p>
+<pre class="code"><code><span class="cm"># * is evaluated before +, just like with built-in types</span>
+<span class="ty">Vector</span> result <span class="op">=</span> a <span class="op">+</span> b <span class="op">*</span> c;   <span class="cm"># same as a + (b * c)</span></code></pre>
+<h2 id="left-operand-dispatch">Left-Operand Dispatch</h2>
+<p>Operator overloading dispatches on the <strong>left operand</strong> only. The left operand must be a class type with the operator defined. If the left operand is a built-in type, built-in behavior is used regardless of the right operand:</p>
+<pre class="code"><code><span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> a;           <span class="cm"># OK: left is Vector, dispatches to op@+</span>
+<span class="cm"># int x = 5 + a;             # ERROR: left is int, uses built-in int addition</span></code></pre>
+<h2 id="complete-example">Complete Example</h2>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">-</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">-</span> other.x, y <span class="op">-</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">*</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">*</span> other.x, y <span class="op">*</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">/</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">/</span> other.x, y <span class="op">/</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">%</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">%</span> other.x, y <span class="op">%</span> other.y);
+    };
+
+    <span class="kw">operator</span> <span class="op">==</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">==</span> other.x <span class="op">&amp;</span> y <span class="op">==</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">!=</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">!=</span> other.x <span class="op">|</span> y <span class="op">!=</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&lt;</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">&lt;</span> other.x <span class="op">&amp;</span> y <span class="op">&lt;</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&gt;</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">&gt;</span> other.x <span class="op">&amp;</span> y <span class="op">&gt;</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&lt;=</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">&lt;=</span> other.x <span class="op">&amp;</span> y <span class="op">&lt;=</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">&gt;=</span>(<span class="ty">Vector</span> other) <span class="ty">bool</span> {
+        <span class="kw">return</span> x <span class="op">&gt;=</span> other.x <span class="op">&amp;</span> y <span class="op">&gt;=</span> other.y;
+    };
+
+    <span class="kw">operator</span> <span class="op">-</span>() <span class="ty">Vector</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span> <span class="op">-</span> x, <span class="nu">0</span> <span class="op">-</span> y);
+    };
+
+    <span class="kw">operator</span> [](<span class="ty">int</span> index) <span class="ty">int</span> {
+        <span class="kw">return</span> <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="kw">else</span> y;
+    };
+
+    <span class="kw">operator</span> []<span class="op">=</span>(<span class="ty">int</span> index, <span class="ty">int</span> value) <span class="kw">void</span> {
+        <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="op">=</span> value <span class="kw">else</span> y <span class="op">=</span> value;
+    };
+
+    <span class="kw">func</span> toString() <span class="ty">str</span> {
+        <span class="kw">return</span> <span class="st">"("</span>.con(x.<span class="ty">str</span>()).con(<span class="st">", "</span>).con(y.<span class="ty">str</span>()).con(<span class="st">")"</span>);
+    };
+};
+
+<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
+<span class="ty">Vector</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">4</span>);
+
+<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> b;           <span class="cm"># (4, 6)</span>
+<span class="ty">Vector</span> diff <span class="op">=</span> a <span class="op">-</span> b;          <span class="cm"># (-2, -2)</span>
+<span class="ty">Vector</span> prod <span class="op">=</span> a <span class="op">*</span> b;          <span class="cm"># (3, 8)</span>
+<span class="ty">Vector</span> quot <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">10</span>, <span class="nu">20</span>) <span class="op">/</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">5</span>, <span class="nu">4</span>);  <span class="cm"># (2, 5)</span>
+<span class="ty">Vector</span> rem <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">10</span>, <span class="nu">7</span>) <span class="op">%</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">2</span>);    <span class="cm"># (1, 1)</span>
+
+<span class="ty">bool</span> eq <span class="op">=</span> a <span class="op">==</span> a;             <span class="cm"># true</span>
+<span class="ty">bool</span> neq <span class="op">=</span> a <span class="op">!=</span> b;            <span class="cm"># true</span>
+<span class="ty">bool</span> lt <span class="op">=</span> a <span class="op">&lt;</span> b;              <span class="cm"># true</span>
+<span class="ty">bool</span> gt <span class="op">=</span> b <span class="op">&gt;</span> a;              <span class="cm"># true</span>
+<span class="ty">bool</span> le <span class="op">=</span> a <span class="op">&lt;=</span> a;             <span class="cm"># true</span>
+<span class="ty">bool</span> ge <span class="op">=</span> a <span class="op">&gt;=</span> a;             <span class="cm"># true</span>
+
+<span class="ty">Vector</span> neg <span class="op">=</span> <span class="op">-</span>a;              <span class="cm"># (-1, -2)</span>
+<span class="ty">int</span> first <span class="op">=</span> a[<span class="nu">0</span>];             <span class="cm"># 1</span>
+
+<span class="ty">Vector</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">0</span>, <span class="nu">0</span>);
+c[<span class="nu">0</span>] <span class="op">=</span> <span class="nu">10</span>;
+c[<span class="nu">1</span>] <span class="op">=</span> <span class="nu">20</span>;                   <span class="cm"># c is now (10, 20)</span>
+
+<span class="cm"># Chained operations</span>
+<span class="ty">Vector</span> chain <span class="op">=</span> a <span class="op">+</span> b <span class="op">+</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">5</span>, <span class="nu">5</span>);  <span class="cm"># (9, 11)</span>
+
+<span class="cm"># Mixed operator and comparison</span>
+<span class="ty">bool</span> check <span class="op">=</span> (a <span class="op">+</span> b) <span class="op">==</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">4</span>, <span class="nu">6</span>); <span class="cm"># true</span></code></pre>
+<h2 id="operators-with-generics">Operators with Generics</h2>
+<p>Operator overloading works with generic classes. The standard library <code>Map[K, V]</code> uses index operators for key-based access:</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/map"</span>;
+
+<span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">str</span>] map <span class="op">=</span> <span class="kw">new</span> <span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">str</span>]();
+map[<span class="st">"name"</span>] <span class="op">=</span> <span class="st">"Velo"</span>;        <span class="cm"># calls operator []=</span>
+<span class="ty">str</span> val <span class="op">=</span> map[<span class="st">"name"</span>];       <span class="cm"># calls operator []</span></code></pre>
+<h2 id="how-it-works">How It Works</h2>
+<p>The compiler transforms operator declarations into internal methods with an <code>op@</code> prefix. When the compiler encounters an operator used on a class instance, it dispatches to the corresponding <code>op@</code> method:</p>
+<ul><li><code>a + b</code> becomes a call to <code>a.op@+(b)</code></li><li><code>-a</code> becomes a call to <code>a.op@neg()</code></li><li><code>a[i]</code> becomes a call to <code>a.op@[](i)</code></li><li><code>a[i] = v</code> becomes a call to <code>a.op@[]=(v, i)</code></li></ul>
+<p>If an operator is used on a class that doesn't define it, the compiler reports an error.</p>
+<h2 id="limitations">Limitations</h2>
+<ul><li>Operator methods must be declared inside a class body.</li><li>You cannot overload operators on built-in types (<code>int</code>, <code>str</code>, <code>bool</code>, etc.).</li><li>Only the left operand is checked for operator dispatch. There is no reverse/right-hand dispatch.</li><li>Compound assignment operators (<code>+=</code>, <code>-=</code>, etc.) are not directly overloadable — they desugar to <code>a = a + b</code>, so defining <code>operator +</code> is sufficient for <code>+=</code> to work on reassignable variables.</li><li>Only the operators listed above are allowed. The compiler rejects unsupported operator symbols.</li></ul>
+<hr>
+<p><a href="23-generics.html">Previous: Generics ←</a> | <a href="25-closures.html">Next: Closures →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

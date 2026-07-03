@@ -27,15 +27,30 @@ byte b = 65;              # An int literal in range (-128..255) fits a byte
 byte negative = -5;
 ```
 
+### Long Integers (`long`)
+
+`long` is a 64-bit signed integer, one rank wider than `int`:
+
+```velo
+long big = 5000000000;    # too large for a 32-bit int → a long literal
+long wide = 0x1_0000_0000; # a hex literal wider than 32 bits is a long
+long fromInt = 42;        # an int literal widens to long
+```
+
+A decimal literal that overflows a signed 32-bit `int`, or a hex/binary literal
+wider than 32 bits, is automatically a `long`; smaller literals stay `int` and
+widen on assignment. The numeric rank is `byte < int < long < float`.
+
 > Numeric literals have no type suffixes (`2y`, `3.0f` are gone). A literal takes
-> the type of its target: an int literal widens to `float` or fits into a `byte`
-> (out-of-range values are a compile error). A `.` makes a literal a `float`.
+> the type of its target: an int literal widens to `long` or `float`, or fits
+> into a `byte` (out-of-range values are a compile error). A `.` makes a literal
+> a `float`.
 
 ### Numeric conversions
 
-Widening is implicit and lossless — a `byte` flows into an `int`, and a `byte`
-or `int` into a `float` (so `float f = 5` really holds `5.0` and `f / 2` is
-`2.5`, not `2`). Mixed arithmetic promotes to the wider type.
+Widening is implicit and lossless — a `byte` flows into an `int`, an `int` into
+a `long`, and any of them into a `float` (so `float f = 5` really holds `5.0`
+and `f / 2` is `2.5`, not `2`). Mixed arithmetic promotes to the wider type.
 
 Narrowing loses data, so it must be explicit:
 
@@ -43,11 +58,14 @@ Narrowing loses data, so it must be explicit:
 float pi = 3.75;
 int   i  = pi.int();      # 3 — truncates toward zero
 byte  b  = 322.byte();    # 66 — low 8 bits
+long  l  = i.long();      # widen to 64-bit (also works implicitly)
+int   j  = l.int();       # narrow a long back to 32 bits (low 32 bits)
 float f  = i.float();     # widen back (i.float() also works implicitly)
 ```
 
 `int x = pi` (float → int) and `byte b = someInt` (int → byte) are **compile
-errors** that tell you to convert with `.int()` / `.byte()`.
+errors** that tell you to convert with `.int()` / `.byte()`. The conversion
+methods are `.byte()`, `.int()`, `.long()`, and `.float()`.
 
 ### Strings (`str`)
 
@@ -100,13 +118,19 @@ tuple[int, str] pair = new tuple(1, "second");
 tuple[int, str, float] triple = new tuple(42, "text", 3.14);
 ```
 
-### Functions (`func[ReturnType]` or `func(Params) ReturnType`)
+### Functions (`func[(Params) ReturnType]` or loose `func[ReturnType]`)
 
 ```velo
-func[int] add = func(int a, int b) int {
-    return return a + b;
+# Full signature — checked at every call site (preferred):
+func[(int, int) int] add = func(int a, int b) int {
+    return a + b;
 };
+
+# Loose form — only the return type; an unchecked escape hatch:
+func[int] callback = add;
 ```
+
+See [Functions](08-functions.md#function-values-and-types) for when to use each.
 
 ### Pointers (`ptr[T]`)
 
@@ -124,8 +148,8 @@ int x = 10;
 ptr[int] px = &x;
 
 # Dereference
-int value = p.val;    # or p.* or *p
-p.val = 100;          # modify through pointer
+int value = p.val();  # read: or *p
+p.val = 100;          # write: modify through pointer (bare val as assignment target)
 ```
 
 See [Pointers](21-pointers.md) for detailed documentation.

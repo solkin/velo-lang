@@ -57,17 +57,17 @@ any value = 42;          # Universal type
 
 ```velo
 func add(int a, int b) int {
-    a + b;
+    return a + b;
 };
 
 # Lambda
 any multiply = func(int a, int b) int {
-    a * b;
+    return a * b;
 };
 
 # Recursive
 func fib(int n) int {
-    if n < 2 then n else fib(n - 1) + fib(n - 2);
+    return if n < 2 then n else fib(n - 1) + fib(n - 2);
 };
 ```
 
@@ -79,12 +79,12 @@ Lambdas capture the variables of the scope they were defined in (lexical closure
 ```velo
 # Higher-order: a function that takes a function
 func apply(int x, func[int] f) int {
-    f(x);
+    return f(x);
 };
 
 # Closure: returned lambda remembers `n` after makeAdder returns
 func makeAdder(int n) func[int] {
-    func(int x) int { x + n; };
+    return func(int x) int { return x + n; };
 };
 
 func[int] add5 = makeAdder(5);
@@ -112,7 +112,7 @@ str grade = if score >= 90 then {
 ```velo
 int i = 1;
 while (i <= 5) {
-    term.println(i.str);
+    term.println(i.str());
     i = i + 1;
 };
 ```
@@ -121,13 +121,14 @@ while (i <= 5) {
 
 ```velo
 array[int] numbers = new array[int]{37, 58, 25, 17, 19};
-println(numbers.len);           # 5
-println(numbers[3]);            # 17
-println(numbers.sub(1, 4)[1]);  # 25
+term.println(numbers.len().str());        # 5
+term.println(numbers[3].str());           # 17
+term.println(numbers.sub(1, 4)[1].str()); # 25
 
+# map callback is value-first, index optional
 array[int] doubled = numbers.map(
-    func(int i, int v) int {
-        v * 2
+    func(int v) int {
+        return v * 2
     }
 );
 ```
@@ -140,20 +141,20 @@ dict[int:str] d = new dict[int:str]{
     2:"b",
     3:"c"
 };
-d.set(5, "e");
-println(d.del(2));        # true
-println(d.len);           # 3
-println(d[5]);            # e
-println(d.key(5));        # true
-println(d.keys[0]);       # first key
+d.put(5, "e");
+term.println(d.del(2).str());     # true
+term.println(d.len.str());        # 3  (len is a field → bare)
+term.println(d[5]);               # e
+term.println(d.key(5).str());     # true
+term.println(d.keys()[0].str());  # first key
 ```
 
 ### Strings
 
 ```velo
 str s = "Test String";
-println(s.len);        # 11
-println(s.sub(5, 11)); # String
+term.println(s.len().str()); # 11
+term.println(s.sub(5, 11));  # String
 str combined = "Hello".con(", ").con("World");
 ```
 
@@ -161,9 +162,9 @@ str combined = "Hello".con(", ").con("World");
 
 ```velo
 tuple[int,str] p = new tuple(1, "second");
-println(p.1.str);  # 1
-println(p.2);      # second
-p.1 = 42;          # Mutating tuple
+term.println(p.1.str());  # 1
+term.println(p.2);        # second
+p.1 = 42;                 # Mutating tuple
 ```
 
 ### Classes
@@ -181,7 +182,7 @@ class Random(int seed) {
     func next() int {
         int r = a * previous + c;
         previous = r;
-        r;
+        return r;
     }
 };
 
@@ -195,15 +196,15 @@ int value = random.next();
 ```velo
 class Vector(int x, int y) {
     operator +(Vector other) Vector {
-        new Vector(x + other.x, y + other.y);
+        return new Vector(x + other.x, y + other.y);
     };
 
     operator ==(Vector other) bool {
-        x == other.x & y == other.y;
+        return x == other.x && y == other.y;
     };
 
     operator [](int index) int {
-        if (index == 0) then x else y;
+        return if (index == 0) then x else y;
     };
 };
 
@@ -218,11 +219,11 @@ int first = a[0];            # 1
 
 ```velo
 ext(int a) max(int b) int {
-    if (a > b) then a else b;
+    return if (a > b) then a else b;
 };
 
 ext(str a) insert(int index, str s) str {
-    a.sub(0, index).con(s).con(a.sub(index, a.len));
+    return a.sub(0, index).con(s).con(a.sub(index, a.len()));
 };
 
 int maxValue = 5.max(10);  # 10
@@ -231,26 +232,26 @@ str result = "Hello".insert(5, " World");  # "Hello World"
 
 ### Actors
 
-Concurrency without locks: an `actor class` instance lives on its own daemon thread, fields are private, and every interaction crosses the boundary via `async` (start) + `await` (wait).
+Concurrency without locks: an `actor class` instance has isolated private state, and every interaction crosses the boundary via `async` (start) + `await` (wait). Actors run cooperatively on a single event loop by default; a host can plug in a thread backend for real multicore parallelism.
 
 ```velo
 actor class Counter(int start) {
     int n = start;
     func bump() int {
         n += 1;
-        n;
+        return n;
     };
 };
 
 actor[Counter] c = new Counter(0);
-term.println((await async c.bump()).str);  # 1
-term.println((await async c.bump()).str);  # 2
+term.println((await async c.bump()).str());  # 1
+term.println((await async c.bump()).str());  # 2
 
-# Real parallel work: keep the future, await later.
+# Overlap calls: start both, await later (parallel with a thread backend).
 actor[Counter] d = new Counter(100);
 future[int] f1 = async c.bump();
 future[int] f2 = async d.bump();
-int x = await f1;   # ≈ wall time of one bump, not two
+int x = await f1;   # both calls in flight before we await
 int y = await f2;
 ```
 
@@ -324,37 +325,38 @@ fs.delete("file.txt");
 
 ## Language Notes
 
-### Important Limitations
+### Things to know
 
-- **No unary `!` operator** - Use `== false` for negation
-- **No `&&` operator** - Use `&` which always evaluates both operands
-- **No `||` operator** - Use `|`
-- **No `break` or `continue`** - Use conditional statements
-- **No method overloading** - Each method name must be unique
-- **Class fields are read-only from outside** - Fields can only be modified inside class methods
+- **Logical operators** `&&`, `||`, `!` short-circuit; `&`, `|`, `^` are bitwise
+  on `int`/`long` (and `&`/`|` alias `&&`/`||` on booleans).
+- **No shift operators** — use `x.shl(n)` / `x.shr(n)`.
+- **`return` is mandatory** — a non-`void` function must `return` on every path;
+  there is no implicit last-expression return.
+- **Method and conversion calls need `()`** — `x.str()`, `arr.len()`; bare access
+  is only for stored fields (`obj.field`, `tuple.1`, `map.len`).
+- **`break` / `continue`** work in `while`, `for`-range and `for`-each loops.
+- **No method overloading** — each method name must be unique.
+- **Class fields are read-only from outside** — fields can only be modified
+  inside class methods.
 
 ### Boolean Operations
 
 ```velo
 # Negation
-if (value == false) {
-    # Execute if value is false
-};
+bool ready = !done;
 
-# Logical AND (always evaluates both operands)
-if (a & b) {
-    # Both a and b are evaluated
+# Logical AND / OR (short-circuit)
+if (a && b) {
+    # b only evaluated if a is true
 };
-
-# Logical OR
-if (a | b) {
-    # At least one is true
+if (a || b) {
+    # b only evaluated if a is false
 };
 ```
 
 ## Project Structure
 
-The project is split into four Gradle modules so the compiler and the VM
+The project is split into focused Gradle modules so the compiler and the VM
 can be used independently:
 
 - `velo-core` — the contract shared by both sides: the `Op` instruction set,
@@ -365,6 +367,8 @@ can be used independently:
 - `velo-vm` — the execution engine: interpreter, records, memory, actors, and
   the embedding API (`VeloRuntime`). Depends only on `velo-core`; a client
   application can run `.vbc` programs without the compiler.
+- `velo-vm2` — a clean-room reimplementation of the VM written from the `.vbc`
+  spec and verified against the golden tests (a parity gate for the format).
 - `velo-cli` — the command-line tool plus the default native classes
   (`Terminal`, `Time`, `FileSystem`, `Http`, `Socket`). The only module that
   links the compiler and the VM together.

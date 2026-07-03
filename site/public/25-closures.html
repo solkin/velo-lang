@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closures — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="closures">Closures</h1>
+<p>A <strong>closure</strong> is a function value that carries the variables of the scope it was defined in. When the function is invoked — even far away from where it was written — those captured variables remain reachable.</p>
+<p>In Velo every <code>func</code> literal is a closure. The captured environment is bound at the moment the function value is created and follows the value wherever it goes.</p>
+<h2 id="capturing-a-value">Capturing a Value</h2>
+<p><code>makeAdder</code> returns a function that adds a captured number. Each call to <code>makeAdder</code> produces an independent closure with its own <code>n</code>:</p>
+<pre class="code"><code><span class="kw">func</span> makeAdder(<span class="ty">int</span> n) <span class="kw">func</span>[<span class="ty">int</span>] {
+    <span class="kw">return</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> {
+        <span class="kw">return</span> x <span class="op">+</span> n;
+    };
+};
+
+<span class="kw">func</span>[<span class="ty">int</span>] add5  <span class="op">=</span> makeAdder(<span class="nu">5</span>);
+<span class="kw">func</span>[<span class="ty">int</span>] add10 <span class="op">=</span> makeAdder(<span class="nu">10</span>);
+
+add5(<span class="nu">3</span>);    <span class="cm"># 8</span>
+add10(<span class="nu">3</span>);   <span class="cm"># 13</span>
+add5(<span class="nu">100</span>);  <span class="cm"># 105</span></code></pre>
+<p>Note that <code>add5</code> and <code>add10</code> were created by the same factory; they share neither code nor state.</p>
+<h2 id="capturing-mutable-state">Capturing Mutable State</h2>
+<p>Captured variables are not snapshots — closures read and write the same storage as the surrounding code.</p>
+<pre class="code"><code><span class="kw">func</span> makeCounter() <span class="kw">func</span>[<span class="ty">int</span>] {
+    <span class="ty">int</span> count <span class="op">=</span> <span class="nu">0</span>;
+    <span class="kw">return</span> <span class="kw">func</span>() <span class="ty">int</span> {
+        count <span class="op">=</span> count <span class="op">+</span> <span class="nu">1</span>;
+        <span class="kw">return</span> count;
+    };
+};
+
+<span class="kw">func</span>[<span class="ty">int</span>] c1 <span class="op">=</span> makeCounter();
+<span class="kw">func</span>[<span class="ty">int</span>] c2 <span class="op">=</span> makeCounter();
+
+c1();  <span class="cm"># 1</span>
+c1();  <span class="cm"># 2</span>
+c2();  <span class="cm"># 1 — independent state</span>
+c1();  <span class="cm"># 3</span></code></pre>
+<p>Two counters built from the same factory have separate <code>count</code> variables because each invocation of <code>makeCounter</code> creates a new local <code>count</code>.</p>
+<h2 id="sharing-state-between-closures">Sharing State Between Closures</h2>
+<p>A factory can return several closures that close over the same variable. This is the canonical recipe for encapsulated mutable state without a class:</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Pair</span>(<span class="kw">func</span>[<span class="kw">void</span>] add, <span class="kw">func</span>[<span class="ty">int</span>] get) {};
+
+<span class="kw">func</span> makeAccumulator() <span class="ty">Pair</span> {
+    <span class="ty">int</span> total <span class="op">=</span> <span class="nu">0</span>;
+    <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Pair</span>(
+        <span class="kw">func</span>(<span class="ty">int</span> v) <span class="kw">void</span> { total <span class="op">=</span> total <span class="op">+</span> v; },
+        <span class="kw">func</span>() <span class="ty">int</span> { <span class="kw">return</span> total; }
+    );
+};
+
+<span class="ty">Pair</span> acc <span class="op">=</span> makeAccumulator();
+acc.add(<span class="nu">7</span>);
+acc.add(<span class="nu">35</span>);
+acc.get();   <span class="cm"># 42</span></code></pre>
+<h2 id="closures-created-in-a-loop">Closures Created in a Loop</h2>
+<p>A closure created inside a loop captures the <strong>per-iteration</strong> binding of the loop body's locals — a <code>for</code> variable, or any variable declared in the body — so each closure keeps its own iteration's value, not the final one:</p>
+<pre class="code"><code><span class="ty">array</span>[<span class="kw">func</span>[<span class="ty">int</span>]] fns <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="kw">func</span>[<span class="ty">int</span>]](<span class="nu">3</span>);
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..3</span> {
+    fns[i] <span class="op">=</span> <span class="kw">func</span>() <span class="ty">int</span> { <span class="kw">return</span> i; };
+};
+fns[<span class="nu">0</span>]();  <span class="cm"># 0</span>
+fns[<span class="nu">1</span>]();  <span class="cm"># 1  (each closure kept its iteration's i)</span>
+fns[<span class="nu">2</span>]();  <span class="cm"># 2</span></code></pre>
+<p>Variables declared <strong>outside</strong> the loop stay shared — closures that mutate them all see the same one. See <a href="07-loops.html#the-loop-variable-is-fresh-each-iteration">Loops</a> for <code>while</code> (whose counter is shared) versus <code>for</code>.</p>
+<h2 id="currying">Currying</h2>
+<p>A function that returns another function lets you bind arguments one at a time:</p>
+<pre class="code"><code><span class="kw">func</span> add(<span class="ty">int</span> a) <span class="kw">func</span>[<span class="ty">int</span>] {
+    <span class="kw">return</span> <span class="kw">func</span>(<span class="ty">int</span> b) <span class="ty">int</span> {
+        <span class="kw">return</span> a <span class="op">+</span> b;
+    };
+};
+
+<span class="kw">func</span>[<span class="ty">int</span>] addTen <span class="op">=</span> add(<span class="nu">10</span>);
+addTen(<span class="nu">5</span>);    <span class="cm"># 15</span>
+add(<span class="nu">3</span>)(<span class="nu">4</span>);    <span class="cm"># 7</span></code></pre>
+<h2 id="storing-closures-in-classes">Storing Closures in Classes</h2>
+<p>Closures are ordinary values, so you can keep them in class fields, arrays, dictionaries, or tuples. The captured environment stays alive for as long as the closure itself is reachable.</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Button</span>(<span class="ty">str</span> label, <span class="kw">func</span>[<span class="kw">void</span>] onClick) {};
+
+<span class="ty">int</span> clicks <span class="op">=</span> <span class="nu">0</span>;
+
+<span class="ty">Button</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Button</span>(<span class="st">"OK"</span>, <span class="kw">func</span>() <span class="kw">void</span> {
+    clicks <span class="op">=</span> clicks <span class="op">+</span> <span class="nu">1</span>;
+});
+
+b.onClick();
+b.onClick();
+b.onClick();
+<span class="cm"># clicks is now 3</span></code></pre>
+<p>The <code>Button</code> instance has no idea what <code>clicks</code> is — it merely holds the <code>func[void]</code> value passed in. Each invocation runs the lambda's body in the scope where it was originally written.</p>
+<h2 id="lexical-definition-site-scoping">Lexical, Definition-Site Scoping</h2>
+<p>Velo closures use <strong>lexical</strong> (sometimes called <em>definition-site</em>) scoping. The function does not see the caller's variables; it sees the variables that surrounded it when it was created. This is the same model used by JavaScript, Python, Kotlin, Swift, Scala and most modern languages.</p>
+<pre class="code"><code><span class="kw">func</span> make() <span class="kw">func</span>[<span class="ty">int</span>] {
+    <span class="ty">int</span> x <span class="op">=</span> <span class="nu">100</span>;
+    <span class="kw">return</span> <span class="kw">func</span>() <span class="ty">int</span> { <span class="kw">return</span> x; };
+};
+
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">1</span>;            <span class="cm"># outer x — irrelevant to the closure</span>
+<span class="kw">func</span>[<span class="ty">int</span>] f <span class="op">=</span> make();
+f();                   <span class="cm"># 100, not 1</span></code></pre>
+<h2 id="lifetime-and-memory">Lifetime and Memory</h2>
+<p>Captured variables live on the JVM heap and are reclaimed by the garbage collector once the closure that captures them becomes unreachable. There is no manual lifetime management: a closure can outlive the function that defined it for as long as you keep a reference to it.</p>
+<h2 id="when-to-use-closures">When To Use Closures</h2>
+<p>Closures shine wherever you would otherwise wire up a small object with a single method:</p>
+<ul><li><strong>Callbacks.</strong> Pass a <code>func[void]</code> to a constructor or registration function.</li><li><strong>Stateful generators.</strong> Return a <code>func[T]</code> that produces the next value each call.</li><li><strong>Configuration.</strong> Capture parameters once and reuse the resulting function.</li><li><strong>Composition.</strong> Build pipelines from <code>compose</code>, <code>twice</code>, <code>andThen</code>, and similar combinators.</li></ul>
+<p>For richer behaviour with multiple operations, prefer a class. For one-off callbacks and lightweight state, closures keep the code shorter and the call site simpler.</p>
+<hr>
+<p><a href="24-operator-overloading.html">Previous: Operator Overloading ←</a> | <a href="26-actors.html">Next: Actors →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

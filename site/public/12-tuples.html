@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuples — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="tuples">Tuples</h1>
+<h2 id="creating-tuples">Creating Tuples</h2>
+<pre class="code"><code><span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] pair <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"second"</span>);
+<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>, <span class="ty">float</span>] triple <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">42</span>, <span class="st">"text"</span>, <span class="nu">3.14</span>);</code></pre>
+<h2 id="accessing-elements">Accessing Elements</h2>
+<pre class="code"><code><span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"second"</span>);
+<span class="ty">int</span> first <span class="op">=</span> p.<span class="nu">1</span>;         <span class="cm"># 1</span>
+<span class="ty">str</span> second <span class="op">=</span> p.<span class="nu">2</span>;         <span class="cm"># "second"</span></code></pre>
+<h2 id="modifying-elements">Modifying Elements</h2>
+<p>Tuples in Velo Lang are mutable:</p>
+<pre class="code"><code><span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"hello"</span>);
+p.<span class="nu">1</span> <span class="op">=</span> <span class="nu">42</span>;                <span class="cm"># Change first element</span>
+p.<span class="nu">2</span> <span class="op">=</span> <span class="st">"world"</span>;           <span class="cm"># Change second element</span></code></pre>
+<hr>
+<p><a href="11-strings.html">Previous: Strings ←</a> | <a href="13-classes.html">Next: Classes →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

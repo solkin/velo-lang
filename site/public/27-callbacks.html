@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Callbacks — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="callbacks">Callbacks</h1>
+<p>A <strong>callback</strong> is a fully-signed function value — <code>func[(args…) ret]</code> — that crosses an execution boundary: into another actor, or into native (JVM) host code. The closure never leaves the context that created it; what travels is a handle. Invoking the handle ships the arguments back and runs the body <strong>on the thread that owns the closure</strong>. That single rule is what makes two-way native integration safe by construction.</p>
+<h2 id="the-shape-of-a-callback">The shape of a callback</h2>
+<pre class="code"><code><span class="kw">func</span>[(<span class="ty">int</span>, <span class="ty">str</span>) <span class="kw">void</span>] cb <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> code, <span class="ty">str</span> message) <span class="kw">void</span> {
+    term.println(message.con(<span class="st">": "</span>).con(code.<span class="ty">str</span>()));
+    <span class="kw">void</span>
+};</code></pre>
+<p>Three requirements for a function type to cross a boundary:</p>
+<ol><li><strong>Full signature</strong> — argument types declared: <code>func[(int) void]</code>, <code>func[() str]</code>. The loose form <code>func[void]</code> stays legal for local higher-order code but cannot cross.</li><li><strong>Transferable arguments and return</strong> — every argument type, and the return type, must itself be transferable (see <a href="26-actors.html">Actors — What Crosses the Boundary</a>).</li><li><p><strong>Return type chooses the mode:</strong></p><ul><li><strong><code>void</code> — fire-and-forget.</strong> A notification: the body is <em>posted</em> to the owner, the invoking side gets no value and does not wait. This is what makes <code>A awaits B while B calls back into A</code> deadlock-free.</li><li><strong>non-<code>void</code> — request/response.</strong> The invoking side <strong>blocks</strong> until the owner runs the body and returns the value. Like any synchronous cross-thread call it can deadlock if the owner is itself blocked awaiting the caller, so invoke value-returning callbacks on an owner that is free to service them.</li></ul></li></ol>
+<p>Violations are rejected at the point of declaration with a <code>not transferable</code> error.</p>
+<h2 id="velo-to-velo-callbacks-between-actors">Velo to Velo: callbacks between actors</h2>
+<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Worker</span>() {
+    <span class="kw">func</span> process(<span class="ty">int</span> value, <span class="kw">func</span>[(<span class="ty">int</span>) <span class="kw">void</span>] done) <span class="kw">void</span> {
+        done(value <span class="op">*</span> <span class="nu">2</span>);    <span class="cm"># posts to the owner — returns immediately</span>
+        <span class="kw">void</span>
+    };
+};
+
+<span class="kw">actor</span>[<span class="ty">Worker</span>] w <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>();
+<span class="kw">await</span> <span class="kw">async</span> w.process(<span class="nu">21</span>, <span class="kw">func</span>(<span class="ty">int</span> v) <span class="kw">void</span> {
+    term.println(<span class="st">"got: "</span>.con(v.<span class="ty">str</span>()));   <span class="cm"># runs on the main thread</span>
+    <span class="kw">void</span>
+});
+term.println(<span class="st">"main frame done"</span>);        <span class="cm"># prints AFTER "got: 42"</span></code></pre>
+<p>The main context is itself an actor ("actor #0"). <code>await</code> is a <em>yield point</em> (VEL-11): while the main frame is parked awaiting <code>w.process</code>, the main context keeps draining its mailbox, so the callback <code>w</code> posts during that call runs <em>before</em> <code>await</code> returns. The example prints <code>got: 42</code> first, then <code>main frame done</code>, and exits once the callback handle is dropped.</p>
+<p>Invocations of one callback are serialised in posting order. A callback that travels back to its owner (<code>A → B → A</code>) unwraps into the original closure — invoking it there is a plain, immediate local call.</p>
+<h3 id="value-returning-callbacks">Value-returning callbacks</h3>
+<p>A non-<code>void</code> callback hands a result back to the invoker, which blocks until the owner produces it. Here the closure is owned by an idle <code>Doubler</code> actor, so invoking it from anywhere runs it on <code>Doubler</code> and returns the value:</p>
+<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Doubler</span>() {
+    <span class="kw">func</span> make() <span class="kw">func</span>[(<span class="ty">int</span>) <span class="ty">int</span>] {
+        <span class="kw">return</span> <span class="kw">func</span>(<span class="ty">int</span> v) <span class="ty">int</span> { <span class="kw">return</span> v <span class="op">*</span> <span class="nu">2</span>; };
+    };
+};
+
+<span class="kw">actor</span>[<span class="ty">Doubler</span>] d <span class="op">=</span> <span class="kw">new</span> <span class="ty">Doubler</span>();
+<span class="kw">func</span>[(<span class="ty">int</span>) <span class="ty">int</span>] twice <span class="op">=</span> <span class="kw">await</span> d.make();
+term.println(twice(<span class="nu">21</span>).<span class="ty">str</span>());   <span class="cm"># 42 — ran on Doubler, value returned here</span></code></pre>
+<p>The deadlock caveat from requirement 3 applies: don't invoke a value-returning callback whose owner is, at that moment, blocked awaiting <em>you</em>.</p>
+<h2 id="native-to-velo-velofunction">Native to Velo: <code>VeloFunction</code></h2>
+<p>On the JVM side a callback parameter is declared either as a plain Kotlin function type — <code>cb: (String) -&gt; Unit</code>, which gives Velo the full signature for compile-time checking and gives the host an ordinary lambda to invoke — or as <code>core.VeloFunction</code>, the explicit handle:</p>
+<pre class="code"><code>class Notifications {
+    private var onMessage: VeloFunction? = null
+
+    fun subscribe(cb: VeloFunction) { onMessage = cb }
+
+    fun deliver(text: String) {
+        // Any thread may invoke; the body still runs on the owner's thread.
+        onMessage?.post(text)
+    }
+}</code></pre>
+<p>Register the class on the runtime — there is no native declaration in Velo source (see <a href="15-native-classes.html">Native Classes</a>) — then just use it:</p>
+<pre class="code"><code><span class="ty">Notifications</span> n <span class="op">=</span> <span class="kw">new</span> <span class="ty">Notifications</span>();
+n.subscribe(<span class="kw">func</span>(<span class="ty">str</span> text) <span class="kw">void</span> {
+    term.println(<span class="st">"message: "</span>.con(text));
+    <span class="kw">void</span>
+});</code></pre>
+<p><code>VeloFunction</code> has two methods:</p>
+<ul><li><code>post(args…)</code> — fire-and-forget, the normal mode for events. Argument count and types are validated eagerly against the declared Velo signature (<code>Int</code>/<code>Float</code>/<code>Boolean</code>/<code>Byte</code>/<code>String</code>, <code>List</code>, <code>Map</code>, or another <code>VeloFunction</code>); a mismatch throws on the calling thread before anything is shipped.</li><li><code>call(args…): CompletableFuture&lt;Any?&gt;</code> — same, but completion (or failure) is observable. The future resolves to the callback's return value (<code>null</code> for a <code>void</code> callback). When invoked from the owner's own thread (a native called synchronously from Velo code), the body executes <strong>inline</strong> — no self-deadlock.</li></ul>
+<p>A live <code>VeloFunction</code> <strong>pins</strong> its owner: the program (or actor) stays serviceable for as long as the host holds the reference. Drop the reference and the owner may shut down. In CLI mode this is the program's exit condition — "main frame finished and nobody can call us any more".</p>
+<h2 id="errors">Errors</h2>
+<p>Velo has no exception handling: every unhandled runtime error stops the program loudly. Callbacks follow the same rule. A failure inside a <code>post</code>-mode callback (no observer) is <strong>program-fatal</strong>; a failure inside <code>call</code> completes the returned future exceptionally and the program lives on — someone observed it.</p>
+<h2 id="embedding-callbacks-on-the-hosts-main-thread">Embedding: callbacks on the host's main thread</h2>
+<p><code>VeloRuntime.start</code> runs a program on any host-provided serial executor. Combined with callbacks this is the BDUI shape — every Velo closure executes on the thread you chose:</p>
+<pre class="code"><code>val runtime = VeloRuntime().register(UiBridge::class)
+val program = runtime.start(Bytecode.read(File("app.vbc")), Dispatcher.from { mainHandler.post(it) })
+// ... UI events flow through VeloFunction.post(...), Velo code runs on the UI thread
+program.stop()</code></pre>
+<p>A not-yet-ready <code>await</code> in the main context no longer blocks its dispatcher (VEL-11): it suspends the current fiber and frees the thread, so a UI thread stays responsive and the main context keeps servicing callbacks and events while parked. The awaited code resumes on the same thread once its future completes. (One yield-point consequence: state may have advanced while you were parked — see <a href="26-actors.html#why-a-visible-marker">Actors — <code>await</code> is a yield point</a>.)</p>
+<hr>
+<p><a href="26-actors.html">Previous: Actors ←</a> | <a href="28-data-classes.html">Next: Data Classes →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

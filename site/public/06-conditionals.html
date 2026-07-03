@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conditional Statements — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="conditional-statements">Conditional Statements</h1>
+<h2 id="if-then-else-expression">If-then-else (Expression)</h2>
+<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
+<span class="ty">str</span> result <span class="op">=</span> <span class="kw">if</span> a <span class="op">==</span> <span class="nu">2</span> <span class="kw">then</span> <span class="st">"two"</span> <span class="kw">else</span> <span class="st">"not two"</span>;</code></pre>
+<h2 id="if-then-else-block">If-then-else (Block)</h2>
+<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
+<span class="ty">str</span> result <span class="op">=</span> <span class="kw">if</span> a <span class="op">==</span> <span class="nu">2</span> <span class="kw">then</span> {
+    <span class="st">"two"</span>
+} <span class="kw">else</span> {
+    <span class="st">"not two"</span>
+};</code></pre>
+<h2 id="nested-conditionals">Nested Conditionals</h2>
+<pre class="code"><code><span class="ty">int</span> score <span class="op">=</span> <span class="nu">85</span>;
+<span class="ty">str</span> grade <span class="op">=</span> <span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">90</span> <span class="kw">then</span> {
+    <span class="st">"A"</span>
+} <span class="kw">else</span> <span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">80</span> <span class="kw">then</span> {
+    <span class="st">"B"</span>
+} <span class="kw">else</span> <span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">70</span> <span class="kw">then</span> {
+    <span class="st">"C"</span>
+} <span class="kw">else</span> {
+    <span class="st">"F"</span>
+};</code></pre>
+<hr>
+<p><a href="05-operators.html">Previous: Operators ←</a> | <a href="07-loops.html">Next: Loops →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

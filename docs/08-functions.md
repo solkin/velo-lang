@@ -134,7 +134,7 @@ func count(array[int] arr, func[bool] pred) int {
 };
 
 int big = count(
-    new array[int]{return 3, 12, 7, 25},
+    new array[int]{3, 12, 7, 25},
     func(int v) bool { return v > 10; }
 );  # 2
 ```

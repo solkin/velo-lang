@@ -21,10 +21,8 @@ ptr[int] p = new ptr[int](42);
 
 ```velo
 ptr[int] nullPtr = new ptr[int];
-# or with empty parentheses
-ptr[int] nullPtr2 = new ptr[int]();
 # or using null literal
-ptr[int] nullPtr3 = null;
+ptr[int] nullPtr2 = null;
 ```
 
 ### Assigning Null
@@ -35,7 +33,7 @@ You can assign `null` to any pointer to nullify it:
 import "std/bool";
 
 ptr[int] p = new ptr[int](42);
-term.println(p.val.str());  # 42
+term.println(p.val().str());  # 42
 
 p = null;                  # nullify the pointer
 term.println((p == null).str()); # true
@@ -43,23 +41,25 @@ term.println((p == null).str()); # true
 
 ## Dereferencing
 
-Use `.val` or `.*` property to read or write through a pointer:
+Read through a pointer with `.val()` (or the prefix `*` operator). Write through
+it by assigning to `.val` or to `*p` — as an assignment target `val` is written
+bare:
 
 ```velo
 ptr[int] p = new ptr[int](42);
 
 # Reading
-int value = p.val;    # value = 42
-int value2 = p.*;     # alternative syntax
+int value = p.val();  # value = 42
+int value2 = *p;      # prefix-operator form
 
 # Writing
 p.val = 100;
-p.* = 200;            # alternative syntax
+*p = 200;             # prefix-operator form
 ```
 
-### Using `*` Operator
+### Using the `*` Operator
 
-You can also use the prefix `*` operator:
+The prefix `*` operator reads and writes through a pointer:
 
 ```velo
 ptr[int] p = new ptr[int](42);
@@ -102,7 +102,7 @@ ptr[int] p = new ptr[int];
 if (p == null) {
     term.println("Pointer is null");
 } else {
-    term.println("Value: ".con(p.val.str()));
+    term.println("Value: ".con(p.val().str()));
 };
 
 # Using bool.str extension
@@ -116,8 +116,8 @@ term.println("Not null: ".con((p != null).str()));
 
 ```velo
 func swap(ptr[int] a, ptr[int] b) void {
-    int tmp = a.val;
-    a.val = b.val;
+    int tmp = a.val();
+    a.val = b.val();
     b.val = tmp;
 };
 
@@ -145,7 +145,7 @@ divmod(17, 5, &q, &r);
 
 ```velo
 func increment(ptr[int] counter) void {
-    counter.val = counter.val + 1;
+    counter.val = counter.val() + 1;
 };
 
 int count = 0;
@@ -157,9 +157,9 @@ increment(&count);  # count = 2
 
 ```velo
 func addToAll(ptr[int] a, ptr[int] b, ptr[int] c, int delta) void {
-    a.val = a.val + delta;
-    b.val = b.val + delta;
-    c.val = c.val + delta;
+    a.val = a.val() + delta;
+    b.val = b.val() + delta;
+    c.val = c.val() + delta;
 };
 
 int v1 = 1;
@@ -176,11 +176,11 @@ class SharedCounter() {
     ptr[int] valuePtr = new ptr[int](0);
     
     func increment() void {
-        valuePtr.val = valuePtr.val + 1;
+        valuePtr.val = valuePtr.val() + 1;
     };
     
     func getValue() int {
-        return valuePtr.val;
+        return valuePtr.val();
     };
 };
 
@@ -207,20 +207,24 @@ ptr[array[int]] parr = new ptr[array[int]](new array[int]{1, 2, 3});
 # Classes
 Point point = new Point(10, 20);
 ptr[Point] pp = &point;
+
+# Pointers to pointers are allowed (deref twice)
+ptr[int] a = new ptr[int](5);
+ptr[ptr[int]] ppi = &a;
+int deref = ppi.val().val();   # 5
 ```
 
 ## Restrictions
 
 1. **No Pointer Arithmetic** - You cannot add/subtract from pointers
 2. **No Null Dereference** - Dereferencing a null pointer throws an exception
-3. **Single-level Only** - No pointers to pointers (`ptr[ptr[int]]` is not allowed)
 
 ## Best Practices
 
 1. **Check for null** before dereferencing if pointer may be null:
    ```velo
    if (p != null) {
-       int value = p.val;
+       int value = p.val();
    };
    ```
 
@@ -233,4 +237,3 @@ ptr[Point] pp = &point;
 ---
 
 [Previous: Best Practices ←](20-best-practices.md) | [Next: Apply Blocks →](22-apply-blocks.md)
-

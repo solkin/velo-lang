@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar &amp; Operator Precedence — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="grammar-operator-precedence">Grammar &amp; Operator Precedence</h1>
+<p>A formal reference for Velo's surface syntax. The grammar is written in EBNF:</p>
+<ul><li><code>=</code> defines a rule, terminated by <code>;</code></li><li><code>|</code> alternatives, <code>[ x ]</code> optional, <code>{ x }</code> zero or more, <code>( x )</code> grouping</li><li><code>"lit"</code> a literal token, <code>'c'</code> a literal character</li><li>lexical rules are <code>UPPERCASE</code>, grammar rules are <code>lowerCamel</code></li></ul>
+<p>Expression structure (which operator binds first) is governed by the <a href="#operator-precedence">precedence table</a> at the end, not by the EBNF alone.</p>
+<h2 id="lexical-structure">Lexical structure</h2>
+<pre class="code"><code>program        = { statement [ terminator ] } ;
+terminator     = NEWLINE | ";" ;          (* a newline ends a statement; ";" only
+                                             needed to separate statements on one line *)
+comment        = "#" { any-char-except-newline } NEWLINE ;
+
+IDENT          = ( LETTER | "_" ) { LETTER | DIGIT | "_" } ;
+LETTER         = "a".."z" | "A".."Z" ;
+DIGIT          = "0".."9" ;
+
+NUMBER         = INT_LIT | FLOAT_LIT | HEX_LIT | BIN_LIT ;   (* no type suffixes *)
+INT_LIT        = DIGIT { DIGIT | "_" } ;   (* int; auto-long if &gt; 32-bit; widens to float / fits a byte by context *)
+FLOAT_LIT      = DIGIT { DIGIT | "_" } "." DIGIT { DIGIT } ;
+HEX_LIT        = "0x" HEXDIGIT { HEXDIGIT | "_" } ;
+BIN_LIT        = "0b" ( "0" | "1" ) { "0" | "1" | "_" } ;
+CHAR_LIT       = "'" ( CHARACTER | ESCAPE ) "'" ;           (* value is its code point *)
+
+STRING         = '"' { STRCHAR | ESCAPE | interpolation } '"' ;
+interpolation  = "$" IDENT | "${" expression "}" ;         (* write \$ for a literal $ *)
+ESCAPE         = "\" ( "n" | "t" | "\" | '"' | "$" | "'" ) ;</code></pre>
+<h2 id="declarations-statements">Declarations &amp; statements</h2>
+<p>A statement is any of these forms or a bare <code>expression</code>.</p>
+<pre class="code"><code>statement      = import
+               | typedDecl | letDecl
+               | funcDecl  | extDecl  | operatorDecl
+               | classDecl | dataDecl | actorDecl | interfaceDecl
+               | if | while | for | return | "break" | "continue"
+               | expression ;
+
+import         = "import" STRING [ "as" IDENT ] ;
+                                     (* .vel optional; std/ = stdlib; else relative to file.
+                                        `as ns` namespaces members: ns.func(), new ns.Class() *)
+
+typedDecl      = type IDENT [ "=" expression ] ;           (* explicit type; mutable *)
+letDecl        = "let" IDENT "=" expression ;              (* inferred type; immutable *)
+
+funcDecl       = "func" [ IDENT ] [ typeParams ] "(" params ")" type block ;
+extDecl        = "ext" "(" param ")" IDENT "(" params ")" type block ;
+operatorDecl   = "operator" operatorName "(" params ")" type block ;
+operatorName   = OPERATOR | "[" "]" [ "=" ] ;              (* e.g. +, ==, [], []= *)
+
+classDecl      = "class"  IDENT [ typeParams ] "(" params ")" [ ":" typeList ] block ;
+dataDecl       = "data" classDecl ;                        (* immutable value type *)
+actorDecl      = "actor" classDecl ;                       (* concurrent, message-driven *)
+interfaceDecl  = "interface" IDENT block ;                 (* body holds method signatures *)
+
+if             = "if" [ "(" ] expression [ ")" ]
+                 ( block [ "else" ( block | if ) ]
+                 | "then" expression "else" expression ) ; (* the then/else form is an expression *)
+while          = "while" [ "(" ] expression [ ")" ] block ;
+for            = "for" IDENT "in" ( expression ".." expression   (* range, end exclusive *)
+                                  | expression ) block ;         (* array iteration       *)
+return         = "return" [ expression ] ;
+
+block          = "{" { statement [ terminator ] } "}" ;
+
+typeParams     = "[" typeParam { "," typeParam } "]" ;
+typeParam      = IDENT [ ":" type ] ;                      (* interface-bounded generic *)
+params         = [ param { "," param } ] ;
+param          = type IDENT [ "=" expression ] ;           (* trailing default value    *)
+typeList       = type { "," type } ;</code></pre>
+<h2 id="types">Types</h2>
+<pre class="code"><code>type           = "byte" | "int" | "long" | "float" | "str" | "bool"
+               | "void" | "any" | "Self"
+               | "array" "[" type "]"
+               | "tuple" "[" type { "," type } "]"
+               | "dict"  "[" type ":" type "]"           (* sugar for Map[K, V] *)
+               | "ptr"   "[" type "]"
+               | "actor" "[" type "]"
+               | "future" "[" type "]"
+               | funcType
+               | IDENT [ "[" type { "," type } "]" ] ;   (* class / interface, maybe generic *)
+
+funcType       = "func" "[" ( "(" [ typeList ] ")" type   (* full signature: func[(int,int) int] *)
+                            | type ) "]" ;                (* loose form:     func[int]           *)</code></pre>
+<h2 id="expressions">Expressions</h2>
+<p>Velo is expression-oriented: <code>if</code>, <code>while</code>, <code>for</code> and blocks are parsed as expressions (so <code>let x = if c then a else b</code> is valid). The statement/expression split above is only for readability.</p>
+<pre class="code"><code>expression     = assignment ;
+assignment     = binary [ assignOp expression ] ;          (* right-associative *)
+assignOp       = "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
+
+binary         = unary { binOp unary } ;                   (* grouped per precedence table *)
+binOp          = "||" | "|" | "&amp;&amp;" | "&amp;" | "^"
+               | "==" | "!=" | "&lt;" | "&gt;" | "&lt;=" | "&gt;="
+               | "+" | "-" | "*" | "/" | "%" ;
+
+unary          = [ "-" | "!" | "&amp;" | "*" ] postfix ;       (* neg, not, address-of, deref *)
+
+postfix        = primary { call | index | property | apply } ;
+call           = "(" [ argList ] ")" ;
+index          = "[" expression "]" ;
+property       = "." ( IDENT | INT_LIT ) [ "(" [ argList ] ")" ] ;
+                 (* .field / .N  → bare access;  .method(...) / .conv()  → call *)
+apply          = "{" { statement [ terminator ] } "}" ;    (* apply block (e.g. UI builders) *)
+argList        = expression { "," expression } ;
+
+primary        = NUMBER | STRING | CHAR_LIT
+               | "true" | "false" | "null" | "void"
+               | IDENT
+               | lambda
+               | newExpr
+               | asyncExpr | awaitExpr
+               | if | while | for            (* control forms are expressions too *)
+               | "(" expression ")" ;
+
+lambda         = "func" [ typeParams ] "(" params ")" type block ;
+newExpr        = "new" ( "array" "[" type "]" ( "(" expression ")" | "{" [ argList ] "}" )
+                       | "tuple" "(" argList ")"
+                       | "dict" "[" type ":" type "]" "{" [ dictEntries ] "}"
+                       | "ptr" "[" type "]" "(" expression ")"
+                       | IDENT [ "[" typeList "]" ] "(" [ argList ] ")" ) ;
+dictEntries    = dictEntry { "," dictEntry } ;
+dictEntry      = expression ":" expression ;
+asyncExpr      = "async" postfix "." IDENT "(" [ argList ] ")" ;
+awaitExpr      = "await" expression ;</code></pre>
+<h2 id="operator-precedence">Operator precedence</h2>
+<p>From <strong>loosest</strong> (binds last) to <strong>tightest</strong> (binds first). Higher rows are evaluated later. Example: <code>a + b * c</code> parses as <code>a + (b * c)</code> (multiplicative binds tighter than additive); <code>a == b &amp;&amp; c == d</code> parses as <code>(a == b) &amp;&amp; (c == d)</code>.</p>
+<div class="table-wrap"><table><thead><tr><th>Level</th><th>Operators</th><th>Kind</th><th>Associativity</th></tr></thead><tbody><tr><td>1</td><td><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code> <code>%=</code></td><td>assignment</td><td>right</td></tr><tr><td>2</td><td><code>||</code> <code>|</code></td><td>logical-or / bitwise-or</td><td>left</td></tr><tr><td>3</td><td><code>&amp;&amp;</code> <code>&amp;</code></td><td>logical-and / bitwise-and</td><td>left</td></tr><tr><td>4</td><td><code>^</code></td><td>bitwise-xor</td><td>left</td></tr><tr><td>7</td><td><code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code></td><td>comparison</td><td>left</td></tr><tr><td>10</td><td><code>+</code> <code>-</code></td><td>additive</td><td>left</td></tr><tr><td>20</td><td><code>*</code> <code>/</code> <code>%</code></td><td>multiplicative</td><td>left</td></tr><tr><td>30</td><td><code>(…)</code> <code>[…]</code> <code>.</code> <code>{…}</code></td><td>call, index, property, apply</td><td>left</td></tr><tr><td>40</td><td><code>-</code> <code>!</code> <code>&amp;</code> <code>*</code> (prefix)</td><td>unary: negate, not, address-of, deref</td><td>right</td></tr></tbody></table></div>
+<p>Notes:</p>
+<ul><li><strong><code>&amp;&amp;</code>/<code>||</code> are logical with short-circuit; <code>&amp;</code>/<code>|</code>/<code>^</code> are bitwise</strong> on ints (and <code>&amp;</code>/<code>|</code> also short-circuit on bools, kept as aliases). Prefer <code>&amp;&amp;</code>/<code>||</code>.</li><li><strong><code>..</code></strong> (range) is not a general operator — it appears only in <code>for i in a..b</code>.</li><li>There are <strong>no shift operators</strong>; use <code>x.shl(n)</code> / <code>x.shr(n)</code>.</li><li><code>&lt;</code> is lowered internally but behaves as a normal left-associative comparison.</li></ul>
+<hr>
+<p><a href="30-llm-guide.html">Previous: LLM Guide ←</a> | <a href="index.html">Back to README →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

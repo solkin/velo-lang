@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionaries — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="dictionaries">Dictionaries</h1>
+<p><code>dict[K:V]</code> is pure syntax sugar over the standard-library <code>Map[K, V]</code> class: the literal and the <code>dict[K:V]</code> type desugar to <code>Map</code>, and a dict value <em>is</em> a <code>Map</code> — there is one type and one API (<code>get</code>, <code>put</code>, <code>keys</code>, <code>del</code>, …). Use the <code>dict</code> syntax for the convenient literal; everything else is the <code>Map</code> class.</p>
+<h2 id="creating-dictionaries">Creating Dictionaries</h2>
+<pre class="code"><code><span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>] map <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>]{
+    <span class="nu">1</span>: <span class="st">"one"</span>,
+    <span class="nu">2</span>: <span class="st">"two"</span>,
+    <span class="nu">3</span>: <span class="st">"three"</span>
+};</code></pre>
+<h2 id="accessing-elements">Accessing Elements</h2>
+<pre class="code"><code><span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>] d <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>]{
+    <span class="nu">1</span>: <span class="st">"a"</span>,
+    <span class="nu">2</span>: <span class="st">"b"</span>
+};
+
+<span class="ty">str</span> value <span class="op">=</span> d[<span class="nu">1</span>];        <span class="cm"># "a"</span>
+d[<span class="nu">3</span>] <span class="op">=</span> <span class="st">"c"</span>;              <span class="cm"># Add/change</span></code></pre>
+<h2 id="dictionary-methods">Dictionary Methods</h2>
+<h3 id="len-number-of-elements"><code>len</code> — Number of Elements</h3>
+<pre class="code"><code><span class="ty">int</span> count <span class="op">=</span> d.len;</code></pre>
+<h3 id="putkey-value-set-value"><code>put(key, value)</code> — Set Value</h3>
+<pre class="code"><code>d.put(<span class="nu">5</span>, <span class="st">"e"</span>);</code></pre>
+<h3 id="delkey-delete-element"><code>del(key)</code> — Delete Element</h3>
+<pre class="code"><code><span class="ty">bool</span> deleted <span class="op">=</span> d.del(<span class="nu">2</span>);  <span class="cm"># true if element was deleted</span></code></pre>
+<h3 id="keykey-check-key-existence"><code>key(key)</code> — Check Key Existence</h3>
+<pre class="code"><code><span class="ty">bool</span> exists <span class="op">=</span> d.key(<span class="nu">5</span>);   <span class="cm"># true if key exists</span></code></pre>
+<h3 id="valvalue-check-value-existence"><code>val(value)</code> — Check Value Existence</h3>
+<pre class="code"><code><span class="ty">bool</span> hasValue <span class="op">=</span> d.val(<span class="st">"c"</span>);  <span class="cm"># true if value exists</span></code></pre>
+<h3 id="keys-array-of-keys"><code>keys</code> — Array of Keys</h3>
+<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] allKeys <span class="op">=</span> d.keys();</code></pre>
+<h3 id="vals-array-of-values"><code>vals</code> — Array of Values</h3>
+<pre class="code"><code><span class="ty">array</span>[<span class="ty">str</span>] allValues <span class="op">=</span> d.vals();</code></pre>
+<h3 id="arr-array-of-tuples-key-value"><code>arr</code> — Array of Tuples (key, value)</h3>
+<pre class="code"><code><span class="ty">array</span>[<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>]] pairs <span class="op">=</span> d.arr();</code></pre>
+<hr>
+<p><a href="09-arrays.html">Previous: Arrays ←</a> | <a href="11-strings.html">Next: Strings →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

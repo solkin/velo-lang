@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Library — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="standard-library">Standard Library</h1>
+<h2 id="boolean-extensions">Boolean Extensions</h2>
+<p>Extension functions for boolean type:</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>;
+
+<span class="ty">bool</span> flag <span class="op">=</span> <span class="kw">true</span>;
+<span class="ty">str</span> s <span class="op">=</span> flag.<span class="ty">str</span>();        <span class="cm"># "true" or "false" (parentheses optional)</span>
+<span class="ty">int</span> i <span class="op">=</span> flag.<span class="ty">int</span>();        <span class="cm"># 1 or 0</span>
+<span class="ty">bool</span> neg <span class="op">=</span> flag.not();   <span class="cm"># Logical NOT (or use the built-in !flag)</span></code></pre>
+<h2 id="integer-extensions">Integer Extensions</h2>
+<p>Extension functions for integer type:</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/int"</span>;
+
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">-42</span>;
+<span class="ty">int</span> absVal <span class="op">=</span> x.abs();           <span class="cm"># 42</span>
+<span class="ty">int</span> negVal <span class="op">=</span> x.neg();           <span class="cm"># -42 (always negative)</span>
+<span class="ty">str</span> hex <span class="op">=</span> (<span class="nu">255</span>).format(<span class="nu">16</span>);     <span class="cm"># "ff"</span>
+<span class="ty">str</span> bin <span class="op">=</span> (<span class="nu">10</span>).format(<span class="nu">2</span>);       <span class="cm"># "1010"</span></code></pre>
+<h2 id="string-extensions">String Extensions</h2>
+<p>Extension functions for string type:</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/str"</span>;
+
+<span class="ty">str</span> text <span class="op">=</span> <span class="st">"Hello"</span>;
+<span class="ty">array</span>[<span class="ty">byte</span>] bytes <span class="op">=</span> text.bytes();    <span class="cm"># [72, 101, 108, 108, 111]</span></code></pre>
+<h2 id="array-extensions">Array Extensions</h2>
+<p>Extension functions for array type:</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/array"</span>;
+
+<span class="ty">array</span>[<span class="ty">byte</span>] bytes <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">byte</span>]{<span class="nu">72</span>, <span class="nu">101</span>, <span class="nu">108</span>, <span class="nu">108</span>, <span class="nu">111</span>};
+<span class="ty">str</span> text <span class="op">=</span> bytes.<span class="ty">str</span>();              <span class="cm"># "Hello"</span></code></pre>
+<p>Both extensions enable roundtrip conversion: <code>text.bytes().str() == text</code>.</p>
+<p>The classes below — Terminal, Time, Http, FileSystem, Socket — are native classes provided by the runtime, so using them needs no <code>import</code>; the compiler knows their types from the registration. Just construct one. The examples use <code>term</code> as the conventional name for a <code>Terminal</code> instance.</p>
+<h2 id="terminal">Terminal</h2>
+<p>Class for terminal operations:</p>
+<pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
+term.print(<span class="st">"Hello"</span>);           <span class="cm"># Output without newline</span>
+term.println(<span class="st">"World"</span>);         <span class="cm"># Output with newline</span>
+<span class="ty">str</span> input <span class="op">=</span> term.input();      <span class="cm"># Read string from console</span></code></pre>
+<h2 id="time">Time</h2>
+<p>Class for time operations:</p>
+<pre class="code"><code><span class="ty">Time</span> time <span class="op">=</span> <span class="kw">new</span> <span class="ty">Time</span>();
+time.sleep(<span class="nu">1000</span>);              <span class="cm"># Sleep for 1000 milliseconds</span>
+<span class="ty">int</span> unixTime <span class="op">=</span> time.unix();     <span class="cm"># Unix timestamp in seconds</span></code></pre>
+<h2 id="http">Http</h2>
+<p>Class for making HTTP requests:</p>
+<pre class="code"><code><span class="ty">Http</span> http <span class="op">=</span> <span class="kw">new</span> <span class="ty">Http</span>();
+<span class="ty">str</span> response <span class="op">=</span> http.get(<span class="st">"https://example.com"</span>);
+<span class="ty">int</span> status <span class="op">=</span> http.statusCode();
+
+<span class="cm"># POST request</span>
+<span class="ty">str</span> jsonBody <span class="op">=</span> <span class="st">"{\"key\": \"value\"}"</span>;
+<span class="ty">str</span> postResponse <span class="op">=</span> http.post(<span class="st">"https://api.example.com/data"</span>, jsonBody, <span class="st">""</span>);</code></pre>
+<h2 id="filesystem">FileSystem</h2>
+<p>Class for file system operations:</p>
+<pre class="code"><code><span class="ty">FileSystem</span> fs <span class="op">=</span> <span class="kw">new</span> <span class="ty">FileSystem</span>();
+
+<span class="cm"># Reading and writing strings</span>
+fs.write(<span class="st">"file.txt"</span>, <span class="st">"Content"</span>);
+<span class="ty">str</span> content <span class="op">=</span> fs.read(<span class="st">"file.txt"</span>);
+fs.append(<span class="st">"file.txt"</span>, <span class="st">"\nMore content"</span>);
+
+<span class="cm"># Reading and writing byte arrays</span>
+<span class="kw">import</span> <span class="st">"std/str"</span>;
+<span class="ty">array</span>[<span class="ty">byte</span>] <span class="kw">data</span> <span class="op">=</span> <span class="st">"binary data"</span>.bytes();
+fs.writeBytes(<span class="st">"file.bin"</span>, <span class="kw">data</span>);
+<span class="ty">array</span>[<span class="ty">byte</span>] loaded <span class="op">=</span> fs.readBytes(<span class="st">"file.bin"</span>);
+fs.appendBytes(<span class="st">"file.bin"</span>, <span class="kw">data</span>);
+
+<span class="cm"># Checks</span>
+<span class="ty">bool</span> exists <span class="op">=</span> fs.exists(<span class="st">"file.txt"</span>);
+<span class="ty">bool</span> isFile <span class="op">=</span> fs.isFile(<span class="st">"file.txt"</span>);
+<span class="ty">bool</span> isDir <span class="op">=</span> fs.isDir(<span class="st">"directory"</span>);
+
+<span class="cm"># Directory operations</span>
+fs.mkdir(<span class="st">"new_dir"</span>);
+<span class="ty">array</span>[<span class="ty">str</span>] files <span class="op">=</span> fs.list(<span class="st">"."</span>);
+
+<span class="cm"># File operations</span>
+fs.copy(<span class="st">"source.txt"</span>, <span class="st">"dest.txt"</span>);
+fs.move(<span class="st">"old.txt"</span>, <span class="st">"new.txt"</span>);
+fs.delete(<span class="st">"file.txt"</span>);
+
+<span class="cm"># Information</span>
+<span class="ty">int</span> fileSize <span class="op">=</span> fs.size(<span class="st">"file.txt"</span>);</code></pre>
+<h2 id="socket">Socket</h2>
+<p>Class for TCP socket communication. Supports both client and server modes.</p>
+<h3 id="client">Client</h3>
+<pre class="code"><code><span class="ty">Socket</span> sock <span class="op">=</span> <span class="kw">new</span> <span class="ty">Socket</span>();
+sock.connect(<span class="st">"127.0.0.1"</span>, <span class="nu">9876</span>);
+
+sock.writeLine(<span class="st">"Hello!"</span>);
+<span class="ty">str</span> reply <span class="op">=</span> sock.readLine();
+
+sock.close();</code></pre>
+<h3 id="server">Server</h3>
+<pre class="code"><code><span class="ty">Socket</span> srv <span class="op">=</span> <span class="kw">new</span> <span class="ty">Socket</span>();
+srv.bind(<span class="nu">9876</span>);
+
+<span class="ty">Socket</span> client <span class="op">=</span> srv.accept();         <span class="cm"># blocks until a client connects</span>
+<span class="ty">str</span> msg <span class="op">=</span> client.readLine();
+client.writeLine(<span class="st">"Echo: "</span> <span class="op">+</span> msg);
+
+client.close();
+srv.close();</code></pre>
+<h3 id="full-api-reference">Full API Reference</h3>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead><tbody><tr><td><code>connect</code></td><td><code>(str host, int port) void</code></td><td>Connect to a remote host</td></tr><tr><td><code>bind</code></td><td><code>(int port) void</code></td><td>Bind and listen on a port</td></tr><tr><td><code>accept</code></td><td><code>() Socket</code></td><td>Accept an incoming connection (blocking)</td></tr><tr><td><code>write</code></td><td><code>(str data) void</code></td><td>Send a string</td></tr><tr><td><code>writeLine</code></td><td><code>(str data) void</code></td><td>Send a string followed by a newline</td></tr><tr><td><code>writeBytes</code></td><td><code>(array[byte] data) void</code></td><td>Send a byte array</td></tr><tr><td><code>readLine</code></td><td><code>() str</code></td><td>Read a line (blocking, strips newline)</td></tr><tr><td><code>read</code></td><td><code>(int size) str</code></td><td>Read up to <code>size</code> characters</td></tr><tr><td><code>readBytes</code></td><td><code>(int size) array[byte]</code></td><td>Read up to <code>size</code> bytes</td></tr><tr><td><code>available</code></td><td><code>() int</code></td><td>Bytes available without blocking</td></tr><tr><td><code>connected</code></td><td><code>() bool</code></td><td>Check if socket is connected</td></tr><tr><td><code>close</code></td><td><code>() void</code></td><td>Close the socket</td></tr><tr><td><code>remoteAddress</code></td><td><code>() str</code></td><td>Remote peer IP address</td></tr><tr><td><code>remotePort</code></td><td><code>() int</code></td><td>Remote peer port</td></tr><tr><td><code>setTimeout</code></td><td><code>(int millis) void</code></td><td>Set timeout for blocking operations</td></tr></tbody></table></div>
+<h2 id="map">Map</h2>
+<p>A generic hash map (<code>Map[K, V]</code>) with separate chaining and automatic resizing. Supports operator overloading for bracket-based access.</p>
+<h3 id="creating-and-populating">Creating and Populating</h3>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/map"</span>;
+
+<span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">int</span>] ages <span class="op">=</span> <span class="kw">new</span> <span class="ty">Map</span>[<span class="ty">str</span>, <span class="ty">int</span>]();
+
+<span class="cm"># Operator syntax</span>
+ages[<span class="st">"Alice"</span>] <span class="op">=</span> <span class="nu">30</span>;
+ages[<span class="st">"Bob"</span>] <span class="op">=</span> <span class="nu">25</span>;
+
+<span class="cm"># Method syntax</span>
+ages.put(<span class="st">"Charlie"</span>, <span class="nu">35</span>);</code></pre>
+<h3 id="lookup">Lookup</h3>
+<pre class="code"><code><span class="cm"># operator [] returns V directly</span>
+<span class="ty">int</span> age <span class="op">=</span> ages[<span class="st">"Alice"</span>];               <span class="cm"># 30</span>
+
+<span class="cm"># get() returns ptr[V] — null if key is not found</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] val <span class="op">=</span> ages.get(<span class="st">"Alice"</span>);
+<span class="kw">if</span> (val <span class="op">!=</span> <span class="kw">null</span>) {
+    <span class="ty">int</span> a <span class="op">=</span> val.val();
+};
+
+<span class="cm"># getOrDefault() returns V directly, with a fallback</span>
+<span class="ty">int</span> eveAge <span class="op">=</span> ages.getOrDefault(<span class="st">"Eve"</span>, <span class="nu">0</span>);  <span class="cm"># 0</span></code></pre>
+<h3 id="checking-and-conditional-insert">Checking and Conditional Insert</h3>
+<pre class="code"><code><span class="ty">bool</span> has <span class="op">=</span> ages.key(<span class="st">"Bob"</span>);            <span class="cm"># true</span>
+<span class="ty">bool</span> empty <span class="op">=</span> ages.empty();             <span class="cm"># false</span>
+<span class="ty">int</span> count <span class="op">=</span> ages.len();                  <span class="cm"># number of entries</span>
+
+<span class="cm"># putIfAbsent — inserts only if key is missing, returns true if inserted</span>
+<span class="ty">bool</span> added <span class="op">=</span> ages.putIfAbsent(<span class="st">"Diana"</span>, <span class="nu">28</span>);     <span class="cm"># true</span>
+<span class="ty">bool</span> again <span class="op">=</span> ages.putIfAbsent(<span class="st">"Diana"</span>, <span class="nu">99</span>);     <span class="cm"># false, value stays 28</span></code></pre>
+<h3 id="removing-entries">Removing Entries</h3>
+<pre class="code"><code><span class="ty">bool</span> removed <span class="op">=</span> ages.del(<span class="st">"Charlie"</span>);    <span class="cm"># true</span>
+<span class="ty">bool</span> noop <span class="op">=</span> ages.del(<span class="st">"Charlie"</span>);       <span class="cm"># false (already gone)</span></code></pre>
+<h3 id="iterating">Iterating</h3>
+<pre class="code"><code><span class="ty">array</span>[<span class="ty">str</span>] k <span class="op">=</span> ages.keys();     <span class="cm"># array of all keys</span>
+<span class="ty">array</span>[<span class="ty">int</span>] v <span class="op">=</span> ages.vals();     <span class="cm"># array of all values</span>
+
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (i <span class="op">&lt;</span> k.len()) {
+    <span class="cm"># process k[i] and v[i]</span>
+    i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
+};</code></pre>
+<h3 id="clearing">Clearing</h3>
+<pre class="code"><code>ages.clear();
+<span class="cm"># ages.len is 0, ages.empty() is true</span></code></pre>
+<h3 id="automatic-resizing">Automatic Resizing</h3>
+<p>The map starts with capacity 16 and doubles when the load factor exceeds 75%. All entries are rehashed into the new table automatically. This is transparent — no API changes are needed:</p>
+<pre class="code"><code><span class="ty">Map</span>[<span class="ty">int</span>, <span class="ty">int</span>] big <span class="op">=</span> <span class="kw">new</span> <span class="ty">Map</span>[<span class="ty">int</span>, <span class="ty">int</span>]();
+<span class="ty">int</span> n <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (n <span class="op">&lt;</span> <span class="nu">100</span>) {
+    big[n] <span class="op">=</span> n <span class="op">*</span> n;
+    n <span class="op">=</span> n <span class="op">+</span> <span class="nu">1</span>;
+};
+<span class="cm"># capacity has grown automatically, all 100 entries are accessible</span></code></pre>
+<h3 id="full-api-reference">Full API Reference</h3>
+<div class="table-wrap"><table><thead><tr><th>Method / Operator</th><th>Signature</th><th>Description</th></tr></thead><tbody><tr><td><code>operator []</code></td><td><code>(K key) V</code></td><td>Lookup by key</td></tr><tr><td><code>operator []=</code></td><td><code>(K key, V value) void</code></td><td>Insert or update</td></tr><tr><td><code>put</code></td><td><code>(K key, V value) void</code></td><td>Insert or update</td></tr><tr><td><code>get</code></td><td><code>(K key) ptr[V]</code></td><td>Lookup (null if missing)</td></tr><tr><td><code>getOrDefault</code></td><td><code>(K key, V defaultValue) V</code></td><td>Lookup with fallback</td></tr><tr><td><code>at</code></td><td><code>(K key) V</code></td><td>Get value directly (error if missing)</td></tr><tr><td><code>key</code></td><td><code>(K key) bool</code></td><td>Check key existence</td></tr><tr><td><code>val</code></td><td><code>(V value) bool</code></td><td>Check if value exists</td></tr><tr><td><code>putIfAbsent</code></td><td><code>(K key, V value) bool</code></td><td>Insert if missing, returns true if inserted</td></tr><tr><td><code>del</code></td><td><code>(K key) bool</code></td><td>Remove entry, returns true if found</td></tr><tr><td><code>keys</code></td><td><code>() array[K]</code></td><td>All keys as array</td></tr><tr><td><code>vals</code></td><td><code>() array[V]</code></td><td>All values as array</td></tr><tr><td><code>arr</code></td><td><code>() array[tuple[K, V]]</code></td><td>All entries as array of tuples</td></tr><tr><td><code>clear</code></td><td><code>() void</code></td><td>Remove all entries</td></tr><tr><td><code>empty</code></td><td><code>() bool</code></td><td>Check if map has no entries</td></tr><tr><td><code>len</code></td><td><code>int</code> (field)</td><td>Number of entries</td></tr></tbody></table></div>
+<h2 id="random">Random</h2>
+<p><code>Random</code> is a pure-Velo reimplementation of <code>java.util.Random</code> — the same 48-bit linear congruential generator (multiplier <code>0x5DEECE66D</code>, addend <code>0xB</code>, modulus <code>2^48</code>), so a given seed produces <strong>exactly</strong> the same sequence as the JVM.</p>
+<pre class="code"><code><span class="kw">import</span> <span class="st">"std/random"</span>;
+
+<span class="ty">Random</span> r <span class="op">=</span> <span class="kw">new</span> <span class="ty">Random</span>(<span class="nu">42</span>);          <span class="cm"># seed it like java.util.Random(long)</span>
+r.nextInt();                        <span class="cm"># -1170105035 (same as the JVM)</span>
+r.nextIntBound(<span class="nu">100</span>);                <span class="cm"># uniform in [0, 100)</span>
+r.nextBoolean();                    <span class="cm"># true / false</span>
+r.nextFloat();                      <span class="cm"># float in [0, 1)</span>
+r.setSeed(<span class="nu">12345</span>);                   <span class="cm"># reseed in place</span></code></pre>
+<p>Velo has no <code>double</code>, so the <code>nextDouble</code> and <code>nextGaussian</code> parts of <code>java.util.Random</code> are intentionally omitted (as is <code>nextLong</code> — the generator is written with 32-bit <code>int</code> arithmetic). Because Velo has no method overloading, the bounded draw is named <code>nextIntBound</code> rather than overloading <code>nextInt</code>.</p>
+<h3 id="full-api-reference">Full API Reference</h3>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead><tbody><tr><td>constructor</td><td><code>(int seed)</code></td><td>Seed the generator (like <code>java.util.Random(long)</code>)</td></tr><tr><td><code>setSeed</code></td><td><code>(int seed) void</code></td><td>Reseed in place</td></tr><tr><td><code>nextInt</code></td><td><code>() int</code></td><td>Next pseudorandom 32-bit <code>int</code> (full range)</td></tr><tr><td><code>nextIntBound</code></td><td><code>(int bound) int</code></td><td>Uniform <code>int</code> in <code>[0, bound)</code></td></tr><tr><td><code>nextBoolean</code></td><td><code>() bool</code></td><td>Next pseudorandom <code>bool</code></td></tr><tr><td><code>nextFloat</code></td><td><code>() float</code></td><td>Uniform <code>float</code> in <code>[0, 1)</code></td></tr></tbody></table></div>
+<hr>
+<p><a href="16-modules-and-includes.html">Previous: Modules and Imports ←</a> | <a href="18-running-programs.html">Next: Running Programs →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

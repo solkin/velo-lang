@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operators — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="operators">Operators</h1>
+<h2 id="arithmetic-operators">Arithmetic Operators</h2>
+<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>;
+<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>;
+
+<span class="ty">int</span> sum <span class="op">=</span> a <span class="op">+</span> b;      <span class="cm"># 13</span>
+<span class="ty">int</span> diff <span class="op">=</span> a <span class="op">-</span> b;     <span class="cm"># 7</span>
+<span class="ty">int</span> prod <span class="op">=</span> a <span class="op">*</span> b;     <span class="cm"># 30</span>
+<span class="ty">int</span> quot <span class="op">=</span> a <span class="op">/</span> b;     <span class="cm"># 3</span>
+<span class="ty">int</span> rem <span class="op">=</span> a <span class="op">%</span> b;      <span class="cm"># 1</span></code></pre>
+<h2 id="unary-operators">Unary Operators</h2>
+<pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">-10</span>;          <span class="cm"># Unary minus</span>
+<span class="ty">int</span> y <span class="op">=</span> <span class="op">-</span>x;           <span class="cm"># y = 10</span>
+<span class="ty">int</span> z <span class="op">=</span> <span class="nu">5</span> <span class="op">+</span> <span class="nu">-3</span>;       <span class="cm"># z = 2</span>
+<span class="ty">int</span> w <span class="op">=</span> <span class="op">-</span>(<span class="nu">-2</span>);        <span class="cm"># w = 2 (double negation)</span></code></pre>
+<h2 id="compound-assignment-operators">Compound Assignment Operators</h2>
+<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>;
+
+a <span class="op">+=</span> <span class="nu">5</span>;               <span class="cm"># a = a + 5, result: 15</span>
+a <span class="op">-=</span> <span class="nu">3</span>;               <span class="cm"># a = a - 3, result: 12</span>
+a <span class="op">*=</span> <span class="nu">2</span>;               <span class="cm"># a = a * 2, result: 24</span>
+a <span class="op">/=</span> <span class="nu">4</span>;               <span class="cm"># a = a / 4, result: 6</span>
+a <span class="op">%=</span> <span class="nu">4</span>;               <span class="cm"># a = a % 4, result: 2</span></code></pre>
+<p>Works with array elements and in loops:</p>
+<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>] { <span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span> };
+arr[<span class="nu">0</span>] <span class="op">+=</span> <span class="nu">10</span>;         <span class="cm"># arr[0] = 11</span>
+
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> i <span class="op">&lt;</span> <span class="nu">10</span> {
+    i <span class="op">+=</span> <span class="nu">1</span>            <span class="cm"># Increment</span>
+}</code></pre>
+<h2 id="comparison-operators">Comparison Operators</h2>
+<pre class="code"><code><span class="ty">bool</span> eq <span class="op">=</span> a <span class="op">==</span> b;     <span class="cm"># Equality</span>
+<span class="ty">bool</span> ne <span class="op">=</span> a <span class="op">!=</span> b;     <span class="cm"># Inequality</span>
+<span class="ty">bool</span> lt <span class="op">=</span> a <span class="op">&lt;</span> b;      <span class="cm"># Less than</span>
+<span class="ty">bool</span> gt <span class="op">=</span> a <span class="op">&gt;</span> b;      <span class="cm"># Greater than</span>
+<span class="ty">bool</span> le <span class="op">=</span> a <span class="op">&lt;=</span> b;     <span class="cm"># Less than or equal</span>
+<span class="ty">bool</span> ge <span class="op">=</span> a <span class="op">&gt;=</span> b;     <span class="cm"># Greater than or equal</span></code></pre>
+<h2 id="logical-operators">Logical Operators</h2>
+<p>Velo has short-circuit logical operators <code>&amp;&amp;</code>, <code>||</code>, and the unary <code>!</code>:</p>
+<pre class="code"><code><span class="ty">bool</span> a <span class="op">=</span> <span class="kw">true</span>;
+<span class="ty">bool</span> b <span class="op">=</span> <span class="kw">false</span>;
+
+<span class="ty">bool</span> and <span class="op">=</span> a <span class="op">&amp;&amp;</span> b;    <span class="cm"># false (short-circuits: b only evaluated if a is true)</span>
+<span class="ty">bool</span> or  <span class="op">=</span> a <span class="op">||</span> b;    <span class="cm"># true  (short-circuits: b only evaluated if a is false)</span>
+<span class="ty">bool</span> neg <span class="op">=</span> <span class="op">!</span>a;        <span class="cm"># false</span></code></pre>
+<p><code>&amp;</code> and <code>|</code> also work on booleans as short-circuit aliases of <code>&amp;&amp;</code> / <code>||</code>, but prefer <code>&amp;&amp;</code> / <code>||</code> for clarity.</p>
+<h2 id="bitwise-operators">Bitwise Operators</h2>
+<p><code>&amp;</code>, <code>|</code>, <code>^</code> are bitwise operators on <code>int</code> and <code>long</code>:</p>
+<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
+<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>;
+
+<span class="ty">int</span> band <span class="op">=</span> a <span class="op">&amp;</span> b;     <span class="cm"># 1  (bitwise AND)</span>
+<span class="ty">int</span> bor  <span class="op">=</span> a <span class="op">|</span> b;     <span class="cm"># 7  (bitwise OR)</span>
+<span class="ty">int</span> bxor <span class="op">=</span> a <span class="op">^</span> b;     <span class="cm"># 6  (bitwise XOR)</span></code></pre>
+<p>There are <strong>no shift operators</strong> (<code>&lt;&lt;</code> / <code>&gt;&gt;</code>). Shift with the <code>.shl(n)</code> / <code>.shr(n)</code> methods instead:</p>
+<pre class="code"><code><span class="ty">int</span> shl <span class="op">=</span> a.shl(<span class="nu">1</span>);   <span class="cm"># 10 (left shift by 1)</span>
+<span class="ty">int</span> shr <span class="op">=</span> a.shr(<span class="nu">1</span>);   <span class="cm"># 2  (right shift by 1)</span></code></pre>
+<h2 id="operator-overloading">Operator Overloading</h2>
+<p>All arithmetic, comparison, unary, and index operators can be overloaded for user-defined classes using the <code>operator</code> keyword. See <a href="24-operator-overloading.html">Operator Overloading</a> for details.</p>
+<hr>
+<p><a href="04-variables-and-assignment.html">Previous: Variables and Assignment ←</a> | <a href="06-conditionals.html">Next: Conditional Statements →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

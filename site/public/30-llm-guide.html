@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Guide — Velo in One Page — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="llm-guide-velo-in-one-page">LLM Guide — Velo in One Page</h1>
+<p>A dense cheat-sheet for generating <strong>correct</strong> Velo. Velo looks like C/Java/Kotlin but has a handful of deliberate rules that trip up code models. Read the seven rules first — most mistakes come from breaking one of them.</p>
+<h2 id="the-seven-rules-that-differ-from-other-languages">The seven rules that differ from other languages</h2>
+<ol><li><strong>A newline ends a statement</strong> (Go-style). No <code>;</code> is needed at end of line, and <strong>never</strong> write <code>};</code>. Use <code>;</code> only to put two statements on one line. A statement may span lines if it breaks <em>after</em> an operator, a <code>.</code>, a comma, or an open bracket.</li><li><strong><code>return</code> is mandatory and explicit.</strong> There is no "last expression is the result". A non-<code>void</code> function must <code>return</code> on <strong>every</strong> path (both branches of a terminal <code>if</code> must return, or add a trailing <code>return</code>).</li><li><strong>Parentheses = computation.</strong> Any method, conversion, or extension call is written with <code>()</code> — <em>even with no arguments</em>: <code>x.str()</code>, <code>arr.len()</code>, <code>list.keys()</code>. Bare access (<code>obj.field</code>, <code>tuple.1</code>, <code>map.len</code>) is <strong>only</strong> for stored fields. Calling without <code>()</code> or reading a field with <code>()</code> is a compile error.</li><li><strong>Types are explicit</strong> on every declaration and signature. The one exception: <code>let name = expr</code> declares an <strong>immutable, type-inferred</strong> local.</li><li><strong>Logical vs bitwise are separate.</strong> <code>&amp;&amp;</code> <code>||</code> <code>!</code> are logical (short-circuit); <code>&amp;</code> <code>|</code> <code>^</code> are bitwise on ints. Negate a bool with <code>!x</code>.</li><li><strong>String interpolation</strong> is Kotlin-style: <code>"$name ${expr}"</code>. Write <code>\$</code> for a literal dollar sign. Convert values with <code>.str()</code> when concatenating with <code>+</code>.</li><li><strong>Declare before use.</strong> The program runs top-to-bottom; a function must be defined above the code that calls it.</li><li><strong>Numbers widen implicitly, narrow explicitly.</strong> <code>byte</code>→<code>int</code>→<code>long</code>→<code>float</code> is automatic (<code>float f = 5</code> holds <code>5.0</code>, so <code>f / 2</code> is <code>2.5</code>). Going the other way loses data and is a compile error — convert with <code>.byte()</code> / <code>.int()</code> / <code>.long()</code> / <code>.float()</code> (float→int truncates). No literal suffixes: an int literal takes its target's type (a decimal literal over 32 bits is a <code>long</code>); a <code>.</code> makes a literal a float.</li></ol>
+<h2 id="syntax-at-a-glance">Syntax at a glance</h2>
+<pre class="code"><code><span class="cm"># Comment. Native objects are constructed with `new`.</span>
+<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
+
+<span class="cm"># Import a module — `.vel` optional; `std/…` is the standard library,</span>
+<span class="cm"># any other path is relative to this file.</span>
+<span class="kw">import</span> <span class="st">"std/bool"</span>
+<span class="kw">import</span> <span class="st">"geom"</span> as g               <span class="cm"># namespaced: reach members as g.area(), new g.Point()</span>
+
+<span class="cm"># Immutable inferred local (preferred for locals):</span>
+<span class="kw">let</span> x <span class="op">=</span> <span class="nu">42</span>                       <span class="cm"># int, cannot be reassigned</span>
+<span class="kw">let</span> name <span class="op">=</span> <span class="st">"Velo"</span>                <span class="cm"># str</span>
+
+<span class="cm"># Explicit typed (mutable) declaration:</span>
+<span class="ty">int</span> count <span class="op">=</span> <span class="nu">0</span>
+count <span class="op">=</span> count <span class="op">+</span> <span class="nu">1</span>                <span class="cm"># ok, mutable</span>
+
+<span class="cm"># Functions: explicit param types and return type, explicit return.</span>
+<span class="kw">func</span> add(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    <span class="kw">return</span> a <span class="op">+</span> b
+}
+
+<span class="kw">func</span> sign(<span class="ty">int</span> n) <span class="ty">int</span> {           <span class="cm"># every path returns</span>
+    <span class="kw">if</span> (n <span class="op">&gt;</span> <span class="nu">0</span>) {
+        <span class="kw">return</span> <span class="nu">1</span>
+    }
+    <span class="kw">if</span> (n <span class="op">&lt;</span> <span class="nu">0</span>) {
+        <span class="kw">return</span> <span class="nu">-1</span>
+    }
+    <span class="kw">return</span> <span class="nu">0</span>
+}
+
+<span class="cm"># `if` is also an expression with then/else (parens around the condition optional):</span>
+<span class="kw">let</span> label <span class="op">=</span> <span class="kw">if</span> x <span class="op">&gt;</span> <span class="nu">0</span> <span class="kw">then</span> <span class="st">"positive"</span> <span class="kw">else</span> <span class="st">"non-positive"</span>
+
+<span class="cm"># Loops: while, for-range (end exclusive), for-each. break / continue work anywhere.</span>
+<span class="ty">int</span> sum <span class="op">=</span> <span class="nu">0</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..5</span> {                  <span class="cm"># 0,1,2,3,4</span>
+    <span class="kw">if</span> (i <span class="op">==</span> <span class="nu">3</span>) { <span class="kw">continue</span> }
+    sum <span class="op">+=</span> i
+}
+
+<span class="ty">int</span> j <span class="op">=</span> <span class="nu">0</span>
+<span class="kw">while</span> (j <span class="op">&lt;</span> <span class="nu">10</span>) {
+    <span class="kw">if</span> (j <span class="op">&gt;</span> <span class="nu">4</span>) { <span class="kw">break</span> }
+    j <span class="op">+=</span> <span class="nu">1</span>
+}
+
+<span class="cm"># Strings: interpolation and .str() conversions (int/float/bool/str all convert).</span>
+<span class="kw">let</span> pi <span class="op">=</span> <span class="nu">3.14</span>
+<span class="kw">let</span> ok <span class="op">=</span> <span class="kw">true</span>
+term.println(<span class="st">"x=$x pi=$pi ok=$ok sum=${sum}"</span>)
+term.println(<span class="st">"count = "</span> <span class="op">+</span> count.<span class="ty">str</span>())     <span class="cm"># + needs .str() on non-strings</span>
+
+<span class="cm"># Arrays: sized vs literal; .len(); map takes value first, index optional.</span>
+<span class="ty">array</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">3</span>)            <span class="cm"># length 3 (NOT zero-initialised)</span>
+<span class="ty">array</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>}   <span class="cm"># literal</span>
+term.println(b.len().<span class="ty">str</span>())                 <span class="cm"># method → ()</span>
+<span class="ty">array</span>[<span class="ty">int</span>] doubled <span class="op">=</span> b.map(<span class="kw">func</span>(<span class="ty">int</span> v) <span class="ty">int</span> { <span class="kw">return</span> v <span class="op">*</span> <span class="nu">2</span> })
+<span class="ty">array</span>[<span class="ty">int</span>] withIdx <span class="op">=</span> b.map(<span class="kw">func</span>(<span class="ty">int</span> v, <span class="ty">int</span> i) <span class="ty">int</span> { <span class="kw">return</span> v <span class="op">+</span> i })
+
+<span class="cm"># Dictionaries (sugar over the Map class; one type, one API):</span>
+<span class="ty">dict</span>[<span class="ty">str</span>:<span class="ty">int</span>] ages <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">str</span>:<span class="ty">int</span>]{ <span class="st">"ada"</span>: <span class="nu">36</span>, <span class="st">"bob"</span>: <span class="nu">40</span> }
+ages[<span class="st">"cid"</span>] <span class="op">=</span> <span class="nu">25</span>                <span class="cm"># index set</span>
+<span class="kw">let</span> a1 <span class="op">=</span> ages[<span class="st">"ada"</span>]            <span class="cm"># index get → the value</span>
+term.println(ages.len.<span class="ty">str</span>())    <span class="cm"># len is a FIELD → bare, no ()</span>
+term.println(ages.key(<span class="st">"bob"</span>).<span class="ty">str</span>())   <span class="cm"># key(...) is a METHOD → ()</span>
+
+<span class="cm"># Tuples: positional fields are bare and 1-indexed.</span>
+<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] pair <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"one"</span>)
+term.println(pair.<span class="nu">1.</span><span class="ty">str</span>())      <span class="cm"># 1</span>
+term.println(pair.<span class="nu">2</span>)            <span class="cm"># "one"</span></code></pre>
+<h2 id="classes-data-classes-interfaces">Classes, data classes, interfaces</h2>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="ty">int</span> mag <span class="op">=</span> x <span class="op">*</span> x <span class="op">+</span> y <span class="op">*</span> y      <span class="cm"># field initialised in the constructor body</span>
+    <span class="kw">func</span> dist2() <span class="ty">int</span> {           <span class="cm"># method: called as p.dist2()</span>
+        <span class="kw">return</span> mag
+    }
+    <span class="kw">func</span> moved(<span class="ty">int</span> dx, <span class="ty">int</span> dy) <span class="ty">Point</span> {
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Point</span>(x <span class="op">+</span> dx, y <span class="op">+</span> dy)
+    }
+}
+
+<span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">3</span>, <span class="nu">4</span>)
+term.println(p.mag.<span class="ty">str</span>())        <span class="cm"># field → bare</span>
+term.println(p.dist2().<span class="ty">str</span>())    <span class="cm"># method → ()</span>
+
+<span class="cm"># data class: immutable value type, compared by value, transferable to actors.</span>
+<span class="kw">data</span> <span class="kw">class</span> <span class="ty">Vec</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">func</span> add(<span class="ty">Vec</span> o) <span class="ty">Vec</span> { <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vec</span>(x <span class="op">+</span> o.x, y <span class="op">+</span> o.y) }
+}
+
+<span class="cm"># interface: satisfied structurally (no `extends`).</span>
+<span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; }
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) {
+    <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side }
+}
+<span class="ty">Shape</span> s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">5</span>)
+term.println(s.area().<span class="ty">str</span>())</code></pre>
+<h2 id="concurrency-actors-asyncawait-callbacks">Concurrency (actors, async/await, callbacks)</h2>
+<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Counter</span>() {
+    <span class="ty">int</span> n <span class="op">=</span> <span class="nu">0</span>
+    <span class="kw">func</span> bump() <span class="ty">int</span> {
+        n <span class="op">+=</span> <span class="nu">1</span>
+        <span class="kw">return</span> n
+    }
+}
+<span class="kw">actor</span>[<span class="ty">Counter</span>] c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>()
+<span class="kw">let</span> v <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> c.bump()     <span class="cm"># async → future[int], await unwraps it</span>
+term.println(v.<span class="ty">str</span>())</code></pre>
+<h2 id="common-mistakes-wrong-right">Common mistakes (❌ wrong → ✅ right)</h2>
+<div class="table-wrap"><table><thead><tr><th>❌ Wrong</th><th>✅ Right</th><th>Why</th></tr></thead><tbody><tr><td><code>while (i&lt;10) { ... };</code></td><td><code>while (i &lt; 10) { ... }</code></td><td>no <code>;</code> after <code>}</code></td></tr><tr><td><code>func f() int { a + b }</code></td><td><code>func f() int { return a + b }</code></td><td>explicit return required</td></tr><tr><td><code>x.str</code> , <code>arr.len</code></td><td><code>x.str()</code> , <code>arr.len()</code></td><td>conversions/methods need <code>()</code></td></tr><tr><td><code>map.len()</code></td><td><code>map.len</code></td><td><code>len</code> is a stored field → bare</td></tr><tr><td><code>dict.get(k).str()</code></td><td><code>dict[k].str()</code></td><td>index returns the value; <code>get</code> returns a <code>ptr</code></td></tr><tr><td><code>"total " + n</code></td><td><code>"total " + n.str()</code> or <code>"total $n"</code></td><td>convert / interpolate</td></tr><tr><td><code>var x = 5</code></td><td><code>let x = 5</code> or <code>int x = 5</code></td><td>no <code>var</code>; <code>let</code> = immutable inferred</td></tr><tr><td><code>list.map(func(int i, int v){...})</code></td><td><code>list.map(func(int v){...})</code></td><td>callback is value-first, index optional</td></tr><tr><td>calling a func defined below</td><td>move the definition above the call</td><td>declare-before-use</td></tr></tbody></table></div>
+<h2 id="complete-example-fizzbuzz">Complete example — FizzBuzz</h2>
+<pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
+
+<span class="kw">func</span> label(<span class="ty">int</span> n) <span class="ty">str</span> {
+    <span class="kw">if</span> (n <span class="op">%</span> <span class="nu">15</span> <span class="op">==</span> <span class="nu">0</span>) { <span class="kw">return</span> <span class="st">"FizzBuzz"</span> }
+    <span class="kw">if</span> (n <span class="op">%</span> <span class="nu">3</span> <span class="op">==</span> <span class="nu">0</span>)  { <span class="kw">return</span> <span class="st">"Fizz"</span> }
+    <span class="kw">if</span> (n <span class="op">%</span> <span class="nu">5</span> <span class="op">==</span> <span class="nu">0</span>)  { <span class="kw">return</span> <span class="st">"Buzz"</span> }
+    <span class="kw">return</span> n.<span class="ty">str</span>()
+}
+
+<span class="kw">for</span> n <span class="kw">in</span> <span class="nu">1..16</span> {
+    term.println(label(n))
+}</code></pre>
+<h2 id="complete-example-words-counted-in-a-dict">Complete example — words counted in a dict</h2>
+<pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
+
+<span class="ty">array</span>[<span class="ty">str</span>] words <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">str</span>]{<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"a"</span>, <span class="st">"c"</span>, <span class="st">"b"</span>, <span class="st">"a"</span>}
+<span class="ty">dict</span>[<span class="ty">str</span>:<span class="ty">int</span>] counts <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">str</span>:<span class="ty">int</span>]{}
+
+<span class="kw">for</span> w <span class="kw">in</span> words {
+    <span class="kw">if</span> (counts.key(w)) {
+        counts[w] <span class="op">=</span> counts[w] <span class="op">+</span> <span class="nu">1</span>
+    } <span class="kw">else</span> {
+        counts[w] <span class="op">=</span> <span class="nu">1</span>
+    }
+}
+
+<span class="ty">array</span>[<span class="ty">str</span>] keys <span class="op">=</span> counts.keys()
+<span class="kw">for</span> k <span class="kw">in</span> keys {
+    term.println(<span class="st">"$k: ${counts[k]}"</span>)
+}</code></pre>
+<hr>
+<p><a href="29-interfaces.html">Previous: Interfaces ←</a> | <a href="31-grammar.html">Next: Grammar →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

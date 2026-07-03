@@ -12,6 +12,21 @@ any value = 42;
 value = "Hello";
 ```
 
+## Immutable Inferred Locals (`let`)
+
+`let name = expr` declares a local whose type is **inferred** from the
+initializer and which is **immutable** — it cannot be reassigned. Prefer `let`
+for locals you don't mutate:
+
+```velo
+let x = 42               # int, inferred
+let greeting = "Hello"   # str, inferred
+# x = 43                 # ERROR: let bindings are immutable
+```
+
+Use an explicit typed declaration (`int x = 10`) when you need to reassign the
+variable.
+
 ## Assignment
 
 ```velo

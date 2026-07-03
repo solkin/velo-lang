@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strings — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="strings">Strings</h1>
+<h2 id="creating-strings">Creating Strings</h2>
+<pre class="code"><code><span class="ty">str</span> greeting <span class="op">=</span> <span class="st">"Hello, World!"</span>;
+<span class="ty">str</span> empty <span class="op">=</span> <span class="st">""</span>;
+<span class="ty">str</span> multiline <span class="op">=</span> <span class="st">"Line 1\nLine 2"</span>;</code></pre>
+<h2 id="string-properties-and-methods">String Properties and Methods</h2>
+<h3 id="len-string-length"><code>len</code> — String Length</h3>
+<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>;
+<span class="ty">int</span> length <span class="op">=</span> s.len();  <span class="cm"># 5</span></code></pre>
+<h3 id="substart-end-substring"><code>sub(start, end)</code> — Substring</h3>
+<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello, World!"</span>;
+<span class="ty">str</span> sub <span class="op">=</span> s.sub(<span class="nu">7</span>, <span class="nu">12</span>);  <span class="cm"># "World"</span></code></pre>
+<h3 id="concatenation">Concatenation</h3>
+<p>Use the <code>+</code> operator to concatenate strings:</p>
+<pre class="code"><code><span class="ty">str</span> a <span class="op">=</span> <span class="st">"Hello"</span>;
+<span class="ty">str</span> b <span class="op">=</span> <span class="st">"World"</span>;
+<span class="ty">str</span> combined <span class="op">=</span> a <span class="op">+</span> <span class="st">", "</span> <span class="op">+</span> b;  <span class="cm"># "Hello, World"</span></code></pre>
+<p>Alternatively, use the <code>con(other)</code> method:</p>
+<pre class="code"><code><span class="ty">str</span> combined <span class="op">=</span> a.con(<span class="st">", "</span>).con(b);  <span class="cm"># "Hello, World"</span></code></pre>
+<h3 id="index-access">Index Access</h3>
+<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>;
+<span class="ty">int</span> charCode <span class="op">=</span> s[<span class="nu">0</span>];      <span class="cm"># Character code for 'H'</span>
+<span class="ty">str</span> firstChar <span class="op">=</span> s[<span class="nu">0</span>].char(); <span class="cm"># "H"</span></code></pre>
+<h2 id="type-conversion">Type Conversion</h2>
+<pre class="code"><code><span class="ty">int</span> num <span class="op">=</span> <span class="nu">42</span>;
+<span class="ty">str</span> numStr <span class="op">=</span> num.<span class="ty">str</span>();     <span class="cm"># "42"</span>
+
+<span class="ty">str</span> text <span class="op">=</span> <span class="st">"123"</span>;
+<span class="ty">int</span> num <span class="op">=</span> text.<span class="ty">int</span>();       <span class="cm"># 123</span></code></pre>
+<hr>
+<p><a href="10-dictionaries.html">Previous: Dictionaries ←</a> | <a href="12-tuples.html">Next: Tuples →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

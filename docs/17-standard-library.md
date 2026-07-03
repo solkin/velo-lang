@@ -10,7 +10,7 @@ import "std/bool";
 bool flag = true;
 str s = flag.str();        # "true" or "false" (parentheses optional)
 int i = flag.int();        # 1 or 0
-bool neg = flag.not;     # Logical NOT
+bool neg = flag.not();   # Logical NOT (or use the built-in !flag)
 ```
 
 ## Integer Extensions
@@ -206,7 +206,7 @@ int age = ages["Alice"];               # 30
 # get() returns ptr[V] — null if key is not found
 ptr[int] val = ages.get("Alice");
 if (val != null) {
-    int a = val.val;
+    int a = val.val();
 };
 
 # getOrDefault() returns V directly, with a fallback
@@ -304,10 +304,11 @@ r.nextFloat();                      # float in [0, 1)
 r.setSeed(12345);                   # reseed in place
 ```
 
-Velo has no `long` or `double`, so the `nextLong`, `nextDouble` and
-`nextGaussian` parts of `java.util.Random` are intentionally omitted. Because
-Velo has no method overloading, the bounded draw is named `nextIntBound`
-rather than overloading `nextInt`.
+Velo has no `double`, so the `nextDouble` and `nextGaussian` parts of
+`java.util.Random` are intentionally omitted (as is `nextLong` — the generator
+is written with 32-bit `int` arithmetic). Because Velo has no method
+overloading, the bounded draw is named `nextIntBound` rather than overloading
+`nextInt`.
 
 ### Full API Reference
 

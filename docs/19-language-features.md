@@ -1,33 +1,59 @@
 # Language Features
 
-## Missing Operators
+## Logical and bitwise operators
 
-- **No unary `!`** — use `== false` for negation
-- **No `&&`** — use `&`, which always evaluates both operands
-- **No `||`** — use `|`
-- **No `break` and `continue`** — use conditional statements
+Velo has full logical operators with short-circuit evaluation, alongside
+bitwise operators on integers:
 
-## Return Values
+- **`&&`, `||`** — logical AND / OR, short-circuit.
+- **`!`** — logical NOT (`!ready`).
+- **`&`, `|`, `^`** — bitwise AND / OR / XOR on `int`/`long`. On booleans `&`/`|`
+  act as short-circuit aliases of `&&`/`||`, but prefer `&&`/`||` for clarity.
 
-In functions, the last expression automatically becomes the return value:
+There are **no shift operators**; use the `x.shl(n)` / `x.shr(n)` methods.
+
+See [Operators](05-operators.md) for the full table.
+
+## Loop control
+
+`break` and `continue` work inside `while`, `for`-range and `for`-each loops.
+
+```velo
+for i in 0..10 {
+    if (i == 3) { continue }
+    if (i > 6)  { break }
+    term.println(i.str())
+}
+```
+
+## Return values
+
+`return` is **mandatory and explicit** — there is no implicit "last expression
+is the result". A non-`void` function must `return` on every path:
 
 ```velo
 func add(int a, int b) int {
-    return a + b;  # This value will be returned
-};
+    return a + b
+}
 ```
 
-## The `let` Construct
+## The `let` construct
 
-The `let` construct allows declaring local variables:
+`let name = expr` declares an **immutable, type-inferred** local. It is the
+preferred way to bind a local you do not reassign; the type comes from the
+initializer:
 
 ```velo
-let(any result = calculate()) {
-    term.println(result.str());
-};
+let result = calculate()     # type inferred, cannot be reassigned
+term.println(result.str())
+
+let name = "Velo"            # str
+let count = 0                # int
 ```
+
+For a mutable variable, declare it with an explicit type instead
+(`int count = 0`).
 
 ---
 
 [Previous: Running Programs ←](18-running-programs.md) | [Next: Best Practices →](20-best-practices.md)
-

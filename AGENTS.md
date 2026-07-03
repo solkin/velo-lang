@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (48 operations). It is designed to be embeddable in JVM applications.
+Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (61 operations). It is designed to be embeddable in JVM applications.
 
 Key characteristics:
 - **Source language**: Velo (`.vel` files)
-- **Bytecode format**: `.vbc` (custom format, v10: magic `0x5e10`, native pool + frames)
+- **Bytecode format**: `.vbc` (custom format, v11: magic `0x5e10`, native pool + frames)
 - **Implementation language**: Kotlin (JVM)
 - **License**: MIT (Igor Solkin)
 
@@ -35,12 +35,14 @@ Minimal external dependencies: Kotlin stdlib and JUnit only.
 ## Modules
 
 ```
-velo-core      Shared contracts: Op (48 opcodes), VmType, Bytecode (.vbc read/write),
+velo-core      Shared contracts: Op (61 opcodes), VmType, Bytecode (.vbc read/write),
                SerializedProgram/SerializedFrame, NativeRegistry/NativeDescriptor/NativeLinker
 velo-compiler  Front-end (depends on core): lexer, Pratt parser, AST nodes, type system,
                codegen; stdlib sources in src/main/resources/std/
 velo-vm        Back-end (depends on core): interpreter, records/memory, actors,
-               NativeBridge, VeloRuntime (embedding API)
+               NativeBridge, VeloRuntime (embedding API) — the VM the CLI ships
+velo-vm2       Clean-room VM reimplemented from the .vbc spec, verified against the
+               golden tests; test-only parity gate (the CLI does not ship it)
 velo-cli       CLI (depends on compiler + vm): Main.kt, default native classes
                (Terminal, Time, FileSystem, Http, Socket), demo programs, integration tests
 ```
@@ -73,7 +75,7 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 
 ## Virtual Machine (`velo-vm`)
 
-1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 48 ops.
+1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 61 ops.
 2. **Memory** — `MemoryArea.kt` heap; `Record` subclasses (`ValueRecord`, `RefRecord` array/class/native, `FuncRecord`, `PtrRecord`) hold values.
 3. **Actors** — `vm/actors/`: `ActorRuntime`, `ActorHandle` (isolated VMContext + serial dispatcher), `Dispatcher` (thread / pump / host executor), `StructuredClone` (transferable values only), `VeloFunction`/`CallbackRecord` two-way callbacks, `Pins` refcount machinery.
 4. **Native interop** — `NativeRegistry`/`NativeDescriptor` (core) synthesize descriptors from JVM classes once; `NativeLinker` links a program's native pool at load; `NativeBridge.kt` is the single Velo⇄JVM conversion point; `Op.NativeCall` dispatches via MethodHandle by pool index. `java.util.Map` does not cross the boundary (no dict in the VM).

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interfaces — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="interfaces">Interfaces</h1>
+<p>An <strong>interface</strong> is a named set of method signatures — a contract a type satisfies by <strong>shape</strong>, not by declaration. Velo interfaces are <em>structural</em> (Go-style): any <a href="13-classes.html">class</a> — or even a <a href="15-native-classes.html">native class</a> — that has the right methods satisfies the interface automatically. There is no base class to extend and no <code>implements</code> to write.</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> {
+    <span class="kw">func</span> area() <span class="ty">int</span>;
+    <span class="kw">func</span> kind() <span class="ty">str</span>;
+};
+
+<span class="cm"># Neither class names `Shape`. They satisfy it because they have its methods.</span>
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) {
+    <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; };
+    <span class="kw">func</span> kind() <span class="ty">str</span> { <span class="kw">return</span> <span class="st">"square"</span>; };
+};
+
+<span class="kw">class</span> <span class="ty">Rect</span>(<span class="ty">int</span> w, <span class="ty">int</span> h) {
+    <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> w <span class="op">*</span> h; };
+    <span class="kw">func</span> kind() <span class="ty">str</span> { <span class="kw">return</span> <span class="st">"rect"</span>; };
+};
+
+<span class="ty">Shape</span> s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">4</span>);
+term.println(s.kind());        <span class="cm"># square</span>
+s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Rect</span>(<span class="nu">3</span>, <span class="nu">5</span>);
+term.println(s.area().<span class="ty">str</span>());    <span class="cm"># 15</span></code></pre>
+<p>Assigning a <code>Square</code> to a <code>Shape</code> variable is allowed because <code>Square</code> provides every method <code>Shape</code> declares. The call <code>s.kind()</code> is dispatched <strong>dynamically</strong> to the concrete class behind <code>s</code> at run time.</p>
+<h2 id="declaring-an-interface">Declaring an interface</h2>
+<p>An interface body is a list of method <strong>signatures</strong> — a name, parameters and a return type, with no body:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Drawable</span> {
+    <span class="kw">func</span> draw(<span class="ty">Canvas</span> c) <span class="kw">void</span>;
+    <span class="kw">func</span> bounds() <span class="ty">int</span>;
+};</code></pre>
+<p>The semicolon after each signature is optional. A method may not have a body inside an interface — only the signature. An interface may reference itself in a signature (e.g. a builder that returns the same interface), because the name is in scope while its methods are parsed.</p>
+<h2 id="structural-satisfaction">Structural satisfaction</h2>
+<p>A type satisfies an interface when it provides <strong>every</strong> method, each with a matching signature: the same name, the same parameter types in the same order, and the same return type. Matching is exact — there is no implicit conversion or variance on parameters.</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
+
+<span class="kw">class</span> <span class="ty">Dot</span>() { <span class="kw">func</span> draw() <span class="ty">int</span> { <span class="kw">return</span> <span class="nu">0</span>; }; };
+
+<span class="ty">Shape</span> s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Dot</span>();   <span class="cm"># error: Dot has no `area() int` — it does not satisfy Shape</span></code></pre>
+<p>A signature that differs only in return type does <strong>not</strong> match:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) { <span class="kw">func</span> area() <span class="ty">str</span> { <span class="kw">return</span> <span class="st">"no"</span>; }; };
+
+<span class="ty">Shape</span> s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">2</span>);   <span class="cm"># error: area returns str, not int</span></code></pre>
+<blockquote><p><strong>Declare an interface before the types that satisfy it.</strong> A class is matched against the interfaces in scope when it is compiled, so keep the <code>interface</code> ahead of the classes — and the assignments — that rely on it.</p></blockquote>
+<h2 id="the-interface-is-the-whole-contract">The interface is the whole contract</h2>
+<p>Through an interface-typed value you may call <strong>only</strong> the methods the interface declares — even if the concrete class has more. The interface is the complete, exclusive view:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
+
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) {
+    <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; };
+    <span class="kw">func</span> kind() <span class="ty">str</span> { <span class="kw">return</span> <span class="st">"square"</span>; };
+};
+
+<span class="ty">Shape</span> s <span class="op">=</span> <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">2</span>);
+term.println(s.area().<span class="ty">str</span>());   <span class="cm"># ok</span>
+term.println(s.kind());       <span class="cm"># error: kind() is not part of Shape</span></code></pre>
+<p>This is what makes interface code reusable: a function that takes a <code>Shape</code> works for any present or future type that satisfies it, and can rely on exactly the declared methods.</p>
+<h2 id="explicit-conformance">Explicit conformance</h2>
+<p>Structural satisfaction alone is enough, but a class may also <strong>declare</strong> the interfaces it means to satisfy, after the constructor parameters:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; };
+
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) : <span class="ty">Shape</span> {
+    <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; };
+    <span class="kw">func</span> kind() <span class="ty">str</span> { <span class="kw">return</span> <span class="st">"square"</span>; };
+};</code></pre>
+<p>This changes nothing at run time — dispatch is identical. What it buys you is <strong>intent and early errors</strong>: if <code>Square</code> is missing or mistypes a method, the error surfaces at the class declaration (naming the missing methods) instead of at the first place you try to use it as a <code>Shape</code>. A class may conform to several interfaces, comma-separated: <code>class Square(int side) : Shape, Drawable { ... }</code>.</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; };
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) : <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; }; };
+<span class="cm"># error: Square declares it conforms to Shape but is missing kind()</span></code></pre>
+<h2 id="interfaces-as-values">Interfaces as values</h2>
+<p>An interface is an ordinary type: use it for variables, parameters, return types and array elements. Every call through it dispatches to the element's concrete class.</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; };
+
+<span class="cm"># A function that works for any Shape.</span>
+<span class="kw">func</span> describe(<span class="ty">Shape</span> s) <span class="ty">str</span> { <span class="kw">return</span> s.kind().con(<span class="st">"("</span>).con(s.area().<span class="ty">str</span>()).con(<span class="st">")"</span>); };
+term.println(describe(<span class="kw">new</span> <span class="ty">Rect</span>(<span class="nu">10</span>, <span class="nu">10</span>)));   <span class="cm"># rect(100)</span>
+
+<span class="cm"># A heterogeneous array — each element a different concrete class.</span>
+<span class="ty">array</span>[<span class="ty">Shape</span>] shapes <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">Shape</span>]{ <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">3</span>), <span class="kw">new</span> <span class="ty">Rect</span>(<span class="nu">2</span>, <span class="nu">5</span>), <span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">4</span>) };
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="kw">while</span> (i <span class="op">&lt;</span> shapes.len()) {
+    <span class="ty">Shape</span> s <span class="op">=</span> shapes[i];
+    term.println(s.kind().con(<span class="st">" = "</span>).con(s.area().<span class="ty">str</span>()));
+    i <span class="op">+=</span> <span class="nu">1</span>;
+};
+<span class="cm"># square = 9</span>
+<span class="cm"># rect = 10</span>
+<span class="cm"># square = 16</span></code></pre>
+<h2 id="self-return-type"><code>Self</code> return type</h2>
+<p>A method may declare its return type as <strong><code>Self</code></strong> — "an instance of whatever the concrete type is". It is the key to fluent builders: the chain keeps the concrete type instead of widening to the interface.</p>
+<pre class="code"><code><span class="kw">class</span> <span class="ty">Counter</span>(<span class="ty">int</span> n) {
+    <span class="kw">func</span> bump() <span class="ty">Self</span> { <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Counter</span>(n <span class="op">+</span> <span class="nu">1</span>); };
+    <span class="kw">func</span> value() <span class="ty">int</span> { <span class="kw">return</span> n; };
+};
+
+<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">0</span>);
+term.println(c.bump().bump().bump().value().<span class="ty">str</span>());   <span class="cm"># 3</span></code></pre>
+<p><code>Self</code> is resolved entirely at compile time to the receiver's type at each call site, so <code>c.bump()</code> is a <code>Counter</code> and the chain type-checks. <code>Self</code> is legal only as a <strong>return type</strong>, never as a parameter — that restriction is what keeps structural satisfaction sound.</p>
+<p>An interface can require a <code>Self</code>-returning method, and dispatch still flows correctly when the value is interface-typed:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Builder</span> {
+    <span class="kw">func</span> grow() <span class="ty">Self</span>;
+    <span class="kw">func</span> value() <span class="ty">int</span>;
+};
+
+<span class="kw">class</span> <span class="ty">Counter</span>(<span class="ty">int</span> n) {
+    <span class="kw">func</span> grow() <span class="ty">Self</span> { <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Counter</span>(n <span class="op">+</span> <span class="nu">1</span>); };
+    <span class="kw">func</span> value() <span class="ty">int</span> { <span class="kw">return</span> n; };
+};
+
+<span class="ty">Builder</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">10</span>);
+term.println(b.grow().grow().value().<span class="ty">str</span>());   <span class="cm"># 12</span></code></pre>
+<h2 id="bounded-generics">Bounded generics</h2>
+<p>A <a href="23-generics.html">generic</a> type parameter can be <strong>bounded</strong> by an interface with <code>[T: Interface]</code>. Inside the generic, you may call the bound's methods on a <code>T</code>; at instantiation, the type argument must satisfy the bound. The bound <strong>must be an interface</strong> — only a structural contract can be checked without runtime type information.</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) { <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; }; };
+<span class="kw">class</span> <span class="ty">Rect</span>(<span class="ty">int</span> w, <span class="ty">int</span> h) { <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> w <span class="op">*</span> h; }; };
+
+<span class="kw">class</span> <span class="ty">Boxed</span>[<span class="ty">T</span>: <span class="ty">Shape</span>](<span class="ty">T</span> item) {
+    <span class="kw">func</span> areaOf() <span class="ty">int</span> { <span class="kw">return</span> item.area(); };   <span class="cm"># `area` is available because T: Shape</span>
+};
+
+<span class="ty">Boxed</span>[<span class="ty">Square</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Boxed</span>[<span class="ty">Square</span>](<span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">5</span>));
+term.println(a.areaOf().<span class="ty">str</span>());   <span class="cm"># 25</span>
+
+<span class="cm"># Violating the bound is rejected:</span>
+<span class="kw">class</span> <span class="ty">Dot</span>() { <span class="kw">func</span> draw() <span class="ty">int</span> { <span class="kw">return</span> <span class="nu">0</span>; }; };
+<span class="ty">Boxed</span>[<span class="ty">Dot</span>] bad <span class="op">=</span> <span class="kw">new</span> <span class="ty">Boxed</span>[<span class="ty">Dot</span>](<span class="kw">new</span> <span class="ty">Dot</span>());   <span class="cm"># error: Dot does not satisfy Shape</span></code></pre>
+<h2 id="native-classes-satisfy-interfaces-too">Native classes satisfy interfaces too</h2>
+<p>This is where structural typing pays off most. A registered <a href="15-native-classes.html">native class</a> — a host (JVM) object exposed to Velo — satisfies a Velo interface <strong>structurally</strong>, with no annotation, wrapper or change on the host side. If the host class has methods with the right names and signatures, it <em>is</em> a <code>Shape</code>:</p>
+<pre class="code"><code><span class="cm"># `Widget` is a host class registered with the runtime, with methods</span>
+<span class="cm"># `area() int` and `kind() str` (and a fluent `padding(int) Self`).</span>
+<span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; };
+
+<span class="ty">Widget</span> w <span class="op">=</span> <span class="kw">new</span> <span class="ty">Widget</span>(<span class="st">"hello"</span>);
+<span class="ty">Shape</span> s <span class="op">=</span> w;                   <span class="cm"># the native handle satisfies Shape</span>
+term.println(s.kind());        <span class="cm"># widget:hello</span>
+term.println(s.area().<span class="ty">str</span>());    <span class="cm"># 5</span></code></pre>
+<p>Velo instances and native handles can sit behind the <strong>same</strong> interface and dispatch the same way: when the receiver is a Velo class the call enters its method, and when it is a native handle the method is resolved by name and invoked across the native boundary. The <code>Self</code> rule applies to host methods too — a fluent native method that returns itself fulfils a <code>Self</code>-returning requirement. See the <strong>Card Feed</strong> sample (<code>velo-android/samples/card-feed</code>) for an interface that spans Velo classes and native Material3 widgets.</p>
+<h2 id="interfaces-and-actors">Interfaces and actors</h2>
+<p>An interface value is <strong>not</strong> <a href="26-actors.html#what-crosses-the-boundary">transferable</a> across an <a href="26-actors.html">actor</a> boundary. An interface is a dynamic-dispatch view whose concrete class is only known at run time, so it cannot be copied to another thread the way a primitive or a <a href="28-data-classes.html"><code>data class</code></a> can. Declaring an actor method that takes or returns an interface is a compile-time error:</p>
+<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
+
+<span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Worker</span>() {
+    <span class="kw">func</span> handle(<span class="ty">Shape</span> s) <span class="ty">int</span> { <span class="kw">return</span> s.area(); };   <span class="cm"># error: Shape is not transferable</span>
+};</code></pre>
+<p>To send structured data to an actor, use a transferable type — a primitive, an array/tuple of transferable values, or a <code>data class</code>.</p>
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>Form</th><th>Notes</th></tr></thead><tbody><tr><td>Declare</td><td><code>interface Name { func m(...) T; }</code></td><td>signatures only, no bodies</td></tr><tr><td>Satisfy structurally</td><td>(nothing)</td><td>a class/native with matching methods just works</td></tr><tr><td>Declare conformance</td><td><code>class C(...) : Iface { ... }</code></td><td>optional; documents intent, fails fast</td></tr><tr><td>Use as a type</td><td>variable / parameter / <code>array[Iface]</code></td><td>dynamic dispatch to the concrete class</td></tr><tr><td>Fluent return</td><td><code>func m() Self</code></td><td>keeps the concrete type through a chain</td></tr><tr><td>Bound a generic</td><td><code>class C[T: Iface](...)</code></td><td>bound must be an interface</td></tr><tr><td>Native conformance</td><td>(nothing)</td><td>host objects satisfy interfaces by shape</td></tr><tr><td>Actor boundary</td><td>—</td><td>interfaces are <strong>not</strong> transferable</td></tr></tbody></table></div>
+<hr>
+<p><a href="28-data-classes.html">Previous: Data Classes ←</a> | <a href="30-llm-guide.html">Next: LLM Guide →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Features — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="language-features">Language Features</h1>
+<h2 id="logical-and-bitwise-operators">Logical and bitwise operators</h2>
+<p>Velo has full logical operators with short-circuit evaluation, alongside bitwise operators on integers:</p>
+<ul><li><strong><code>&amp;&amp;</code>, <code>||</code></strong> — logical AND / OR, short-circuit.</li><li><strong><code>!</code></strong> — logical NOT (<code>!ready</code>).</li><li><strong><code>&amp;</code>, <code>|</code>, <code>^</code></strong> — bitwise AND / OR / XOR on <code>int</code>/<code>long</code>. On booleans <code>&amp;</code>/<code>|</code> act as short-circuit aliases of <code>&amp;&amp;</code>/<code>||</code>, but prefer <code>&amp;&amp;</code>/<code>||</code> for clarity.</li></ul>
+<p>There are <strong>no shift operators</strong>; use the <code>x.shl(n)</code> / <code>x.shr(n)</code> methods.</p>
+<p>See <a href="05-operators.html">Operators</a> for the full table.</p>
+<h2 id="loop-control">Loop control</h2>
+<p><code>break</code> and <code>continue</code> work inside <code>while</code>, <code>for</code>-range and <code>for</code>-each loops.</p>
+<pre class="code"><code><span class="kw">for</span> i <span class="kw">in</span> <span class="nu">0..10</span> {
+    <span class="kw">if</span> (i <span class="op">==</span> <span class="nu">3</span>) { <span class="kw">continue</span> }
+    <span class="kw">if</span> (i <span class="op">&gt;</span> <span class="nu">6</span>)  { <span class="kw">break</span> }
+    term.println(i.<span class="ty">str</span>())
+}</code></pre>
+<h2 id="return-values">Return values</h2>
+<p><code>return</code> is <strong>mandatory and explicit</strong> — there is no implicit "last expression is the result". A non-<code>void</code> function must <code>return</code> on every path:</p>
+<pre class="code"><code><span class="kw">func</span> add(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    <span class="kw">return</span> a <span class="op">+</span> b
+}</code></pre>
+<h2 id="the-let-construct">The <code>let</code> construct</h2>
+<p><code>let name = expr</code> declares an <strong>immutable, type-inferred</strong> local. It is the preferred way to bind a local you do not reassign; the type comes from the initializer:</p>
+<pre class="code"><code><span class="kw">let</span> result <span class="op">=</span> calculate()     <span class="cm"># type inferred, cannot be reassigned</span>
+term.println(result.<span class="ty">str</span>())
+
+<span class="kw">let</span> name <span class="op">=</span> <span class="st">"Velo"</span>            <span class="cm"># str</span>
+<span class="kw">let</span> count <span class="op">=</span> <span class="nu">0</span>                <span class="cm"># int</span></code></pre>
+<p>For a mutable variable, declare it with an explicit type instead (<code>int count = 0</code>).</p>
+<hr>
+<p><a href="18-running-programs.html">Previous: Running Programs ←</a> | <a href="20-best-practices.html">Next: Best Practices →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>

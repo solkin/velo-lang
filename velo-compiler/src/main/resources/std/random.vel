@@ -6,8 +6,8 @@
 # kept as six 8-bit limbs because Velo `int` is a 32-bit signed value — a 16-bit
 # limb would overflow when multiplied.
 #
-# Velo has no `long` or `double`, so the long/double/Gaussian parts of
-# java.util.Random are intentionally left out; the int/boolean/float surface is
+# Velo has no `double`, so the double/Gaussian parts of java.util.Random are
+# intentionally left out (as is nextLong); the int/boolean/float surface is
 # reproduced exactly.
 class Random(int seed) {
     # 48-bit seed as 6 bytes, least-significant first (each 0..255).

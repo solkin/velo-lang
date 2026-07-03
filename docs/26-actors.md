@@ -26,7 +26,7 @@ actor class Counter(int start) {
 };
 ```
 
-The body of an `actor class` is identical to a regular class — fields, methods, init code. The only difference is that constructing an instance spins up a new worker thread and runs the constructor on it.
+The body of an `actor class` is identical to a regular class — fields, methods, init code. The only difference is that constructing an instance creates an isolated actor — its own private state and mailbox — and runs the constructor there: on the shared cooperative event loop by default, or on a dedicated thread if the host opted into a thread backend.
 
 ## Spawning and Calling
 
@@ -246,13 +246,13 @@ term.println((await async b.bump()).str());  # 101
 term.println((await async a.bump()).str());  # 12
 ```
 
-Two actors, two threads, two private `n`s — no `mutex`, no race.
+Two actors, two private `n`s — no `mutex`, no race.
 
 ## Restrictions
 
 - `actor class` cannot be `native` — there's nothing on the JVM side to dispatch to.
 - `actor class` is not generic. Wrap your generic logic in plain classes and let the actor hold them.
-- `async` parses tightly: `async receiver.method(args)`. Use parentheses around the receiver (`async (foo()).method()`) or around the result (`(await async x.foo()).str`) when chaining.
+- `async` parses tightly: `async receiver.method(args)`. Use parentheses around the receiver (`async (foo()).method()`) or around the result (`(await async x.foo()).str()`) when chaining.
 - `await receiver.method(args)` is the synchronous sugar (`async` implied). When the awaited value is a plain `future[T]`, `await` accepts any expression but only that type — `await someInt` is a compile error.
 - `await` shares precedence with `.` / `[]` / `()`, so `await arr[i]` parses as `(await arr)[i]`. When the future comes from indexing, calling, or any other postfix, wrap it: `await (arr[i])`, `await (someFunc())`.
 - `future[T]` is pinned to its producing actor. It cannot appear in another `actor class`'s method signatures (param or return).
