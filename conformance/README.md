@@ -17,6 +17,10 @@ conformance/
   cases/<category>/<name>.out   # expected stdout, byte-exact
 ```
 
+`cases/<category>/` holds edge-case, self-checking programs; `cases/golden/`
+holds the migrated legacy demo corpus (observational). Both are run identically
+on every backend.
+
 A case may start with a marker comment on line 1:
 
 - `# conformance: vm2-only` — run only on velo-vm2 (feature the legacy VM lacks)

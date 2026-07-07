@@ -85,15 +85,15 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 
 ```bash
 ./gradlew test
-./gradlew :velo-cli:test --tests "integration.GoldenTest"
+./gradlew :velo-cli:test --tests "integration.ConformanceTest"
 ```
 
 - `velo-core`: `BytecodeRoundTripTest` — every op and VmType round-trips through `.vbc` (keep its op list in sync with `Op.kt`).
 - `velo-compiler`: `ParserTest`, `TokenStreamTest`, `StringInputTest`, `InputStackTest`.
 - `velo-vm`: `vm/VMTest`, `HeapTest`, `LifoStackTest`, `VarsTest`, `vm/operations/*` op unit tests.
-- `velo-cli`: integration — `GoldenTest` (compiles `.vel` from `src/test/resources/golden/`, compares stdout against `.golden`; auto-discovers new pairs), `ActorsTest`, `CallbacksTest`, `NativeBindingTest`.
+- `velo-cli`: integration — `ConformanceTest` (runs the language-neutral `/conformance` corpus on **both** `velo-vm` and `velo-vm2`, asserting each case matches its `.out` and the two agree), plus `ActorsTest`, `CallbacksTest`, `DataClassTest`, `NativeBindingTest`, `ImportTest`, `Vm2ParityTest`.
 
-To add a golden test: drop `myfeature.vel` + `myfeature.golden` into `velo-cli/src/test/resources/golden/` (and optionally add an explicit `@Test` in `GoldenTest.kt`).
+To add a conformance case: drop `myfeature.vel` + `myfeature.out` into `conformance/cases/<category>/` (byte-exact expected stdout). A missing `.out` is auto-recorded on first run when both VMs agree and no `FAIL` self-check line prints, then the run fails asking for review. See `conformance/README.md`.
 
 ## CI / CD
 
