@@ -1,0 +1,10 @@
+ok int - long stays long
+ok long - int
+ok int + long
+ok int * long
+ok byte + int promotes
+ok long remainder
+ok float remainder
+ok float less (fractional)
+ok float greater (fractional)
+ok long greater than int

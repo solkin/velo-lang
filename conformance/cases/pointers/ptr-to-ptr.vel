@@ -1,0 +1,17 @@
+# Pointers to pointers; deref reads, bare .val writes.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ptr[int] a = new ptr[int](5)
+ptr[ptr[int]] pp = &a
+ck("deref twice", pp.val().val() == 5)
+
+a.val = 9
+ck("sees update via pp", pp.val().val() == 9)
+
+int x = 1
+ptr[int] px = &x
+px.val = 42
+ck("write through &x", x == 42)

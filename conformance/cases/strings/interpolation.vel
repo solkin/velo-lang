@@ -1,0 +1,14 @@
+# String interpolation: $ident, ${expr}, and an escaped dollar.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+let n = 7
+ck("var interp", "n=$n" == "n=7")
+ck("expr interp", "sum=${3 + 4}" == "sum=7")
+ck("mixed", "$n and ${n * 2}" == "7 and 14")
+
+str who = "Velo"
+ck("str interp", "hi $who" == "hi Velo")
+ck("escaped dollar", "cost \$5" == "cost " + "$" + "5")

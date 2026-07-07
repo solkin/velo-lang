@@ -1,0 +1,19 @@
+# Arithmetic, comparison and remainder promote to the wider operand — no matter
+# which side it is on.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+long big = 3000000000
+
+ck("int - long stays long", (0 - big) == -3000000000)
+ck("long - int", (big - 0) == 3000000000)
+ck("int + long", (1 + big) == 3000000001)
+ck("int * long", (2 * big) == 6000000000)
+ck("byte + int promotes", ((100).byte() + 1000) == 1100)
+ck("long remainder", (big % 7) == 4)
+ck("float remainder", (5.5 % 2.0) == 1.5)
+ck("float less (fractional)", 1.5 < 1.7)
+ck("float greater (fractional)", 2.7 > 2.5)
+ck("long greater than int", big > 100)

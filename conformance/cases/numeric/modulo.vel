@@ -1,0 +1,11 @@
+# Integer division truncates toward zero; % takes the sign of the dividend.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("mod basic", (17 % 5) == 2)
+ck("mod neg dividend", (-17 % 5) == -2)
+ck("mod neg divisor", (17 % -5) == 2)
+ck("div truncates", (-7 / 2) == -3)
+ck("div positive", (7 / 2) == 3)

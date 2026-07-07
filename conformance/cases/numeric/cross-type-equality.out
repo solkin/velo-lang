@@ -1,0 +1,9 @@
+ok long == int
+ok int == long
+ok byte == int
+ok int == byte
+ok float == int
+ok int == float
+ok long == float
+ok unequal across kind
+ok byte unequal

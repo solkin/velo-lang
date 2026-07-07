@@ -1,0 +1,8 @@
+ok false && _ is false
+ok && skipped rhs
+ok true || _ is true
+ok || skipped rhs
+ok true && rhs runs
+ok && ran rhs once
+ok false || rhs runs
+ok || ran rhs once

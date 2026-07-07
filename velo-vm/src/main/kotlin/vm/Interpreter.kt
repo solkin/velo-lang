@@ -216,9 +216,9 @@ object Interpreter {
 
         is Op.Rem -> {
             val frame = ctx.currentFrame()
-            val rec1 = frame.subs.pop().getInt()
-            val rec2 = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(rec2 % rec1))
+            val rec1 = frame.subs.pop().getNumber()
+            val rec2 = frame.subs.pop().getNumber()
+            frame.subs.push(ValueRecord(rec2.remainder(rec1)))
             pc + 1
         }
 
@@ -226,9 +226,9 @@ object Interpreter {
 
         is Op.More -> {
             val frame = ctx.currentFrame()
-            val val1 = frame.subs.pop().getInt()
-            val val2 = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(val2 > val1))
+            val val1 = frame.subs.pop().getNumber()
+            val val2 = frame.subs.pop().getNumber()
+            frame.subs.push(ValueRecord(val2.greaterThan(val1)))
             pc + 1
         }
 
@@ -237,11 +237,15 @@ object Interpreter {
             val val1 = frame.subs.pop()
             val val2 = frame.subs.pop()
             // `data class` instances compare by value (field-by-field, deep);
-            // every other value keeps its existing identity/primitive equality.
+            // two numbers compare by value across kinds (int/long/byte/float
+            // promote — `3 == 3L` is true); everything else keeps identity/
+            // primitive equality.
             val equal = if (isDataInstance(val1, ctx) && isDataInstance(val2, ctx)) {
                 deepEquals(val1, val2, ctx)
             } else {
-                val1 == val2
+                val a = (val1 as? ValueRecord)?.get<Any?>() as? Number
+                val b = (val2 as? ValueRecord)?.get<Any?>() as? Number
+                if (a != null && b != null) numericEquals(a, b) else val1 == val2
             }
             frame.subs.push(ValueRecord(equal))
             pc + 1

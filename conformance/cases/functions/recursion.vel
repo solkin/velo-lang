@@ -1,0 +1,21 @@
+# Recursion.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+func fact(int n) int {
+    return if n <= 1 then 1 else n * fact(n - 1)
+}
+ck("factorial 6", fact(6) == 720)
+
+func fib(int n) int {
+    return if n < 2 then n else fib(n - 1) + fib(n - 2)
+}
+ck("fib 10", fib(10) == 55)
+ck("fib 15", fib(15) == 610)
+
+func sumTo(int n) int {
+    return if n == 0 then 0 else n + sumTo(n - 1)
+}
+ck("sumTo 100", sumTo(100) == 5050)

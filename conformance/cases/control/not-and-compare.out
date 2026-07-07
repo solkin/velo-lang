@@ -1,0 +1,9 @@
+ok not false
+ok not true is false
+ok double negation
+ok lt
+ok gt
+ok le
+ok ge
+ok ne
+ok float compare

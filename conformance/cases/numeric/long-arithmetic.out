@@ -1,0 +1,5 @@
+ok long add
+ok long mul
+ok long square exact
+ok neg long
+ok int widens to long

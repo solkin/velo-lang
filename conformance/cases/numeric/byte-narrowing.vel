@@ -1,0 +1,11 @@
+# .byte() keeps the low 8 bits (sign-extended); byte promotes in arithmetic.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("low 8 bits", (322).byte() == (66).byte())
+ck("wrap to negative", (200).byte() == (-56).byte())
+ck("minus one", (-1).byte() == (255).byte())
+ck("byte promotes in add", ((100).byte() + (100).byte()) == 200)
+ck("byte promotes to int", (0 + (65).byte()) == 65)

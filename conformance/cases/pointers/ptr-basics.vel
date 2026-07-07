@@ -1,0 +1,18 @@
+# Boxed pointer: read via .val()/*p, write via .val =, and &array element.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ptr[int] p = new ptr[int](7)
+ck("read val", p.val() == 7)
+ck("read deref", *p == 7)
+
+p.val = 12
+ck("write val", p.val() == 12)
+ck("deref sees write", *p == 12)
+
+array[int] a = new array[int]{1, 2, 3}
+ptr[int] e = &a[1]
+e.val = 99
+ck("write through array ptr", a[1] == 99)

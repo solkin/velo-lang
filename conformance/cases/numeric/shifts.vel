@@ -1,0 +1,13 @@
+# Shifts are methods (.shl/.shr), on int and long.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("shl int", (1).shl(4) == 16)
+ck("shr int", (256).shr(2) == 64)
+ck("shl chain", (3).shl(8) == 768)
+ck("shl long 40", (1).long().shl(40) == 1099511627776)
+ck("bit and", (12 & 10) == 8)
+ck("bit or", (12 | 10) == 14)
+ck("bit xor", (12 ^ 10) == 6)

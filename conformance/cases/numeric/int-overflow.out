@@ -1,0 +1,4 @@
+ok max+1 wraps to min
+ok min-1 wraps to max
+ok max*2 wraps
+ok max+max wraps

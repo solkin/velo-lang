@@ -1,0 +1,5 @@
+ok var interp
+ok expr interp
+ok mixed
+ok str interp
+ok escaped dollar

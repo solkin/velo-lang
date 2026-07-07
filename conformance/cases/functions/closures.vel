@@ -1,0 +1,26 @@
+# Closures capture and mutate their defining scope; per-iteration binding.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+func counter() func[int] {
+    int n = 0
+    return func() int {
+        n = n + 1
+        return n
+    }
+}
+any c = counter()
+ck("closure step 1", c() == 1)
+ck("closure step 2", c() == 2)
+ck("closure step 3", c() == 3)
+
+any c2 = counter()
+ck("independent closure", c2() == 1)
+
+func adder(int by) func[int] {
+    return func(int x) int { return x + by }
+}
+any add10 = adder(10)
+ck("curried add", add10(5) == 15)

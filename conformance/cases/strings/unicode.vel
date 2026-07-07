@@ -1,0 +1,11 @@
+# Non-ASCII strings (exercises string encoding across implementations).
+Terminal term = new Terminal()
+
+term.println("hello")
+term.println("héllo wörld")
+term.println("Привет, мир")
+term.println("rocket: 🚀")
+
+str name = "Velo"
+term.println("$name is $name")
+term.println("literal dollar: \$5")

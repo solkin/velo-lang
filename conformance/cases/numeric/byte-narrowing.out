@@ -1,0 +1,5 @@
+ok low 8 bits
+ok wrap to negative
+ok minus one
+ok byte promotes in add
+ok byte promotes to int

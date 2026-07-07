@@ -1,0 +1,13 @@
+# float -> int/long narrowing truncates toward zero; widening is exact.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("trunc positive", (3.75).int() == 3)
+ck("trunc negative", (-3.75).int() == -3)
+ck("trunc to long", (3.99).long() == (3).long())
+ck("trunc neg to long", (-3.99).long() == (-3).long())
+ck("int widens to float", (5).float() == 5.0)
+ck("float half not int", (5.0 / 2.0) == 2.5)
+ck("int div floors", (5 / 2) == 2)

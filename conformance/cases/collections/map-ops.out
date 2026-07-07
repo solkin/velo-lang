@@ -1,0 +1,10 @@
+ok index get
+ok put get
+ok len
+ok key present
+ok key absent
+ok getOrDefault hit
+ok getOrDefault miss
+ok del present
+ok del again
+ok len after del

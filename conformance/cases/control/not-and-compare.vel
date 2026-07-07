@@ -1,0 +1,17 @@
+# Unary ! and the comparison operators.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("not false", !false)
+ck("not true is false", (!true) == false)
+bool b = true
+ck("double negation", !(!b))
+
+ck("lt", 3 < 5)
+ck("gt", 5 > 3)
+ck("le", 5 <= 5)
+ck("ge", 6 >= 5)
+ck("ne", (4 == 5) == false)
+ck("float compare", 1.5 < 2.5)

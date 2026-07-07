@@ -1,0 +1,20 @@
+# Actor with private state; sequential async/await calls.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+actor class Counter(int start) {
+    int n = start
+    func bump() int {
+        n = n + 1
+        return n
+    }
+    func value() int { return n }
+}
+
+actor[Counter] c = new Counter(0)
+ck("bump 1", (await async c.bump()) == 1)
+ck("bump 2", (await async c.bump()) == 2)
+ck("sync sugar", (await c.bump()) == 3)
+ck("value", (await c.value()) == 3)

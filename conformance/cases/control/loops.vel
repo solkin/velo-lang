@@ -1,0 +1,32 @@
+# for-range (end exclusive), empty range, break and continue.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+int sum = 0
+for i in 0..5 { sum = sum + i }
+ck("range 0..5 sum", sum == 10)
+
+int cnt = 0
+for i in 3..3 { cnt = cnt + 1 }
+ck("empty range", cnt == 0)
+
+int bs = 0
+for i in 0..10 {
+    if (i == 5) { break }
+    bs = bs + i
+}
+ck("break at 5", bs == 10)
+
+int cs = 0
+for i in 0..10 {
+    if ((i % 2) == 0) { continue }
+    cs = cs + i
+}
+ck("continue keeps odds", cs == 25)
+
+int w = 0
+int acc = 0
+while (w < 4) { acc = acc + w; w = w + 1 }
+ck("while sum", acc == 6)

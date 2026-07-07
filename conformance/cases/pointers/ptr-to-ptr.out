@@ -1,0 +1,3 @@
+ok deref twice
+ok sees update via pp
+ok write through &x

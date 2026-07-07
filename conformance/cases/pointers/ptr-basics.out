@@ -1,0 +1,5 @@
+ok read val
+ok read deref
+ok write val
+ok deref sees write
+ok write through array ptr

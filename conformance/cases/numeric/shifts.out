@@ -1,0 +1,7 @@
+ok shl int
+ok shr int
+ok shl chain
+ok shl long 40
+ok bit and
+ok bit or
+ok bit xor

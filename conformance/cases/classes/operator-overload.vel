@@ -1,0 +1,22 @@
+# Operator overloading: +, ==, [], unary -.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+class Vec(int x, int y) {
+    operator +(Vec o) Vec { return new Vec(x + o.x, y + o.y) }
+    operator ==(Vec o) bool { return (x == o.x) && (y == o.y) }
+    operator [](int i) int { return if i == 0 then x else y }
+    operator -() Vec { return new Vec(0 - x, 0 - y) }
+}
+
+Vec a = new Vec(1, 2)
+Vec b = new Vec(3, 4)
+Vec s = a + b
+ck("plus x", s[0] == 4)
+ck("plus y", s[1] == 6)
+ck("equals", a == new Vec(1, 2))
+ck("not equals", (a == b) == false)
+Vec neg = -a
+ck("unary minus", neg[0] == -1)

@@ -1,0 +1,15 @@
+# Numeric equality is by value across kinds (int/long/byte/float promote).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ck("long == int", (3).long() == 3)
+ck("int == long", 3 == (3).long())
+ck("byte == int", (65).byte() == 65)
+ck("int == byte", 65 == (65).byte())
+ck("float == int", 3.0 == 3)
+ck("int == float", 3 == 3.0)
+ck("long == float", (3).long() == 3.0)
+ck("unequal across kind", ((3).long() == 4) == false)
+ck("byte unequal", ((65).byte() == 66) == false)

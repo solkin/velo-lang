@@ -1,0 +1,16 @@
+# String length, substring, concat, indexing (code points).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+str s = "hello"
+ck("len", s.len() == 5)
+ck("sub", s.sub(1, 4) == "ell")
+ck("con chain", ("a".con("b")).con("c") == "abc")
+ck("plus", ("x" + "y") == "xy")
+ck("index is code point", s[0] == 104)
+ck("index last", s[4] == 111)
+ck("parse int", "123".int() == 123)
+ck("parse neg int", "-45".int() == -45)
+ck("int to str", (42).str() == "42")

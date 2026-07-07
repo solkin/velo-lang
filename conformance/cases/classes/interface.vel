@@ -1,0 +1,27 @@
+# Structural interfaces and polymorphic dispatch.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+interface Shape {
+    func area() int
+}
+
+class Square(int side) {
+    func area() int { return side * side }
+}
+
+class Rect(int w, int h) {
+    func area() int { return w * h }
+}
+
+Shape a = new Square(5)
+Shape b = new Rect(2, 3)
+ck("square area", a.area() == 25)
+ck("rect area", b.area() == 6)
+
+array[Shape] shapes = new array[Shape]{ new Square(2), new Rect(3, 4) }
+int total = 0
+for sh in shapes { total = total + sh.area() }
+ck("polymorphic sum", total == 16)

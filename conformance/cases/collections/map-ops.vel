@@ -1,0 +1,22 @@
+# dict / Map: put, index, key, del, len, getOrDefault (no iteration-order pinning).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+dict[str:int] m = new dict[str:int]{}
+m["a"] = 1
+m["b"] = 2
+m.put("c", 3)
+
+ck("index get", m["a"] == 1)
+ck("put get", m["c"] == 3)
+ck("len", m.len == 3)
+ck("key present", m.key("b"))
+ck("key absent", m.key("z") == false)
+ck("getOrDefault hit", m.getOrDefault("a", 0) == 1)
+ck("getOrDefault miss", m.getOrDefault("z", 99) == 99)
+
+ck("del present", m.del("a"))
+ck("del again", m.del("a") == false)
+ck("len after del", m.len == 2)

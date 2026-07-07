@@ -1,0 +1,13 @@
+# 32-bit int arithmetic wraps around (two's complement).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+int max = 2147483647
+int intMin = (-2147483648).int()
+
+ck("max+1 wraps to min", (max + 1) == intMin)
+ck("min-1 wraps to max", (intMin - 1) == max)
+ck("max*2 wraps", (max * 2) == -2)
+ck("max+max wraps", (max + max) == -2)

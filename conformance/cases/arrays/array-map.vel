@@ -1,0 +1,13 @@
+# .map with value-only and value+index callbacks; arraycopy.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+array[int] a = new array[int]{1, 2, 3}
+
+array[int] doubled = a.map(func(int v) int { return v * 2 })
+ck("map value", doubled[2] == 6)
+
+array[int] withIdx = a.map(func(int v, int i) int { return v + i })
+ck("map with index", withIdx[2] == 5)

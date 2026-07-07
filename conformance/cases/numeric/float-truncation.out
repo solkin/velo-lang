@@ -1,0 +1,7 @@
+ok trunc positive
+ok trunc negative
+ok trunc to long
+ok trunc neg to long
+ok int widens to float
+ok float half not int
+ok int div floors

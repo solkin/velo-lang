@@ -1,0 +1,23 @@
+# && / || short-circuit: the right operand runs only when needed.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+int calls = 0
+func rhs(bool v) bool {
+    calls = calls + 1
+    return v
+}
+
+ck("false && _ is false", (false && rhs(true)) == false)
+ck("&& skipped rhs", calls == 0)
+
+ck("true || _ is true", (true || rhs(true)) == true)
+ck("|| skipped rhs", calls == 0)
+
+ck("true && rhs runs", (true && rhs(false)) == false)
+ck("&& ran rhs once", calls == 1)
+
+ck("false || rhs runs", (false || rhs(true)) == true)
+ck("|| ran rhs once", calls == 2)

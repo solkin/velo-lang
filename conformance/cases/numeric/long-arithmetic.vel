@@ -1,0 +1,15 @@
+# 64-bit long arithmetic beyond the int range.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+long big = 3000000000
+ck("long add", (big + big) == 6000000000)
+ck("long mul", (big * 2) == 6000000000)
+
+long m = 1000000
+ck("long square exact", (m * m) == 1000000000000)
+
+ck("neg long", ((0).long() - big) == -3000000000)
+ck("int widens to long", (big + 1) == 3000000001)

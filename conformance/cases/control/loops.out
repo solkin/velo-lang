@@ -1,0 +1,5 @@
+ok range 0..5 sum
+ok empty range
+ok break at 5
+ok continue keeps odds
+ok while sum
