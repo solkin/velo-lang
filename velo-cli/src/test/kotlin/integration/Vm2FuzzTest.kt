@@ -160,6 +160,8 @@ private val NUM = listOf(Ty.BYTE, Ty.INT, Ty.LONG, Ty.FLOAT)
 
 private data class V(val name: String, val ty: Ty, val mutable: Boolean = true)
 private data class Fn(val name: String, val params: List<Ty>, val ret: Ty)
+private data class Method(val name: String, val params: List<Ty>, val ret: Ty)
+private data class ActorDef(val name: String, val ctor: List<Ty>, val methods: List<Method>)
 
 /**
  * Generates one self-contained, type-correct Velo program. Type-directed:
@@ -174,6 +176,8 @@ private class Generator(private val rnd: Random) {
     private val sb = StringBuilder()
     private val scope = ArrayList<V>()
     private val fns = ArrayList<Fn>()
+    private val actors = ArrayList<ActorDef>()
+    private val actorVars = ArrayList<Pair<String, ActorDef>>()
     private var counter = 0
     private var indent = 0
 
@@ -185,10 +189,12 @@ private class Generator(private val rnd: Random) {
 
     fun program(): String {
         line("Terminal term = new Terminal();")
+        repeat(rnd.nextInt(0, 2)) { actorDecl() }
         repeat(rnd.nextInt(0, 3)) { topLevelFunc() }
         // A few globals to guarantee observable, printable output.
         repeat(rnd.nextInt(3, 6)) { declStmt() }
-        repeat(rnd.nextInt(4, 9)) { stmt(depth = 2) }
+        for (a in actors) if (chance(0.85)) spawnActor(a)
+        repeat(rnd.nextInt(4, 10)) { stmt(depth = 2) }
         // Print every surviving top-level variable, in declaration order.
         for (v in scope) line("term.println((${v.name}).str());")
         return sb.toString()
@@ -197,13 +203,14 @@ private class Generator(private val rnd: Random) {
     // ---- statements -------------------------------------------------------
 
     private fun stmt(depth: Int) {
-        when (rnd.nextInt(if (depth <= 0) 2 else 7)) {
+        when (rnd.nextInt(if (depth <= 0) 2 else 8)) {
             0 -> declStmt()
             1 -> assignStmt()
             2 -> ifStmt(depth)
             3 -> whileStmt(depth)
             4 -> forStmt(depth)
             5 -> closureLoopStmt()
+            6 -> if (actorVars.isNotEmpty() && depth >= 2) actorCallStmt() else assignStmt()
             else -> assignStmt()
         }
     }
@@ -313,6 +320,79 @@ private class Generator(private val rnd: Random) {
         fns += Fn(name, params, ret) // registered after body ⇒ non-recursive
     }
 
+    // ---- actors -----------------------------------------------------------
+
+    /**
+     * `actor class` with numeric fields and value-returning methods only — all
+     * signatures are primitives, which are transferable across the actor
+     * boundary, so the compiler accepts them. Methods mutate fields and return
+     * a number; they never print and never fault, so stdout stays a pure
+     * function of the (serialized) call order.
+     */
+    private fun actorDecl() {
+        val name = fresh("A")
+        val ctor = List(rnd.nextInt(0, 3)) { pick(NUM) }
+        val cnames = ctor.mapIndexed { i, t -> "c$i" to t }
+        line("actor class $name(${cnames.joinToString(", ") { "${it.second.kw} ${it.first}" }}) {")
+        indent++
+        val fields = ArrayList<V>()
+        repeat(rnd.nextInt(1, 4)) {
+            val ft = pick(NUM)
+            val init = cnames.filter { it.second.rank <= ft.rank }.randomOrNullBy()?.first ?: literal(ft)
+            line("${ft.kw} fld${fields.size} = $init;")
+            fields += V("fld${fields.size}", ft)
+        }
+        val methods = ArrayList<Method>()
+        repeat(rnd.nextInt(1, 4)) {
+            val mparams = List(rnd.nextInt(0, 3)) { pick(NUM) }
+            val pnames = mparams.mapIndexed { i, t -> "q$i" to t }
+            val ret = pick(NUM)
+            line("func m${methods.size}(${pnames.joinToString(", ") { "${it.second.kw} ${it.first}" }}) ${ret.kw} {")
+            // Body sees the fields (mutable) and the params (read-only). fns is
+            // still empty here (actors are emitted first), so no top-level calls.
+            val saved = ArrayList(scope); scope.clear()
+            fields.forEach { scope += it }
+            pnames.forEach { scope += V(it.first, it.second, mutable = false) }
+            indent++
+            repeat(rnd.nextInt(0, 3)) { assignStmt() }
+            line("return ${expr(ret, 3)};")
+            indent--
+            scope.clear(); scope.addAll(saved)
+            line("};")
+            methods += Method("m${methods.size}", mparams, ret)
+        }
+        indent--
+        line("};")
+        actors += ActorDef(name, ctor, methods)
+    }
+
+    private fun spawnActor(a: ActorDef) {
+        val vn = fresh("act")
+        line("actor[${a.name}] $vn = new ${a.name}(${a.ctor.joinToString(", ") { exactArg(it, 2) }});")
+        actorVars += vn to a
+    }
+
+    /**
+     * A cross-actor call whose result main binds and later prints. Mostly the
+     * `await async` shorthand; sometimes the explicit `future` form. Both are
+     * deterministic — main awaits (and prints) in program order regardless of
+     * how the scheduler interleaves the actors underneath.
+     */
+    private fun actorCallStmt() {
+        val (vn, def) = actorVars.randomOrNullBy() ?: return
+        val m = def.methods.randomOrNullBy() ?: return
+        val args = m.params.joinToString(", ") { exactArg(it, 2) }
+        val rn = fresh("r")
+        if (chance(0.3)) {
+            val fut = fresh("fut")
+            line("future[${m.ret.kw}] $fut = async $vn.${m.name}($args);")
+            line("${m.ret.kw} $rn = await $fut;")
+        } else {
+            line("${m.ret.kw} $rn = await async $vn.${m.name}($args);")
+        }
+        scope += V(rn, m.ret)
+    }
+
     // ---- expressions ------------------------------------------------------
 
     private fun expr(target: Ty, depth: Int): String =
@@ -353,6 +433,13 @@ private class Generator(private val rnd: Random) {
     /** Explicit conversion — the only way to reach BYTE and to exercise narrowing. */
     private fun convertTo(target: Ty, depth: Int): String =
         "((${numExpr(pick(NUM), depth - 1)}).${target.kw}())"
+
+    /**
+     * An argument of *exactly* [t]. Actor call/constructor boundaries do NOT
+     * apply implicit widening (a value is marshalled by its concrete type), so
+     * every crossing argument is pinned to the parameter type with a conversion.
+     */
+    private fun exactArg(t: Ty, depth: Int): String = "((${numExpr(t, depth)}).${t.kw}())"
 
     private fun callExpr(target: Ty, depth: Int): String? {
         val f = fns.filter { it.ret.rank in 0..target.rank }.randomOrNullBy() ?: return null
