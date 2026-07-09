@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gravity Defied — Track Studio</title>
+<style>
+  /* ---- strict corporate design tokens ------------------------------------ */
+  :root {
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --panel-2: #f7f8fa;
+    --border: #d8dde3;
+    --border-strong: #c2c9d2;
+    --text: #1d2330;
+    --muted: #667085;
+    --muted-2: #8a93a2;
+    --accent: #1f4e8c;
+    --accent-hover: #163b6b;
+    --accent-soft: #e8eef7;
+    --danger: #b3261e;
+    --danger-soft: #fbeceb;
+    --ok: #1f7a4d;
+    --warn: #8a5a00;
+    --warn-soft: #fbf3e2;
+    --l0: #2f6f4f; --l0-soft: #e7f1eb;
+    --l1: #8a5a00; --l1-soft: #f6efe1;
+    --l2: #7a2e2e; --l2-soft: #f4e7e7;
+    --radius: 4px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161c; --panel: #1a1f27; --panel-2: #20262f;
+      --border: #2c333d; --border-strong: #3a424e;
+      --text: #e6e9ee; --muted: #9aa4b2; --muted-2: #77808e;
+      --accent: #5b8fd6; --accent-hover: #7aa6e2; --accent-soft: #22304a;
+      --danger: #e06a63; --danger-soft: #3a2422;
+      --ok: #5cbf8f; --warn: #d9a441; --warn-soft: #33301f;
+      --l0: #7dc6a1; --l0-soft: #223027;
+      --l1: #d9a441; --l1-soft: #332c1c;
+      --l2: #d98a8a; --l2-soft: #33242422;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---- app bar ----------------------------------------------------------- */
+  .appbar {
+    display: flex; align-items: center; gap: 16px;
+    height: 48px; padding: 0 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+  }
+  .brand { display: flex; align-items: baseline; gap: 8px; font-weight: 600; letter-spacing: .2px; }
+  .brand .mark { color: var(--accent); font-weight: 700; }
+  .brand .sub { color: var(--muted); font-weight: 400; font-size: 12px; }
+  .appbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  /* ---- buttons & controls ------------------------------------------------ */
+  button {
+    font-family: inherit; font-size: 12px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); padding: 6px 11px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { background: var(--panel-2); border-color: var(--muted-2); }
+  button:active { background: var(--border); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.ghost { border-color: transparent; background: transparent; }
+  button.ghost:hover { background: var(--panel-2); }
+  button.danger { color: var(--danger); border-color: var(--border-strong); }
+  button.danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+  button.sm { padding: 3px 7px; font-size: 11px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.toggle.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  input[type=text], input[type=number], select {
+    font-family: inherit; font-size: 12px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); padding: 5px 8px; width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent-soft); outline-offset: -1px; border-color: var(--accent); }
+  input[type=number] { font-family: var(--mono); }
+  label.field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+  .sep { width: 1px; height: 22px; background: var(--border); }
+
+  /* ---- workspace --------------------------------------------------------- */
+  .workspace { flex: 1; display: flex; min-height: 0; }
+
+  /* sidebar */
+  .sidebar { width: 288px; flex: none; background: var(--panel); border-right: 1px solid var(--border);
+             display: flex; flex-direction: column; min-height: 0; }
+  .sidebar-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+                  border-bottom: 1px solid var(--border); font-weight: 600; text-transform: uppercase;
+                  letter-spacing: .5px; font-size: 11px; color: var(--muted); }
+  .count-chip { background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px;
+                padding: 1px 8px; font-weight: 600; color: var(--text); }
+  .track-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; }
+  .track-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius);
+                cursor: pointer; border: 1px solid transparent; }
+  .track-item:hover { background: var(--panel-2); }
+  .track-item.sel { background: var(--accent-soft); border-color: var(--accent); }
+  .track-idx { font-family: var(--mono); font-size: 11px; color: var(--muted-2); width: 20px; text-align: right; flex: none; }
+  .track-main { flex: 1; min-width: 0; }
+  .track-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-meta { font-size: 11px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .track-actions { display: none; gap: 2px; flex: none; }
+  .track-item:hover .track-actions, .track-item.sel .track-actions { display: flex; }
+  .badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; letter-spacing: .3px; }
+  .badge.l0 { color: var(--l0); background: var(--l0-soft); }
+  .badge.l1 { color: var(--l1); background: var(--l1-soft); }
+  .badge.l2 { color: var(--l2); background: var(--l2-soft); }
+  .sidebar-empty { padding: 24px 16px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.6; }
+
+  /* editor */
+  .editor { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .editor-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+                 border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+  .editor-head .name-in { width: 180px; }
+  .editor-head .league-in { width: 132px; }
+  .toolbar { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .editor-body { flex: 1; display: flex; min-height: 0; }
+  .canvas-wrap { flex: 1; position: relative; background:
+      repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(128,128,128,.05) 23px, rgba(128,128,128,.05) 24px),
+      repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(128,128,128,.05) 23px, rgba(128,128,128,.05) 24px),
+      var(--panel-2);
+      min-width: 0; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .canvas-wrap.pan canvas { cursor: grab; }
+  .canvas-hud { position: absolute; left: 10px; bottom: 10px; font-family: var(--mono); font-size: 11px;
+                color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent);
+                border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 8px; pointer-events: none; }
+  .canvas-legend { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px;
+                   font-size: 11px; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent);
+                   border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 9px; pointer-events: none; }
+  .canvas-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  .side-forms { width: 300px; flex: none; border-left: 1px solid var(--border); background: var(--panel);
+                display: flex; flex-direction: column; min-height: 0; }
+  .form-block { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .form-block h3 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hint { font-size: 11px; color: var(--muted-2); margin-top: 8px; line-height: 1.5; }
+
+  .points-block { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .points-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px 6px; }
+  .points-head h3 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
+  .points-scroll { overflow-y: auto; flex: 1; padding: 0 8px 10px; }
+  table.pts { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  table.pts th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 600;
+                 text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--border); z-index: 1; }
+  table.pts th.n { text-align: center; }
+  table.pts td { padding: 1px 3px; border-bottom: 1px solid var(--panel-2); }
+  table.pts td.n { text-align: center; color: var(--muted-2); }
+  table.pts tr.sel td { background: var(--accent-soft); }
+  table.pts tr.drop td { background: var(--danger-soft); }
+  table.pts input { padding: 2px 4px; text-align: right; }
+  table.pts .rm { color: var(--danger); cursor: pointer; padding: 0 4px; text-align: center; user-select: none; }
+
+  /* status bar */
+  .statusbar { flex: none; height: 30px; display: flex; align-items: center; gap: 14px;
+               padding: 0 14px; background: var(--panel); border-top: 1px solid var(--border);
+               font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .statusbar .ok { color: var(--ok); }
+  .statusbar .warn { color: var(--warn); }
+  .statusbar .err { color: var(--danger); }
+  .statusbar .spacer { margin-left: auto; }
+
+  .editor-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  gap: 10px; color: var(--muted); }
+  .editor-empty .big { font-size: 15px; font-weight: 600; color: var(--text); }
+
+  /* modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(15,20,28,.5); display: none;
+                    align-items: center; justify-content: center; z-index: 50; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px;
+           width: 560px; max-width: 92vw; max-height: 86vh; display: flex; flex-direction: column;
+           box-shadow: 0 12px 40px rgba(0,0,0,.28); }
+  .modal-head { padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; align-items: center; }
+  .modal-head .x { margin-left: auto; }
+  .modal-body { padding: 8px 10px; overflow-y: auto; }
+  .modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+  .modal-foot .spacer { margin-left: auto; }
+  .pick-toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; color: var(--muted); font-size: 11px; }
+  .pick-list { list-style: none; margin: 0; padding: 0; }
+  .pick-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius); }
+  .pick-item:hover { background: var(--panel-2); }
+  .pick-item input { width: auto; }
+  .pick-item .pn { flex: 1; font-weight: 600; }
+  .pick-item .pm { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .file-hidden { display: none; }
+  .kbd { font-family: var(--mono); background: var(--panel-2); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; font-size: 10px; }
+</style>
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand"><span class="mark">▲</span> Gravity Defied <span class="sub">Track Studio</span></div>
+    <div class="appbar-actions">
+      <button id="btnImportMrg" title="Import an original levels.mrg">Import .mrg…</button>
+      <button id="btnImportVel" title="Load an existing tracks.vel">Import tracks.vel…</button>
+      <button id="btnNew">New track</button>
+      <div class="sep"></div>
+      <button id="btnExport" class="primary" title="Download tracks.vel for the sample">Export tracks.vel</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar">
+      <div class="sidebar-head">Project tracks <span class="count-chip" id="trackCount">0</span>
+        <button id="btnClearAll" class="ghost sm danger" style="margin-left:auto" title="Remove all tracks">Clear</button>
+      </div>
+      <ul class="track-list" id="trackList"></ul>
+    </aside>
+
+    <section class="editor" id="editor"></section>
+  </main>
+
+  <footer class="statusbar" id="status">
+    <span id="statusMain">Ready.</span>
+    <span class="spacer"></span>
+    <span id="statusHint">Y is up (solid ground below) · X strictly increases left→right · start on/above surface · point ×8192 → engine units</span>
+  </footer>
+
+  <!-- import picker modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <div class="modal-head"><span id="modalTitle">Import tracks</span><button class="ghost sm x" id="modalX">✕</button></div>
+      <div class="pick-toolbar">
+        <button class="sm ghost" id="pickAll">Select all</button>
+        <button class="sm ghost" id="pickNone">Select none</button>
+        <span id="pickInfo" style="margin-left:auto"></span>
+      </div>
+      <div class="modal-body"><ul class="pick-list" id="pickList"></ul></div>
+      <div class="modal-foot">
+        <span id="pickCount" style="color:var(--muted)"></span>
+        <span class="spacer"></span>
+        <button id="pickCancel">Cancel</button>
+        <button id="pickReplace">Replace project</button>
+        <button id="pickAdd" class="primary">Add selected</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="fileMrg" class="file-hidden" accept=".mrg,application/octet-stream">
+  <input type="file" id="fileVel" class="file-hidden" accept=".vel,text/plain">
+
+<script>
+"use strict";
+/* =========================================================================
+   Gravity Defied — Track Studio
+   A single-file authoring tool that produces the sample's `tracks.vel`.
+
+   Data model (one entry per track):
+     { name, league(0..2),
+       startX, startY, finishX, finishY,   // engine/tracks.vel units (raw*8192)
+       points: [{x,y}, ...] }              // RAW units, exactly as in tracks.vel
+
+   Coordinate spaces (verified against engine.vel):
+     - tracks.vel stores each point in RAW units (small ints).
+     - The engine scales a point on load as (v<<16)>>3  ==  v * 8192.
+     - start/finish in tracks.vel are already in the *scaled* space, so a raw
+       grid position g maps to a field value g*8192. The canvas therefore draws
+       every point at (x, y) and each flag at (field/8192).
+   ========================================================================= */
+const SCALE = 1 << 13;            // 8192  == (1<<16)>>3
+const LEAGUE_NAMES = ["Beginner", "Skilled", "Pro"];
+const MAX_VALID_TRACKS = 4096;    // header sanity guard (Reader.MAX_VALID_TRACKS analogue)
+
+let project = [];                 // array of track objects
+let sel = -1;                     // selected track index
+let selPoint = -1;                // selected point index within the track
+
+/* ---- small helpers ----------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+const clampL = (l) => (l < 0 ? 0 : l > 2 ? 2 : l | 0);
+function escVelStr(s) { return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
+function cur() { return sel >= 0 && sel < project.length ? project[sel] : null; }
+
+function newTrack(name) {
+  // Start sits a little ABOVE the flat surface (Y-up), so the bike drops and lands.
+  return { name: name || "New Track", league: 0,
+           startX: -150 * SCALE, startY: 20 * SCALE, finishX: 380 * SCALE, finishY: 0,
+           points: [ {x:-200,y:0}, {x:-100,y:0}, {x:0,y:0}, {x:150,y:0}, {x:280,y:0}, {x:420,y:0} ] };
+}
+
+/* =========================================================================
+   .mrg  binary parser  (faithful port of Reader.readHeader + Level.readTrackData)
+   DataInputStream is big-endian; bytes are signed.
+   ========================================================================= */
+function decodeCp1251(bytes) {
+  try { return new TextDecoder("windows-1251").decode(new Uint8Array(bytes)); }
+  catch (e) { return bytes.map((b) => String.fromCharCode(b)).join(""); }
+}
+
+function parseMrg(buffer) {
+  const dv = new DataView(buffer);
+  let off = 0;
+  const len = dv.byteLength;
+  const need = (n) => { if (off + n > len) throw new Error("unexpected end of file at " + off); };
+  const rInt = () => { need(4); const v = dv.getInt32(off); off += 4; return v; };
+  const rShort = () => { need(2); const v = dv.getInt16(off); off += 2; return v; };
+  const rU8 = () => { need(1); return dv.getUint8(off++); };
+  const rI8 = () => { need(1); return dv.getInt8(off++); };
+
+  // ---- header: exactly 3 leagues ----
+  const meta = [];                // {league, name, pointer}
+  for (let i = 0; i < 3; i++) {
+    const count = rInt();
+    if (count < 0 || count > MAX_VALID_TRACKS) throw new Error("Level file is not valid (bad count " + count + ")");
+    for (let j = 0; j < count; j++) {
+      const pointer = rInt();
+      const buf = [];
+      for (let n = 0; ; n++) {
+        if (n >= 40) break;       // Reader caps names at 40 bytes
+        const b = rU8();
+        if (b === 0) break;
+        buf.push(b);
+      }
+      const name = decodeCp1251(buf).replace(/_/g, " ");
+      meta.push({ league: i, name, pointer });
+    }
+  }
+  const headerEnd = off;
+
+  // ---- one track body, read at the current offset ----
+  function readTrackData(m) {
+    const ver = rI8();            // version byte, always consumed
+    if (ver === 50) off += 20;    // '2' → 20-byte extra header
+    const startX = rInt(), startY = rInt(), finishX = rInt(), finishY = rInt();
+    const pointsCount = rShort();
+    if (pointsCount < 1 || pointsCount > 65535) throw new Error("insane point count " + pointsCount);
+    const points = [];
+    let k1 = rInt(), l1 = rInt();
+    points.push({ x: k1, y: l1 });
+    for (let i = 1; i < pointsCount; i++) {
+      const b0 = rI8();
+      let x, y;
+      // escape: the next point is given as ABSOLUTE coords (k1,l1 := x,y), NOT a delta.
+      // Verified against the real levels.mrg: treating it as a delta makes escape-using
+      // tracks (Slope, Deep, Cliff, Original, Indoor, Pillar) non-monotonic and broken.
+      if (b0 === -1) { k1 = 0; l1 = 0; x = rInt(); y = rInt(); }
+      else { x = b0; y = rI8(); }                // else: signed byte deltas
+      k1 += x; l1 += y;
+      points.push({ x: k1, y: l1 });
+    }
+    return { name: m.name, league: m.league, startX, startY, finishX, finishY, points };
+  }
+
+  // Strategy: read tracks sequentially from the end of the header (GD stores the
+  // data section contiguously, in header order). If that desyncs, retry using the
+  // header pointer as an absolute file offset.
+  const tracks = [];
+  let mode = "sequential";
+  try {
+    off = headerEnd;
+    for (const m of meta) tracks.push(readTrackData(m));
+  } catch (seqErr) {
+    tracks.length = 0;
+    mode = "pointer";
+    for (const m of meta) { off = m.pointer; tracks.push(readTrackData(m)); }
+  }
+  return { tracks, mode, count: meta.length };
+}
+
+/* =========================================================================
+   tracks.vel  text parser  (round-trips this tool's own output and hand edits)
+   ========================================================================= */
+function parseTracksVel(text) {
+  const tracks = [];
+  // names: func name(int i) ... if (i == N) { return "STR" };
+  const names = {};
+  const reName = /if\s*\(\s*i\s*==\s*(\d+)\s*\)\s*\{\s*return\s*"((?:\\.|[^"\\])*)"\s*\}/g;
+  let m;
+  while ((m = reName.exec(text)) !== null) {
+    names[+m[1]] = m[2].replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+  }
+  // trackData: if (i == N) { return new array[int]{ ints } }
+  const reData = /if\s*\(\s*i\s*==\s*(\d+)\s*\)\s*\{\s*return\s+new\s+array\[int\]\s*\{([^}]*)\}/g;
+  const rows = [];
+  while ((m = reData.exec(text)) !== null) {
+    const idx = +m[1];
+    const nums = m[2].split(",").map((s) => s.trim()).filter((s) => s.length).map(Number);
+    if (nums.some((n) => Number.isNaN(n))) continue;
+    rows.push({ idx, nums });
+  }
+  rows.sort((a, b) => a.idx - b.idx);
+  for (const r of rows) {
+    const a = r.nums;
+    if (a.length < 6) continue;
+    const league = clampL(a[0]);
+    const startX = a[1], startY = a[2], finishX = a[3], finishY = a[4];
+    const pc = a[5];
+    const points = [];
+    for (let k = 0; k < pc; k++) {
+      const bx = 6 + k * 2, by = bx + 1;
+      if (by >= a.length) break;
+      points.push({ x: a[bx], y: a[by] });
+    }
+    tracks.push({ name: names[r.idx] || ("Track " + r.idx), league, startX, startY, finishX, finishY, points });
+  }
+  return tracks;
+}
+
+/* =========================================================================
+   tracks.vel  generator  (matches the original file's layout exactly)
+   ========================================================================= */
+function generateTracksVel(tracks) {
+  const n = tracks.length;
+  const L = [];
+  L.push("# Gravity Defied — track data, " + n + " tracks in 3 leagues. Produced by track-editor.html.");
+  L.push("# Each track is a flat int array: [league, startX, startY, finishX, finishY, pointCount, x0,y0, x1,y1, ...]");
+  L.push("# Point coordinates are the original raw units; the engine scales them by (v<<16)>>3 on load.");
+  L.push("");
+  L.push("class Tracks() {");
+  L.push("    func count() int { return " + n + " }");
+  L.push("");
+  L.push("    func name(int i) str {");
+  tracks.forEach((t, i) => L.push('        if (i == ' + i + ') { return "' + escVelStr(t.name) + '" };'));
+  L.push('        return "?"');
+  L.push("    }");
+  L.push("");
+  L.push("    func league(int i) int {");
+  tracks.forEach((t, i) => L.push("        if (i == " + i + ") { return " + clampL(t.league) + " };"));
+  L.push("        return 0");
+  L.push("    }");
+  L.push("");
+  L.push("    func trackData(int i) array[int] {");
+  tracks.forEach((t, i) => {
+    const arr = [clampL(t.league), t.startX | 0, t.startY | 0, t.finishX | 0, t.finishY | 0, t.points.length];
+    for (const p of t.points) { arr.push(p.x | 0, p.y | 0); }
+    L.push("        if (i == " + i + ") { return new array[int]{ " + arr.join(", ") + " } };");
+  });
+  L.push("        return new array[int]{ 0, 0, 0, 0, 0, 0 }");
+  L.push("    }");
+  L.push("}");
+  return L.join("\n") + "\n";
+}
+
+/* =========================================================================
+   Validation (mirrors engine.vel Track.load monotonic-x filtering)
+   ========================================================================= */
+// Surface Y (raw) at raw x over the engine's kept points — mirrors Track.surfaceAtPoint.
+function surfaceRawAt(kept, x) {
+  if (!kept.length) return null;
+  let result = kept[0].y;
+  for (let k = 0; k < kept.length - 1; k++) {
+    if (kept[k].x <= x && x <= kept[k + 1].x) {
+      const dx = kept[k + 1].x - kept[k].x;
+      result = dx < 1 ? kept[k].y : kept[k].y + (kept[k + 1].y - kept[k].y) * (x - kept[k].x) / dx;
+      break;
+    }
+  }
+  return result;
+}
+function validate(t) {
+  if (!t) return { keep: 0, dropped: 0, dropSet: new Set(), kept: [], msgs: [] };
+  const pc = t.points.length;
+  const msgs = [];
+  // engine begins at the min-x point, then keeps strictly increasing x
+  let minIdx = 0, minX = pc ? t.points[0].x : 0;
+  for (let i = 1; i < pc; i++) if (t.points[i].x < minX) { minX = t.points[i].x; minIdx = i; }
+  let keep = 0, lastX = 0;
+  const dropSet = new Set();
+  const kept = [];
+  for (let i = minIdx; i < pc; i++) {
+    const p = t.points[i];
+    if (keep === 0 || lastX < p.x) { keep++; lastX = p.x; kept.push(p); } else dropSet.add(i);
+  }
+  for (let i = 0; i < minIdx; i++) dropSet.add(i);   // points before minIdx are skipped by the engine
+  if (pc < 2) msgs.push({ t: "err", s: "needs at least 2 points" });
+  if (dropSet.size > 0) msgs.push({ t: "warn", s: dropSet.size + " point(s) will be dropped (x not strictly increasing)" });
+  if (keep >= 2) msgs.push({ t: "ok", s: keep + " usable points" });
+  // Spawn safety: Y is up, so the start must sit ON or ABOVE the surface — a start
+  // below the surface makes the bike spawn underground and the physics can crash.
+  if (keep >= 2) {
+    const surf = surfaceRawAt(kept, t.startX / SCALE);
+    if (surf !== null && t.startY / SCALE < surf - 1)
+      msgs.push({ t: "err", s: "start is below the surface — bike spawns underground (will likely crash)" });
+  }
+  if (!t.name.trim()) msgs.push({ t: "warn", s: "empty name" });
+  return { keep, dropped: dropSet.size, dropSet, minIdx, kept, msgs };
+}
+
+/* =========================================================================
+   Canvas view + rendering
+   ========================================================================= */
+const view = { cx: 0, cy: 0, scale: 1 };   // world point at screen centre + px per world unit
+let canvas = null, ctx = null, dpr = 1;
+let dragPoint = -1, panning = false, lastMouse = null, toolMode = "add"; // add | pan | setStart | setFinish
+
+function worldBounds(t) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const acc = (x, y) => { if (x < minX) minX = x; if (y < minY) minY = y; if (x > maxX) maxX = x; if (y > maxY) maxY = y; };
+  for (const p of t.points) acc(p.x, p.y);
+  acc(t.startX / SCALE, t.startY / SCALE);
+  acc(t.finishX / SCALE, t.finishY / SCALE);
+  if (!isFinite(minX)) { minX = -100; minY = -100; maxX = 100; maxY = 100; }
+  if (maxX - minX < 1) { minX -= 50; maxX += 50; }
+  if (maxY - minY < 1) { minY -= 50; maxY += 50; }
+  return { minX, minY, maxX, maxY };
+}
+function fitView() {
+  const t = cur(); if (!t) return;
+  const b = worldBounds(t);
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  view.cx = (b.minX + b.maxX) / 2; view.cy = (b.minY + b.maxY) / 2;
+  const sx = (w * 0.88) / (b.maxX - b.minX), sy = (h * 0.82) / (b.maxY - b.minY);
+  view.scale = Math.max(0.02, Math.min(sx, sy));
+  draw();
+}
+// The game world is Y-UP (gravity pulls toward -Y; program.vel negates Y when it
+// draws). The canvas must match that orientation, else what you draw above the
+// track lands *below* the surface in-game (upside-down level + underground spawn
+// that crashes the physics). So screen-Y is negated here: larger world Y = higher.
+function w2s(wx, wy) {
+  return { x: (wx - view.cx) * view.scale + canvas.clientWidth / 2,
+           y: (view.cy - wy) * view.scale + canvas.clientHeight / 2 };
+}
+function s2w(sx, sy) {
+  return { x: (sx - canvas.clientWidth / 2) / view.scale + view.cx,
+           y: view.cy - (sy - canvas.clientHeight / 2) / view.scale };
+}
+function resizeCanvas() {
+  if (!canvas) return;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(canvas.clientWidth * dpr);
+  canvas.height = Math.round(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function draw() {
+  if (!ctx) return;
+  const t = cur();
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  if (!t) return;
+  const colLine = css("--accent"), colPt = css("--text"), colMuted = css("--muted-2");
+  const val = validate(t);
+
+  // solid earth: fill everything below the surface (toward -Y / screen bottom), so
+  // the Y-up orientation reads at a glance and the start belongs above this fill.
+  if (val.kept.length >= 2) {
+    ctx.beginPath();
+    const s0 = w2s(val.kept[0].x, val.kept[0].y);
+    ctx.moveTo(s0.x, h);
+    val.kept.forEach((p) => { const s = w2s(p.x, p.y); ctx.lineTo(s.x, s.y); });
+    const sN = w2s(val.kept[val.kept.length - 1].x, val.kept[val.kept.length - 1].y);
+    ctx.lineTo(sN.x, h);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(120,132,146,0.16)";
+    ctx.fill();
+  }
+
+  // baseline at world y = surface? just draw the polyline in list order
+  ctx.lineWidth = 2; ctx.strokeStyle = colLine; ctx.beginPath();
+  t.points.forEach((p, i) => { const s = w2s(p.x, p.y); i ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y); });
+  ctx.stroke();
+
+  // points
+  t.points.forEach((p, i) => {
+    const s = w2s(p.x, p.y);
+    const dropped = val.dropSet && val.dropSet.has(i);
+    ctx.beginPath(); ctx.arc(s.x, s.y, i === selPoint ? 5 : 3.2, 0, 7);
+    ctx.fillStyle = dropped ? css("--danger") : (i === selPoint ? css("--accent") : colPt);
+    ctx.fill();
+    if (i === selPoint) { ctx.lineWidth = 1.5; ctx.strokeStyle = css("--accent"); ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, 7); ctx.stroke(); }
+  });
+
+  // start & finish flags
+  drawFlag(t.startX / SCALE, t.startY / SCALE, css("--ok"), "S");
+  drawFlag(t.finishX / SCALE, t.finishY / SCALE, css("--danger"), "F");
+
+  // HUD
+  $("hud").textContent = "pts " + t.points.length + " · zoom " + view.scale.toFixed(3) +
+    " · center " + Math.round(view.cx) + "," + Math.round(view.cy);
+}
+function drawFlag(wx, wy, color, label) {
+  const s = w2s(wx, wy);
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x, s.y - 22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s.x, s.y - 22); ctx.lineTo(s.x + 14, s.y - 18); ctx.lineTo(s.x, s.y - 14); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.font = "9px " + css("--mono"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(label, s.x + 7, s.y - 18);
+}
+
+/* ---- canvas interaction ------------------------------------------------ */
+function hitPoint(sx, sy) {
+  const t = cur(); if (!t) return -1;
+  for (let i = t.points.length - 1; i >= 0; i--) {
+    const s = w2s(t.points[i].x, t.points[i].y);
+    if ((s.x - sx) ** 2 + (s.y - sy) ** 2 <= 49) return i;
+  }
+  return -1;
+}
+function insertSortedByX(t, x, y) {
+  let i = 0; while (i < t.points.length && t.points[i].x < x) i++;
+  t.points.splice(i, 0, { x, y });
+  return i;
+}
+function bindCanvas() {
+  canvas.addEventListener("mousedown", (e) => {
+    const t = cur(); if (!t) return;
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    lastMouse = { x: sx, y: sy };
+    if (toolMode === "pan" || e.button === 1) { panning = true; return; }
+    const w = s2w(sx, sy); const gx = Math.round(w.x), gy = Math.round(w.y);
+    if (toolMode === "setStart") { t.startX = gx * SCALE; t.startY = gy * SCALE; setTool("add"); syncForms(); draw(); return; }
+    if (toolMode === "setFinish") { t.finishX = gx * SCALE; t.finishY = gy * SCALE; setTool("add"); syncForms(); draw(); return; }
+    const hit = hitPoint(sx, sy);
+    if (hit >= 0) { selPoint = hit; dragPoint = hit; }
+    else { selPoint = insertSortedByX(t, gx, gy); dragPoint = selPoint; renderPointsTable(); }
+    draw(); highlightPointRow();
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (dragPoint < 0 && !panning) return;
+    const t = cur(); if (!t) return;
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    if (panning) {
+      view.cx -= (sx - lastMouse.x) / view.scale; view.cy -= (sy - lastMouse.y) / view.scale;
+      lastMouse = { x: sx, y: sy }; draw(); return;
+    }
+    const w = s2w(sx, sy);
+    t.points[dragPoint] = { x: Math.round(w.x), y: Math.round(w.y) };
+    syncPointRow(dragPoint); draw();
+  });
+  window.addEventListener("mouseup", () => { dragPoint = -1; panning = false; });
+  canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const hit = hitPoint(e.clientX - r.left, e.clientY - r.top);
+    if (hit >= 0) { deletePoint(hit); }
+  });
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    const before = s2w(sx, sy);
+    const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    view.scale = Math.max(0.02, Math.min(50, view.scale * f));
+    const after = s2w(sx, sy);
+    view.cx += before.x - after.x; view.cy += before.y - after.y;
+    draw();
+  }, { passive: false });
+}
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if ((e.key === "Delete" || e.key === "Backspace") && selPoint >= 0) { e.preventDefault(); deletePoint(selPoint); }
+});
+
+/* =========================================================================
+   Rendering the UI
+   ========================================================================= */
+function render() {
+  renderSidebar();
+  renderEditor();
+  renderStatus();
+}
+function renderSidebar() {
+  $("trackCount").textContent = project.length;
+  const ul = $("trackList");
+  if (!project.length) { ul.innerHTML = '<li class="sidebar-empty">No tracks yet.<br>Import a <b>.mrg</b> / <b>tracks.vel</b><br>or create a new track.</li>'; return; }
+  ul.innerHTML = "";
+  project.forEach((t, i) => {
+    const li = document.createElement("li");
+    li.className = "track-item" + (i === sel ? " sel" : "");
+    li.innerHTML =
+      '<span class="track-idx">' + i + '</span>' +
+      '<span class="track-main"><div class="track-name"></div>' +
+      '<div class="track-meta"><span class="badge l' + t.league + '">' + LEAGUE_NAMES[t.league] + '</span>' +
+      '<span>' + t.points.length + ' pts</span></div></span>' +
+      '<span class="track-actions">' +
+        '<button class="ghost sm" data-a="up" title="Move up">▲</button>' +
+        '<button class="ghost sm" data-a="dn" title="Move down">▼</button>' +
+        '<button class="ghost sm" data-a="dup" title="Duplicate">⧉</button>' +
+        '<button class="ghost sm danger" data-a="del" title="Delete">✕</button>' +
+      '</span>';
+    li.querySelector(".track-name").textContent = t.name;
+    li.addEventListener("click", (e) => {
+      const a = e.target.getAttribute && e.target.getAttribute("data-a");
+      if (a) { e.stopPropagation(); trackAction(i, a); return; }
+      selectTrack(i);
+    });
+    ul.appendChild(li);
+  });
+}
+function trackAction(i, a) {
+  if (a === "up" && i > 0) { [project[i - 1], project[i]] = [project[i], project[i - 1]]; if (sel === i) sel = i - 1; else if (sel === i - 1) sel = i; }
+  else if (a === "dn" && i < project.length - 1) { [project[i + 1], project[i]] = [project[i], project[i + 1]]; if (sel === i) sel = i + 1; else if (sel === i + 1) sel = i; }
+  else if (a === "dup") { project.splice(i + 1, 0, JSON.parse(JSON.stringify(project[i]))); }
+  else if (a === "del") { project.splice(i, 1); if (sel >= project.length) sel = project.length - 1; }
+  render();
+}
+function selectTrack(i) { sel = i; selPoint = -1; renderEditor(); renderSidebar(); renderStatus(); requestAnimationFrame(fitView); }
+
+function renderEditor() {
+  const host = $("editor");
+  const t = cur();
+  if (!t) {
+    host.innerHTML = '<div class="editor-empty"><div class="big">No track selected</div>' +
+      '<div>Pick a track on the left, or create/import one.</div></div>';
+    canvas = ctx = null; return;
+  }
+  host.innerHTML =
+    '<div class="editor-head">' +
+      '<label class="field" style="flex:none"><span>Name</span><input type="text" id="fName" class="name-in"></label>' +
+      '<label class="field" style="flex:none"><span>League</span><select id="fLeague" class="league-in">' +
+        '<option value="0">0 · Beginner</option><option value="1">1 · Skilled</option><option value="2">2 · Pro</option>' +
+      '</select></label>' +
+      '<div class="toolbar">' +
+        '<button class="toggle sm" id="tAdd" title="Add / move points">✎ Edit</button>' +
+        '<button class="toggle sm" id="tPan" title="Pan the view">✋ Pan</button>' +
+        '<div class="sep"></div>' +
+        '<button class="sm" id="tStart" title="Click canvas to set start">Set start</button>' +
+        '<button class="sm" id="tFinish" title="Click canvas to set finish">Set finish</button>' +
+        '<div class="sep"></div>' +
+        '<button class="sm" id="bSort" title="Sort points by X">Sort X</button>' +
+        '<button class="sm" id="bFit" title="Fit view">Fit</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="editor-body">' +
+      '<div class="canvas-wrap" id="cwrap"><canvas id="cv"></canvas>' +
+        '<div class="canvas-hud" id="hud"></div>' +
+        '<div class="canvas-legend">' +
+          '<div><i style="background:var(--ok)"></i>start (S)</div>' +
+          '<div><i style="background:var(--danger)"></i>finish (F)</div>' +
+          '<div><i style="background:var(--accent)"></i>selected point</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="side-forms">' +
+        '<div class="form-block"><h3>Start / Finish <span style="text-transform:none;font-weight:400">(raw units)</span></h3>' +
+          '<div class="grid2">' +
+            '<label class="field"><span>start X</span><input type="number" id="sStartX"></label>' +
+            '<label class="field"><span>start Y</span><input type="number" id="sStartY"></label>' +
+            '<label class="field"><span>finish X</span><input type="number" id="sFinX"></label>' +
+            '<label class="field"><span>finish Y</span><input type="number" id="sFinY"></label>' +
+          '</div>' +
+          '<div class="hint">Stored in tracks.vel as raw×8192. Start/finish flags are markers along the track.</div>' +
+        '</div>' +
+        '<div class="points-block">' +
+          '<div class="points-head"><h3>Points</h3>' +
+            '<button class="sm ghost" id="bAddRow" style="margin-left:auto">+ Row</button>' +
+            '<button class="sm ghost danger" id="bClearPts">Clear</button>' +
+          '</div>' +
+          '<div class="points-scroll"><table class="pts" id="ptsTable"></table></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  canvas = $("cv"); ctx = canvas.getContext("2d");
+  bindCanvas();
+  // header fields
+  $("fName").value = t.name;
+  $("fName").addEventListener("input", (e) => { t.name = e.target.value; renderSidebar(); });
+  $("fLeague").value = String(t.league);
+  $("fLeague").addEventListener("change", (e) => { t.league = clampL(+e.target.value); renderSidebar(); });
+  // start/finish (raw)
+  bindRaw("sStartX", () => t.startX, (v) => t.startX = v);
+  bindRaw("sStartY", () => t.startY, (v) => t.startY = v);
+  bindRaw("sFinX", () => t.finishX, (v) => t.finishX = v);
+  bindRaw("sFinY", () => t.finishY, (v) => t.finishY = v);
+  // toolbar
+  $("tAdd").addEventListener("click", () => setTool("add"));
+  $("tPan").addEventListener("click", () => setTool("pan"));
+  $("tStart").addEventListener("click", () => setTool("setStart"));
+  $("tFinish").addEventListener("click", () => setTool("setFinish"));
+  $("bSort").addEventListener("click", () => { t.points.sort((a, b) => a.x - b.x); selPoint = -1; renderPointsTable(); draw(); renderStatus(); });
+  $("bFit").addEventListener("click", fitView);
+  $("bAddRow").addEventListener("click", () => {
+    const lastX = t.points.length ? t.points[t.points.length - 1].x : 0;
+    t.points.push({ x: lastX + 50, y: 0 }); selPoint = t.points.length - 1; renderPointsTable(); draw(); renderStatus();
+  });
+  $("bClearPts").addEventListener("click", () => { if (confirm("Remove all points from this track?")) { t.points = []; selPoint = -1; renderPointsTable(); draw(); renderStatus(); } });
+  setTool("add");
+  renderPointsTable();
+  resizeCanvas();
+}
+function bindRaw(id, get, set) {
+  const el = $(id);
+  el.value = (get() / SCALE);
+  el.addEventListener("input", (e) => {
+    const v = parseFloat(e.target.value);
+    if (!Number.isNaN(v)) { set(Math.round(v * SCALE)); draw(); renderStatus(); }
+  });
+}
+function setTool(mode) {
+  toolMode = mode;
+  const cw = $("cwrap"); if (cw) cw.classList.toggle("pan", mode === "pan");
+  const map = { add: "tAdd", pan: "tPan" };
+  ["tAdd", "tPan"].forEach((id) => { const b = $(id); if (b) b.classList.toggle("active", map[mode] === id); });
+  // set-start / set-finish are momentary; reflect them on their buttons
+  const ts = $("tStart"), tf = $("tFinish");
+  if (ts) ts.classList.toggle("active", mode === "setStart");
+  if (tf) tf.classList.toggle("active", mode === "setFinish");
+  if (mode === "setStart") setStatus("Click on the canvas to place the START flag.");
+  else if (mode === "setFinish") setStatus("Click on the canvas to place the FINISH flag.");
+}
+function syncForms() {
+  const t = cur(); if (!t) return;
+  if ($("sStartX")) { $("sStartX").value = t.startX / SCALE; $("sStartY").value = t.startY / SCALE;
+    $("sFinX").value = t.finishX / SCALE; $("sFinY").value = t.finishY / SCALE; }
+}
+
+function renderPointsTable() {
+  const t = cur(); const tbl = $("ptsTable"); if (!tbl || !t) return;
+  const val = validate(t);
+  let html = '<thead><tr><th class="n">#</th><th>X</th><th>Y</th><th></th></tr></thead><tbody>';
+  t.points.forEach((p, i) => {
+    const drop = val.dropSet && val.dropSet.has(i);
+    html += '<tr data-i="' + i + '" class="' + (i === selPoint ? "sel" : "") + (drop ? " drop" : "") + '">' +
+      '<td class="n">' + i + '</td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="x" value="' + p.x + '"></td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="y" value="' + p.y + '"></td>' +
+      '<td class="rm" data-i="' + i + '" title="Delete point">✕</td></tr>';
+  });
+  html += "</tbody>";
+  tbl.innerHTML = html;
+  tbl.querySelectorAll("input").forEach((inp) => {
+    inp.addEventListener("input", (e) => {
+      const i = +e.target.getAttribute("data-i"), k = e.target.getAttribute("data-k");
+      const v = parseInt(e.target.value, 10);
+      if (!Number.isNaN(v)) { t.points[i][k] = v; draw(); renderStatus(); markDropRows(); }
+    });
+    inp.addEventListener("focus", (e) => { selPoint = +e.target.getAttribute("data-i"); highlightPointRow(); draw(); });
+  });
+  tbl.querySelectorAll(".rm").forEach((el) => el.addEventListener("click", (e) => deletePoint(+e.target.getAttribute("data-i"))));
+}
+function markDropRows() {
+  const t = cur(); if (!t) return; const val = validate(t);
+  document.querySelectorAll("#ptsTable tbody tr").forEach((tr) => {
+    const i = +tr.getAttribute("data-i");
+    tr.classList.toggle("drop", val.dropSet && val.dropSet.has(i));
+  });
+}
+function syncPointRow(i) {
+  const t = cur(); if (!t) return;
+  const xs = document.querySelector('#ptsTable input[data-i="' + i + '"][data-k="x"]');
+  const ys = document.querySelector('#ptsTable input[data-i="' + i + '"][data-k="y"]');
+  if (xs) xs.value = t.points[i].x; if (ys) ys.value = t.points[i].y;
+  markDropRows();
+}
+function highlightPointRow() {
+  document.querySelectorAll("#ptsTable tbody tr").forEach((tr) =>
+    tr.classList.toggle("sel", +tr.getAttribute("data-i") === selPoint));
+}
+function deletePoint(i) {
+  const t = cur(); if (!t) return;
+  t.points.splice(i, 1);
+  if (selPoint === i) selPoint = -1; else if (selPoint > i) selPoint--;
+  renderPointsTable(); draw(); renderStatus();
+}
+
+/* ---- status bar -------------------------------------------------------- */
+function setStatus(s) { $("statusMain").innerHTML = s; }
+function renderStatus() {
+  const t = cur();
+  if (!t) { setStatus(project.length ? "Select a track." : "Ready. Import a .mrg / tracks.vel, or create a new track."); return; }
+  const val = validate(t);
+  const parts = val.msgs.map((m) => '<span class="' + m.t + '">' + m.s + "</span>");
+  setStatus('Track #' + sel + ' · ' + parts.join(" &nbsp;·&nbsp; "));
+}
+
+/* =========================================================================
+   Import / export wiring
+   ========================================================================= */
+let pendingImport = [];   // tracks awaiting the picker decision
+
+function openPicker(title, tracks, note) {
+  pendingImport = tracks;
+  $("modalTitle").textContent = title;
+  $("pickInfo").textContent = note || "";
+  const ul = $("pickList"); ul.innerHTML = "";
+  tracks.forEach((t, i) => {
+    const li = document.createElement("li"); li.className = "pick-item";
+    li.innerHTML = '<input type="checkbox" checked data-i="' + i + '">' +
+      '<span class="badge l' + t.league + '">' + LEAGUE_NAMES[t.league] + '</span>' +
+      '<span class="pn"></span><span class="pm">' + t.points.length + ' pts</span>';
+    li.querySelector(".pn").textContent = t.name;
+    ul.appendChild(li);
+  });
+  updatePickCount();
+  ul.querySelectorAll("input").forEach((c) => c.addEventListener("change", updatePickCount));
+  $("modal").classList.add("show");
+}
+function updatePickCount() {
+  const n = document.querySelectorAll("#pickList input:checked").length;
+  $("pickCount").textContent = n + " of " + pendingImport.length + " selected";
+}
+function selectedImport() {
+  const out = [];
+  document.querySelectorAll("#pickList input").forEach((c) => { if (c.checked) out.push(pendingImport[+c.getAttribute("data-i")]); });
+  return out;
+}
+function closePicker() { $("modal").classList.remove("show"); pendingImport = []; }
+
+function wireUI() {
+  $("btnImportMrg").addEventListener("click", () => $("fileMrg").click());
+  $("btnImportVel").addEventListener("click", () => $("fileVel").click());
+  $("fileMrg").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const res = parseMrg(rd.result);
+        openPicker("Import from " + f.name, res.tracks, "parsed " + res.count + " tracks · " + res.mode + " mode");
+        setStatus('<span class="ok">Parsed ' + res.count + " tracks from " + f.name + " (" + res.mode + " mode).</span>");
+      } catch (err) { setStatus('<span class="err">.mrg parse failed: ' + err.message + "</span>"); alert("Could not parse .mrg:\n" + err.message); }
+    };
+    rd.readAsArrayBuffer(f); e.target.value = "";
+  });
+  $("fileVel").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const tracks = parseTracksVel(rd.result);
+        if (!tracks.length) throw new Error("no trackData entries found");
+        openPicker("Import from " + f.name, tracks, "parsed " + tracks.length + " tracks");
+      } catch (err) { setStatus('<span class="err">tracks.vel parse failed: ' + err.message + "</span>"); alert("Could not parse tracks.vel:\n" + err.message); }
+    };
+    rd.readAsText(f); e.target.value = "";
+  });
+  $("pickAll").addEventListener("click", () => { document.querySelectorAll("#pickList input").forEach((c) => c.checked = true); updatePickCount(); });
+  $("pickNone").addEventListener("click", () => { document.querySelectorAll("#pickList input").forEach((c) => c.checked = false); updatePickCount(); });
+  $("pickCancel").addEventListener("click", closePicker);
+  $("modalX").addEventListener("click", closePicker);
+  $("pickAdd").addEventListener("click", () => { const s = selectedImport(); project = project.concat(s.map(clone)); afterImport(); });
+  $("pickReplace").addEventListener("click", () => { const s = selectedImport(); project = s.map(clone); sel = -1; afterImport(); });
+  $("btnNew").addEventListener("click", () => { project.push(newTrack("Track " + project.length)); sel = project.length - 1; selPoint = -1; render(); renderEditor(); requestAnimationFrame(fitView); });
+  $("btnClearAll").addEventListener("click", () => { if (project.length && confirm("Remove all " + project.length + " tracks from the project?")) { project = []; sel = -1; render(); } });
+  $("btnExport").addEventListener("click", exportVel);
+  window.addEventListener("resize", () => { if (canvas) resizeCanvas(); });
+}
+function clone(t) { return JSON.parse(JSON.stringify(t)); }
+function afterImport() {
+  closePicker();
+  if (sel < 0 && project.length) sel = 0;
+  render(); renderEditor(); if (cur()) requestAnimationFrame(fitView);
+  setStatus('<span class="ok">Project now has ' + project.length + " tracks.</span>");
+}
+function exportVel() {
+  if (!project.length && !confirm("Export an empty tracks.vel?")) return;
+  const text = generateTracksVel(project);
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "tracks.vel";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  setStatus('<span class="ok">Exported tracks.vel · ' + project.length + " tracks · " + text.length + " bytes.</span>");
+}
+
+/* ---- boot -------------------------------------------------------------- */
+wireUI();
+render();
+
+// expose pure functions for headless testing / debugging
+window.GD = { parseMrg, parseTracksVel, generateTracksVel, validate, SCALE };
+</script>
+</body>
+</html>
