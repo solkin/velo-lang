@@ -18,6 +18,10 @@ configure(subprojects.filter { it.name != "velo-android" }) {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+        // Forward -Dvelo.* flags (e.g. fuzz seed/count, gc threshold) to the test JVM.
+        System.getProperties().forEach { k, v ->
+            if (k is String && k.startsWith("velo.")) systemProperty(k, v.toString())
+        }
     }
 
     extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
