@@ -205,6 +205,26 @@
   .pick-item .pm { font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .file-hidden { display: none; }
   .kbd { font-family: var(--mono); background: var(--panel-2); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; font-size: 10px; }
+
+  /* ---- Play (test-drive) overlay ---------------------------------------- */
+  .play-btn { color: var(--ok); border-color: var(--border-strong); font-weight: 600; }
+  .play-btn:hover { background: var(--l0-soft); border-color: var(--ok); }
+  .play-overlay { position: fixed; inset: 0; z-index: 60; display: none; flex-direction: column; background: #0b0e13; }
+  .play-overlay.show { display: flex; }
+  .play-bar { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 14px;
+              background: var(--panel); border-bottom: 1px solid var(--border); flex: none; }
+  .play-bar .play-title { font-weight: 600; }
+  .play-bar .play-hint { color: var(--muted); font-size: 11px; }
+  .play-bar .play-league { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-left: auto; }
+  .play-bar .play-league select { width: auto; }
+  .play-canvas-wrap { flex: 1; position: relative; min-height: 0; }
+  #playCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #fff; touch-action: none; }
+  .play-touch { position: absolute; bottom: 18px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
+  .play-touch .grp { display: flex; gap: 12px; }
+  .play-touch button { pointer-events: auto; width: 58px; height: 58px; border-radius: 50%; font-size: 20px;
+                       display: flex; align-items: center; justify-content: center; padding: 0; gap: 0; line-height: 1;
+                       opacity: .82; background: var(--panel); border: 1px solid var(--border-strong); color: var(--text); }
+  .play-touch button:active { background: var(--accent-soft); border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -258,6 +278,26 @@
 
   <input type="file" id="fileMrg" class="file-hidden" accept=".mrg,application/octet-stream">
   <input type="file" id="fileVel" class="file-hidden" accept=".vel,text/plain">
+
+  <!-- Play (test-drive) overlay: authentic engine, 1:1 physics -->
+  <div class="play-overlay" id="playOverlay">
+    <div class="play-bar">
+      <span class="play-title" id="playTitle">Track</span>
+      <span class="play-hint">↑/W gas · ↓/S brake · ←/→ lean · R restart · Esc exit</span>
+      <label class="play-league">Bike league
+        <select id="playLeague"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3">4</option></select>
+      </label>
+      <button class="sm" id="playRestart">Restart</button>
+      <button class="sm primary" id="playExit">Exit ▶</button>
+    </div>
+    <div class="play-canvas-wrap">
+      <canvas id="playCanvas"></canvas>
+      <div class="play-touch">
+        <div class="grp"><button data-btn="leanB" title="lean back">⟲</button><button data-btn="leanF" title="lean forward">⟳</button></div>
+        <div class="grp"><button data-btn="brake" title="brake">▼</button><button data-btn="gas" title="gas">▲</button></div>
+      </div>
+    </div>
+  </div>
 
 <script>
 "use strict";
@@ -735,6 +775,8 @@ function renderEditor() {
         '<div class="sep"></div>' +
         '<button class="sm" id="bSort" title="Sort points by X">Sort X</button>' +
         '<button class="sm" id="bFit" title="Fit view">Fit</button>' +
+        '<div class="sep"></div>' +
+        '<button class="sm play-btn" id="bPlay" title="Test-drive this track with the real game physics">▶ Play</button>' +
       '</div>' +
     '</div>' +
     '<div class="editor-body">' +
@@ -785,6 +827,7 @@ function renderEditor() {
   $("tFinish").addEventListener("click", () => setTool("setFinish"));
   $("bSort").addEventListener("click", () => { t.points.sort((a, b) => a.x - b.x); selPoint = -1; renderPointsTable(); draw(); renderStatus(); });
   $("bFit").addEventListener("click", fitView);
+  $("bPlay").addEventListener("click", () => window.__gdPlay.start(cur()));
   $("bAddRow").addEventListener("click", () => {
     const lastX = t.points.length ? t.points[t.points.length - 1].x : 0;
     t.points.push({ x: lastX + 50, y: 0 }); selPoint = t.points.length - 1; renderPointsTable(); draw(); renderStatus();
@@ -948,6 +991,16 @@ function wireUI() {
   $("btnNew").addEventListener("click", () => { project.push(newTrack("Track " + project.length)); sel = project.length - 1; selPoint = -1; render(); renderEditor(); requestAnimationFrame(fitView); });
   $("btnClearAll").addEventListener("click", () => { if (project.length && confirm("Remove all " + project.length + " tracks from the project?")) { project = []; sel = -1; render(); } });
   $("btnExport").addEventListener("click", exportVel);
+  // Play overlay controls
+  $("playExit").addEventListener("click", () => window.__gdPlay.stop());
+  $("playRestart").addEventListener("click", () => window.__gdPlay.restart());
+  $("playLeague").addEventListener("change", (e) => window.__gdPlay.setLeague(+e.target.value));
+  document.querySelectorAll(".play-touch button").forEach((b) => {
+    const btn = b.getAttribute("data-btn");
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); window.__gdPlay.press(btn, true); });
+    b.addEventListener("pointerup", (e) => { e.preventDefault(); window.__gdPlay.press(btn, false); });
+    b.addEventListener("pointerleave", () => window.__gdPlay.press(btn, false));
+  });
   window.addEventListener("resize", () => { if (canvas) resizeCanvas(); });
 }
 function clone(t) { return JSON.parse(JSON.stringify(t)); }
@@ -967,6 +1020,894 @@ function exportVel() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   setStatus('<span class="ok">Exported tracks.vel · ' + project.length + " tracks · " + text.length + " bytes.</span>");
 }
+
+/* ===== Gravity Defied engine (physics + render), 1:1 port of engine.vel + program.vel ===== */
+// Gravity Defied physics — 1:1 port of engine.vel (Track physics + Physics).
+// Velo `int` is 32-bit, so JS <<,>>,|0 match exactly; the 16.16 products that need
+// a 64-bit intermediate (fm/fdiv/build) use BigInt, then truncate to 32-bit.
+const GDSim = (function () {
+  "use strict";
+  const ONE = 65536, HALF_PI = 0x19220, PI = 0x3243f, TWO_PI = 0x6487f, QUARTER = 0x19220;
+
+  function iabs(v) { return v < 0 ? (0 - v) | 0 : v; }
+  // (int)((long)a * (long)b >> 16)
+  function fm(a, b) { return Number(BigInt.asIntN(32, (BigInt(a | 0) * BigInt(b | 0)) >> 16n)); }
+  // (int)(((long)a << 32) / (long)b >> 16)
+  function fdiv(a, b) { return Number(BigInt.asIntN(32, ((BigInt(a | 0) << 32n) / BigInt(b | 0)) >> 16n)); }
+  // |(j,i1)| approximation (no sqrt)
+  function hyp(j, i1) {
+    let aj = iabs(j), ai = iabs(i1), l1 = aj, i2 = ai;
+    if (ai >= aj) { l1 = ai; i2 = aj; }
+    return (fm(64448, l1) + fm(28224, i2)) | 0;
+  }
+
+  const SINQ = [
+    0, 1608, 3215, 4821, 6423, 8022, 9616, 11204, 12785, 14359,
+    15923, 17479, 19024, 20557, 22078, 23586, 25079, 26557, 28020, 29465,
+    30893, 32302, 33692, 35061, 36409, 37736, 39039, 40319, 41575, 42806,
+    44011, 45189, 46340, 47464, 48558, 49624, 50660, 51665, 52639, 53581,
+    54491, 55368, 56212, 57022, 57797, 58538, 59243, 59913, 60547, 61144,
+    61705, 62228, 62714, 63162, 63571, 63943, 64276, 64571, 64826, 65043,
+    65220, 65358, 65457, 65516, 65536
+  ];
+  function sinQ(a) {
+    const idx = fdiv(a, QUARTER);
+    let p = fm(idx, 64 * ONE) >> 16;
+    if (p < 0) p = 0;
+    if (p >= 64) return SINQ[64];
+    const frac = (fm(idx, 64 * ONE) - (p << 16)) | 0;
+    const lo = SINQ[p], hi = SINQ[p + 1];
+    return (lo + fm(hi - lo, frac)) | 0;
+  }
+  function fsin(a) {
+    a = a % TWO_PI;
+    if (a < 0) a = (a + TWO_PI) | 0;
+    if (a <= QUARTER) return sinQ(a);
+    if (a <= PI) return sinQ((PI - a) | 0);
+    if (a <= PI + QUARTER) return (0 - sinQ((a - PI) | 0)) | 0;
+    return (0 - sinQ((TWO_PI - a) | 0)) | 0;
+  }
+  function fcos(a) { return fsin((a + HALF_PI) | 0); }
+
+  const FORA = [0x1c000, 0x10000, 32768];
+
+  function newVec() { return { x: 0, y: 0, e: 0, d: 0, fx: 0, fy: 0, wv: 0, wa: 0, wang: 0 }; }
+  function resetVec(v) { v.x = 0; v.y = 0; v.e = 0; v.d = 0; v.fx = 0; v.fy = 0; v.wv = 0; v.wa = 0; v.wang = 0; }
+  function newNode() { const s = []; for (let i = 0; i < 6; i++) s.push(newVec()); return { rad: 0, radIdx: 0, invm: 0, torque: 0, s }; }
+  function resetNode(n) { n.rad = 0; n.invm = 0; n.torque = 0; for (let i = 0; i < 6; i++) resetVec(n.s[i]); }
+
+  // ---- Track physics (engine.vel Track class) ------------------------------
+  class TrackPhys {
+    constructor() {
+      this.startX = 0; this.startY = 0; this.finishX = 0xc80000; this.finishY = 0;
+      this.gotoIdx = 0; this.finIdx = 0; this.count = 0;
+      this.px = []; this.py = []; this.nx = []; this.ny = [];
+      this.ea = 0; this.fa = 0; this.winA = 0; this.winK = 0;
+      this.haI = [0, 0, 0]; this.vaI = [0, 0, 0];
+      this.eOut = 0; this.dOut = 0;
+      this.perspective = false;
+      this.cullE = 0; this.cullB = 0; this.cullG = 0;
+    }
+    init() {
+      for (let j = 0; j < 3; j++) {
+        const a = (FORA[j] + 19660) >> 1;
+        const b = (FORA[j] - 19660) >> 1;
+        this.haI[j] = fm(a, a);
+        this.vaI[j] = fm(b, b);
+      }
+    }
+    buildNormals() {
+      this.nx = new Array(this.count); this.ny = new Array(this.count);
+      for (let k = 0; k < this.count; k++) {
+        const i1 = (this.px[(k + 1) % this.count] - this.px[k]) | 0;
+        const j1 = (this.py[(k + 1) % this.count] - this.py[k]) | 0;
+        const k1 = (0 - j1) | 0;
+        const i2 = i1;
+        const j2 = hyp(k1, i2);
+        this.nx[k] = fdiv(k1, j2);
+        this.ny[k] = fdiv(i2, j2);
+        if (this.gotoIdx === 0 && this.px[k] > this.startX) this.gotoIdx = k + 1;
+        if (this.finIdx === 0 && this.px[k] > this.finishX) this.finIdx = k;
+      }
+    }
+    // rawPoints: [{x,y}] raw units; start/finish already in scaled (tracks.vel) units.
+    load(rawPoints, startX, startY, finishX, finishY) {
+      this.startX = startX | 0; this.startY = startY | 0;
+      this.finishX = finishX | 0; this.finishY = finishY | 0;
+      const pc = rawPoints.length;
+      this.gotoIdx = 0; this.finIdx = 0;
+      this.px = []; this.py = []; this.count = 0;
+      let minIdx = 0, minX = rawPoints[0].x;
+      for (let s = 1; s < pc; s++) if (rawPoints[s].x < minX) { minX = rawPoints[s].x; minIdx = s; }
+      for (let i = minIdx; i < pc; i++) {
+        const rx = rawPoints[i].x | 0, ry = rawPoints[i].y | 0;
+        const sx = (rx << 16) >> 3;
+        const sy = (ry << 16) >> 3;
+        if (this.count === 0 || this.px[this.count - 1] < sx) {
+          this.px[this.count] = sx; this.py[this.count] = sy; this.count++;
+        }
+      }
+      this.buildNormals();
+      if (this.finIdx <= 0) this.finIdx = this.count - 1;
+      this.ea = 0; this.fa = 0; this.winA = 0; this.winK = 0;
+    }
+    spawnX() { return this.startX << 1; }
+    surfaceAtPoint(x) {
+      let result = this.py[0];
+      for (let k = 0; k < this.count - 1; k++) {
+        if (this.px[k] <= x && x <= this.px[k + 1]) {
+          const dx = (this.px[k + 1] - this.px[k]) | 0;
+          if (dx < 1) result = this.py[k];
+          else result = (this.py[k] + Math.trunc((this.py[k + 1] - this.py[k]) * (x - this.px[k]) / dx)) | 0;
+          break;
+        }
+      }
+      return result;
+    }
+    spawnY() {
+      if (this.count < 2) return this.startY << 1;
+      const surf = this.surfaceAtPoint(this.startX);
+      let y = this.startY;
+      const MAXDROP = 0x30000;
+      if (y - surf > MAXDROP) y = (surf + MAXDROP) | 0;
+      return y << 1;
+    }
+    startPointX() { return this.px[this.gotoIdx] << 1; }
+    finishPointX() { return this.px[this.finIdx] << 1; }
+    progressAt(j) {
+      const x = j >> 1;
+      const k = (x - this.px[this.gotoIdx]) | 0;
+      const i1 = (this.px[this.finIdx] - this.px[this.gotoIdx]) | 0;
+      if (iabs(i1) < 3 || k > i1) return ONE;
+      return fdiv(k, i1);
+    }
+    window(jIn, kIn) {
+      const j = jIn >> 1;
+      const k = kIn >> 1;
+      if (this.fa >= this.count - 1) this.fa = this.count - 1;
+      if (this.ea < 0) this.ea = 0;
+      if (k > this.winK) {
+        let go = true;
+        while (this.fa < this.count - 1 && go) {
+          this.fa = this.fa + 1;
+          if (k > this.px[this.fa]) {} else go = false;
+        }
+      } else {
+        if (j < this.winA) {
+          let go2 = true;
+          while (this.ea > 0 && go2) {
+            this.ea = this.ea - 1;
+            if (j < this.px[this.ea]) {} else go2 = false;
+          }
+        } else {
+          let go3 = true;
+          while (this.ea < this.count - 1 && go3) {
+            this.ea = this.ea + 1;
+            if (j > this.px[this.ea]) {} else go3 = false;
+          }
+          if (this.ea > 0) this.ea = this.ea - 1;
+          let go4 = true;
+          while (this.fa > 0 && go4) {
+            this.fa = this.fa - 1;
+            if (k < this.px[this.fa]) {} else go4 = false;
+          }
+          if (this.fa + 1 >= this.count - 1) this.fa = this.count - 1; else this.fa = this.fa + 1;
+        }
+      }
+      this.winA = this.px[this.ea];
+      this.winK = this.px[this.fa];
+    }
+    collide(n1, radIdx) {
+      let k3 = 0, byte1 = 2;
+      const l3 = n1.x >> 1;
+      let i4 = n1.y >> 1;
+      if (this.perspective) i4 = (i4 - ONE) | 0;
+      let j4 = 0, k4 = 0, l4 = this.ea, result = -1;
+      while (l4 < this.fa && result < 0) {
+        const k = this.px[l4], i1 = this.py[l4];
+        const j1 = this.px[l4 + 1], k1 = this.py[l4 + 1];
+        if (l3 - this.haI[radIdx] > j1 || l3 + this.haI[radIdx] < k) {
+          // out of reach
+        } else {
+          let l1 = (k - j1) | 0;
+          let i2 = (i1 - k1) | 0;
+          const j2 = (fm(l1, l1) + fm(i2, i2)) | 0;
+          const k2 = (fm(l3 - k, 0 - l1) + fm(i4 - i1, 0 - i2)) | 0;
+          let l2 = 0;
+          if (iabs(j2) >= 3) l2 = fdiv(k2, j2);
+          else {
+            const sgnK = k2 <= 0 ? -1 : 1;
+            const sgnJ = j2 <= 0 ? -1 : 1;
+            l2 = (sgnK * sgnJ * 0x7fffffff) | 0;
+          }
+          if (l2 < 0) l2 = 0;
+          if (l2 > ONE) l2 = ONE;
+          const i3 = (k + fm(l2, 0 - l1)) | 0;
+          const j3 = (i1 + fm(l2, 0 - i2)) | 0;
+          l1 = (l3 - i3) | 0;
+          i2 = (i4 - j3) | 0;
+          const l5 = (fm(l1, l1) + fm(i2, i2)) | 0;
+          let byte0 = 2;
+          if (l5 < this.haI[radIdx]) { if (l5 >= this.vaI[radIdx]) byte0 = 1; else byte0 = 0; }
+          const dot = (fm(this.nx[l4], n1.e) + fm(this.ny[l4], n1.d)) | 0;
+          if (byte0 === 0 && dot < 0) { this.eOut = this.nx[l4]; this.dOut = this.ny[l4]; result = 0; }
+          else if (byte0 === 1 && dot < 0) {
+            k3 = k3 + 1; byte1 = 1;
+            if (k3 === 1) { j4 = this.nx[l4]; k4 = this.ny[l4]; }
+            else { j4 = (j4 + this.nx[l4]) | 0; k4 = (k4 + this.ny[l4]) | 0; }
+          }
+        }
+        l4 = l4 + 1;
+      }
+      if (result >= 0) return result;
+      if (byte1 === 1) {
+        if (fm(j4, n1.e) + fm(k4, n1.d) >= 0) return 2;
+        this.eOut = j4; this.dOut = k4;
+      }
+      return byte1;
+    }
+    setCull3(e, b, g) { this.cullE = e; this.cullB = b; this.cullG = g; }
+    setCull2(j, k) { this.cullE = j >> 1; this.cullB = k >> 1; }
+    advanceWindow(j, k, i1) {
+      this.setCull3((j + 0x18000) >> 1, (k - 0x18000) >> 1, i1 >> 1);
+      this.window(j, k);
+    }
+  }
+
+  // ---- Physics (engine.vel Physics class) ----------------------------------
+  class Physics {
+    constructor(lf) {
+      this.lf = lf;
+      this.hak = []; this.ian = []; this.aaan = [];
+      this.vaI = 0; this.waI = 1; this.xaI = -1; this.cI = 0; this.EI = 0; this.CI = 0;
+      this.IZ = false; this.mZ = false; this.TI = 32768; this.kI = 0;
+      this.vZ = false; this.bZ = false; this.afZ = false; this.tI = 0; this.zI = 0;
+      this.elseZ = false; this.UZ = false; this.ifZ = false; this.sZ = false; this.rZ = false; this.OZ = false;
+      this.dZ = false; this.FZ = false; this.XZ = false; this.wZ = false; this.RZ = false; this.NZ = false;
+      this.doZ = true; this.oI = 0; this.nI = 0; this.GI = 0xa0000;
+      this.hI = 0; this.YI = 1310; this.voidI = 0x190000;
+      this.gI = 45875; this.fI = 13107; this.eI = 39321; this.yI = 0x140000; this.xI = 0x40000; this.jI = 6553;
+      this.aeI = 32768; this.adI = 32768; this.maxSpin = 0x110000; this.QI = 0x3e80000; this.charI = 0x320000;
+      this.abI = 6553; this.WI = 26214; this.AI = 26214; this.longI = 0x50000; this.qI = 0x12c0000;
+    }
+    akk(k1, n1, k2, j, i1) {
+      const n2 = k1.s[j], n3 = k2.s[j];
+      let j1 = (n2.x - n3.x) | 0, l1 = (n2.y - n3.y) | 0;
+      const i2 = hyp(j1, l1);
+      if (iabs(i2) >= 3) {
+        j1 = fdiv(j1, i2); l1 = fdiv(l1, i2);
+        const j2 = (i2 - n1.y) | 0;
+        const stiff = fm(j2, n1.x);
+        let l2 = fm(j1, stiff);
+        let i3 = fm(l1, stiff);
+        const j3 = (n2.e - n3.e) | 0, k3 = (n2.d - n3.d) | 0;
+        const l3 = fm((fm(j1, j3) + fm(l1, k3)) | 0, n1.wang);
+        l2 = (l2 + fm(j1, l3)) | 0;
+        i3 = (i3 + fm(l1, l3)) | 0;
+        l2 = fm(l2, i1); i3 = fm(i3, i1);
+        n2.fx = (n2.fx - l2) | 0; n2.fy = (n2.fy - i3) | 0;
+        n3.fx = (n3.fx + l2) | 0; n3.fy = (n3.fy + i3) | 0;
+      }
+    }
+    deriv(j, i1, j1) {
+      for (let l1 = 0; l1 < 6; l1++) {
+        const n1 = this.hak[l1].s[j], n2 = this.hak[l1].s[i1];
+        n2.x = fm(n1.e, j1); n2.y = fm(n1.d, j1);
+        const k1 = fm(j1, this.hak[l1].invm);
+        n2.e = fm(n1.fx, k1); n2.d = fm(n1.fy, k1);
+      }
+    }
+    combine(j, i1, j1) {
+      for (let k1 = 0; k1 < 6; k1++) {
+        const n1 = this.hak[k1].s[j], n2 = this.hak[k1].s[i1], n3 = this.hak[k1].s[j1];
+        n1.x = (n2.x + (n3.x >> 1)) | 0; n1.y = (n2.y + (n3.y >> 1)) | 0;
+        n1.e = (n2.e + (n3.e >> 1)) | 0; n1.d = (n2.d + (n3.d >> 1)) | 0;
+      }
+    }
+    force(j) {
+      for (let i1 = 0; i1 < 6; i1++) {
+        const n1 = this.hak[i1].s[j];
+        n1.fx = 0; n1.fy = 0; n1.wa = 0;
+        n1.fy = (n1.fy - fdiv(this.voidI, this.hak[i1].invm)) | 0;
+      }
+      if (this.IZ === false) {
+        this.akk(this.hak[0], this.ian[1], this.hak[2], j, ONE);
+        this.akk(this.hak[0], this.ian[0], this.hak[1], j, ONE);
+        this.akk(this.hak[2], this.ian[6], this.hak[4], j, 0x20000);
+        this.akk(this.hak[1], this.ian[5], this.hak[3], j, 0x20000);
+      }
+      this.akk(this.hak[0], this.ian[2], this.hak[3], j, ONE);
+      this.akk(this.hak[0], this.ian[3], this.hak[4], j, ONE);
+      this.akk(this.hak[3], this.ian[4], this.hak[4], j, ONE);
+      this.akk(this.hak[5], this.ian[8], this.hak[3], j, ONE);
+      this.akk(this.hak[5], this.ian[7], this.hak[4], j, ONE);
+      this.akk(this.hak[5], this.ian[9], this.hak[0], j, ONE);
+
+      const n2 = this.hak[2].s[j];
+      this.cI = fm(this.cI, ONE - this.jI);
+      n2.wa = this.cI;
+      if (n2.wv > this.maxSpin) n2.wv = this.maxSpin;
+      if (n2.wv < 0 - this.maxSpin) n2.wv = (0 - this.maxSpin) | 0;
+
+      let j1 = 0, l1 = 0;
+      for (let i2 = 0; i2 < 6; i2++) { j1 = (j1 + this.hak[i2].s[j].e) | 0; l1 = (l1 + this.hak[i2].s[j].d) | 0; }
+      j1 = fdiv(j1, 0x60000); l1 = fdiv(l1, 0x60000);
+      let j3 = 0;
+      for (let k3 = 0; k3 < 6; k3++) {
+        const j2 = (this.hak[k3].s[j].e - j1) | 0;
+        const k2 = (this.hak[k3].s[j].d - l1) | 0;
+        j3 = hyp(j2, k2);
+        if (j3 > 0x1e0000) {
+          const l2 = fdiv(j2, j3);
+          const i3 = fdiv(k2, j3);
+          this.hak[k3].s[j].e = (this.hak[k3].s[j].e - l2) | 0;
+          this.hak[k3].s[j].d = (this.hak[k3].s[j].d - i3) | 0;
+        }
+      }
+      const byte0 = (this.hak[2].s[j].y - this.hak[0].s[j].y < 0) ? -1 : 1;
+      const byte1 = (this.hak[2].s[j].e - this.hak[0].s[j].e < 0) ? -1 : 1;
+      if (byte0 * byte1 > 0) this.kI = j3; else this.kI = (0 - j3) | 0;
+    }
+    substep(j) {
+      this.force(this.vaI);
+      this.deriv(this.vaI, 2, j);
+      this.combine(4, this.vaI, 2);
+      this.force(4);
+      this.deriv(4, 3, j >> 1);
+      this.combine(4, this.vaI, 3);
+      this.combine(this.waI, this.vaI, 2);
+      this.combine(this.waI, this.waI, 3);
+      for (let i1 = 1; i1 <= 2; i1++) {
+        const n1 = this.hak[i1].s[this.vaI], n2 = this.hak[i1].s[this.waI];
+        n2.wang = (n1.wang + fm(j, n1.wv)) | 0;
+        n2.wv = (n1.wv + fm(j, fm(this.hak[i1].torque, n1.wa))) | 0;
+      }
+    }
+    detect(j) {
+      let byte0 = 2;
+      let i1 = this.hak[1].s[j].x;
+      if (this.hak[2].s[j].x > i1) i1 = this.hak[2].s[j].x;
+      if (this.hak[5].s[j].x > i1) i1 = this.hak[5].s[j].x;
+      let j1 = this.hak[1].s[j].x;
+      if (this.hak[2].s[j].x < j1) j1 = this.hak[2].s[j].x;
+      if (this.hak[5].s[j].x < j1) j1 = this.hak[5].s[j].x;
+      this.lf.advanceWindow((j1 - FORA[0]) | 0, (i1 + FORA[0]) | 0, this.hak[5].s[j].y);
+      let k1 = (this.hak[1].s[j].x - this.hak[2].s[j].x) | 0;
+      const l1 = (this.hak[1].s[j].y - this.hak[2].s[j].y) | 0;
+      const i2 = hyp(k1, l1);
+      k1 = fdiv(k1, i2);
+      const j2 = (0 - fdiv(l1, i2)) | 0;
+      const k2 = k1;
+      let l2 = 0, stop = false;
+      while (l2 < 6 && stop === false) {
+        if (l2 === 4 || l2 === 3) {
+          // skip
+        } else {
+          const n1 = this.hak[l2].s[j];
+          if (l2 === 0) { n1.x = (n1.x + fm(j2, ONE)) | 0; n1.y = (n1.y + fm(k2, ONE)) | 0; }
+          const i3 = this.lf.collide(n1, this.hak[l2].radIdx);
+          if (l2 === 0) { n1.x = (n1.x - fm(j2, ONE)) | 0; n1.y = (n1.y - fm(k2, ONE)) | 0; }
+          this.EI = this.lf.eOut; this.CI = this.lf.dOut;
+          if (l2 === 5 && i3 !== 2) this.mZ = true;
+          if (l2 === 1 && i3 !== 2) this.NZ = true;
+          if (i3 === 1) { this.xaI = l2; byte0 = 1; }
+          else if (i3 === 0) { this.xaI = l2; byte0 = 0; stop = true; }
+        }
+        l2 = l2 + 1;
+      }
+      return byte0;
+    }
+    resolve(j) {
+      const n1 = this.hak[this.xaI].s[j];
+      n1.x = (n1.x + fm(this.EI, 3276)) | 0;
+      n1.y = (n1.y + fm(this.CI, 3276)) | 0;
+      let i1 = 0, j1 = 0, l1 = 0, i2 = 0, j2 = 0;
+      if (this.FZ && (this.xaI === 2 || this.xaI === 1) && n1.wv < 6553) {
+        i1 = (this.gI - this.WI) | 0; j1 = 13107; l1 = 39321; i2 = (26214 - this.WI) | 0; j2 = (26214 - this.WI) | 0;
+      } else {
+        i1 = this.gI; j1 = this.fI; l1 = this.eI; i2 = this.aeI; j2 = this.adI;
+      }
+      const k2 = hyp(this.EI, this.CI);
+      this.EI = fdiv(this.EI, k2); this.CI = fdiv(this.CI, k2);
+      const l2 = n1.e, i3 = n1.d;
+      const j3 = (0 - (fm(l2, this.EI) + fm(i3, this.CI))) | 0;
+      const k3 = (0 - (fm(l2, 0 - this.CI) + fm(i3, this.EI))) | 0;
+      const l3 = (fm(i1, n1.wv) - fm(j1, fdiv(k3, this.hak[this.xaI].rad))) | 0;
+      const i4 = (fm(i2, k3) - fm(l1, fm(n1.wv, this.hak[this.xaI].rad))) | 0;
+      const j4 = (0 - fm(j2, j3)) | 0;
+      const k4 = fm(0 - i4, 0 - this.CI);
+      const l4 = fm(0 - i4, this.EI);
+      const i5 = fm(0 - j4, this.EI);
+      const j5 = fm(0 - j4, this.CI);
+      n1.wv = l3; n1.e = (k4 + i5) | 0; n1.d = (l4 + j5) | 0;
+    }
+    finishOut() { return this.hak[1].s[this.waI].x > this.lf.finishPointX() || this.hak[2].s[this.waI].x > this.lf.finishPointX(); }
+    backAtStart() { return this.hak[1].s[this.vaI].x < this.lf.startPointX(); }
+    pvv() {
+      const j = (this.hak[1].s[this.vaI].x - this.hak[2].s[this.vaI].x) | 0;
+      let i1 = (this.hak[1].s[this.vaI].y - this.hak[2].s[this.vaI].y) | 0;
+      const j1 = hyp(j, i1);
+      i1 = fdiv(i1, j1);
+      this.FZ = false;
+      if (i1 < 0) { this.XZ = true; this.wZ = false; }
+      else if (i1 > 0) { this.wZ = true; this.XZ = false; }
+      const s0 = (this.hak[2].s[this.vaI].y - this.hak[0].s[this.vaI].y <= 0) ? -1 : 1;
+      const s1 = (this.hak[2].s[this.vaI].e - this.hak[0].s[this.vaI].e <= 0) ? -1 : 1;
+      const flag = (s0 * s1) > 0;
+      if ((flag && this.wZ) || (flag === false && this.XZ)) this.dZ = true; else this.dZ = false;
+    }
+    qvv() {
+      if (this.IZ) return;
+      let j = (this.hak[1].s[this.vaI].x - this.hak[2].s[this.vaI].x) | 0;
+      let i1 = (this.hak[1].s[this.vaI].y - this.hak[2].s[this.vaI].y) | 0;
+      const j1 = hyp(j, i1);
+      j = fdiv(j, j1); i1 = fdiv(i1, j1);
+      if (this.dZ && this.cI >= 0 - this.QI) this.cI = (this.cI - this.charI) | 0;
+      if (this.FZ) {
+        this.cI = 0;
+        this.hak[1].s[this.vaI].wv = fm(this.hak[1].s[this.vaI].wv, ONE - this.abI);
+        this.hak[2].s[this.vaI].wv = fm(this.hak[2].s[this.vaI].wv, ONE - this.abI);
+        if (this.hak[1].s[this.vaI].wv < 6553) this.hak[1].s[this.vaI].wv = 0;
+        if (this.hak[2].s[this.vaI].wv < 6553) this.hak[2].s[this.vaI].wv = 0;
+      }
+      this.hak[0].invm = fm(11915, this.yI);
+      this.hak[4].invm = fm(18724, this.yI);
+      this.hak[3].invm = fm(18724, this.yI);
+      this.hak[1].invm = fm(43690, this.yI);
+      this.hak[2].invm = fm(11915, this.yI);
+      this.hak[5].invm = fm(14563, this.yI);
+      if (this.XZ) {
+        this.hak[0].invm = fm(18724, this.yI);
+        this.hak[4].invm = fm(14563, this.yI);
+        this.hak[3].invm = fm(18724, this.yI);
+        this.hak[1].invm = fm(43690, this.yI);
+        this.hak[2].invm = fm(10082, this.yI);
+      } else if (this.wZ) {
+        this.hak[0].invm = fm(18724, this.yI);
+        this.hak[4].invm = fm(18724, this.yI);
+        this.hak[3].invm = fm(14563, this.yI);
+        this.hak[1].invm = fm(26214, this.yI);
+        this.hak[2].invm = fm(11915, this.yI);
+      }
+      if (this.XZ || this.wZ) {
+        const k1 = (0 - i1) | 0;
+        const l1 = j;
+        if (this.XZ && this.kI > 0 - this.longI) {
+          let i2 = ONE;
+          if (this.kI < 0) i2 = fdiv((this.longI - iabs(this.kI)) | 0, this.longI);
+          const k2 = fm(this.AI, i2);
+          const i3 = fm(k1, k2), k3 = fm(l1, k2), i4 = fm(j, k2), k4 = fm(i1, k2);
+          if (this.TI > 32768) this.TI = (this.TI - 1638 >= 0) ? (this.TI - 1638) | 0 : 0;
+          else this.TI = (this.TI - 3276 >= 0) ? (this.TI - 3276) | 0 : 0;
+          this.hak[4].s[this.vaI].e = (this.hak[4].s[this.vaI].e - i3) | 0;
+          this.hak[4].s[this.vaI].d = (this.hak[4].s[this.vaI].d - k3) | 0;
+          this.hak[3].s[this.vaI].e = (this.hak[3].s[this.vaI].e + i3) | 0;
+          this.hak[3].s[this.vaI].d = (this.hak[3].s[this.vaI].d + k3) | 0;
+          this.hak[5].s[this.vaI].e = (this.hak[5].s[this.vaI].e - i4) | 0;
+          this.hak[5].s[this.vaI].d = (this.hak[5].s[this.vaI].d - k4) | 0;
+        }
+        if (this.wZ && this.kI < this.longI) {
+          let j2 = ONE;
+          if (this.kI > 0) j2 = fdiv((this.longI - this.kI) | 0, this.longI);
+          const l2 = fm(this.AI, j2);
+          const j3 = fm(k1, l2), l3 = fm(l1, l2), j4 = fm(j, l2), l4 = fm(i1, l2);
+          if (this.TI > 32768) this.TI = (this.TI + 1638 >= ONE) ? ONE : (this.TI + 1638) | 0;
+          else this.TI = (this.TI + 3276 >= ONE) ? ONE : (this.TI + 3276) | 0;
+          this.hak[4].s[this.vaI].e = (this.hak[4].s[this.vaI].e + j3) | 0;
+          this.hak[4].s[this.vaI].d = (this.hak[4].s[this.vaI].d + l3) | 0;
+          this.hak[3].s[this.vaI].e = (this.hak[3].s[this.vaI].e - j3) | 0;
+          this.hak[3].s[this.vaI].d = (this.hak[3].s[this.vaI].d - l3) | 0;
+          this.hak[5].s[this.vaI].e = (this.hak[5].s[this.vaI].e + j4) | 0;
+          this.hak[5].s[this.vaI].d = (this.hak[5].s[this.vaI].d + l4) | 0;
+        }
+      } else {
+        if (this.TI < 26214) this.TI = (this.TI + 3276) | 0;
+        else if (this.TI > 39321) this.TI = (this.TI - 3276) | 0;
+        else this.TI = 32768;
+      }
+    }
+    integrate(j) {
+      const flag = this.RZ;
+      let i1 = 0, j1 = j, ret = -1, guard = 0;
+      while (ret === -1) {
+        guard = guard + 1;
+        if (guard > 4000) ret = 5;
+        if (i1 >= j) ret = 999;
+        else {
+          this.substep((j1 - i1) | 0);
+          let k1 = 0;
+          if (flag === false && this.finishOut()) k1 = 3; else k1 = this.detect(this.waI);
+          if (flag === false && this.RZ) ret = (k1 === 3) ? 1 : 2;
+          else {
+            if (k1 === 0) {
+              j1 = (i1 + j1) >> 1;
+              if (iabs(j1 - i1) < 65) ret = 5;
+            } else if (k1 === 3) {
+              this.RZ = true; j1 = (i1 + j1) >> 1;
+            } else {
+              let broke5 = false;
+              if (k1 === 1) {
+                let i2 = -1, rg = 0;
+                while (i2 !== 2 && broke5 === false) {
+                  this.resolve(this.waI);
+                  const jj = this.detect(this.waI);
+                  i2 = jj;
+                  if (jj === 0) { ret = 5; broke5 = true; }
+                  rg = rg + 1;
+                  if (rg > 48) i2 = 2;
+                }
+              }
+              if (broke5 === false) {
+                i1 = j1; j1 = j;
+                this.vaI = this.vaI !== 1 ? 1 : 0;
+                this.waI = this.waI !== 1 ? 1 : 0;
+              }
+            }
+          }
+        }
+      }
+      if (ret === 999) {
+        const dx = (this.hak[1].s[this.vaI].x - this.hak[2].s[this.vaI].x) | 0;
+        const dy = (this.hak[1].s[this.vaI].y - this.hak[2].s[this.vaI].y) | 0;
+        const l1 = (fm(dx, dx) + fm(dy, dy)) | 0;
+        if (l1 < 0xf0000) this.IZ = true;
+        if (l1 > 0x460000) this.IZ = true;
+        return 0;
+      }
+      return ret;
+    }
+    build(x, y) {
+      for (let j1 = 0; j1 < 6; j1++) {
+        let radIdx = 0, l1 = 0, jx = 0, ky = 0, torque = 0;
+        if (j1 === 0) { radIdx = 1; l1 = 0x58000; jx = 0; ky = 0; }
+        else if (j1 === 4) { radIdx = 1; l1 = 0x38000; jx = 0xfffe0000 | 0; ky = 0x30000; }
+        else if (j1 === 3) { radIdx = 1; l1 = 0x38000; jx = 0x20000; ky = 0x30000; }
+        else if (j1 === 1) { radIdx = 0; l1 = 0x18000; jx = 0x38000; ky = 0; }
+        else if (j1 === 2) { radIdx = 0; l1 = 0x58000; jx = 0xfffc8000 | 0; ky = 0; torque = 21626; }
+        else { radIdx = 2; l1 = 0x48000; jx = 0; ky = 0x50000; }
+        resetNode(this.hak[j1]);
+        this.hak[j1].rad = FORA[radIdx];
+        this.hak[j1].radIdx = radIdx;
+        const inner = Number(BigInt.asIntN(32, (0x1000000000000n / BigInt(l1)) >> 16n));
+        this.hak[j1].invm = fm(inner, this.yI);
+        this.hak[j1].torque = torque;
+        this.hak[j1].s[this.vaI].x = (x + jx) | 0; this.hak[j1].s[this.vaI].y = (y + ky) | 0;
+        this.hak[j1].s[5].x = (x + jx) | 0; this.hak[j1].s[5].y = (y + ky) | 0;
+      }
+      for (let k1 = 0; k1 < 10; k1++) { resetVec(this.ian[k1]); this.ian[k1].x = this.qI; this.ian[k1].wang = this.xI; }
+      this.ian[0].y = 0x38000; this.ian[1].y = 0x38000; this.ian[2].y = 0x39b05; this.ian[3].y = 0x39b05; this.ian[4].y = 0x40000;
+      this.ian[5].y = 0x35aa6; this.ian[6].y = 0x35aa6; this.ian[7].y = 0x2d413; this.ian[8].y = 0x2d413; this.ian[9].y = 0x50000;
+      this.ian[5].wang = fm(this.xI, 45875);
+      this.ian[6].x = fm(6553, this.qI); this.ian[5].x = fm(6553, this.qI);
+      this.ian[9].x = fm(0x11999, this.qI); this.ian[8].x = fm(0x11999, this.qI); this.ian[7].x = fm(0x11999, this.qI);
+    }
+    snap() {
+      for (let j = 0; j < 6; j++) {
+        this.hak[j].s[5].x = this.hak[j].s[this.vaI].x;
+        this.hak[j].s[5].y = this.hak[j].s[this.vaI].y;
+        this.hak[j].s[5].wang = this.hak[j].s[this.vaI].wang;
+      }
+      this.hak[0].s[5].e = this.hak[0].s[this.vaI].e;
+      this.hak[0].s[5].d = this.hak[0].s[this.vaI].d;
+      this.hak[2].s[5].wv = this.hak[2].s[this.vaI].wv;
+    }
+    reset() {
+      this.tI = 0;
+      this.build(this.lf.spawnX(), this.lf.spawnY());
+      this.cI = 0; this.kI = 0;
+      this.IZ = false; this.mZ = false; this.RZ = false; this.NZ = false; this.vZ = false; this.bZ = false; this.afZ = false;
+      this.lf.setCull2(((this.hak[2].s[5].x + 0x18000) - FORA[0]) | 0, ((this.hak[1].s[5].x - 0x18000) + FORA[0]) | 0);
+    }
+    setLeague(j) {
+      this.hI = j;
+      this.gI = 45875; this.fI = 13107; this.eI = 39321; this.yI = 0x140000; this.xI = 0x40000; this.jI = 6553;
+      if (j === 3) { this.aeI = 32768; this.adI = 32768; this.maxSpin = 0x160000; this.QI = 0x4b00000; this.charI = 0x360000; this.abI = 6553; this.WI = 26214; this.AI = 0x10000; this.longI = 0x140000; this.qI = 0x14a0000; }
+      else if (j === 2) { this.aeI = 32768; this.adI = 32768; this.maxSpin = 0x140000; this.QI = 0x47e0000; this.charI = 0x350000; this.abI = 6553; this.WI = 26214; this.AI = 39321; this.longI = 0x50000; this.qI = 0x14a0000; }
+      else if (j === 1) { this.aeI = 32768; this.adI = 32768; this.maxSpin = 0x110000; this.QI = 0x3e80000; this.charI = 0x320000; this.abI = 6553; this.WI = 26214; this.AI = 26214; this.longI = 0x50000; this.qI = 0x12c0000; }
+      else { this.aeI = 19660; this.adI = 19660; this.maxSpin = 0x110000; this.QI = 0x3200000; this.charI = 0x320000; this.abI = 327; this.WI = 0; this.AI = 32768; this.longI = 0x50000; this.qI = 0x12c0000; }
+      this.reset();
+    }
+    publish() {
+      for (let j = 0; j < 6; j++) {
+        this.aaan[j].x = this.hak[j].s[5].x; this.aaan[j].y = this.hak[j].s[5].y; this.aaan[j].wang = this.hak[j].s[5].wang;
+      }
+      this.aaan[0].e = this.hak[0].s[5].e; this.aaan[0].d = this.hak[0].s[5].d; this.aaan[2].wv = this.hak[2].s[5].wv;
+    }
+    camX() {
+      if (this.doZ) this.oI = (fdiv(this.aaan[0].e, 0x180000) + fm(this.oI, 57344)) | 0; else this.oI = 0;
+      if (this.oI > this.GI) this.oI = this.GI;
+      if (this.oI < 0 - this.GI) this.oI = (0 - this.GI) | 0;
+      return ((this.aaan[0].x + this.oI) << 2) >> 16;
+    }
+    camY() {
+      if (this.doZ) this.nI = (fdiv(this.aaan[0].d, 0x180000) + fm(this.nI, 57344)) | 0; else this.nI = 0;
+      if (this.nI > this.GI) this.nI = this.GI;
+      if (this.nI < 0 - this.GI) this.nI = (0 - this.GI) | 0;
+      return ((this.aaan[0].y + this.nI) << 2) >> 16;
+    }
+    progress() {
+      const j = this.aaan[1].x >= this.aaan[2].x ? this.aaan[1].x : this.aaan[2].x;
+      if (this.IZ) return this.lf.progressAt(this.aaan[0].x);
+      return this.lf.progressAt(j);
+    }
+    setButtons(j) { this.elseZ = false; this.UZ = false; if ((j & 2) !== 0) this.elseZ = true; if ((j & 1) !== 0) this.UZ = true; }
+    lean(j, i1) {
+      if (this.vZ === false) {
+        this.ifZ = false; this.sZ = false; this.rZ = false; this.OZ = false;
+        if (j > 0) this.ifZ = true; else if (j < 0) this.sZ = true;
+        if (i1 > 0) this.rZ = true; else if (i1 < 0) this.OZ = true;
+      }
+    }
+    release() { this.ifZ = false; this.sZ = false; this.rZ = false; this.OZ = false; }
+    step() {
+      this.dZ = this.ifZ; this.FZ = this.sZ; this.XZ = this.OZ; this.wZ = this.rZ;
+      if (this.vZ) this.pvv();
+      this.qvv();
+      const j = this.integrate(this.YI);
+      if (j === 5 || this.mZ) return 5;
+      if (this.IZ) return 3;
+      if (this.backAtStart()) { this.NZ = false; return 4; }
+      return j;
+    }
+    loadLevel(rawPoints, sx, sy, fx, fy) { this.lf.load(rawPoints, sx, sy, fx, fy); this.reset(); this.snap(); }
+    restart() { this.reset(); this.snap(); }
+    start(league) { this.YI = 1310; this.voidI = 0x190000; this.setLeague(league); this.snap(); }
+    init(league) {
+      for (let i = 0; i < 6; i++) { this.hak[i] = newNode(); this.aaan[i] = newVec(); }
+      for (let i = 0; i < 10; i++) this.ian[i] = newVec();
+      this.lf.init();
+      this.start(league === undefined ? 1 : league);
+    }
+  }
+
+  return { TrackPhys, Physics, FORA, fm, fdiv, hyp, fsin, fcos, iabs, ONE };
+})();
+
+
+/* ===== Play mode: authentic perspective render (1:1 from program.vel) + loop ===== */
+(function () {
+  "use strict";
+  const { fm, fdiv, hyp, fsin, fcos, FORA, ONE } = GDSim;
+  const ELEV = 0x320000, ROADCOL = "#0aa00a";
+  const POSE_WC = [0x2cccc, -39321, 0x40000, 0xfffe0000 | 0, 0x60000, 0xffff0000 | 0, 0x70000, -39321, 0x48000, 6553, 16384, 0xfffdcccd | 0, 13107, 0xfffecccd | 0, 0x46666, 0x14ccc];
+  const POSE_DA = [0x2e666, 0xfffe999a | 0, 0x3e666, 0xfffc6667 | 0, 0x51999, 0xfffe4000 | 0, 0x60000, -42598, 0x49999, 6553, 0x10000, 0xfffecccd | 0, 13107, 0xfffecccd | 0, 0x46666, 0x14ccc];
+  const POSE_MA = [0x26666, 13107, 0x48000, -13107, 0x59999, 0x19999, 0x63333, 0x2b333, 0x54ccc, 0x11999, 39321, 0xfffe8000 | 0, 13107, -52428, 0x46666, 0x14ccc];
+
+  let phys = null, track = null, cv = null, ctx = null, W = 0, H = 0, timer = null, dpr = 1;
+  let camPX = 0, camPY = 0, camCx = 0, camCy = 0;
+  let gas = false, brake = false, leanF = false, leanB = false;
+  let started = false, over = false, finished = false, stateCode = 0, startT = 0, endT = 0, league = 0, trackName = "", frames = 0;
+
+  // ---- world -> screen (program.vel:93-97) ----
+  const sxNode = (wx) => (wx >> 14) - camPX + ((W / 2) | 0);
+  const syNode = (wy) => camPY - (wy >> 14) + ((H / 2) | 0);
+  const sxPt = (px) => (px >> 13) - camPX + ((W / 2) | 0);
+  const syPt = (py) => camPY - (py >> 13) + ((H / 2) | 0);
+
+  // ---- canvas primitives ----
+  function line(x0, y0, x1, y1, col, w) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
+  function rect(x, y, w, h, col) { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); }
+  function circle(cx, cy, r, col, w, fill) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); if (fill) { ctx.fillStyle = col; ctx.fill(); } else { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke(); } }
+
+  // ---- perspective helpers (program.vel:108-175) ----
+  function perspK(px, py, cx, cy) { let r = hyp(cx - px, (cy + ELEV) - py); if (r < 4) r = 4; return r; }
+  function upX(i, cx, cy) { const r = perspK(track.px[i], track.py[i], cx, cy); return sxPt((track.px[i] + fdiv(cx - track.px[i], r >> 2)) | 0); }
+  function upY(i, cx, cy) { const r = perspK(track.px[i], track.py[i], cx, cy); return syPt((track.py[i] + fdiv((cy + ELEV) - track.py[i], r >> 2)) | 0); }
+  function biX(wx, wy) { const px = wx >> 1, py = wy >> 1; const r = perspK(px, py, camCx, camCy); return sxPt((px + (fdiv(camCx - px, r >> 2) >> 1)) | 0); }
+  function biY(wx, wy) { const px = wx >> 1, py = wy >> 1; const r = perspK(px, py, camCx, camCy); return syPt((py + (fdiv((camCy + ELEV) - py, r >> 2) >> 1)) | 0); }
+  function bl(x0, y0, x1, y1, col, w) { line(biX(x0, y0), biY(x0, y0), biX(x1, y1), biY(x1, y1), col, w); }
+
+  function flagP(i, cx, cy, col) { const fx = upX(i, cx, cy), fy = upY(i, cx, cy); line(fx, fy, fx, fy - 40, "#8a8f98", 2); rect(fx, fy - 40, 18, 12, col); }
+
+  function drawTrack() {
+    rect(0, 0, W, H, "#ffffff");
+    const cx = phys.aaan[0].x >> 1, cy = phys.aaan[0].y >> 1;
+    for (let k = 0; k < track.count - 1; k++) {
+      const sx0 = sxPt(track.px[k]), sx1 = sxPt(track.px[k + 1]);
+      if (sx1 >= -48 && sx0 <= W + 48) {
+        const sy0 = syPt(track.py[k]), sy1 = syPt(track.py[k + 1]);
+        const ux0 = upX(k, cx, cy), uy0 = upY(k, cx, cy), ux1 = upX(k + 1, cx, cy), uy1 = upY(k + 1, cx, cy);
+        line(ux0, uy0, ux1, uy1, ROADCOL, 2);
+        line(sx0, sy0, ux0, uy0, ROADCOL, 1);
+        line(sx0, sy0, sx1, sy1, ROADCOL, 2);
+      }
+    }
+    flagP(track.gotoIdx, cx, cy, "#1565c0");
+    flagP(track.finIdx, cx, cy, "#c62828");
+  }
+
+  function drawWheelP(nx, ny, ang, spokeCol) {
+    let l1 = fm(FORA[0], 58982), i2 = 0;
+    const c = fcos(ang), s = fsin(ang);
+    let i3 = l1; l1 = (fm(c, l1) - fm(s, i2)) | 0; i2 = (fm(s, i3) + fm(c, i2)) | 0;
+    const c2 = fcos(0x141b2), s2 = fsin(0x141b2);
+    for (let k = 0; k < 5; k++) {
+      bl(nx, ny, (nx + l1) | 0, (ny + i2) | 0, spokeCol, 1);
+      i3 = l1; l1 = (fm(c2, l1) - fm(s2, i2)) | 0; i2 = (fm(s2, i3) + fm(c2, i2)) | 0;
+    }
+    circle(biX(nx, ny), biY(nx, ny), FORA[0] >> 14, "#111111", 2, false);
+    circle(biX(nx, ny), biY(nx, ny), 2, "#111111", 0, true);
+  }
+
+  function drawFrame(fdx, fdy, pdx, pdy) {
+    const a = phys.aaan;
+    const rwx = a[2].x, rwy = a[2].y;
+    const k2 = (rwx + fm(pdx, 32768)) | 0, l2 = (rwy + fm(pdy, 32768)) | 0;
+    const i3 = (rwx - fm(pdx, 32768)) | 0, j3 = (rwy - fm(pdy, 32768)) | 0;
+    const k3 = (a[0].x + fm(fdx, 32768)) | 0, l3 = (a[0].y + fm(fdy, 32768)) | 0;
+    const i4 = (k3 - fm(fdx, 0x20000)) | 0, j4 = (l3 - fm(fdy, 0x20000)) | 0;
+    const k4 = (i4 + fm(pdx, 0x10000)) | 0, l4 = (j4 + fm(pdy, 0x10000)) | 0;
+    const i5 = (i4 + fm(fdx, 49152) + fm(pdx, 49152)) | 0, j5 = (j4 + fm(fdy, 49152) + fm(pdy, 49152)) | 0;
+    const i6 = a[1].x, j6 = a[1].y;
+    const k6 = (a[4].x - fm(fdx, 49152)) | 0, l6 = (a[4].y - fm(fdy, 49152)) | 0;
+    const i7 = (k6 - fm(pdx, 32768)) | 0, j7 = (l6 - fm(pdy, 32768)) | 0;
+    const k7 = ((k6 - fm(fdx, 0x20000)) + fm(pdx, 16384)) | 0, l7 = ((l6 - fm(fdy, 0x20000)) + fm(pdy, 16384)) | 0;
+    const i8 = a[3].x, j8 = a[3].y;
+    const i9 = ((i8 + fm(pdx, 0x1c000)) - fm(fdx, 32768)) | 0, j9 = ((j8 + fm(pdy, 0x1c000)) - fm(fdy, 32768)) | 0;
+    const C = "#20242c";
+    if (!phys.IZ) { bl(k2, l2, k4, l4, C, 2); bl(i3, j3, i4, j4, C, 2); }
+    bl(k3, l3, i4, j4, C, 2); bl(k3, l3, i8, j8, C, 2); bl(i5, j5, i8, j8, C, 2);
+    if (!phys.IZ) { bl(i8, j8, i6, j6, C, 2); bl(i9, j9, i6, j6, C, 2); }
+    bl(k4, l4, i7, j7, C, 2); bl(i5, j5, k6, l6, C, 2); bl(k6, l6, k7, l7, C, 2); bl(i7, j7, k7, l7, C, 2);
+  }
+
+  function drawRider(fdx, fdy, pdx, pdy) {
+    const a = phys.aaan, bx = a[0].x, by = a[0].y, ti = phys.TI;
+    const rx = new Array(8), ry = new Array(8);
+    for (let k = 0; k < 8; k++) {
+      let poseX = POSE_WC[k * 2], poseY = POSE_WC[k * 2 + 1];
+      if (ti < 32768) { const t = fm(ti, 0x20000); poseX = (fm(POSE_DA[k * 2], 0x10000 - t) + fm(POSE_WC[k * 2], t)) | 0; poseY = (fm(POSE_DA[k * 2 + 1], 0x10000 - t) + fm(POSE_WC[k * 2 + 1], t)) | 0; }
+      else if (ti > 32768) { const t = fm(ti - 32768, 0x20000); poseX = (fm(POSE_WC[k * 2], 0x10000 - t) + fm(POSE_MA[k * 2], t)) | 0; poseY = (fm(POSE_WC[k * 2 + 1], 0x10000 - t) + fm(POSE_MA[k * 2 + 1], t)) | 0; }
+      rx[k] = (bx + fm(pdx, poseX) + fm(fdx, poseY)) | 0;
+      ry[k] = (by + fm(pdy, poseX) + fm(fdy, poseY)) | 0;
+    }
+    bl(rx[5], ry[5], rx[0], ry[0], "#111111", 3);
+    bl(rx[0], ry[0], rx[1], ry[1], "#111111", 3);
+    bl(rx[1], ry[1], rx[2], ry[2], "#20408a", 4);
+    bl(rx[2], ry[2], rx[4], ry[4], "#20408a", 3);
+    bl(rx[4], ry[4], rx[7], ry[7], "#111111", 3);
+    const hx = biX(rx[3], ry[3]), hy = biY(rx[3], ry[3]);
+    circle(hx, hy, 4, "#c62828", 0, true); circle(hx, hy, 4, "#111111", 1, false);
+  }
+
+  function drawBike() {
+    let fdx = (phys.aaan[3].x - phys.aaan[4].x) | 0, fdy = (phys.aaan[3].y - phys.aaan[4].y) | 0;
+    const fl = hyp(fdx, fdy);
+    if (fl !== 0) { fdx = fdiv(fdx, fl); fdy = fdiv(fdy, fl); }
+    const pdx = (0 - fdy) | 0, pdy = fdx;
+    drawWheelP(phys.aaan[1].x, phys.aaan[1].y, phys.aaan[1].wang, "#555555");
+    drawWheelP(phys.aaan[2].x, phys.aaan[2].y, phys.aaan[2].wang, "#555555");
+    drawFrame(fdx, fdy, pdx, pdy);
+    drawRider(fdx, fdy, pdx, pdy);
+  }
+
+  function drawHud() {
+    const pr = phys.progress();
+    const barW = fm(pr, W * ONE) >> 16;
+    rect(0, 0, W, 4, "#e0e0e0"); rect(0, 0, barW, 4, "#29aa27");
+    const t = Math.floor(frames * 3);   // deterministic: one 30 ms frame -> 3 deci-seconds
+    ctx.fillStyle = "#111111"; ctx.font = "600 15px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillText("TIME " + t, 10, 24);
+    ctx.fillStyle = "#666666"; ctx.font = "13px system-ui, sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(trackName, W - 10, 22);
+    if (over) {
+      const big = finished ? ("FINISH!  " + t) : "CRASHED";
+      const col = finished ? "#1565c0" : "#c62828";
+      const sub = finished ? "R / Space — restart" : "R / Space — restart";
+      ctx.fillStyle = "rgba(255,255,255,0.82)"; ctx.fillRect(0, (H / 2 - 46) | 0, W, 92);
+      ctx.textAlign = "center"; ctx.fillStyle = col; ctx.font = "700 30px system-ui, sans-serif"; ctx.fillText(big, W / 2, H / 2);
+      ctx.fillStyle = "#333333"; ctx.font = "14px system-ui, sans-serif"; ctx.fillText(sub, W / 2, H / 2 + 30);
+    }
+  }
+
+  function draw() {
+    phys.publish();
+    camPX = phys.camX(); camPY = phys.camY();
+    camCx = phys.aaan[0].x >> 1; camCy = phys.aaan[0].y >> 1;
+    drawTrack(); drawBike(); drawHud();
+  }
+
+  function applyInput() {
+    const j = gas ? 1 : (brake ? -1 : 0);
+    const i = leanF ? 1 : (leanB ? -1 : 0);
+    phys.lean(j, i);
+    phys.setButtons(gas ? 1 : 0);
+    if (gas || brake) { started = true; if (startT === 0) startT = performance.now(); }
+  }
+
+  function stepFrame() {
+    if (cv && (cv.clientWidth !== W || cv.clientHeight !== H)) resizeCanvas();
+    if (!over) {
+      applyInput();
+      for (let n = 0; n < 2 && !over; n++) {
+        stateCode = phys.step(); phys.snap();
+        if (stateCode === 1 || stateCode === 2) { over = true; finished = true; if (endT === 0) endT = performance.now(); }
+        else if (stateCode === 3 || stateCode === 5) { over = true; finished = false; if (endT === 0) endT = performance.now(); }
+      }
+      if (started && !over) frames = frames + 1;
+    }
+    draw();
+  }
+
+  function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function loadInto(t) {
+    track = new GDSim.TrackPhys();
+    phys = new GDSim.Physics(track);
+    phys.init(league);
+    phys.loadLevel(t.points, t.startX, t.startY, t.finishX, t.finishY);
+    started = false; over = false; finished = false; stateCode = 0; startT = 0; endT = 0; frames = 0;
+    gas = brake = leanF = leanB = false;
+    trackName = t.name;
+  }
+
+  let curTrack = null;
+  function onKey(e) {
+    const k = e.key;
+    if (k === "Escape") { stopPlay(); return; }
+    if (over && (k === "r" || k === "R" || k === " " || k === "Enter")) { e.preventDefault(); loadInto(curTrack); return; }
+    if (k === "r" || k === "R") { e.preventDefault(); loadInto(curTrack); return; }
+    if (k === "ArrowUp" || k === "w" || k === "W") { gas = true; e.preventDefault(); }
+    else if (k === "ArrowDown" || k === "s" || k === "S") { brake = true; e.preventDefault(); }
+    else if (k === "ArrowLeft" || k === "a" || k === "A") { leanB = true; e.preventDefault(); }
+    else if (k === "ArrowRight" || k === "d" || k === "D") { leanF = true; e.preventDefault(); }
+  }
+  function onKeyUp(e) {
+    const k = e.key;
+    if (k === "ArrowUp" || k === "w" || k === "W") gas = false;
+    else if (k === "ArrowDown" || k === "s" || k === "S") brake = false;
+    else if (k === "ArrowLeft" || k === "a" || k === "A") leanB = false;
+    else if (k === "ArrowRight" || k === "d" || k === "D") leanF = false;
+  }
+
+  function startPlay(t) {
+    if (!t || !t.points || t.points.length < 2) { alert("Track needs at least 2 points to play."); return; }
+    curTrack = t;
+    const ov = document.getElementById("playOverlay");
+    ov.classList.add("show");
+    cv = document.getElementById("playCanvas"); ctx = cv.getContext("2d");
+    const sel = document.getElementById("playLeague");
+    league = t.league | 0; sel.value = String(league);
+    document.getElementById("playTitle").textContent = t.name;
+    resizeCanvas();
+    loadInto(t);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("keyup", onKeyUp);
+    window.addEventListener("resize", resizeCanvas);
+    if (timer) clearInterval(timer);
+    timer = setInterval(stepFrame, 30);
+    draw();
+  }
+  function stopPlay() {
+    if (timer) { clearInterval(timer); timer = null; }
+    document.removeEventListener("keydown", onKey);
+    document.removeEventListener("keyup", onKeyUp);
+    window.removeEventListener("resize", resizeCanvas);
+    const ov = document.getElementById("playOverlay"); if (ov) ov.classList.remove("show");
+    phys = null; track = null;
+  }
+
+  // wire the overlay's own controls
+  document.addEventListener("DOMContentLoaded", () => {});
+  window.__gdPlay = {
+    start: startPlay, stop: stopPlay,
+    setLeague(n) { league = n | 0; if (curTrack) loadInto(curTrack); },
+    restart() { if (curTrack) loadInto(curTrack); },
+    // touch controls
+    press(btn, on) {
+      if (btn === "gas") gas = on; else if (btn === "brake") brake = on;
+      else if (btn === "leanB") leanB = on; else if (btn === "leanF") leanF = on;
+      if (on && (btn === "gas" || btn === "brake")) { started = true; if (startT === 0) startT = performance.now(); }
+      if (over && on) loadInto(curTrack);
+    }
+  };
+})();
+
 
 /* ---- boot -------------------------------------------------------------- */
 wireUI();
