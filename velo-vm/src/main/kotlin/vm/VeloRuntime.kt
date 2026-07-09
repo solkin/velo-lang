@@ -82,12 +82,13 @@ class VeloRuntime(
     }
 
     /**
-     * Inject a host actor-placement backend instead of the default
-     * thread-per-actor — the threading SPI. [factory] is a provider so each
-     * [run] / [start] gets its own backend (e.g. a fresh pool), torn down when
-     * the program stops. The concrete JVM pool lives in the CLI host
-     * (`host.PooledDispatcherFactory`); the VM core stays thread-agnostic. Safe
-     * to pool because a parked `await` (VEL-11) frees the backing thread.
+     * Inject a host actor-placement backend instead of the default cooperative
+     * placement (all actors share the single event loop, no host threads) — the
+     * threading SPI. [factory] is a provider so each [run] / [start] gets its
+     * own backend (e.g. a fresh pool), torn down when the program stops. The
+     * concrete JVM pool lives in the CLI host (`host.PooledDispatcherFactory`);
+     * the VM core stays thread-agnostic. Safe to pool because a parked `await`
+     * (VEL-11) frees the backing thread.
      */
     fun actorPlacement(factory: () -> DispatcherFactory): VeloRuntime {
         actorDispatcherFactory = factory
