@@ -115,7 +115,11 @@ class Vm2FuzzTest {
                 // here — count it so a generator regression stays visible.
                 legacy is Outcome.Hung && fresh is Outcome.Hung -> { bothFailed++; false }
                 legacy is Outcome.Done && fresh is Outcome.Done &&
-                    legacy.err != null && fresh.err != null -> { bothFailed++; false }
+                    legacy.err != null && fresh.err != null -> {
+                    // Both raised: not a kind-divergence, but the stdout printed
+                    // before the fault must still match (error *text* is not compared).
+                    bothFailed++; legacy.out != fresh.out
+                }
                 legacy is Outcome.Done && fresh is Outcome.Done ->
                     legacy.err != null || fresh.err != null || legacy.out != fresh.out
                 else -> true // exactly one hung
@@ -160,7 +164,7 @@ private val NUM = listOf(Ty.BYTE, Ty.INT, Ty.LONG, Ty.FLOAT)
 
 private data class V(val name: String, val ty: Ty, val mutable: Boolean = true)
 private data class Fn(val name: String, val params: List<Ty>, val ret: Ty)
-private data class Method(val name: String, val params: List<Ty>, val ret: Ty)
+private data class Method(val name: String, val params: List<Ty>, val ret: Ty, val callback: Boolean = false)
 private data class ActorDef(val name: String, val ctor: List<Ty>, val methods: List<Method>)
 
 /**
@@ -199,6 +203,11 @@ private class Generator(private val rnd: Random) {
         for (v in scope) line("term.println((${v.name}).str());")
         return sb.toString()
     }
+    // NOTE: intentionally no faulting programs. A top-level uncaught error is an
+    // embedding-contract difference, not a computational one — vm.run() swallows
+    // it (prints a dump, returns), vm2.run() propagates it as a VeloError. That
+    // divergence is real and tracked for stage A2 (reconcile before the CLI
+    // switch), but stdout-differential fuzzing is the wrong tool to assert on it.
 
     // ---- statements -------------------------------------------------------
 
@@ -346,8 +355,12 @@ private class Generator(private val rnd: Random) {
         repeat(rnd.nextInt(1, 4)) {
             val mparams = List(rnd.nextInt(0, 3)) { pick(NUM) }
             val pnames = mparams.mapIndexed { i, t -> "q$i" to t }
-            val ret = pick(NUM)
-            line("func m${methods.size}(${pnames.joinToString(", ") { "${it.second.kw} ${it.first}" }}) ${ret.kw} {")
+            // A quarter of methods take a void callback they fire once — exercises
+            // the reentrant callback path (VEL-11), where vm and vm2 differ inside.
+            val callback = chance(0.25)
+            val ret = if (callback) Ty.INT else pick(NUM)
+            val extra = if (callback) (if (pnames.isEmpty()) "" else ", ") + "func[(int) void] cb" else ""
+            line("func m${methods.size}(${pnames.joinToString(", ") { "${it.second.kw} ${it.first}" }}$extra) ${if (callback) "void" else ret.kw} {")
             // Body sees the fields (mutable) and the params (read-only). fns is
             // still empty here (actors are emitted first), so no top-level calls.
             val saved = ArrayList(scope); scope.clear()
@@ -355,11 +368,12 @@ private class Generator(private val rnd: Random) {
             pnames.forEach { scope += V(it.first, it.second, mutable = false) }
             indent++
             repeat(rnd.nextInt(0, 3)) { assignStmt() }
-            line("return ${expr(ret, 3)};")
+            if (callback) { line("cb(${numExpr(Ty.INT, 2)});"); line("void") }
+            else line("return ${expr(ret, 3)};")
             indent--
             scope.clear(); scope.addAll(saved)
             line("};")
-            methods += Method("m${methods.size}", mparams, ret)
+            methods += Method("m${methods.size}", mparams, ret, callback)
         }
         indent--
         line("};")
@@ -381,6 +395,14 @@ private class Generator(private val rnd: Random) {
     private fun actorCallStmt() {
         val (vn, def) = actorVars.randomOrNullBy() ?: return
         val m = def.methods.randomOrNullBy() ?: return
+        if (m.callback) {
+            // The fired callback prints on main while it is parked in `await` —
+            // deterministic in order, but a reentrancy divergence would show here.
+            val cx = fresh("cx")
+            val lead = m.params.joinToString("") { exactArg(it, 2) + ", " }
+            line("await async $vn.${m.name}(${lead}func(int $cx) void { term.println(\"cb \".con($cx.str())); void });")
+            return
+        }
         val args = m.params.joinToString(", ") { exactArg(it, 2) }
         val rn = fresh("r")
         if (chance(0.3)) {
