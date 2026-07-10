@@ -90,6 +90,10 @@ class VM(
             } else {
                 System.err.println("\n!! Runtime error: ${ex.message ?: ex}")
             }
+            // Print the dump for diagnostics, then propagate: an embedding host
+            // must be able to tell a crash from a clean finish (RunStats is a lie
+            // otherwise). Matches vm2, whose run() rethrows the main failure.
+            throw ex
         } finally {
             actorRuntime.shutdownAll()
         }

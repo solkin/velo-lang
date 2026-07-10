@@ -42,6 +42,13 @@ fun main(args: Array<String>) {
         println("Bytecode written: ${file.length()} bytes")
     } else {
         println()
-        VeloRuntime(natives).run(program)
+        try {
+            VeloRuntime(natives).run(program)
+        } catch (ex: Throwable) {
+            // The VM already printed a diagnostic dump; surface a terse status
+            // and a non-zero exit so scripts and CI see the failure.
+            System.err.println("Program failed: ${ex.message ?: ex}")
+            kotlin.system.exitProcess(1)
+        }
     }
 }
