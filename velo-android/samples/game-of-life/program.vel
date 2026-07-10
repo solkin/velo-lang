@@ -56,6 +56,7 @@ int resizeSeq = 0;
 int fps = 0;
 int frameCount = 0;
 int fpsStamp = 0;
+int periodAccum = 0;
 
 func recomputeGeometry() void {
     cell = BOARD_PX_W / cols;
@@ -253,6 +254,13 @@ actor class LifeEngine(int width, int height) {
 
     func resize(int nw, int nh) array[int] {
         array[int] next = new array[int](nw * nh);
+        # Sized arrays contain empty cells by contract. Initialise the whole
+        # expanded board before copying the overlap from the old field.
+        int fill = 0;
+        while (fill < next.len()) {
+            next[fill] = 0;
+            fill += 1;
+        };
         int copyW = if (nw < w) then nw else w;
         int copyH = if (nh < h) then nh else h;
         int y = 0;
@@ -523,20 +531,40 @@ while (pi < PATTERN_COUNT) {
 
 func onTimer(int token) void {
     if (playing & token == playToken) {
-        current = await async engine.step();
-        render(current);
-        frameCount += 1;
-        int now = time.unix();
-        if (now - fpsStamp >= 1) {
-            fps = frameCount;
-            frameCount = 0;
-            fpsStamp = now;
-            fpsLabel.text(fps.str());
+        int frameStart = time.millis();
+        array[int] stepped = await async engine.step();
+        # An await pumps UI callbacks. A resize/clear may therefore invalidate
+        # this in-flight snapshot while the actor is stepping; check the token
+        # again before rendering or scheduling the next tick.
+        if (playing & token == playToken) {
+            current = stepped;
+            render(current);
+            # Real frame rate over a millisecond window: frames * 1000 / elapsed ms.
+            frameCount += 1;
+            int now = time.millis();
+            int elapsed = now - fpsStamp;
+            if (elapsed >= 500) {
+                fps = frameCount * 1000 / elapsed;
+                frameCount = 0;
+                fpsStamp = now;
+                fpsLabel.text(fps.str());
+            };
+            # Frame limiter. The target period is 1000/genPerSec ms, spread exactly
+            # with a remainder carry so integer rounding never accumulates; then
+            # subtract the time already spent stepping and rendering, so the achieved
+            # rate tracks the requested speed instead of drifting slower.
+            periodAccum += 1000;
+            int period = periodAccum / genPerSec;
+            periodAccum -= period * genPerSec;
+            int delay = period - (now - frameStart);
+            if (delay < 1) {
+                delay = 1;
+            };
+            async ticker.after(delay, token, func(int t) void {
+                onTimer(t);
+                void
+            });
         };
-        async ticker.after(1000 / genPerSec, token, func(int t) void {
-            onTimer(t);
-            void
-        });
     };
     void
 };
@@ -548,6 +576,10 @@ func applyResize(int newCols) void {
     if (nc != cols) {
         cols = nc;
         recomputeGeometry();
+        # Invalidate a step that may currently be parked at await. The latest
+        # resize restarts the animation after its new snapshot is installed.
+        playToken += 1;
+        int resizeToken = playToken;
         # Dragging the slider fires many resizes that overlap on the await; each
         # one updates the geometry up front, so a late reply from an earlier,
         # smaller board would be rendered against the newer (larger) geometry and
@@ -559,6 +591,12 @@ func applyResize(int newCols) void {
             current = snap;
             render(current);
             updateCaption();
+            if (playing) {
+                async ticker.after(1000 / genPerSec, resizeToken, func(int t) void {
+                    onTimer(t);
+                    void
+                });
+            };
         };
     };
     void
@@ -648,7 +686,8 @@ playFab.onClick(func() void {
         playToken += 1;
         playFab.icon(icons.pause());
         frameCount = 0;
-        fpsStamp = time.unix();
+        fpsStamp = time.millis();
+        periodAccum = 0;
         int token = playToken;
         async ticker.after(1000 / genPerSec, token, func(int t) void {
             onTimer(t);
@@ -718,7 +757,7 @@ board.onPointerMove(func(int x, int y) void {
 
 render(current);
 updateCaption();
-fpsStamp = time.unix();
+fpsStamp = time.millis();
 ui.open(root);
 
 term.println("Game of Life opened.");
