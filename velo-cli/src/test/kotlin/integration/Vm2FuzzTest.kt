@@ -192,6 +192,10 @@ private class Generator(private val rnd: Random) {
     private fun <T> List<T>.randomOrNullBy(): T? = if (isEmpty()) null else this[rnd.nextInt(size)]
 
     fun program(): String {
+        // In error mode the program prints all its values, then faults. Both VMs
+        // now propagate an uncaught error from run() (contract reconciled), so
+        // this asserts they raise alike after an identical stdout prefix.
+        val errorMode = chance(0.12)
         line("Terminal term = new Terminal();")
         repeat(rnd.nextInt(0, 2)) { actorDecl() }
         repeat(rnd.nextInt(0, 3)) { topLevelFunc() }
@@ -201,13 +205,21 @@ private class Generator(private val rnd: Random) {
         repeat(rnd.nextInt(4, 10)) { stmt(depth = 2) }
         // Print every surviving top-level variable, in declaration order.
         for (v in scope) line("term.println((${v.name}).str());")
+        if (errorMode) emitFault()
         return sb.toString()
     }
-    // NOTE: intentionally no faulting programs. A top-level uncaught error is an
-    // embedding-contract difference, not a computational one — vm.run() swallows
-    // it (prints a dump, returns), vm2.run() propagates it as a VeloError. That
-    // divergence is real and tracked for stage A2 (reconcile before the CLI
-    // switch), but stdout-differential fuzzing is the wrong tool to assert on it.
+
+    /** A guaranteed fault — an actor method reading out of bounds (surfaces
+     *  through await), else a plain out-of-bounds read on main. */
+    private fun emitFault() {
+        val a = actorVars.randomOrNullBy()
+        if (a != null) {
+            line("term.println((await async ${a.first}.boom()).str());")
+        } else {
+            line("array[int] boom = new array[int]{};")
+            line("term.println((boom[0]).str());")
+        }
+    }
 
     // ---- statements -------------------------------------------------------
 
@@ -375,6 +387,9 @@ private class Generator(private val rnd: Random) {
             line("};")
             methods += Method("m${methods.size}", mparams, ret, callback)
         }
+        // A faulting method (out-of-bounds), never in `methods` so normal calls
+        // skip it — invoked only in error mode to check both VMs raise alike.
+        line("func boom() int { array[int] xs = new array[int]{}; return xs[0]; };")
         indent--
         line("};")
         actors += ActorDef(name, ctor, methods)
