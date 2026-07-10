@@ -1,6 +1,6 @@
 {
   "id": "catacomb",
   "name": "Catacomb",
-  "description": "A fixed-point Wolfenstein-style raycaster on Canvas with textured walls, sliding doors, patrolling guards and a pistol — no floats or trig natives.",
+  "description": "A fixed-point Wolfenstein-style raycaster: textured walls, sliding doors, guards and a pistol.",
   "interactive": true
 }

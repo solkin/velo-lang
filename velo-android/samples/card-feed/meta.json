@@ -1,6 +1,6 @@
 {
   "id": "card-feed",
   "name": "Card Feed",
-  "description": "A scrolling Material3 feed where each card is a different Velo class behind one `interface Card`, driven by a heterogeneous array[Card].",
+  "description": "A scrolling Material3 feed where every card is a different class behind one interface.",
   "interactive": true
 }

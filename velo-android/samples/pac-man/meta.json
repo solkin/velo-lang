@@ -1,6 +1,6 @@
 {
   "id": "pac-man",
   "name": "Pac-Man",
-  "description": "The 1980 Pac-Man: the blue maze, pellets and energizers, four ghosts with distinct personalities, frightened mode, warp tunnel and score.",
+  "description": "The 1980 Pac-Man: the maze, four ghosts with distinct personalities, frightened mode, warp tunnel.",
   "interactive": true
 }

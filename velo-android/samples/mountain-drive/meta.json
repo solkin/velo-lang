@@ -1,6 +1,6 @@
 {
   "id": "mountain-drive",
   "name": "Mountain Drive",
-  "description": "A first-person arcade racer on a from-scratch fixed-point pseudo-3D road engine, with curves, hills, scrolling scenery and a live dashboard.",
+  "description": "A pseudo-3D arcade racer on a from-scratch fixed-point road engine, with a live dashboard.",
   "interactive": true
 }

@@ -1,6 +1,6 @@
 {
   "id": "qr-code",
   "name": "QR Generator",
-  "description": "A Material3 app that turns text into a scannable QR code, with the full QR standard (Reed-Solomon, masking, BCH) implemented in Velo.",
+  "description": "Turns text into a scannable QR code, the full standard implemented in Velo.",
   "interactive": true
 }

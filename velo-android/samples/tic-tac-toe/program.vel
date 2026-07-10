@@ -1,108 +1,437 @@
+# Tic-Tac-Toe — you (X) against the machine (O), on a native Material3 screen. You always move
+# first; the computer answers after a short "thinking" pause so a turn reads the way a real
+# opponent would. The board is a Canvas (a light grid, primary-tinted crosses, tertiary rings,
+# a coloured stroke through the winning three); a status line and three score tiles sit above it.
+#
+# The opponent is a classic minimax search: it plays the whole game out in its head, scoring a
+# win as +10 and a loss as -10, discounted by depth so it grabs the fastest win and stalls the
+# slowest loss. That makes "Unbeatable" literally unbeatable — perfect play from the second seat
+# can only be forced to a draw. "Normal" runs the same search but slips into a random move now
+# and then, which is the exact crack a human needs to sneak a win; "Easy" just plays at random.
+# The move is chosen on the main actor, with a one-shot Timer actor supplying the delay.
+
+import "std/random";
+
 Terminal term = new Terminal();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
+Random rng = new Random(new Time().unix());
 
-# 3x3 game board initialized with empty cells
-array[array[str]] board = new array[array[str]]{
-    new array[str]{" ", " ", " "},
-    new array[str]{" ", " ", " "},
-    new array[str]{" ", " ", " "}
+# ---- marks & geometry ---------------------------------------------------------------------
+int EMPTY = 0;
+int YOU = 1;                 # X, human, always first
+int CPU = 2;                 # O, minimax
+int BOARD = 300;             # canvas is square
+int CELL = BOARD / 3;        # 100 dp per cell
+
+# The eight winning triples (three rows, three columns, two diagonals), flattened.
+array[int] LINES = new array[int]{
+    0, 1, 2,   3, 4, 5,   6, 7, 8,
+    0, 3, 6,   1, 4, 7,   2, 5, 8,
+    0, 4, 8,   2, 4, 6
 };
 
-# Print the current state of the board
-func printBoard() void {
-    term.println("  0   1   2");
-    term.println("0  ".con(board[0][0]).con(" | ").con(board[0][1]).con(" | ").con(board[0][2]));
-    term.println("  ---+---+---");
-    term.println("1  ".con(board[1][0]).con(" | ").con(board[1][1]).con(" | ").con(board[1][2]));
-    term.println("  ---+---+---");
-    term.println("2  ".con(board[2][0]).con(" | ").con(board[2][1]).con(" | ").con(board[2][2]));
-    void;
+# ---- game state ---------------------------------------------------------------------------
+array[int] cells = new array[int](9);   # EMPTY / YOU / CPU
+bool over = false;
+bool yourTurn = true;
+int winner = 0;                          # 0 none-or-draw, YOU, or CPU
+int winA = 0 - 1;                        # ends of the winning triple, or -1
+int winC = 0 - 1;
+int wins = 0;
+int draws = 0;
+int losses = 0;
+int difficulty = 1;                      # 0 Easy, 1 Normal, 2 Unbeatable
+int moveToken = 0;                       # bumped to cancel a pending computer move
+
+# ---- a one-shot timer actor: the computer's "thinking" delay -------------------------------
+actor class Timer() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
 };
 
-# Check if three cells contain the same non-empty mark
-func checkLine(str a, str b, str c) bool {
-    return a != " " & a == b & b == c;
+actor[Timer] thinker = new Timer();
+
+# ---- widgets ------------------------------------------------------------------------------
+Container root = ui.column().fillWidth().fillHeight();
+AppBar bar = ui.appBar("Tic-Tac-Toe");
+root.add(bar);
+
+Container scroller = ui.scroll().weight(1);
+root.add(scroller);
+Container content = ui.column().padding(16).gap(16).fillWidth().center();
+scroller.add(content);
+
+Text status = ui.text("Your move").style(styles.titleLarge()).bold();
+content.add(status);
+
+# One score tile: a rounded surface with a small caption over a big number.
+func scoreTile(str label, Text value, str tint) Surface {
+    Surface tile = ui.surface().corner(16).weight(1);
+    tile.elevation(2);
+    Container col = ui.column().padding(12).gap(2).center();
+    col.add(ui.text(label).style(styles.labelSmall()).color(tint));
+    col.add(value);
+    tile.add(col);
+    return tile;
 };
 
-# Check all winning combinations for the given player
-func checkWinner(str player) bool {
-    bool win = false;
-    # Rows
-    if (checkLine(board[0][0], board[0][1], board[0][2])) { win = true; };
-    if (checkLine(board[1][0], board[1][1], board[1][2])) { win = true; };
-    if (checkLine(board[2][0], board[2][1], board[2][2])) { win = true; };
-    # Columns
-    if (checkLine(board[0][0], board[1][0], board[2][0])) { win = true; };
-    if (checkLine(board[0][1], board[1][1], board[2][1])) { win = true; };
-    if (checkLine(board[0][2], board[1][2], board[2][2])) { win = true; };
-    # Diagonals
-    if (checkLine(board[0][0], board[1][1], board[2][2])) { win = true; };
-    if (checkLine(board[0][2], board[1][1], board[2][0])) { win = true; };
-    return win;
+Text youScore = ui.text("0").style(styles.headlineSmall()).bold();
+Text drawScore = ui.text("0").style(styles.headlineSmall()).bold();
+Text cpuScore = ui.text("0").style(styles.headlineSmall()).bold();
+
+Container scores = ui.row().gap(10).fillWidth();
+scores.add(scoreTile("You", youScore, colors.primary()));
+scores.add(scoreTile("Draws", drawScore, colors.onSurfaceVariant()));
+scores.add(scoreTile("Computer", cpuScore, colors.error()));
+content.add(scores);
+
+Canvas board = ui.canvas().width(BOARD).height(BOARD).corner(16).background(colors.surfaceVariant());
+Container boardWrap = ui.column().fillWidth().center();
+boardWrap.add(board);
+content.add(boardWrap);
+
+# Difficulty as a single-select chip row.
+array[str] DIFF_NAMES = new array[str]{"Easy", "Normal", "Unbeatable"};
+array[Chip] diffChips = new array[Chip](3);
+Container diffRow = ui.flowRow().gap(8).fillWidth().center();
+int di = 0;
+while (di < 3) {
+    Chip c = ui.chip(DIFF_NAMES[di]).checkable(true).checked(di == difficulty);
+    diffChips[di] = c;
+    diffRow.add(c);
+    di += 1;
+};
+content.add(diffRow);
+
+Button newBtn = ui.tonalButton("New game").icon(icons.refresh()).fillWidth();
+content.add(newBtn);
+
+# ---- drawing ------------------------------------------------------------------------------
+
+func drawX(int cx, int cy) void {
+    int h = CELL / 2 - 24;
+    board.drawLine(cx - h, cy - h, cx + h, cy + h).color(colors.primary()).stroke(10).cap("round");
+    board.drawLine(cx - h, cy + h, cx + h, cy - h).color(colors.primary()).stroke(10).cap("round");
+    void
 };
 
-# Check if the board is completely filled (draw condition)
-func isDraw() bool {
+func drawO(int cx, int cy) void {
+    board.drawCircle(cx, cy, CELL / 2 - 26).color(colors.tertiary()).stroke(10);
+    void
+};
+
+func center(int i) int {
+    return (i % 3) * CELL + CELL / 2;
+};
+
+func middleY(int i) int {
+    return (i / 3) * CELL + CELL / 2;
+};
+
+func draw() void {
+    board.clear();
+    # grid: two inner lines each way
+    int k = 1;
+    while (k < 3) {
+        int p = k * CELL;
+        board.drawLine(p, 10, p, BOARD - 10).color(colors.outlineVariant()).stroke(3).cap("round");
+        board.drawLine(10, p, BOARD - 10, p).color(colors.outlineVariant()).stroke(3).cap("round");
+        k += 1;
+    };
     int i = 0;
-    bool full = true;
-    while (i < 3) {
-        int j = 0;
-        while (j < 3) {
-            if (board[i][j] == " ") {
-                full = false;
+    while (i < 9) {
+        if (cells[i] == YOU) { drawX(center(i), middleY(i)); };
+        if (cells[i] == CPU) { drawO(center(i), middleY(i)); };
+        i += 1;
+    };
+    if (winA >= 0) {
+        str col = if (winner == YOU) then colors.primary() else colors.error();
+        board.drawLine(center(winA), middleY(winA), center(winC), middleY(winC)).color(col).stroke(9).cap("round").alpha(85);
+    };
+    void
+};
+
+# ---- rules --------------------------------------------------------------------------------
+
+# The mark owning a full line, or 0. Pure over any board — minimax leans on it.
+func lineWinner(array[int] b) int {
+    int i = 0;
+    while (i < LINES.len()) {
+        int a = LINES[i];
+        int bb = LINES[i + 1];
+        int cc = LINES[i + 2];
+        if (b[a] != EMPTY & b[a] == b[bb] & b[bb] == b[cc]) {
+            return b[a];
+        };
+        i += 3;
+    };
+    return 0;
+};
+
+func isFull(array[int] b) bool {
+    int i = 0;
+    while (i < 9) {
+        if (b[i] == EMPTY) { return false; };
+        i += 1;
+    };
+    return true;
+};
+
+# Record the winning triple's end cells so draw() can strike through them.
+func markWinLine() void {
+    int i = 0;
+    while (i < LINES.len()) {
+        int a = LINES[i];
+        int bb = LINES[i + 1];
+        int cc = LINES[i + 2];
+        if (cells[a] != EMPTY & cells[a] == cells[bb] & cells[bb] == cells[cc]) {
+            winA = a;
+            winC = cc;
+        };
+        i += 3;
+    };
+    void
+};
+
+# ---- the opponent -------------------------------------------------------------------------
+
+# Minimax from the computer's seat: +10 for a CPU win and -10 for a loss, each discounted by the
+# depth it takes to get there, so a nearer win outscores a distant one. Empty cells are tried in
+# place on the shared board and restored on the way back up, so the whole search allocates nothing.
+func minimax(array[int] b, int depth, bool cpuToMove) int {
+    int w = lineWinner(b);
+    if (w == CPU) { return 10 - depth; };
+    if (w == YOU) { return depth - 10; };
+    if (isFull(b)) { return 0; };
+
+    if (cpuToMove) {
+        int best = 0 - 1000;
+        int i = 0;
+        while (i < 9) {
+            if (b[i] == EMPTY) {
+                b[i] = CPU;
+                int v = minimax(b, depth + 1, false);
+                b[i] = EMPTY;
+                if (v > best) { best = v; };
             };
-            j += 1;
+            i += 1;
+        };
+        return best;
+    } else {
+        int best = 1000;
+        int i = 0;
+        while (i < 9) {
+            if (b[i] == EMPTY) {
+                b[i] = YOU;
+                int v = minimax(b, depth + 1, true);
+                b[i] = EMPTY;
+                if (v < best) { best = v; };
+            };
+            i += 1;
+        };
+        return best;
+    };
+};
+
+# Best cell for the computer, breaking ties at random so it does not always play the same game.
+func bestMove(array[int] b) int {
+    int best = 0 - 1000;
+    array[int] pick = new array[int](9);
+    int n = 0;
+    int i = 0;
+    while (i < 9) {
+        if (b[i] == EMPTY) {
+            b[i] = CPU;
+            int v = minimax(b, 1, false);
+            b[i] = EMPTY;
+            if (v > best) {
+                best = v;
+                n = 0;
+                pick[n] = i;
+                n += 1;
+            } else {
+                if (v == best) {
+                    pick[n] = i;
+                    n += 1;
+                };
+            };
         };
         i += 1;
     };
-    return full;
+    if (n == 0) { return 0 - 1; };
+    return pick[rng.nextIntBound(n)];
 };
 
-str currentPlayer = "X";
-bool gameOver = false;
+func randomMove(array[int] b) int {
+    array[int] empty = new array[int](9);
+    int n = 0;
+    int i = 0;
+    while (i < 9) {
+        if (b[i] == EMPTY) {
+            empty[n] = i;
+            n += 1;
+        };
+        i += 1;
+    };
+    if (n == 0) { return 0 - 1; };
+    return empty[rng.nextIntBound(n)];
+};
 
-term.println("Welcome to Tic-Tac-Toe!");
-term.println("Enter row and column numbers (0-2).");
+func chooseMove() int {
+    if (difficulty == 0) { return randomMove(cells); };
+    if (difficulty == 1 & rng.nextIntBound(100) < 30) { return randomMove(cells); };
+    return bestMove(cells);
+};
 
-while (gameOver == false) {
-    printBoard();
+# ---- turns & scoring ----------------------------------------------------------------------
 
-    bool validMove = false;
-    int row = 0;
-    int col = 0;
+func setStatus(str text, str col) void {
+    status.text(text);
+    status.color(col);
+    void
+};
 
-    # Ask for input until a valid move is provided
-    while (validMove == false) {
-        term.print("Player ".con(currentPlayer).con(", enter row (0-2): "));
-        row = term.input().int();
-        term.print("Enter col (0-2): ");
-        col = term.input().int();
+func refreshScores() void {
+    youScore.text(wins.str());
+    drawScore.text(draws.str());
+    cpuScore.text(losses.str());
+    void
+};
 
-        if (row >= 0 & row <= 2 & col >= 0 & col <= 2) {
-            if (board[row][col] == " ") {
-                board[row][col] = currentPlayer;
-                validMove = true;
-            } else {
-                term.println("Cell already taken! Try again.");
+# If the last move ended the game, record it and return true.
+func settle() bool {
+    int w = lineWinner(cells);
+    if (w != 0) {
+        over = true;
+        winner = w;
+        markWinLine();
+        if (w == YOU) {
+            wins += 1;
+            setStatus("You win!", colors.primary());
+        } else {
+            losses += 1;
+            setStatus("Computer wins", colors.error());
+        };
+        refreshScores();
+        draw();
+        return true;
+    };
+    if (isFull(cells)) {
+        over = true;
+        winner = 0;
+        draws += 1;
+        setStatus("Draw", colors.onSurfaceVariant());
+        refreshScores();
+        draw();
+        return true;
+    };
+    return false;
+};
+
+func cpuMove(int token) void {
+    # A New game (or difficulty switch) bumps moveToken, orphaning this callback.
+    if (token == moveToken & over == false & yourTurn == false) {
+        int m = chooseMove();
+        if (m >= 0) { cells[m] = CPU; };
+        if (settle() == false) {
+            yourTurn = true;
+            setStatus("Your move", colors.onSurface());
+            draw();
+        };
+    };
+    void
+};
+
+func newGame() void {
+    int i = 0;
+    while (i < 9) {
+        cells[i] = EMPTY;
+        i += 1;
+    };
+    over = false;
+    yourTurn = true;
+    winner = 0;
+    winA = 0 - 1;
+    winC = 0 - 1;
+    moveToken += 1;                 # cancel any pending computer move
+    setStatus("Your move", colors.onSurface());
+    draw();
+    void
+};
+
+func setDifficulty(int d) void {
+    difficulty = d;
+    int i = 0;
+    while (i < 3) {
+        diffChips[i].checked(i == d);
+        i += 1;
+    };
+    newGame();
+    void
+};
+
+# ---- input --------------------------------------------------------------------------------
+
+board.onTap(func(int px, int py) void {
+    if (over == false & yourTurn) {
+        int c = px / CELL;
+        int r = py / CELL;
+        if (c >= 0 & c < 3 & r >= 0 & r < 3) {
+            int i = r * 3 + c;
+            if (cells[i] == EMPTY) {
+                cells[i] = YOU;
+                yourTurn = false;
+                draw();
+                if (settle() == false) {
+                    setStatus("Thinking…", colors.onSurfaceVariant());
+                    moveToken += 1;
+                    int t = moveToken;
+                    async thinker.after(500, t, func(int x) void {
+                        cpuMove(x);
+                        void
+                    });
+                };
             };
-        } else {
-            term.println("Invalid coordinates! Try again.");
         };
     };
+    void
+});
 
-    # Check for winner or draw; otherwise switch player
-    if (checkWinner(currentPlayer)) {
-        printBoard();
-        term.println("Player ".con(currentPlayer).con(" wins!"));
-        gameOver = true;
-    } else if (isDraw()) {
-        printBoard();
-        term.println("It's a draw!");
-        gameOver = true;
-    } else {
-        if (currentPlayer == "X") {
-            currentPlayer = "O";
-        } else {
-            currentPlayer = "X";
-        };
-    };
+int ci = 0;
+while (ci < 3) {
+    int idx = ci;
+    diffChips[ci].onClick(func() void {
+        setDifficulty(idx);
+        void
+    });
+    ci += 1;
 };
+
+newBtn.onClick(func() void {
+    newGame();
+    void
+});
+
+bar.action("New game", icons.refresh(), func() void {
+    newGame();
+    void
+});
+
+bar.onNav(func() void {
+    ui.close();
+    void
+});
+
+# ---- go -----------------------------------------------------------------------------------
+refreshScores();
+newGame();
+ui.open(root);
+
+term.println("Tic-Tac-Toe opened — you are X, tap a cell to move.");

@@ -1,6 +1,6 @@
 {
   "id": "sketch",
   "name": "Sketch",
-  "description": "A finger-painting app — pick a colour and brush size, draw on the canvas, erase or clear.",
+  "description": "A finger-painting app — pick a colour and brush, draw, erase or clear.",
   "interactive": true
 }

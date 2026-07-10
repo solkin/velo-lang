@@ -1,6 +1,6 @@
 {
   "id": "benchmark",
   "name": "VM Benchmark",
-  "description": "A console micro-benchmark timing the VM's core operations and the UI bridge; a matching Java/nanovm sample runs side by side.",
+  "description": "Console micro-benchmark timing the VM's core ops, paired with a matching Java build.",
   "interactive": false
 }

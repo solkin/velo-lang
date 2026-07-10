@@ -1,6 +1,0 @@
-{
-  "id": "material-life",
-  "name": "Material Life",
-  "description": "A native Material3 Game of Life — Canvas board, pattern palette, live stats and a settings sheet — on an actor-backed toroidal simulation.",
-  "interactive": true
-}

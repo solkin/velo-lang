@@ -1,6 +1,6 @@
 {
   "id": "bomberman",
   "name": "Bomberman",
-  "description": "Bomberman on a wide scrolling Canvas arena: chain-detonating bombs, destructible bricks, hidden power-ups, roaming enemies and an exit.",
+  "description": "Bomberman on a scrolling arena: chain-detonating bombs, breakable bricks, power-ups, enemies, a hidden exit.",
   "interactive": true
 }

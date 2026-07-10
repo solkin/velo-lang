@@ -1,6 +1,6 @@
 {
   "id": "tic-tac-toe",
   "name": "Tic-Tac-Toe",
-  "description": "Two-player tic-tac-toe; enter row/column to place your mark.",
+  "description": "Play X against a minimax computer on a Material3 Canvas; Easy, Normal or Unbeatable.",
   "interactive": true
 }

@@ -1,6 +1,6 @@
 {
   "id": "lode-runner",
   "name": "Lode Runner",
-  "description": "The 1983 Lode Runner: climb ropes and ladders, dig traps for the guards, grab all the gold, then escape up top.",
+  "description": "The 1983 Lode Runner: dig traps for the guards, grab the gold, escape up top.",
   "interactive": true
 }

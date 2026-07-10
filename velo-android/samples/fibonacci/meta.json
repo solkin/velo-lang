@@ -1,6 +1,0 @@
-{
-  "id": "fibonacci",
-  "name": "Fibonacci",
-  "description": "Computes the 93rd Fibonacci number with an iterative loop.",
-  "interactive": false
-}

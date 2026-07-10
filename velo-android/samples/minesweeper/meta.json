@@ -1,6 +1,6 @@
 {
   "id": "minesweeper",
   "name": "Minesweeper",
-  "description": "Classic Windows Minesweeper on a Canvas: beveled cells, LED counter and timer, smiley reset, flood-fill reveal and flags.",
+  "description": "Classic Minesweeper on a Canvas: beveled cells, LED counter, flood-fill reveal and flags.",
   "interactive": true
 }

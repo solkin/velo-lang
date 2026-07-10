@@ -1,83 +1,724 @@
+# Material Life — Conway's Game of Life as a native-style Android screen, modelled on the
+# NanoVM "Game of Life" demo. The grid is painted on a Canvas (live cells are rounded rects,
+# the faint lattice is lines); a tap toggles a cell, a drag paints freehand and the chip
+# palette stamps classic patterns. Three live read-outs (generation, population, real frame
+# rate) sit above the board, and a settings bottom sheet tunes the speed, the field size
+# (which rebuilds the grid live) and the wrap / grid options. The board is toroidal, so
+# gliders that leave one edge re-enter the opposite one. Simulation state lives in an actor.
+
+import "std/random";
+
 Terminal term = new Terminal();
+Time time = new Time();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
 
-class GameOfLife(Terminal term) {
+# ---- fixed canvas box (dp); the cell size is derived so any field fits inside it ----------
+int BOARD_PX_W = 320;
+int BOARD_PX_H = 360;
+int MIN_CELL = 6;
 
-    any w = new array[array[int]]{
-        new array[int]{0, 1, 0, 0, 0, 0},
-        new array[int]{0, 0, 1, 0, 0, 0},
-        new array[int]{1, 1, 1, 0, 0, 0},
-        new array[int]{0, 0, 0, 0, 0, 0},
-        new array[int]{0, 0, 0, 0, 0, 0},
-        new array[int]{0, 0, 0, 0, 0, 0}
+int MIN_COLS = 10;
+int MAX_COLS = 56;
+int DEFAULT_COLS = 32;
+
+int MIN_SPEED = 1;
+int MAX_SPEED = 60;
+
+int PEN = 0;
+int PULSAR = 5;
+int PATTERN_COUNT = 9;
+
+array[str] PATTERN_NAMES = new array[str]{
+    "Pen", "Glider", "Blinker", "Toad", "Beacon", "Pulsar", "LWSS", "R-pentomino", "Glider Gun"
+};
+
+# ---- field geometry (derived from the column count) ---------------------------------------
+int cols = DEFAULT_COLS;
+int rows = 0;
+int cell = 0;
+int gridW = 0;
+int gridH = 0;
+int offX = 0;
+int offY = 0;
+
+# ---- UI / playback state ------------------------------------------------------------------
+bool playing = false;
+int playToken = 0;
+int genPerSec = 10;
+int armed = 0;
+bool wrap = true;
+bool showGrid = true;
+int population = 0;
+int resizeSeq = 0;
+int fps = 0;
+int frameCount = 0;
+int fpsStamp = 0;
+
+func recomputeGeometry() void {
+    cell = BOARD_PX_W / cols;
+    if (cell < MIN_CELL) {
+        cell = MIN_CELL;
+    };
+    rows = BOARD_PX_H / cell;
+    gridW = cols * cell;
+    gridH = rows * cell;
+    offX = (BOARD_PX_W - gridW) / 2;
+    offY = (BOARD_PX_H - gridH) / 2;
+    void
+};
+
+recomputeGeometry();
+
+# A fresh random board, ~28% alive. Built here on the main actor because the
+# Random class (a top-level class) can only be instantiated outside an actor;
+# the resulting array is transferred into the engine via loadCells.
+func randomCells(int seed) array[int] {
+    Random rng = new Random(seed);
+    array[int] out = new array[int](cols * rows);
+    int i = 0;
+    while (i < out.len()) {
+        out[i] = if (rng.nextIntBound(100) < 28) then 1 else 0;
+        i += 1;
+    };
+    return out;
+};
+
+# ---- the simulation actor -----------------------------------------------------------------
+
+actor class LifeEngine(int width, int height) {
+    int w = width;
+    int h = height;
+    bool wrap = true;
+    int generation = 0;
+    array[int] cells = new array[int](width * height);
+
+    func index(int x, int y) int {
+        return y * w + x;
     };
 
-    func calc(array[array[int]] matrix, int x, int y) int {
-         func window(int a) int {
-            if (a >= 0) {
-                return if (a < matrix.len()) then a else a - matrix.len();
-            } else {
-                return matrix.len() + a;
-            }
+    func snapshot() array[int] {
+        array[int] out = new array[int](cells.len() + 1);
+        out[0] = generation;
+        int i = 0;
+        while (i < cells.len()) {
+            out[i + 1] = cells[i];
+            i += 1;
         };
-
-        any cells =
-                matrix[window(y - 1)][window(x - 1)] +
-                matrix[window(y - 1)][x] +
-                matrix[window(y - 1)][window(x + 1)] +
-                matrix[y][window(x - 1)] +
-                matrix[y][window(x + 1)] +
-                matrix[window(y + 1)][window(x - 1)] +
-                matrix[window(y + 1)][x] +
-                matrix[window(y + 1)][window(x + 1)];
-
-        return if cells == 2 then {
-            matrix[y][x]
-        } else if cells == 3 then {
-            1
-        } else {
-            0
-        }
+        return out;
     };
 
-    func printWorld() void {
-        w.map(
-            func(array[int] row, int index) array[int] {
-                row.map(
-                    func(int col, int index) int {
-                        term.print(col.str());
-                        term.print(" ");
-                        return col;
-                    }
-                );
-                term.println("");
-                return row
-            }
-        );
+    func zero() void {
+        int i = 0;
+        while (i < cells.len()) {
+            cells[i] = 0;
+            i += 1;
+        };
         void
     };
 
-    func nextGeneration() void {
-        w = w.map(
-            func(array[int] row, int y) array[int] {
-                return row.map(
-                    func(int col, int x) int {
-                        return calc(w, x, y);
-                    }
-                );
-            }
-        );
+    func setWrap(bool on) array[int] {
+        wrap = on;
+        return snapshot();
     };
 
+    # The random pattern is generated on the caller's side (a top-level class
+    # such as Random can't be instantiated from inside an actor) and handed in
+    # as a plain transferable array; we just copy it over the board.
+    func loadCells(array[int] src) array[int] {
+        generation = 0;
+        int n = if (src.len() < cells.len()) then src.len() else cells.len();
+        int i = 0;
+        while (i < n) {
+            cells[i] = src[i];
+            i += 1;
+        };
+        while (i < cells.len()) {
+            cells[i] = 0;
+            i += 1;
+        };
+        return snapshot();
+    };
+
+    func clear() array[int] {
+        zero();
+        generation = 0;
+        return snapshot();
+    };
+
+    func toggle(int x, int y) array[int] {
+        if (x >= 0 & x < w & y >= 0 & y < h) {
+            int i = index(x, y);
+            cells[i] = if (cells[i] == 0) then 1 else 0;
+        };
+        return snapshot();
+    };
+
+    func paint(int x, int y) array[int] {
+        if (x >= 0 & x < w & y >= 0 & y < h) {
+            cells[index(x, y)] = 1;
+        };
+        return snapshot();
+    };
+
+    func pulsar() array[int] {
+        array[int] barCols = new array[int]{2, 3, 4, 8, 9, 10};
+        array[int] barRows = new array[int]{0, 5, 7, 12};
+        array[int] spokeCols = new array[int]{0, 5, 7, 12};
+        array[int] spokeRows = new array[int]{2, 3, 4, 8, 9, 10};
+        array[int] out = new array[int](96);
+        int k = 0;
+        int i = 0;
+        while (i < barRows.len()) {
+            int j = 0;
+            while (j < barCols.len()) {
+                out[k] = barCols[j];
+                out[k + 1] = barRows[i];
+                k += 2;
+                j += 1;
+            };
+            i += 1;
+        };
+        i = 0;
+        while (i < spokeRows.len()) {
+            int j = 0;
+            while (j < spokeCols.len()) {
+                out[k] = spokeCols[j];
+                out[k + 1] = spokeRows[i];
+                k += 2;
+                j += 1;
+            };
+            i += 1;
+        };
+        return out;
+    };
+
+    func pattern(int id) array[int] {
+        return if (id == 1) then new array[int]{1, 0, 2, 1, 0, 2, 1, 2, 2, 2}
+        else if (id == 2) then new array[int]{0, 0, 1, 0, 2, 0}
+        else if (id == 3) then new array[int]{1, 0, 2, 0, 3, 0, 0, 1, 1, 1, 2, 1}
+        else if (id == 4) then new array[int]{0, 0, 1, 0, 0, 1, 1, 1, 2, 2, 3, 2, 2, 3, 3, 3}
+        else if (id == 5) then pulsar()
+        else if (id == 6) then new array[int]{0, 0, 3, 0, 4, 1, 0, 2, 4, 2, 1, 3, 2, 3, 3, 3, 4, 3}
+        else if (id == 7) then new array[int]{1, 0, 2, 0, 0, 1, 1, 1, 1, 2}
+        else if (id == 8) then new array[int]{
+            0, 4, 0, 5, 1, 4, 1, 5,
+            10, 4, 10, 5, 10, 6, 11, 3, 11, 7, 12, 2, 12, 8, 13, 2, 13, 8,
+            14, 5, 15, 3, 15, 7, 16, 4, 16, 5, 16, 6, 17, 5,
+            20, 2, 20, 3, 20, 4, 21, 2, 21, 3, 21, 4, 22, 1, 22, 5,
+            24, 0, 24, 1, 24, 5, 24, 6, 34, 2, 34, 3, 35, 2, 35, 3
+        }
+        else new array[int](0);
+    };
+
+    func stamp(int id, int cx, int cy) array[int] {
+        array[int] pts = pattern(id);
+        if (pts.len() >= 2) {
+            int minX = pts[0];
+            int maxX = pts[0];
+            int minY = pts[1];
+            int maxY = pts[1];
+            int i = 0;
+            while (i < pts.len()) {
+                int px = pts[i];
+                int py = pts[i + 1];
+                if (px < minX) { minX = px; };
+                if (px > maxX) { maxX = px; };
+                if (py < minY) { minY = py; };
+                if (py > maxY) { maxY = py; };
+                i += 2;
+            };
+            int baseX = cx - (minX + (maxX - minX) / 2);
+            int baseY = cy - (minY + (maxY - minY) / 2);
+            int k = 0;
+            while (k < pts.len()) {
+                int gx = baseX + pts[k];
+                int gy = baseY + pts[k + 1];
+                if (gx >= 0 & gx < w & gy >= 0 & gy < h) {
+                    cells[index(gx, gy)] = 1;
+                };
+                k += 2;
+            };
+        };
+        return snapshot();
+    };
+
+    func stampCenter(int id) array[int] {
+        zero();
+        generation = 0;
+        return stamp(id, w / 2, h / 2);
+    };
+
+    func resize(int nw, int nh) array[int] {
+        array[int] next = new array[int](nw * nh);
+        int copyW = if (nw < w) then nw else w;
+        int copyH = if (nh < h) then nh else h;
+        int y = 0;
+        while (y < copyH) {
+            int x = 0;
+            while (x < copyW) {
+                next[y * nw + x] = cells[y * w + x];
+                x += 1;
+            };
+            y += 1;
+        };
+        cells = next;
+        w = nw;
+        h = nh;
+        generation = 0;
+        return snapshot();
+    };
+
+    # Conway's B3/S23, one generation. The neighbour count is inlined with direct
+    # array reads (no per-neighbour helper calls — those dominated the cost) and
+    # the snapshot the caller renders is filled in the same pass, so there is no
+    # separate copy afterwards. Row bases (rm/r/rp) and the wrapped/clamped
+    # neighbour rows are hoisted out of the inner loop; on the toroidal default
+    # every cell has all eight neighbours, so the has* guards stay true and only
+    # matter for the bounded (wrap off) mode.
+    func step() array[int] {
+        int len = cells.len();
+        array[int] next = new array[int](len);
+        array[int] out = new array[int](len + 1);
+        int y = 0;
+        while (y < h) {
+            int row = y * w;
+            int ym = 0;
+            int yp = 0;
+            if (wrap) {
+                ym = if (y == 0) then h - 1 else y - 1;
+                yp = if (y == h - 1) then 0 else y + 1;
+            } else {
+                ym = y - 1;
+                yp = y + 1;
+            };
+            bool hasUp = wrap | (ym >= 0);
+            bool hasDown = wrap | (yp < h);
+            int rm = ym * w;
+            int rp = yp * w;
+            int x = 0;
+            while (x < w) {
+                int xm = 0;
+                int xp = 0;
+                bool hasL = true;
+                bool hasR = true;
+                if (wrap) {
+                    xm = if (x == 0) then w - 1 else x - 1;
+                    xp = if (x == w - 1) then 0 else x + 1;
+                } else {
+                    xm = x - 1;
+                    xp = x + 1;
+                    hasL = xm >= 0;
+                    hasR = xp < w;
+                };
+                int n = 0;
+                if (hasUp) {
+                    if (hasL) { n = n + cells[rm + xm]; };
+                    n = n + cells[rm + x];
+                    if (hasR) { n = n + cells[rm + xp]; };
+                };
+                if (hasL) { n = n + cells[row + xm]; };
+                if (hasR) { n = n + cells[row + xp]; };
+                if (hasDown) {
+                    if (hasL) { n = n + cells[rp + xm]; };
+                    n = n + cells[rp + x];
+                    if (hasR) { n = n + cells[rp + xp]; };
+                };
+                int i = row + x;
+                int v = 0;
+                if (cells[i] == 1) {
+                    v = if (n == 2 | n == 3) then 1 else 0;
+                } else {
+                    v = if (n == 3) then 1 else 0;
+                };
+                next[i] = v;
+                out[i + 1] = v;
+                x += 1;
+            };
+            y += 1;
+        };
+        cells = next;
+        generation += 1;
+        out[0] = generation;
+        return out;
+    };
 };
 
-GameOfLife g = new GameOfLife(term);
-term.print("Enter generations count: ");
-int count = term.input().int();
-term.println("");
-int idx = 0;
-while (idx <= count) {
-    g.printWorld();
-    term.println("--");
-    g.nextGeneration();
-    idx += 1;
+actor class TickTimer() {
+    Time timer = new Time();
+
+    func after(int millis, int token, func[(int) void] done) void {
+        timer.sleep(millis);
+        done(token);
+        void
+    };
 };
+
+actor[LifeEngine] engine = new LifeEngine(cols, rows);
+actor[TickTimer] ticker = new TickTimer();
+
+array[int] current = await async engine.stampCenter(PULSAR);
+
+# ---- UI skeleton --------------------------------------------------------------------------
+
+# The root is a stacking box so the play/pause + clear FABs float over the scrolling
+# content, bottom-end, the way a Scaffold would place them on a Material screen.
+Container root = ui.box().fillWidth().fillHeight();
+Container page = ui.column().fillWidth().fillHeight();
+root.add(page);
+
+AppBar bar = ui.appBar("Game of Life");
+bar.onNav(func() void {
+    playing = false;
+    playToken += 1;
+    ui.close();
+    void
+});
+page.add(bar);
+
+Container scroller = ui.scroll().weight(1);
+page.add(scroller);
+
+Container content = ui.column().padding(16).gap(14).fillWidth();
+scroller.add(content);
+
+func statTile(str label, Text value) Surface {
+    Surface tile = ui.surface().corner(16).weight(1);
+    tile.elevation(2);
+    Container col = ui.column().padding(12).gap(2);
+    col.add(ui.text(label).style(styles.labelSmall()).color(colors.onSurfaceVariant()));
+    col.add(value);
+    tile.add(col);
+    return tile;
+};
+
+Text generationLabel = ui.text("0").style(styles.titleLarge()).bold();
+Text liveLabel = ui.text("0").style(styles.titleLarge()).bold();
+Text fpsLabel = ui.text("—").style(styles.titleLarge()).bold();
+
+Container stats = ui.row().gap(10).fillWidth();
+stats.add(statTile("Generation", generationLabel));
+stats.add(statTile("Live cells", liveLabel));
+stats.add(statTile("FPS", fpsLabel));
+content.add(stats);
+
+Canvas board = ui.canvas().width(BOARD_PX_W).height(BOARD_PX_H).corner(16).background(colors.surfaceVariant());
+Container boardWrap = ui.column().fillWidth().center();
+boardWrap.add(board);
+content.add(boardWrap);
+
+Container palette = ui.flowRow().gap(8).fillWidth();
+content.add(palette);
+
+array[Chip] chips = new array[Chip](PATTERN_COUNT);
+
+Container actions = ui.row().gap(8).fillWidth();
+Button step = ui.tonalButton("Step").icon(icons.forward()).weight(1);
+Button random = ui.tonalButton("Random").icon(icons.refresh()).weight(1);
+actions.add(step);
+actions.add(random);
+content.add(actions);
+
+Text caption = ui.text("").style(styles.bodySmall()).color(colors.onSurfaceVariant()).textAlign("center");
+content.add(caption);
+
+# Bottom clearance so the scrolled controls never end up hidden behind the floating FABs.
+content.add(ui.spacer().height(88));
+
+Container fabStack = ui.column().gap(12).padding(16).align("bottomEnd");
+Button clearFab = ui.smallFab(icons.delete()).background(colors.secondaryContainer()).tint(colors.onSecondaryContainer());
+Button playFab = ui.fab(icons.play()).background(colors.primaryContainer()).tint(colors.onPrimaryContainer());
+fabStack.add(clearFab);
+fabStack.add(playFab);
+root.add(fabStack);
+
+# ---- rendering ----------------------------------------------------------------------------
+
+func render(array[int] snap) void {
+    board.clear();
+
+    int inset = if (cell >= 8) then 1 else 0;
+    int radius = if (cell >= 10) then 2 else if (cell >= 6) then 1 else 0;
+
+    if (showGrid) {
+        int gx = 0;
+        while (gx <= cols) {
+            int x = offX + gx * cell;
+            board.drawLine(x, offY, x, offY + gridH).color(colors.outlineVariant()).stroke(1).alpha(50);
+            gx += 1;
+        };
+        int gy = 0;
+        while (gy <= rows) {
+            int y = offY + gy * cell;
+            board.drawLine(offX, y, offX + gridW, y).color(colors.outlineVariant()).stroke(1).alpha(50);
+            gy += 1;
+        };
+    };
+
+    int live = 0;
+    int total = cols * rows;
+    int i = 0;
+    while (i < total) {
+        if (snap[i + 1] == 1) {
+            int x = i % cols;
+            int y = i / cols;
+            board.drawRoundRect(offX + x * cell + inset, offY + y * cell + inset, cell - 2 * inset, cell - 2 * inset, radius)
+                .color(colors.primary())
+                .fill();
+            live += 1;
+        };
+        i += 1;
+    };
+    population = live;
+
+    if (live == 0 & playing == false) {
+        board.drawText(offX + 12, offY + gridH / 2 - 8, "Tap or drag to draw", 14).color(colors.onSurfaceVariant());
+        board.drawText(offX + 12, offY + gridH / 2 + 12, "or pick a pattern, then Play", 12).color(colors.outline());
+    };
+
+    generationLabel.text(snap[0].str());
+    liveLabel.text(live.str());
+    void
+};
+
+func fieldLabel() str {
+    return "Field — ".con(cols.str()).con(" × ").con(rows.str()).con(" cells");
+};
+
+func updateCaption() void {
+    caption.text(genPerSec.str().con(" gen/s   ·   ").con(cols.str()).con("×").con(rows.str()).con("   ·   wrap ").con(if (wrap) then "on" else "off"));
+    void
+};
+
+func armPattern(int idx) void {
+    armed = idx;
+    int i = 0;
+    while (i < PATTERN_COUNT) {
+        chips[i].checked(i == idx);
+        i += 1;
+    };
+    void
+};
+
+func makeChip(str label, int idx) Chip {
+    Chip c = ui.chip(label).checkable(true).checked(idx == armed);
+    c.onClick(func() void {
+        armPattern(idx);
+        void
+    });
+    return c;
+};
+
+int pi = 0;
+while (pi < PATTERN_COUNT) {
+    Chip c = makeChip(PATTERN_NAMES[pi], pi);
+    chips[pi] = c;
+    palette.add(c);
+    pi += 1;
+};
+
+# ---- the animation clock ------------------------------------------------------------------
+
+func onTimer(int token) void {
+    if (playing & token == playToken) {
+        current = await async engine.step();
+        render(current);
+        frameCount += 1;
+        int now = time.unix();
+        if (now - fpsStamp >= 1) {
+            fps = frameCount;
+            frameCount = 0;
+            fpsStamp = now;
+            fpsLabel.text(fps.str());
+        };
+        async ticker.after(1000 / genPerSec, token, func(int t) void {
+            onTimer(t);
+            void
+        });
+    };
+    void
+};
+
+func applyResize(int newCols) void {
+    int nc = newCols;
+    if (nc < MIN_COLS) { nc = MIN_COLS; };
+    if (nc > MAX_COLS) { nc = MAX_COLS; };
+    if (nc != cols) {
+        cols = nc;
+        recomputeGeometry();
+        # Dragging the slider fires many resizes that overlap on the await; each
+        # one updates the geometry up front, so a late reply from an earlier,
+        # smaller board would be rendered against the newer (larger) geometry and
+        # read past the end of its snapshot. Only the most recent resize renders.
+        resizeSeq += 1;
+        int mySeq = resizeSeq;
+        array[int] snap = await async engine.resize(cols, rows);
+        if (mySeq == resizeSeq) {
+            current = snap;
+            render(current);
+            updateCaption();
+        };
+    };
+    void
+};
+
+func openSettings() void {
+    Container panel = ui.column().padding(20).gap(14).fillWidth();
+
+    panel.add(ui.text("Animation").style(styles.labelMedium()).color(colors.primary()));
+    Text speedLabel = ui.text("Speed — ".con(genPerSec.str()).con(" gen/s")).style(styles.titleSmall());
+    panel.add(speedLabel);
+    Slider speed = ui.slider(MIN_SPEED, MAX_SPEED).fillWidth();
+    speed.slide(genPerSec);
+    speed.onSlide(func(int v) void {
+        genPerSec = if (v < MIN_SPEED) then MIN_SPEED else v;
+        speedLabel.text("Speed — ".con(genPerSec.str()).con(" gen/s"));
+        updateCaption();
+        void
+    });
+    panel.add(speed);
+
+    panel.add(ui.divider());
+
+    panel.add(ui.text("Field").style(styles.labelMedium()).color(colors.primary()));
+    Text sizeLabel = ui.text(fieldLabel()).style(styles.titleSmall());
+    panel.add(sizeLabel);
+    Slider size = ui.slider(MIN_COLS, MAX_COLS).fillWidth();
+    size.slide(cols);
+    size.onSlide(func(int v) void {
+        applyResize(v);
+        sizeLabel.text(fieldLabel());
+        void
+    });
+    panel.add(size);
+
+    panel.add(ui.divider());
+
+    Container wrapRow = ui.row().fillWidth();
+    wrapRow.add(ui.text("Wrap edges (toroidal)").weight(1));
+    Toggle wrapSwitch = ui.toggle("");
+    wrapSwitch.checked(wrap);
+    wrapSwitch.onToggle(func(bool on) void {
+        wrap = on;
+        current = await async engine.setWrap(on);
+        updateCaption();
+        void
+    });
+    wrapRow.add(wrapSwitch);
+    panel.add(wrapRow);
+
+    Container gridRow = ui.row().fillWidth();
+    gridRow.add(ui.text("Show grid lines").weight(1));
+    Toggle gridSwitch = ui.toggle("");
+    gridSwitch.checked(showGrid);
+    gridSwitch.onToggle(func(bool on) void {
+        showGrid = on;
+        render(current);
+        void
+    });
+    gridRow.add(gridSwitch);
+    panel.add(gridRow);
+
+    panel.add(ui.divider());
+
+    Button done = ui.button("Done").fillWidth();
+    done.onClick(func() void {
+        ui.dismissSheet();
+        void
+    });
+    panel.add(done);
+
+    ui.sheet(panel);
+    void
+};
+
+# ---- wiring -------------------------------------------------------------------------------
+
+playFab.onClick(func() void {
+    if (playing) {
+        playing = false;
+        playToken += 1;
+        playFab.icon(icons.play());
+        fps = 0;
+        fpsLabel.text("—");
+    } else {
+        playing = true;
+        playToken += 1;
+        playFab.icon(icons.pause());
+        frameCount = 0;
+        fpsStamp = time.unix();
+        int token = playToken;
+        async ticker.after(1000 / genPerSec, token, func(int t) void {
+            onTimer(t);
+            void
+        });
+    };
+    void
+});
+
+step.onClick(func() void {
+    playing = false;
+    playToken += 1;
+    playFab.icon(icons.play());
+    current = await async engine.step();
+    render(current);
+    void
+});
+
+random.onClick(func() void {
+    playing = false;
+    playToken += 1;
+    playFab.icon(icons.play());
+    current = await async engine.loadCells(randomCells(time.unix() + playToken));
+    render(current);
+    void
+});
+
+clearFab.onClick(func() void {
+    playing = false;
+    playToken += 1;
+    playFab.icon(icons.play());
+    current = await async engine.clear();
+    render(current);
+    void
+});
+
+bar.action("Settings", icons.settings(), func() void {
+    openSettings();
+    void
+});
+
+board.onPointerDown(func(int x, int y) void {
+    int col = (x - offX) / cell;
+    int row = (y - offY) / cell;
+    if (col >= 0 & col < cols & row >= 0 & row < rows) {
+        if (armed == PEN) {
+            current = await async engine.toggle(col, row);
+        } else {
+            current = await async engine.stamp(armed, col, row);
+        };
+        render(current);
+    };
+    void
+});
+
+board.onPointerMove(func(int x, int y) void {
+    if (armed == PEN) {
+        int col = (x - offX) / cell;
+        int row = (y - offY) / cell;
+        if (col >= 0 & col < cols & row >= 0 & row < rows) {
+            current = await async engine.paint(col, row);
+            render(current);
+        };
+    };
+    void
+});
+
+render(current);
+updateCaption();
+fpsStamp = time.unix();
+ui.open(root);
+
+term.println("Game of Life opened.");
