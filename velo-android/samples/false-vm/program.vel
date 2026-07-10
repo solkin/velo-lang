@@ -1,0 +1,437 @@
+# FALSE — an interactive interpreter for the FALSE esoteric language.
+#
+# Type a program (or pick an example) and run it. The source is interpreted
+# directly, following the FALSE specification and the false-vm reference.
+#
+# Supported: numbers, 'c character codes, the stack ($ % \ @ ø), arithmetic
+# (+ - * / _), bitwise & comparisons (& | ~ > =, true is -1), [ ] lambdas,
+# ! ? # for apply / if / while, a-z variables (a: a;), "..." string output,
+# . , ^ for print-number / print-char / read-char, and { } comments.
+
+Terminal term = new Terminal();
+
+# ---------- bundled examples ----------
+
+str exHello  = "\"Hello, FALSE!\"";
+str ex2p2    = "2 2 + .";
+str exFact   = "[$1>[$1-f;!*]?]f: 6 f;! . \" (fact 6)\"";
+str exFib    = "[$1>[$1-f;!\\2-f;!+]?]f: 10 f;! . \" (fib 10)\"";
+str exPrimes = "30 9[1-$][$@$@$@$@/*=[1-$$[%1-$@]?0[$.' ,]?]?]#";
+
+func printHelp() void {
+    term.println("");
+    term.println("FALSE in a nutshell:");
+    term.println("  123     number");
+    term.println("  'A      character (its code)");
+    term.println("  $ % \\ @ ø     stack (dup drop swap rot pick)");
+    term.println("  + - * / _     arithmetic  (_ = negate)");
+    term.println("  & | ~ > =     bitwise and comparison (true = -1)");
+    term.println("  [code]  lambda");
+    term.println("  !       apply a lambda");
+    term.println("  ?       cond [then] ?");
+    term.println("  #       [cond] [body] #");
+    term.println("  a:  a;  variables");
+    term.println("  \"text\"  print a string");
+    term.println("  . , ^   print number / print char / read char");
+    term.println("  {note}  comment");
+    term.println("");
+    term.println("Commands: help | ex | 1..5 | demo | quit");
+    term.println("Type a program; a blank line runs it, a blank prompt exits.");
+    term.println("");
+};
+
+func showExamples() void {
+    term.println("");
+    term.println("Examples (enter the number or 'ex N'):");
+    term.println("  1  hello");
+    term.println("  2  2 + 2");
+    term.println("  3  factorial");
+    term.println("  4  fibonacci");
+    term.println("  5  primes (up to 30)");
+    term.println("");
+};
+
+func getExample(int n) str {
+    if (n == 1) { return exHello; };
+    if (n == 2) { return ex2p2; };
+    if (n == 3) { return exFact; };
+    if (n == 4) { return exFib; };
+    if (n == 5) { return exPrimes; };
+    return "";
+};
+
+# Parse an example selector: a bare "1".."5", or "ex 1".."ex 5". Returns 0 for
+# anything else.
+func exampleNumber(str line) int {
+    if (line.len() == 1 && line[0] >= '1' && line[0] <= '5') {
+        return line[0] - '0';
+    };
+    if (line.len() >= 4 && line.sub(0, 3) == "ex " && line[3] >= '1' && line[3] <= '5') {
+        return line[3] - '0';
+    };
+    return 0;
+};
+
+# ---------- the FALSE interpreter (direct, over the source text) ----------
+
+func interpret(str src) void {
+    term.println("");
+    term.println(">>>");
+
+    int len = src.len();
+    int ip = 0;
+
+    array[int] stk = new array[int](2048);
+    int sp = -1;
+
+    array[int] vars = new array[int](26);
+
+    array[int] callstk = new array[int](512);
+    int csp = -1;
+
+    str inBuf = "";
+    int inPos = 0;
+
+    func push(int v) void {
+        sp = sp + 1;
+        stk[sp] = v;
+    };
+
+    func pop() int {
+        let v = stk[sp];
+        sp = sp - 1;
+        return v;
+    };
+
+    func isWs(int c) bool {
+        return c == 32 || c == 9 || c == 10 || c == 13;
+    };
+
+    func skipWs() void {
+        while (ip < len && isWs(src[ip])) {
+            ip = ip + 1;
+        };
+    };
+
+    # Execute the token at ip, advancing ip past it. Lambdas ([ ]) are left in
+    # place and referenced by an encoded pointer; !, ? and # drive control flow
+    # through the shared call stack.
+    func step() void {
+        skipWs();
+        if (ip >= len) return;
+
+        int c = src[ip];
+        ip = ip + 1;
+
+        if (c == 123) {  # {  — comment, skip to the matching }
+            int d = 1;
+            while (ip < len && d > 0) {
+                int cc = src[ip];
+                ip = ip + 1;
+                if (cc == 123) { d = d + 1; } else if (cc == 125) { d = d - 1; };
+            };
+            return;
+        };
+
+        if (c == 34) {  # "  — print the string up to the next "
+            while (ip < len) {
+                int cc = src[ip];
+                ip = ip + 1;
+                if (cc == 34) break;
+                term.print(cc.char());
+            };
+            return;
+        };
+
+        if (c >= 48 && c <= 57) {  # 0-9  — a decimal number
+            int num = c - 48;
+            while (ip < len) {
+                int d = src[ip];
+                if (d < 48 || d > 57) break;
+                num = num * 10 + (d - 48);
+                ip = ip + 1;
+            };
+            push(num);
+            return;
+        };
+
+        if (c == 39) {  # '  — push the code of the next character
+            if (ip < len) {
+                push(src[ip]);
+                ip = ip + 1;
+            };
+            return;
+        };
+
+        # ---- stack ----
+        if (c == 36) {  # $  — dup
+            if (sp >= 0) push(stk[sp]);
+            return;
+        };
+        if (c == 37) {  # %  — drop
+            if (sp >= 0) sp = sp - 1;
+            return;
+        };
+        if (c == 92) {  # \  — swap
+            if (sp >= 1) {
+                let a = pop();
+                let b = pop();
+                push(a);
+                push(b);
+            };
+            return;
+        };
+        if (c == 64) {  # @  — rot
+            if (sp >= 2) {
+                let x2 = pop();
+                let x1 = pop();
+                let x = pop();
+                push(x1);
+                push(x2);
+                push(x);
+            };
+            return;
+        };
+        if (c == 248) {  # ø  — pick (copy the n-th element from the top)
+            if (sp >= 0) {
+                let n = pop();
+                if (sp - n >= 0) {
+                    push(stk[sp - n]);
+                };
+            };
+            return;
+        };
+
+        # ---- arithmetic and bitwise (classic FALSE) ----
+        if (c == 43) {  # +
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a + b); }
+            return;
+        };
+        if (c == 45) {  # -
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a - b); }
+            return;
+        };
+        if (c == 42) {  # *
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a * b); }
+            return;
+        };
+        if (c == 47) {  # /
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a / b); }
+            return;
+        };
+        if (c == 95) {  # _  — negate
+            if (sp >= 0) push(0 - pop());
+            return;
+        };
+        if (c == 38) {  # &
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a & b); }
+            return;
+        };
+        if (c == 124) {  # |
+            if (sp >= 1) { let b = pop(); let a = pop(); push(a | b); }
+            return;
+        };
+        if (c == 126) {  # ~  — bitwise not
+            if (sp >= 0) push(0 - 1 - pop());
+            return;
+        };
+        if (c == 62) {  # >  — greater than (true = -1)
+            if (sp >= 1) {
+                let b = pop();
+                let a = pop();
+                int res = 0; if (a > b) { res = -1; }; push(res);
+            };
+            return;
+        };
+        if (c == 61) {  # =  — equals (true = -1)
+            if (sp >= 1) {
+                let b = pop();
+                let a = pop();
+                int res = 0; if (a == b) { res = -1; }; push(res);
+            };
+            return;
+        };
+
+        # ---- input / output ----
+        if (c == 94) {  # ^  — read one character (-1 at end of input)
+            if (inPos >= inBuf.len()) {
+                inBuf = term.input();
+                inPos = 0;
+            };
+            int ch = -1;
+            if (inPos < inBuf.len()) {
+                ch = inBuf[inPos];
+                inPos = inPos + 1;
+            };
+            push(ch);
+            return;
+        };
+        if (c == 44) {  # ,  — print a character
+            if (sp >= 0) term.print(pop().char());
+            return;
+        };
+        if (c == 46) {  # .  — print a number
+            if (sp >= 0) term.print(pop().str());
+            return;
+        };
+        if (c == 223) {  # ß  — flush (no-op here)
+            return;
+        };
+
+        # ---- variables (a:  a;) ----
+        if (c >= 97 && c <= 122) {  # a-z
+            int idx = c - 97;
+            while (ip < len && isWs(src[ip])) { ip = ip + 1; };
+            if (ip < len) {
+                int m = src[ip];
+                if (m == 58 || m == 59) {  # : store,  ; fetch
+                    ip = ip + 1;
+                    if (m == 58) {
+                        if (sp >= 0) { vars[idx] = pop(); };
+                    } else {
+                        push(vars[idx]);
+                    };
+                };
+            };
+            return;
+        };
+
+        # ---- lambdas: [ ] ----
+        if (c == 91) {  # [  — scan the body, push an encoded pointer to it
+            int start = ip;
+            int depth = 1;
+            while (ip < len && depth > 0) {
+                int cc = src[ip];
+                ip = ip + 1;
+                if (cc == 91) { depth = depth + 1; } else if (cc == 93) { depth = depth - 1; };
+            };
+            push(0 - (start + 1));
+            return;
+        };
+
+        if (c == 93) {  # ]  — return from the current lambda
+            if (csp >= 0) {
+                ip = callstk[csp];
+                csp = csp - 1;
+            };
+            return;
+        };
+
+        # ---- control flow: ! ? # ----
+        if (c == 33) {  # !  — apply the lambda on top
+            if (sp >= 0) {
+                let v = pop();
+                int target = 0 - v - 1; if (v >= 0) { target = v; };
+                csp = csp + 1;
+                callstk[csp] = ip;
+                ip = target;
+            };
+            return;
+        };
+
+        if (c == 63) {  # ?  — cond [then] ?
+            if (sp >= 1) {
+                let lam = pop();
+                let cond = pop();
+                if (cond != 0) {
+                    int target = 0 - lam - 1; if (lam >= 0) { target = lam; };
+                    csp = csp + 1;
+                    callstk[csp] = ip;
+                    ip = target;
+                };
+            };
+            return;
+        };
+
+        if (c == 35) {  # #  — [cond] [body] #  (while)
+            if (sp >= 1) {
+                let bodyV = pop();
+                let condV = pop();
+                int bStart = 0 - bodyV - 1; if (bodyV >= 0) { bStart = bodyV; };
+                int cStart = 0 - condV - 1; if (condV >= 0) { cStart = condV; };
+
+                while (true) {
+                    # run cond, then read the flag it leaves
+                    int pre = csp;
+                    csp = csp + 1;
+                    callstk[csp] = ip;
+                    ip = cStart;
+                    while (ip < len && csp > pre) {
+                        step();
+                    };
+                    int cv = 0; if (sp >= 0) { cv = pop(); };
+                    if (cv == 0) break;
+
+                    # run body
+                    pre = csp;
+                    csp = csp + 1;
+                    callstk[csp] = ip;
+                    ip = bStart;
+                    while (ip < len && csp > pre) {
+                        step();
+                    };
+                };
+            };
+            return;
+        };
+
+        # anything else is ignored
+    };
+
+    while (ip < len) {
+        step();
+    };
+
+    if (sp >= 0) {
+        term.println("");
+    };
+    term.println("<<< done");
+};
+
+# ---------- terminal REPL ----------
+
+term.println("FALSE — an interactive interpreter");
+term.println("https://github.com/solkin/false-vm");
+printHelp();
+
+bool running = true;
+while (running) {
+    term.print("false> ");
+    str line = term.input();
+
+    # A blank line at the prompt ends the session. input() yields "" both for an
+    # empty line and at end-of-input (Back / Ctrl-D unblock it the same way), so
+    # this is the single, unambiguous way to leave the REPL — no runaway loop.
+    if (line.len() == 0) {
+        running = false;
+    } else if (line == "quit" || line == "exit") {
+        running = false;
+    } else if (line == "help") {
+        printHelp();
+    } else if (line == "ex" || line == "examples") {
+        showExamples();
+    } else if (line == "demo") {
+        term.println("[demo]");
+        interpret(exHello);
+        interpret(ex2p2);
+        interpret(exFact);
+    } else {
+        int ex = exampleNumber(line);
+        if (ex > 0) {
+            term.println("[example ".con(ex.str()).con("]"));
+            interpret(getExample(ex));
+        } else {
+            # A FALSE program. Keep reading continuation lines until a blank one,
+            # so a multi-line source works, then run the whole thing.
+            str code = line;
+            str more = term.input();
+            while (more.len() > 0) {
+                code = code.con("\n").con(more);
+                more = term.input();
+            };
+            interpret(code);
+        };
+    };
+};
+
+term.println("bye.");

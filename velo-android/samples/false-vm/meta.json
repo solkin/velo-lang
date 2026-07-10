@@ -1,0 +1,6 @@
+{
+  "id": "false-vm",
+  "name": "FALSE",
+  "description": "An interactive interpreter for the FALSE language. Type a program and run it, or pick an example.",
+  "interactive": true
+}
