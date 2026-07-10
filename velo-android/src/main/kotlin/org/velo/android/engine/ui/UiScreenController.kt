@@ -18,7 +18,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.navigation.NavigationBarView
 import com.google.android.material.snackbar.Snackbar
-import vm2.LoopHandle
+import vm3.LoopHandle
 
 /**
  * Hosts the Velo program's Material3 screens as a back-stack laid over the terminal.

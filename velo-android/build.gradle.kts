@@ -11,7 +11,9 @@ android {
 
     defaultConfig {
         applicationId = "org.velo.android"
-        minSdk = 23
+        // vm3 deliberately uses the platform MethodHandle implementation for
+        // compact, reflection-free hot native calls. Android exposes it at API 26.
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
@@ -63,9 +65,8 @@ dependencies {
 
     // The Velo VM — pure-JVM modules consumed as ordinary libraries. The compiler
     // is NOT shipped in the app: .vbc is produced at build time, loaded at runtime.
-    // velo-vm2 is the clean-room backend; it links against the portable `core`
-    // Dispatcher SPI rather than vm's own actor runtime.
-    implementation(project(":velo-vm2"))
+    // Compact JVM/Android backend; the compiler is kept off the device.
+    implementation(project(":velo-vm3"))
     implementation(project(":velo-core"))
 
     implementation(libs.androidx.core.ktx)
@@ -102,6 +103,12 @@ android.sourceSets.getByName("main").assets.srcDir(compileVeloSamples.flatMap { 
 // AGP reads the assets dir as plain files and loses the task's builtBy, so wire the
 // dependency explicitly for every variant's asset merge.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(compileVeloSamples)
+}
+
+// Release lint also scans generated assets, but AGP does not preserve the
+// producing task through sourceSets.assets.srcDir.
+tasks.matching { it.name.startsWith("lint") || it.name.contains("Lint") }.configureEach {
     dependsOn(compileVeloSamples)
 }
 

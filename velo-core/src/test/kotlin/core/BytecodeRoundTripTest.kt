@@ -25,6 +25,7 @@ class BytecodeRoundTripTest {
      */
     private val samples: List<Op> = listOf(
         Op.Push(42),
+        Op.Push(4_294_967_296L),
         Op.Push(3.14f),
         Op.Push("hello"),
         Op.Push(true),
@@ -56,6 +57,11 @@ class BytecodeRoundTripTest {
         Op.IntToFloat,
         Op.FloatToInt,
         Op.IntToByte,
+        Op.IntToLong,
+        Op.LongToInt,
+        Op.LongToFloat,
+        Op.FloatToLong,
+        Op.LongStr,
         Op.StrCon,
         Op.StrLen,
         Op.StrIndex,
@@ -190,5 +196,32 @@ class BytecodeRoundTripTest {
             }
         }
         assertEquals(Op::class.sealedSubclasses.size, byOpcode.size)
+    }
+
+    @Test
+    fun `unsigned u8 and u16 fields retain their full wire range`() {
+        val manyTypes = List(128) { VmType.Int }
+        val program = SerializedProgram(
+            natives = listOf(
+                NativeRef(NativeRef.Kind.METHOD, "Wide", "call", manyTypes, VmType.Void),
+            ),
+            frames = listOf(
+                SerializedFrame(
+                    num = 65_535,
+                    vars = listOf(65_535),
+                    ops = listOf(Op.NativeCall(poolIndex = 65_535, args = manyTypes)),
+                ),
+            ),
+        )
+
+        assertEquals(program, roundTrip(program))
+    }
+
+    private fun roundTrip(program: SerializedProgram): SerializedProgram {
+        val bytes = ByteArrayOutputStream().use { baos ->
+            DataOutputStream(baos).use { Bytecode.write(program, it) }
+            baos.toByteArray()
+        }
+        return DataInputStream(ByteArrayInputStream(bytes)).use { Bytecode.read(it) }
     }
 }

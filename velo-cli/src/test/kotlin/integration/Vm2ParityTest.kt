@@ -80,11 +80,12 @@ class Vm2ParityTest {
             }
             val legacy = capture { vm.VeloRuntime(registry()).run(program) }
             val fresh = capture { vm2.VeloRuntime(registry()).run(program) }
-            if (legacy == fresh) {
+            val compact = capture { vm3.VeloRuntime(registry()).run(program) }
+            if (legacy == fresh && legacy == compact) {
                 compared++
                 println("PARITY ✓ ${demo.name}")
             } else {
-                failures += "${demo.name}:\n--- legacy ---\n$legacy\n--- vm2 ---\n$fresh"
+                failures += "${demo.name}:\n--- legacy ---\n$legacy\n--- vm2 ---\n$fresh\n--- vm3 ---\n$compact"
             }
         }
         println("compared $compared demos")

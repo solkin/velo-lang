@@ -130,6 +130,10 @@ class TerminalActivity : AppCompatActivity() {
                     when {
                         userStopped -> setStatus(RunStatus.Stopped)
                         failure != null -> {
+                            // A guest callback can fail while its full-screen UI
+                            // is open. Reveal the terminal immediately so the
+                            // failure is visible instead of looking like a frozen app.
+                            ui.reset()
                             enqueue(OutputKind.SYSTEM, "\n[${failure.message ?: failure.javaClass.simpleName}]\n")
                             setStatus(RunStatus.Failed(failure.message ?: failure.javaClass.simpleName))
                         }

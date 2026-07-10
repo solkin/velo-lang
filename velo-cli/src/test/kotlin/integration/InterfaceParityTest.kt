@@ -68,8 +68,10 @@ class InterfaceParityTest {
 
         val legacy = capture { vm.VeloRuntime(registry()).run(program) }
         val fresh = capture { vm2.VeloRuntime(registry()).run(program) }
+        val compact = capture { vm3.VeloRuntime(registry()).run(program) }
 
         assertEquals(fresh, legacy, "legacy VM diverged from vm2")
+        assertEquals(fresh, compact, "vm3 diverged from vm2")
         assertEquals(listOf("square=16", "widget:abc=3", "4", "2", "7"), fresh.lines())
     }
 }

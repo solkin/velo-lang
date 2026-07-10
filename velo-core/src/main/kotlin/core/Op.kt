@@ -371,6 +371,11 @@ sealed interface Op {
      * Otherwise the function's captured (definition-site) scope is used,
      * which is what makes escaping closures work.
      *
+     * [args] is normally the non-negative arity. A negative value is emitted
+     * only inside class/interface method wrappers: `abs(args)` is the arity and
+     * the wrapper reverses its argument slice before entering the method, undoing
+     * property-evaluation order.
+     *
      * A callback owned by another actor is not entered locally; its arguments
      * are structurally cloned and delivered to the owner's dispatcher. When
      * [callbackResult] is false (a `void` callback) the delivery is

@@ -196,6 +196,7 @@ class NativeClassDescriptor(
         fun mapJvmType(c: Class<*>, generic: JType?, registry: NativeRegistry): VmType? = when {
             c == java.lang.Void.TYPE || c == Unit::class.java -> VmType.Void
             c == Integer.TYPE || c == java.lang.Integer::class.java -> VmType.Int
+            c == java.lang.Long.TYPE || c == java.lang.Long::class.java -> VmType.Long
             c == java.lang.Float.TYPE || c == java.lang.Float::class.java -> VmType.Float
             c == java.lang.Boolean.TYPE || c == java.lang.Boolean::class.java -> VmType.Bool
             c == java.lang.Byte.TYPE || c == java.lang.Byte::class.java -> VmType.Byte

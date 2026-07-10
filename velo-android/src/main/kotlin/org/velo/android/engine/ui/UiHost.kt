@@ -3,7 +3,7 @@ package org.velo.android.engine.ui
 import android.content.Context
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import vm2.LoopHandle
+import vm3.LoopHandle
 
 /**
  * The Android-side surface the Velo `Ui` native drives — a screen stack laid over

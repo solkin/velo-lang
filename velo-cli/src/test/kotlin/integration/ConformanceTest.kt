@@ -79,6 +79,7 @@ class ConformanceTest {
     private val backends = listOf(
         Backend("velo-vm") { p, r -> vm.VeloRuntime(r).run(p) },
         Backend("velo-vm2") { p, r -> vm2.VeloRuntime(r).run(p) },
+        Backend("velo-vm3") { p, r -> vm3.VeloRuntime(r).run(p) },
     )
 
     private fun marker(src: String): String? =

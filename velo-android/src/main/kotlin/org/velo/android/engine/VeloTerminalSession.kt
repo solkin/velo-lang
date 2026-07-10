@@ -6,8 +6,8 @@ import core.SerializedProgram
 import org.velo.android.engine.ui.UiBinding
 import org.velo.android.engine.ui.UiHost
 import org.velo.android.engine.ui.registerUiNatives
-import vm2.RunStats
-import vm2.VeloRuntime
+import vm3.RunStats
+import vm3.VeloRuntime
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 

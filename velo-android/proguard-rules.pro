@@ -17,15 +17,9 @@
 # by method name — keep the classes and every member intact.
 -keep class org.velo.android.engine.** { *; }
 
-# The Velo VM/core: callback bridging compares against these exact types and the
-# linker reflects over native signatures. Keep the public surface and any types
-# referenced from reflected native method signatures.
--keep class core.** { *; }
--keep class vm2.** { *; }
-
 # VeloFunction (guest callbacks passed to natives) is matched by class identity
 # in the native bridge — must survive minification under its real name.
--keep interface core.VeloFunction { *; }
+-keep,allowoptimization interface core.VeloFunction { *; }
 
 # Kotlin function types are what declared `(T) -> Unit` native params reflect as;
 # the descriptor inspects them to derive callback signatures.

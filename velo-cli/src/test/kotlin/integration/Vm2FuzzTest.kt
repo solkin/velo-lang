@@ -108,24 +108,18 @@ class Vm2FuzzTest {
 
             val legacy = timedRun(10_000) { vm.VeloRuntime(registry()).run(program) }
             val fresh = timedRun(10_000) { vm2.VeloRuntime(registry()).run(program) }
+            val compact = timedRun(10_000) { vm3.VeloRuntime(registry()).run(program) }
 
-            val bad = when {
-                // Both backends failed/hung identically-in-kind on a compilable
-                // program: not a divergence. Constructed programs shouldn't reach
-                // here — count it so a generator regression stays visible.
-                legacy is Outcome.Hung && fresh is Outcome.Hung -> { bothFailed++; false }
-                legacy is Outcome.Done && fresh is Outcome.Done &&
-                    legacy.err != null && fresh.err != null -> {
-                    // Both raised: not a kind-divergence, but the stdout printed
-                    // before the fault must still match (error *text* is not compared).
-                    bothFailed++; legacy.out != fresh.out
-                }
-                legacy is Outcome.Done && fresh is Outcome.Done ->
-                    legacy.err != null || fresh.err != null || legacy.out != fresh.out
-                else -> true // exactly one hung
+            val legacyVsFresh = sameOutcome(legacy, fresh)
+            val legacyVsCompact = sameOutcome(legacy, compact)
+            val bad = !(legacyVsFresh && legacyVsCompact)
+            if (!bad && listOf(legacy, fresh, compact).all { it is Outcome.Done && it.err != null }) {
+                bothFailed++
+            } else if (!bad && listOf(legacy, fresh, compact).all { it is Outcome.Hung }) {
+                bothFailed++
             }
 
-            if (bad) diverged += report(seed, src, legacy, fresh)
+            if (bad) diverged += report(seed, src, legacy, fresh, compact)
         }
 
         println("fuzz: compiled=$compiled skippedCompile=$skippedCompile bothFailed=$bothFailed diverged=${diverged.size}")
@@ -133,23 +127,41 @@ class Vm2FuzzTest {
             "generator produced too few compilable programs ($compiled/$count) — the generator is broken, not the VMs"
         }
         if (diverged.isNotEmpty()) {
-            fail("${diverged.size} program(s) diverged between vm and vm2:\n\n" +
+            fail("${diverged.size} program(s) diverged between vm, vm2 and vm3:\n\n" +
                 diverged.take(8).joinToString("\n" + "=".repeat(60) + "\n"))
         }
     }
+
+    private fun sameOutcome(a: Outcome, b: Outcome): Boolean = when {
+                // Both backends failed/hung identically-in-kind on a compilable
+                // program: not a divergence. Constructed programs shouldn't reach
+                // here — count it so a generator regression stays visible.
+                a is Outcome.Hung && b is Outcome.Hung -> true
+                a is Outcome.Done && b is Outcome.Done &&
+                    a.err != null && b.err != null -> {
+                    // Both raised: not a kind-divergence, but the stdout printed
+                    // before the fault must still match (error *text* is not compared).
+                    a.out == b.out
+                }
+                a is Outcome.Done && b is Outcome.Done ->
+                    a.err == null && b.err == null && a.out == b.out
+                else -> false
+            }
 
     private fun describe(o: Outcome) = when (o) {
         is Outcome.Hung -> "HUNG"
         is Outcome.Done -> o.err?.let { "RAISED ${it.javaClass.simpleName}: ${it.message}" } ?: "ok"
     }
 
-    private fun report(seed: Long, src: String, legacy: Outcome, fresh: Outcome) = buildString {
+    private fun report(seed: Long, src: String, legacy: Outcome, fresh: Outcome, compact: Outcome) = buildString {
         appendLine("seed=$seed")
         appendLine("--- source ---"); appendLine(src)
         appendLine("--- legacy (vm) ${describe(legacy)} ---")
         if (legacy is Outcome.Done) appendLine(legacy.out)
         appendLine("--- vm2 ${describe(fresh)} ---")
         if (fresh is Outcome.Done) appendLine(fresh.out)
+        appendLine("--- vm3 ${describe(compact)} ---")
+        if (compact is Outcome.Done) appendLine(compact.out)
     }
 }
 

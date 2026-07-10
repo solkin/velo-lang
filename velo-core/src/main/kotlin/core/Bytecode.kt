@@ -227,19 +227,19 @@ object Bytecode {
     }
 
     fun read(inp: DataInputStream): SerializedProgram {
-        val magic = inp.readShort().toInt()
+        val magic = inp.readUnsignedShort()
         if (magic != MAGIC) {
             throw IllegalArgumentException("Not a Velo bytecode file, wrong magic: $magic")
         }
-        val versionMajor = inp.readByte().toInt()
-        val versionMinor = inp.readByte().toInt()
+        val versionMajor = inp.readUnsignedByte()
+        val versionMinor = inp.readUnsignedByte()
         if (versionMajor != VERSION_MAJOR) {
             throw IllegalArgumentException("Unsupported bytecode version: $versionMajor.$versionMinor")
         }
         val natives = readNatives(inp)
         val dataClasses = readDataClasses(inp)
         val classMethods = readClassMethods(inp)
-        val frames = List(inp.readShort().toInt()) { readFrame(inp) }
+        val frames = List(inp.readUnsignedShort()) { readFrame(inp) }
         return SerializedProgram(
             natives = natives,
             frames = frames,
@@ -249,9 +249,9 @@ object Bytecode {
     }
 
     private fun readClassMethods(inp: DataInputStream): List<ClassMethodsInfo> {
-        return List(inp.readShort().toInt()) {
+        return List(inp.readUnsignedShort()) {
             val frameNum = inp.readInt()
-            val methods = List(inp.readShort().toInt()) {
+            val methods = List(inp.readUnsignedShort()) {
                 ClassMethod(name = inp.readUTF(), index = inp.readInt())
             }
             ClassMethodsInfo(frameNum = frameNum, methods = methods)
@@ -259,10 +259,10 @@ object Bytecode {
     }
 
     private fun readDataClasses(inp: DataInputStream): List<DataClassInfo> {
-        return List(inp.readShort().toInt()) {
+        return List(inp.readUnsignedShort()) {
             val frameNum = inp.readInt()
             val name = inp.readUTF()
-            val fields = List(inp.readByte().toInt()) {
+            val fields = List(inp.readUnsignedByte()) {
                 DataField(name = inp.readUTF(), index = inp.readInt(), type = readType(inp))
             }
             DataClassInfo(frameNum = frameNum, name = name, fields = fields)
@@ -270,25 +270,29 @@ object Bytecode {
     }
 
     private fun readNatives(inp: DataInputStream): List<NativeRef> {
-        return List(inp.readShort().toInt()) {
-            val kind = if (inp.readByte().toInt() == 0) NativeRef.Kind.CONSTRUCTOR else NativeRef.Kind.METHOD
+        return List(inp.readUnsignedShort()) {
+            val kind = when (val tag = inp.readUnsignedByte()) {
+                0 -> NativeRef.Kind.CONSTRUCTOR
+                1 -> NativeRef.Kind.METHOD
+                else -> throw IllegalStateException("Unsupported native kind: $tag")
+            }
             val className = inp.readUTF()
             val methodName = inp.readUTF()
-            val params = List(inp.readByte().toInt()) { readType(inp) }
+            val params = List(inp.readUnsignedByte()) { readType(inp) }
             val returns = readType(inp)
             NativeRef(kind, className, methodName, params, returns)
         }
     }
 
     private fun readFrame(inp: DataInputStream): SerializedFrame {
-        val num = inp.readShort().toInt()
-        val vars = List(inp.readShort().toInt()) { inp.readShort().toInt() }
-        val ops = List(inp.readShort().toInt()) { readOp(inp) }
+        val num = inp.readUnsignedShort()
+        val vars = List(inp.readUnsignedShort()) { inp.readUnsignedShort() }
+        val ops = List(inp.readUnsignedShort()) { readOp(inp) }
         return SerializedFrame(num = num, ops = ops, vars = vars)
     }
 
     private fun readOp(inp: DataInputStream): Op {
-        return when (val opcode = inp.readByte().toInt()) {
+        return when (val opcode = inp.readUnsignedByte()) {
             0x02 -> Op.And
             0x03 -> Op.ArrNew
             0x04 -> Op.ArrLoad
@@ -343,8 +347,8 @@ object Bytecode {
             0x40 -> Op.StrInt
             0x42 -> Op.Instance
             0x43 -> Op.NativeCall(
-                poolIndex = inp.readShort().toInt(),
-                args = List(inp.readByte().toInt()) { readType(inp) },
+                poolIndex = inp.readUnsignedShort(),
+                args = List(inp.readUnsignedByte()) { readType(inp) },
             )
             0x46 -> Op.Shl
             0x47 -> Op.Shr
@@ -369,7 +373,7 @@ object Bytecode {
     }
 
     private fun readValue(inp: DataInputStream): Any {
-        return when (val tag = inp.readByte().toInt()) {
+        return when (val tag = inp.readUnsignedByte()) {
             TYPE_BYTE -> inp.readByte()
             TYPE_INT -> inp.readInt()
             TYPE_LONG -> inp.readLong()
@@ -382,7 +386,7 @@ object Bytecode {
     }
 
     private fun readType(inp: DataInputStream): VmType {
-        return when (val tag = inp.readByte().toInt()) {
+        return when (val tag = inp.readUnsignedByte()) {
             TYPE_VOID -> VmType.Void
             TYPE_ANY -> VmType.Any
             TYPE_BYTE -> VmType.Byte
@@ -391,12 +395,12 @@ object Bytecode {
             TYPE_FLOAT -> VmType.Float
             TYPE_STR -> VmType.Str
             TYPE_BOOL -> VmType.Bool
-            TYPE_TUPLE -> VmType.Tuple(List(inp.readByte().toInt()) { readType(inp) })
+            TYPE_TUPLE -> VmType.Tuple(List(inp.readUnsignedByte()) { readType(inp) })
             TYPE_ARRAY -> VmType.Array(elementType = readType(inp))
             TYPE_CLASS -> VmType.Class(name = inp.readUTF())
             TYPE_FUNC -> {
                 val args = if (inp.readBoolean()) {
-                    List(inp.readByte().toInt()) { readType(inp) }
+                    List(inp.readUnsignedByte()) { readType(inp) }
                 } else {
                     null
                 }

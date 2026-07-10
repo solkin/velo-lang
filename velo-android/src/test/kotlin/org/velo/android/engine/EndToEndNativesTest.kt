@@ -4,7 +4,7 @@ import compiler.VeloCompiler
 import core.NativeRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import vm2.VeloRuntime
+import vm3.VeloRuntime
 import java.io.File
 
 /**
