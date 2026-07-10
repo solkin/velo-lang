@@ -47,6 +47,17 @@ class VeloRuntime(private val natives: NativeRegistry = NativeRegistry()) {
         return this
     }
 
+    /**
+     * Plug in a custom [Heap] strategy — a host-specific collector for a native
+     * port. The default is [NoHeap] (lean on the host GC); [managedHeap] is the
+     * convenience shortcut for the built-in mark-sweep. The VM depends only on
+     * the [Heap] interface, so any implementation works.
+     */
+    fun heap(heap: Heap): VeloRuntime {
+        this.heap = heap
+        return this
+    }
+
     fun run(program: SerializedProgram): RunStats = run(program, null)
 
     /**

@@ -58,4 +58,43 @@ class Vm2GcTest {
     @Test fun `arrays are reclaimed`() = assertBoundedHeap("alloc-churn")
 
     @Test fun `instances are reclaimed`() = assertBoundedHeap("objects")
+
+    @Test fun `actor allocations are reclaimed across the multi-actor boundary`() {
+        // Previously the managed collector self-disabled once an actor spawned
+        // (single-fiber roots were incomplete). Now a spawned actor that churns
+        // arrays still gets its garbage swept: allocation happens inside the
+        // actor's own fibers, yet the live set stays bounded.
+        val reg = NativeRegistry().register(Terminal::class)
+        val src = """
+            Terminal term = new Terminal();
+            actor class Churner() {
+                func run(int rounds) int {
+                    int sum = 0;
+                    int i = 0;
+                    while (i < rounds) {
+                        array[int] tmp = new array[int](8);
+                        tmp[0] = i;
+                        sum += tmp[0];
+                        i += 1;
+                    };
+                    return sum;
+                };
+            };
+            actor[Churner] c = new Churner();
+            term.println((await async c.run(300000)).str());
+        """.trimIndent()
+        val tmp = File.createTempFile("gc-actor", ".vel").apply { writeText(src); deleteOnExit() }
+        val program = VeloCompiler(reg).compile(tmp.path) ?: error("compile failed")
+
+        val plain = capture { VeloRuntime(reg).run(program) }
+        var stats: vm2.RunStats? = null
+        val managed = capture { stats = VeloRuntime(reg).managedHeap(thresholdAllocs = 20_000).run(program) }
+
+        val mem = stats!!.memory!!
+        assertEquals(plain, managed, "managed-heap result diverged with an actor present")
+        assertTrue(mem.allocations > 100_000, "expected heavy allocation, got ${mem.allocations}")
+        assertTrue(mem.collections > 3, "collector barely ran (${mem.collections})")
+        assertTrue(mem.peakLive < 20_000 * 2, "live set not bounded with actors: peakLive=${mem.peakLive}")
+        println("actor-churn: allocations=${mem.allocations} peakLive=${mem.peakLive} collections=${mem.collections}")
+    }
 }

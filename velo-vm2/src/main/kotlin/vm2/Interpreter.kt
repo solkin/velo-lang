@@ -104,9 +104,19 @@ class Interpreter(
 
     private val managed = heap !== NoHeap
 
-    /** The fiber currently driving on this thread, and whether any actor has spawned. */
+    /** The fiber currently driving on this thread. */
     @Volatile private var driving: Fiber? = null
-    @Volatile private var multiActor = false
+
+    // Managed-heap GC roots, maintained only in the cooperative single-threaded
+    // mode ([trackRoots]) where a stop-the-world mark-sweep is safe: every actor
+    // and fiber lives on the one loop thread, so a collect at an allocation
+    // safepoint sees a consistent set of roots. Threaded dispatch and NoHeap
+    // never touch these sets — they stay empty at zero cost, and the host GC (or
+    // nothing) handles reclamation there.
+    private val trackRoots = managed && mainDispatcher == null && factory == null
+    private val liveFibers = HashSet<Fiber>()
+    private val liveActors = ArrayList<ActorRef>()
+    private val pendingRoots = HashSet<Any?>()
 
     /** Velo `data class` metadata keyed by name, for host → Velo re-materialisation. */
     private val dataByName: Map<String, DataClassInfo> = dataClasses.values.associateBy { it.name }
@@ -143,12 +153,26 @@ class Interpreter(
         var suspended = false
     }
 
+    /**
+     * Create a fiber, registering it as a live GC root for its lifetime and
+     * dropping it when it settles. In non-tracking mode (threaded / NoHeap) this
+     * is a plain constructor and the registry stays empty.
+     */
+    private fun newFiber(actor: ActorRef, onSettled: (Any?, Throwable?) -> Unit): Fiber {
+        if (!trackRoots) return Fiber(actor, onSettled)
+        lateinit var f: Fiber
+        f = Fiber(actor) { v, e -> liveFibers.remove(f); onSettled(v, e) }
+        liveFibers.add(f)
+        return f
+    }
+
     /** Seed and dispatch the main fiber onto the main dispatcher (host-injected or the cooperative loop). */
     private fun launchMain(entryFrameNum: Int) {
         val entry = frames[entryFrameNum] ?: error("No entry frame #$entryFrameNum")
         val entryFrame = Frame(entry, null)
         val main = ActorRef(Instance(entryFrame, entry.num), mainDispatcher ?: LoopDispatcher(loop), "main")
-        val fiber = Fiber(main) { _, err -> mainError = err; mainDone = true; checkStop() }
+        if (trackRoots) liveActors.add(main)
+        val fiber = newFiber(main) { _, err -> mainError = err; mainDone = true; checkStop() }
         // The entry frame takes no arguments: its operand window starts at the
         // base of the (empty) value stack.
         entryFrame.opBase = 0
@@ -373,6 +397,19 @@ class Interpreter(
         }
     }
 
+    /**
+     * Every GC root across all live actors: each actor's instance state, each
+     * in-flight fiber's operands + scope chains, and message arguments still in
+     * transit to a mailbox — those live only inside a queued dispatcher task
+     * (invisible to the mark phase) between [transfer] and the receiving fiber's
+     * seed, so they are pinned in [pendingRoots] for that window.
+     */
+    private fun allRoots(): Sequence<Any?> = sequence {
+        for (a in liveActors) yield(a.instance)
+        for (f in liveFibers) yieldAll(rootsOf(f))
+        yieldAll(pendingRoots)
+    }
+
     /** Tag a raw failure with the failing actor once, leaving an already-tagged error intact. */
     private fun tag(actor: ActorRef, t: Throwable): Throwable =
         if (t is VeloError) t else VeloError("actor '${actor.name}' failed: ${t.message}", t)
@@ -506,31 +543,35 @@ class Interpreter(
         val owner = handle.owner
         val transferred = args.map { transfer(it, fiber.actor) }
         if (!wantResult) {
+            if (trackRoots) pendingRoots.addAll(transferred)
             owner.dispatcher.execute {
-                val msg = Fiber(owner) { _, _ -> }
+                val msg = newFiber(owner) { _, _ -> }
                 seed(msg, handle.fn, transferred)
+                if (trackRoots) pendingRoots.removeAll(transferred.toSet())
                 drive(msg)
             }
             return false
         }
         val f = VFuture()
+        if (trackRoots) pendingRoots.addAll(transferred)
         owner.dispatcher.execute {
-            val msg = Fiber(owner) { result, err ->
+            val msg = newFiber(owner) { result, err ->
                 if (err != null) f.fail(err) else f.complete(transfer(result, owner))
             }
             seed(msg, handle.fn, transferred)
+            if (trackRoots) pendingRoots.removeAll(transferred.toSet())
             drive(msg)
         }
         return awaitFuture(fiber, f)
     }
 
     /**
-     * Collection safepoint after a managed allocation. Skipped once any actor
-     * has spawned: the single-fiber roots would then be incomplete and the
-     * sweep could free objects reachable only from another fiber or a mailbox.
+     * Collection safepoint after a managed allocation. Active only in the
+     * cooperative single-threaded mode ([trackRoots]); [allRoots] then spans
+     * every actor and in-flight fiber, so the sweep is safe with actors present.
      */
     private fun afterAlloc() {
-        if (managed && !multiActor) driving?.let { f -> heap.maybeCollect { rootsOf(f) } }
+        if (trackRoots) heap.maybeCollect { allRoots() }
     }
 
     private inline fun binary(s: ValueStack, f: (Any?, Any?) -> Any?) {
@@ -550,26 +591,29 @@ class Interpreter(
     // ---- Actors ----
 
     private fun actorSpawn(fiber: Fiber, act: Frame, op: Op.ActorSpawn) {
-        multiActor = true // roots now span multiple fibers/mailboxes; disable single-fiber GC
         val args = popDeclaredArgs(fiber.vs, op.args).map { transfer(it, fiber.actor) }
         val classFrame = frames[op.classFrameNum] ?: error("No actor frame #${op.classFrameNum}")
         val dispatcher = factory?.create(op.className) ?: LoopDispatcher(loop)
         // The constructor's lexical parent is the spawning frame [act]; its locals
         // are heap-resident, so the new actor can safely read them across threads.
         val instance = runSync(FuncValue(classFrame, act), args, fiber.actor) as Instance
-        fiber.vs.push(ActorRef(instance, dispatcher, op.className))
+        val actor = ActorRef(instance, dispatcher, op.className)
+        if (trackRoots) liveActors.add(actor)
+        fiber.vs.push(actor)
     }
 
     private fun actorCall(fiber: Fiber, act: Frame, op: Op.ActorCall) {
         val args = popDeclaredArgs(fiber.vs, op.args).map { transfer(it, fiber.actor) }
         val actor = fiber.vs.pop() as ActorRef
         val f = VFuture()
+        if (trackRoots) pendingRoots.addAll(args)
         actor.dispatcher.execute {
             val method = actor.instance.scope.load(op.methodVarIndex) as FuncValue
-            val msg = Fiber(actor) { result, err ->
+            val msg = newFiber(actor) { result, err ->
                 if (err != null) f.fail(err) else f.complete(transfer(result, actor))
             }
             seed(msg, method, args)
+            if (trackRoots) pendingRoots.removeAll(args.toSet())
             drive(msg)
         }
         fiber.vs.push(f)
@@ -595,7 +639,7 @@ class Interpreter(
     private fun runSync(func: FuncValue, args: List<Any?>, owner: ActorRef): Any? {
         var result: Any? = NO_VALUE
         var failure: Throwable? = null
-        val fiber = Fiber(owner) { v, e -> result = v; failure = e }
+        val fiber = newFiber(owner) { v, e -> result = v; failure = e }
         seed(fiber, func, args)
         drive(fiber)
         failure?.let { throw it }
@@ -676,9 +720,11 @@ class Interpreter(
             if (runningActor.get() === owner) {
                 runSync(fn, velo, owner)
             } else {
+                if (trackRoots) pendingRoots.addAll(velo)
                 owner.dispatcher.execute {
-                    val msg = Fiber(owner) { _, _ -> }
+                    val msg = newFiber(owner) { _, _ -> }
                     seed(msg, fn, velo)
+                    if (trackRoots) pendingRoots.removeAll(velo.toSet())
                     drive(msg)
                 }
             }
@@ -695,12 +741,14 @@ class Interpreter(
                     cf.completeExceptionally(t)
                 }
             } else {
+                if (trackRoots) pendingRoots.addAll(velo)
                 owner.dispatcher.execute {
-                    val msg = Fiber(owner) { r, e ->
+                    val msg = newFiber(owner) { r, e ->
                         if (e != null) cf.completeExceptionally(e)
                         else cf.complete(if (r === NO_VALUE) null else veloToHost(r))
                     }
                     seed(msg, fn, velo)
+                    if (trackRoots) pendingRoots.removeAll(velo.toSet())
                     drive(msg)
                 }
             }
