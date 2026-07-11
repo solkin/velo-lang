@@ -1,0 +1,23 @@
+# Float edge cases: -0.0, NaN and Inf under == and > must follow IEEE and agree
+# across every backend. The differential fuzzer never generates these (no NaN, and
+# ±0.0 pairs are rare), so pin the semantics here — this is what caught vm3 using a
+# total-order compareTo instead of IEEE operators.
+Terminal term = new Terminal();
+
+float pz = 0.00;
+float nz = 0.00 * (0.00 - 1.00);   # -0.0
+float nan = 0.00 / 0.00;           # NaN
+float inf = 1.00 / 0.00;           # +Inf
+
+# -0.0 equals +0.0, and neither is greater than the other.
+if (pz == nz) { term.println("negzero-eq"); } else { term.println("negzero-neq"); };
+if (pz > nz) { term.println("negzero-gt"); } else { term.println("negzero-ngt"); };
+if (nz > pz) { term.println("negzero-gt2"); } else { term.println("negzero-ngt2"); };
+
+# NaN is unordered: not equal to itself, not greater than or less than anything.
+if (nan == nan) { term.println("nan-eq"); } else { term.println("nan-neq"); };
+if (nan > pz) { term.println("nan-gt"); } else { term.println("nan-ngt"); };
+if (pz > nan) { term.println("nan-gt-l"); } else { term.println("nan-ngt-l"); };
+
+# Infinity orders above every finite value.
+if (inf > 1000000.00) { term.println("inf-gt"); } else { term.println("inf-ngt"); };
