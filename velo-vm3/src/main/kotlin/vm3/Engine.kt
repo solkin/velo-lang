@@ -6,7 +6,6 @@ import core.Dispatcher
 import core.DispatcherFactory
 import core.NativeLinker
 import core.NativeRegistry
-import core.NullPtr
 import core.Op
 import core.SerializedProgram
 import core.VmType
@@ -307,10 +306,10 @@ internal class Engine(
                 0x35 -> bitwise('^')
                 0x46 -> shift(left = true)
                 0x47 -> shift(left = false)
-                0x1b -> { val bi = sp - 1; val ai = sp - 2; val r = compareSlots(ai, bi) > 0; sp = ai; sRef[ai] = null; pushBool(r) }
+                0x1b -> { val bi = sp - 1; val ai = sp - 2; val r = greaterSlots(ai, bi); sp = ai; sRef[ai] = null; pushBool(r) }
                 OP_GT_IF -> {
                     val bi = sp - 1; val ai = sp - 2
-                    val taken = compareSlots(ai, bi) > 0
+                    val taken = greaterSlots(ai, bi)
                     sp = ai; sRef[ai] = null
                     frame.pc = pc + 2
                     if (!taken) frame.pc += spec.opA[pc + 1]
@@ -768,7 +767,7 @@ internal class Engine(
             if (ai < 0) throw VeloError("Operand stack underflow")
             val ta = sTag[ai]; val tb = sTag[bi]
             val res = if (isNumericTag(ta) && isNumericTag(tb)) {
-                compareSlots(ai, bi) == 0
+                numericEqualSlots(ai, bi)
             } else {
                 equalsValue(boxSlot(ta, sPrim[ai], sRef[ai]), boxSlot(tb, sPrim[bi], sRef[bi]))
             }
@@ -776,10 +775,19 @@ internal class Engine(
             return res
         }
 
-        private fun compareSlots(ai: Int, bi: Int): Int = when (maxOf(kindRank(sTag[ai]), kindRank(sTag[bi]))) {
-            1 -> slotInt(ai).compareTo(slotInt(bi))
-            2 -> slotLong(ai).compareTo(slotLong(bi))
-            else -> slotFloat(ai).compareTo(slotFloat(bi))
+        // Comparisons use direct IEEE operators (not a total-order compareTo), so
+        // -0.0 and NaN match the reference VM: 0.0 == -0.0 is true, NaN == NaN and
+        // NaN > x are false.
+        private fun greaterSlots(ai: Int, bi: Int): Boolean = when (maxOf(kindRank(sTag[ai]), kindRank(sTag[bi]))) {
+            1 -> slotInt(ai) > slotInt(bi)
+            2 -> slotLong(ai) > slotLong(bi)
+            else -> slotFloat(ai) > slotFloat(bi)
+        }
+
+        private fun numericEqualSlots(ai: Int, bi: Int): Boolean = when (maxOf(kindRank(sTag[ai]), kindRank(sTag[bi]))) {
+            1 -> slotInt(ai) == slotInt(bi)
+            2 -> slotLong(ai) == slotLong(bi)
+            else -> slotFloat(ai) == slotFloat(bi)
         }
 
         private fun kindRank(tag: Byte): Int = when (tag) {
@@ -807,7 +815,7 @@ internal class Engine(
         // Values on the operand stack that must fall back to a JVM object.
         private fun equalsValue(a: Any?, b: Any?): Boolean {
             if (a === Uninitialized || b === Uninitialized) throw VeloError("Cannot compare uninitialized values")
-            if (a is Number && b is Number) return compareNumbersBoxed(a, b) == 0
+            if (a is Number && b is Number) return numericEqualsBoxed(a, b)
             if (a is VArray && b is VArray) return a.size == b.size && (0 until a.size).all {
                 equalsValue(a.get(it), b.get(it))
             }
@@ -819,10 +827,10 @@ internal class Engine(
             return a == b
         }
 
-        private fun compareNumbersBoxed(a: Number, b: Number): Int = when {
-            a is Float || b is Float -> a.toFloat().compareTo(b.toFloat())
-            a is Long || b is Long -> a.toLong().compareTo(b.toLong())
-            else -> a.toInt().compareTo(b.toInt())
+        private fun numericEqualsBoxed(a: Number, b: Number): Boolean = when {
+            a is Float || b is Float -> a.toFloat() == b.toFloat()
+            a is Long || b is Long -> a.toLong() == b.toLong()
+            else -> a.toInt() == b.toInt()
         }
 
         private fun hashValue(value: Any?): Int = when (value) {
@@ -831,7 +839,7 @@ internal class Engine(
             is Byte -> value.toInt()
             is Int -> value
             is Long -> value.hashCode()
-            is Float -> value.hashCode()
+            is Float -> value.toRawBits()
             is VArray -> (0 until value.size).fold(1) { h, i -> 31 * h + hashValue(value.get(i)) }
             is InstanceValue -> engine.dataClasses[value.classFrame]?.fields?.fold(1) { h, f -> 31 * h + hashValue(value.env.get(f.index)) }
                 ?: System.identityHashCode(value)
