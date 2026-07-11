@@ -234,6 +234,13 @@ class Track() {
         px = new array[int](pc)
         py = new array[int](pc)
         count = 0
+        # The visible-point window indexes into this level's points; reset it so a
+        # stale index left over from a longer previous track can't read past the
+        # freshly (and smaller) allocated arrays.
+        ea = 0
+        fa = 0
+        winA = 0
+        winK = 0
         # Some tracks (e.g. Slope) put a stray first point to the RIGHT of the real start, so
         # the strictly-increasing-x rule would reject most of the track. Begin from the leftmost
         # (min-x) source point — the true start — then keep the monotonic run from there.
@@ -312,6 +319,7 @@ class Track() {
         int j = jIn.shr(1)
         int k = kIn.shr(1)
         if (fa >= count - 1) { fa = count - 1 }
+        if (ea >= count - 1) { ea = count - 1 }
         if (ea < 0) { ea = 0 }
         # The original advances with pre-increment (points[++faI]) — so faI ends at the
         # first point at/after the bike's right edge, one PAST the segment under the bike.
