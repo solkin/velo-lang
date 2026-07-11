@@ -269,14 +269,14 @@ internal class Engine(
                 val calls = this.calls
                 while (calls.isNotEmpty()) {
                     val frame = calls[calls.size - 1]
-                    val ops = frame.spec.ops
-                    if (frame.pc >= ops.size) { finishFrame(frame); continue }
+                    val code = frame.spec.code
+                    if (frame.pc >= code.size) { finishFrame(frame); continue }
                     // Observe a cooperative stop without paying a volatile read
                     // every instruction.
                     if ((ins and CHECK_MASK) == 0L && engine.stopped.get()) break
-                    val op = ops[frame.pc++]
+                    val pc = frame.pc++
                     ins++
-                    execute(op, frame)
+                    execute(pc, frame)
                 }
                 engine.failure?.let { throw it }
                 return if (sp == 0) null else popAny()
@@ -285,12 +285,14 @@ internal class Engine(
             }
         }
 
-        private fun execute(op: Op, frame: Activation) {
-            // Dispatch on the bytecode tag itself. A Kotlin `when` on the
-            // sealed Op hierarchy lowers object branches to a long chain of
-            // equality calls; an Int tag lowers to a JVM switch.
-            when (op.opcode) {
-                0x29 -> { val v = (op as Op.Push).value; if (v === NullPtr) pushRef(NullPointerValue) else push(v) }
+        private fun execute(pc: Int, frame: Activation) {
+            // Dispatch on the flat opcode stream (an IntArray), reading operands
+            // from the frame's precomputed opA/consts tables — no Op-object
+            // chase, no cast on the hot path. Fused superinstructions (OP_*)
+            // ride the same switch.
+            val spec = frame.spec
+            when (spec.code[pc]) {
+                0x29 -> push(spec.consts[pc])
                 0x0c -> drop()
                 0x0d -> dup()
                 0x34 -> swap()
@@ -306,6 +308,18 @@ internal class Engine(
                 0x46 -> shift(left = true)
                 0x47 -> shift(left = false)
                 0x1b -> { val bi = sp - 1; val ai = sp - 2; val r = compareSlots(ai, bi) > 0; sp = ai; sRef[ai] = null; pushBool(r) }
+                OP_GT_IF -> {
+                    val bi = sp - 1; val ai = sp - 2
+                    val taken = compareSlots(ai, bi) > 0
+                    sp = ai; sRef[ai] = null
+                    frame.pc = pc + 2
+                    if (!taken) frame.pc += spec.opA[pc + 1]
+                }
+                OP_EQ_IF -> {
+                    val taken = equalsTop()
+                    frame.pc = pc + 2
+                    if (!taken) frame.pc += spec.opA[pc + 1]
+                }
                 0x0e -> equals()
                 0x14 -> pushRef(String(Character.toChars(popInt())))
                 0x15 -> pushRef(popInt().toString())
@@ -346,26 +360,26 @@ internal class Engine(
                     val src = popArray(); val dst = popArray()
                     src.copyInto(dst, srcPos, dstPos, length)
                 }
-                0x0f -> loadVar(frame.env, (op as Op.Load).index)
-                0x2d -> storeVar(frame.env, (op as Op.Store).index)
-                0x12 -> if (!popBool()) frame.pc += (op as Op.If).elseSkip
-                0x1d -> frame.pc += (op as Op.Move).count
-                0x22 -> frame.env = makeEnv(frame.spec.scopeKeys[frame.pc - 1]!!, frame.env, frame.spec.escapes)
+                0x0f -> loadVar(frame.env, spec.opA[pc])
+                0x2d -> storeVar(frame.env, spec.opA[pc])
+                0x12 -> if (!popBool()) frame.pc += spec.opA[pc]
+                0x1d -> frame.pc += spec.opA[pc]
+                0x22 -> frame.env = makeEnv(spec.scopeKeys[pc]!!, frame.env, spec.escapes)
                 0x23 -> {
                     val leaving = frame.env
                     val parent = leaving.parent ?: throw VeloError("No scope to leave")
-                    if (!frame.spec.escapes) recycle(leaving)
+                    if (!spec.escapes) recycle(leaving)
                     frame.env = parent
                 }
                 0x11 -> engine.stop()
                 0x2b -> finishFrame(frame)
-                0x18 -> pushRef(FuncValue(engine.frames.getValue((op as Op.Frame).num), frame.env, owner))
+                0x18 -> pushRef(FuncValue(engine.frames.getValue(spec.opA[pc]), frame.env, owner))
                 0x42 -> {
-                    frame.env.classFrame = frame.spec.num
-                    pushRef(InstanceValue(frame.spec.num, frame.env))
+                    frame.env.classFrame = spec.num
+                    pushRef(InstanceValue(spec.num, frame.env))
                 }
                 0x19 -> {
-                    op as Op.MethodLoad
+                    val op = spec.ops[pc] as Op.MethodLoad
                     val receiver = frame.env.parent ?: throw VeloError("Method receiver is missing")
                     val classFrame = findInstanceFrame(receiver)
                     val slot = engine.methods[classFrame]?.get(op.name)
@@ -373,20 +387,20 @@ internal class Engine(
                     pushRef(receiver.get(slot))
                 }
                 0x09 -> {
-                    op as Op.Call
+                    val op = spec.ops[pc] as Op.Call
                     call(op.args, op.classParent, op.callbackResult)
                 }
-                0x1c -> interfaceCall(op as Op.InterfaceCall)
+                0x1c -> interfaceCall(spec.ops[pc] as Op.InterfaceCall)
                 0x50 -> pushRef(BoxPointer(popAny()))
                 0x51 -> push((popRef() as VPointer).get())
                 0x52 -> { val ptr = popRef() as VPointer; ptr.set(popAny()) }
-                0x53 -> pushRef(EnvPointer(frame.env, (op as Op.PtrRef).varIndex))
+                0x53 -> pushRef(EnvPointer(frame.env, spec.opA[pc]))
                 0x54 -> { val index = popInt(); pushRef(ArrayPointer(popArray(), index)) }
-                0x43 -> nativeCall(op as Op.NativeCall)
-                0x60 -> actorSpawn(op as Op.ActorSpawn)
-                0x61 -> actorCall(op as Op.ActorCall)
+                0x43 -> nativeCall(spec.ops[pc] as Op.NativeCall)
+                0x60 -> actorSpawn(spec.ops[pc] as Op.ActorSpawn)
+                0x61 -> actorCall(spec.ops[pc] as Op.ActorCall)
                 0x62 -> futureAwait()
-                else -> throw VeloError("Unknown opcode 0x${op.opcode.toString(16)}")
+                else -> throw VeloError("Unknown opcode 0x${spec.code[pc].toString(16)}")
             }
         }
 
@@ -747,7 +761,9 @@ internal class Engine(
             }
         }
 
-        private fun equals() {
+        private fun equals() = pushBool(equalsTop())
+
+        private fun equalsTop(): Boolean {
             val bi = sp - 1; val ai = sp - 2
             if (ai < 0) throw VeloError("Operand stack underflow")
             val ta = sTag[ai]; val tb = sTag[bi]
@@ -757,7 +773,7 @@ internal class Engine(
                 equalsValue(boxSlot(ta, sPrim[ai], sRef[ai]), boxSlot(tb, sPrim[bi], sRef[bi]))
             }
             sp = ai; sRef[ai] = null; sRef[bi] = null
-            pushBool(res)
+            return res
         }
 
         private fun compareSlots(ai: Int, bi: Int): Int = when (maxOf(kindRank(sTag[ai]), kindRank(sTag[bi]))) {

@@ -1,10 +1,15 @@
 package vm3
 
+import core.NullPtr
 import core.Op
 import core.SerializedFrame
 
 internal object Uninitialized
 internal object NullPointerValue
+
+/** Fused superinstruction codes (kept above the 0x00..0xFF opcode range). */
+internal const val OP_GT_IF = 0x100
+internal const val OP_EQ_IF = 0x101
 
 // ---------------------------------------------------------------------------
 // Tagged value representation.
@@ -71,6 +76,47 @@ internal class FrameSpec(frame: SerializedFrame) {
      */
     @JvmField val escapes: Boolean =
         ops.any { it.opcode == 0x18 || it.opcode == 0x42 || it.opcode == 0x53 }
+
+    // Flat instruction stream: the dispatch code, a primary int operand and the
+    // Push-constant table are decoded once so the hot loop reads plain arrays
+    // instead of chasing Op objects and casting. `code` also carries fused
+    // superinstructions (OP_*).
+    @JvmField val code: IntArray
+    @JvmField val opA: IntArray
+    @JvmField val consts: Array<Any?>
+
+    init {
+        val n = ops.size
+        code = IntArray(n) { ops[it].opcode }
+        opA = IntArray(n)
+        consts = arrayOfNulls(n)
+        for (i in 0 until n) when (val op = ops[i]) {
+            is Op.Load -> opA[i] = op.index
+            is Op.Store -> opA[i] = op.index
+            is Op.If -> opA[i] = op.elseSkip
+            is Op.Move -> opA[i] = op.count
+            is Op.Frame -> opA[i] = op.num
+            is Op.PtrRef -> opA[i] = op.varIndex
+            is Op.Push -> consts[i] = if (op.value === NullPtr) NullPointerValue else op.value
+            else -> Unit
+        }
+        // Basic-block-aware peephole: fuse `GT; If` (the common loop condition)
+        // when the If is not itself a jump target, so control can't land between.
+        val target = BooleanArray(n)
+        for (i in 0 until n) {
+            val t = when (val op = ops[i]) {
+                is Op.If -> i + 1 + op.elseSkip
+                is Op.Move -> i + 1 + op.count
+                else -> -1
+            }
+            if (t in 0 until n) target[t] = true
+        }
+        for (i in 0 until n - 1) {
+            if (target[i + 1] || code[i + 1] != 0x12) continue
+            if (code[i] == 0x1b) code[i] = OP_GT_IF
+            else if (code[i] == 0x0e) code[i] = OP_EQ_IF
+        }
+    }
 }
 
 /**
