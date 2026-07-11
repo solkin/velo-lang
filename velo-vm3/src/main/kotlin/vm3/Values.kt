@@ -62,31 +62,74 @@ internal class FrameSpec(frame: SerializedFrame) {
     @JvmField val scopeKeys: Array<IntArray?> = arrayOfNulls<IntArray>(ops.size).also { arr ->
         ops.forEachIndexed { i, op -> if (op is Op.ScopeEnter) arr[i] = IntArray(op.count) { op.base + it } }
     }
+
+    /**
+     * True if this frame's environment can outlive the call — it captures itself
+     * into a closure (FrameLoad), freezes into an instance (Instance) or is
+     * aliased by a pointer (PtrRef). Such frames get a fresh Env; the common case
+     * (plain functions, loops) has its Env pooled and reused instead.
+     */
+    @JvmField val escapes: Boolean =
+        ops.any { it.opcode == 0x18 || it.opcode == 0x42 || it.opcode == 0x53 }
 }
 
 /**
  * Lexical environment. Variable ids are program-global, so tiny linear maps
  * beat hash maps here.
  *
- * Storage is a single boxed slot array. A tagged (three-array) layout was tried
- * to keep primitives unboxed in variables too, but an Env is allocated per call,
- * per instance and per loop-scope, so three arrays each cost far more allocation
- * churn than the boxing they save. The operand stack — allocated once per fiber
- * and reused — is where the tagged layout pays off; variables stay boxed.
+ * Two layouts share one class:
+ *  - **tagged** (the hot path): primitives stay unboxed in `tag`/`prim`/`ref`,
+ *    so Load/Store never box. Non-escaping frames pool and [rebind]-reuse these,
+ *    so the three arrays cost nothing per call.
+ *  - **boxed** (`boxed != null`): a single `Any?` array. Used for frames whose
+ *    Env escapes (a closure captures it, it freezes into an instance, or a
+ *    pointer aliases it, see FrameSpec.escapes) — those aren't pooled, and one
+ *    array is leaner than three when a fresh Env is unavoidable per object.
  */
-internal class Env(
-    @JvmField val keys: IntArray,
-    @JvmField val parent: Env?,
+internal class Env private constructor(
+    @JvmField var keys: IntArray,
+    @JvmField var parent: Env?,
+    @JvmField var tag: ByteArray,
+    @JvmField var prim: LongArray,
+    @JvmField var ref: Array<Any?>,
+    @JvmField var boxed: Array<Any?>?,
 ) {
     @JvmField var classFrame: Int = -1
-    private val values = arrayOfNulls<Any?>(keys.size).also { it.fill(Uninitialized) }
 
+    /** Reuse a pooled (always tagged) Env for a fresh activation. */
+    fun rebind(keys: IntArray, parent: Env?) {
+        this.keys = keys
+        this.parent = parent
+        this.classFrame = -1
+        if (tag.size < keys.size) {
+            tag = ByteArray(keys.size); prim = LongArray(keys.size); ref = arrayOfNulls(keys.size)
+        } else {
+            java.util.Arrays.fill(tag, 0, keys.size, TAG_UNINIT)
+            java.util.Arrays.fill(ref, 0, keys.size, null)
+        }
+    }
+
+    fun localIndex(index: Int): Int {
+        val k = keys
+        for (i in k.indices) if (k[i] == index) return i
+        return -1
+    }
+
+    // Boxed access for cold callers (pointers, data-class marshalling, method
+    // resolution); the hot Load/Store path reads the slots directly in Fiber.
     fun get(index: Int): Any? {
         var env: Env? = this
         while (env != null) {
             val at = env.localIndex(index)
-            if (at >= 0) return env.values[at].also {
-                if (it === Uninitialized) throw VeloError("Variable $index is not initialized")
+            if (at >= 0) {
+                val b = env.boxed
+                if (b != null) {
+                    val v = b[at]
+                    if (v === Uninitialized) throw VeloError("Variable $index is not initialized")
+                    return v
+                }
+                if (env.tag[at] == TAG_UNINIT) throw VeloError("Variable $index is not initialized")
+                return boxSlot(env.tag[at], env.prim[at], env.ref[at])
             }
             env = env.parent
         }
@@ -97,15 +140,30 @@ internal class Env(
         var env: Env? = this
         while (env != null) {
             val at = env.localIndex(index)
-            if (at >= 0) { env.values[at] = value; return }
+            if (at >= 0) {
+                val b = env.boxed
+                if (b != null) { b[at] = value; return }
+                val t = tagOf(value)
+                env.tag[at] = t
+                env.prim[at] = primBitsOf(value)
+                env.ref[at] = if (t == TAG_REF) value else null
+                return
+            }
             env = env.parent
         }
         throw VeloError("Variable $index is not in scope")
     }
 
-    private fun localIndex(index: Int): Int {
-        for (i in keys.indices) if (keys[i] == index) return i
-        return -1
+    companion object {
+        private val EMPTY_TAG = ByteArray(0)
+        private val EMPTY_PRIM = LongArray(0)
+        private val EMPTY_REF = arrayOfNulls<Any?>(0)
+
+        fun tagged(keys: IntArray, parent: Env?): Env =
+            Env(keys, parent, ByteArray(keys.size), LongArray(keys.size), arrayOfNulls(keys.size), null)
+
+        fun boxed(keys: IntArray, parent: Env?): Env =
+            Env(keys, parent, EMPTY_TAG, EMPTY_PRIM, EMPTY_REF, arrayOfNulls<Any?>(keys.size).also { it.fill(Uninitialized) })
     }
 }
 

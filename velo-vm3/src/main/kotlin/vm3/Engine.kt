@@ -259,7 +259,8 @@ internal class Engine(
         private val calls = ArrayList<Activation>(16)
 
         init {
-            calls += Activation(entry, Env(entry.vars, parent), 0)
+            val env = if (entry.escapes) Env.boxed(entry.vars, parent) else Env.tagged(entry.vars, parent)
+            calls += Activation(entry, env, 0)
         }
 
         fun run(): Any? {
@@ -349,8 +350,13 @@ internal class Engine(
                 0x2d -> storeVar(frame.env, (op as Op.Store).index)
                 0x12 -> if (!popBool()) frame.pc += (op as Op.If).elseSkip
                 0x1d -> frame.pc += (op as Op.Move).count
-                0x22 -> frame.env = Env(frame.spec.scopeKeys[frame.pc - 1]!!, frame.env)
-                0x23 -> frame.env = frame.env.parent ?: throw VeloError("No scope to leave")
+                0x22 -> frame.env = makeEnv(frame.spec.scopeKeys[frame.pc - 1]!!, frame.env, frame.spec.escapes)
+                0x23 -> {
+                    val leaving = frame.env
+                    val parent = leaving.parent ?: throw VeloError("No scope to leave")
+                    if (!frame.spec.escapes) recycle(leaving)
+                    frame.env = parent
+                }
                 0x11 -> engine.stop()
                 0x2b -> finishFrame(frame)
                 0x18 -> pushRef(FuncValue(engine.frames.getValue((op as Op.Frame).num), frame.env, owner))
@@ -432,7 +438,7 @@ internal class Engine(
                 removeAt(receiverAt)
                 receiver.env
             } else fn.captured
-            calls += Activation(fn.frame, Env(fn.frame.vars, parent), sp - argc)
+            calls += Activation(fn.frame, makeEnv(fn.frame.vars, parent, fn.frame.escapes), sp - argc)
         }
 
         private fun interfaceCall(op: Op.InterfaceCall) {
@@ -441,7 +447,7 @@ internal class Engine(
             when (val receiver = boxSlot(sTag[receiverAt], sPrim[receiverAt], sRef[receiverAt])) {
                 is InstanceValue -> {
                     removeAt(receiverAt)
-                    calls += Activation(wrapper.frame, Env(wrapper.frame.vars, receiver.env), sp - op.args)
+                    calls += Activation(wrapper.frame, makeEnv(wrapper.frame.vars, receiver.env, wrapper.frame.escapes), sp - op.args)
                 }
                 is NativeValue -> {
                     removeAt(receiverAt)
@@ -461,12 +467,12 @@ internal class Engine(
 
         private fun nativeCall(op: Op.NativeCall) {
             val bound = engine.natives[op.poolIndex]
-            val invoke = ArrayList<Any?>(op.args.size + 1)
-            val converted = ArrayList<Any?>(op.args.size)
-            repeat(op.args.size) { i -> converted += toHost(popAny(), op.args[i], bound.jvmParams[i]) }
+            val converted = nativeConverted; converted.clear()
+            val invoke = nativeInvoke; invoke.clear()
+            repeat(op.args.size) { i -> converted.add(toHost(popAny(), op.args[i], bound.jvmParams[i])) }
             if (!bound.isConstructor) {
                 val receiver = popAny() as? NativeValue ?: throw VeloError("Native receiver is missing")
-                invoke += receiver.value
+                invoke.add(receiver.value)
             }
             invoke.addAll(converted)
             val result = try {
@@ -691,6 +697,7 @@ internal class Engine(
             } else {
                 sp = frame.base
             }
+            if (!frame.spec.escapes) recycle(frame.env)
             calls.removeAt(calls.lastIndex)
         }
 
@@ -836,14 +843,69 @@ internal class Engine(
             else -> value
         }
 
-        // -- lexical variables --------------------------------------------------
-        // Variables are boxed (see Env); the bridge unboxes onto the tagged
-        // stack on Load and boxes once on Store — no per-op box for the
-        // arithmetic temporaries that flow between them.
+        // -- lexical variables (tagged, unboxed) --------------------------------
 
-        private fun loadVar(env: Env, index: Int) = push(env.get(index))
+        private fun loadVar(env0: Env, index: Int) {
+            var env: Env? = env0
+            while (env != null) {
+                val at = env.localIndex(index)
+                if (at >= 0) {
+                    val b = env.boxed
+                    if (b != null) {
+                        val v = b[at]
+                        if (v === Uninitialized) throw VeloError("Variable $index is not initialized")
+                        push(v)
+                        return
+                    }
+                    val t = env.tag[at]
+                    if (t == TAG_UNINIT) throw VeloError("Variable $index is not initialized")
+                    pushSlot(t, env.prim[at], env.ref[at])
+                    return
+                }
+                env = env.parent
+            }
+            throw VeloError("Variable $index is not in scope")
+        }
 
-        private fun storeVar(env: Env, index: Int) = env.set(index, popAny())
+        private fun storeVar(env0: Env, index: Int) {
+            val i = down()
+            val t = sTag[i]; val p = sPrim[i]; val r = if (t == TAG_REF) sRef[i] else null
+            sRef[i] = null
+            var env: Env? = env0
+            while (env != null) {
+                val at = env.localIndex(index)
+                if (at >= 0) {
+                    val b = env.boxed
+                    if (b != null) b[at] = boxSlot(t, p, r)
+                    else { env.tag[at] = t; env.prim[at] = p; env.ref[at] = r }
+                    return
+                }
+                env = env.parent
+            }
+            throw VeloError("Variable $index is not in scope")
+        }
+
+        // -- per-fiber Env pool -------------------------------------------------
+        // A non-escaping frame's Env is reused instead of reallocated. Pooled
+        // Envs carry the largest slot arrays seen, so a rebind rarely grows.
+
+        private val envPool = ArrayList<Env>(16)
+
+        // Reused argument buffers for the native bridge (cleared per call).
+        private val nativeConverted = ArrayList<Any?>(8)
+        private val nativeInvoke = ArrayList<Any?>(8)
+
+        private fun makeEnv(keys: IntArray, parent: Env?, escapes: Boolean): Env {
+            if (escapes) return Env.boxed(keys, parent)
+            if (envPool.isEmpty()) return Env.tagged(keys, parent)
+            val e = envPool.removeAt(envPool.size - 1)
+            e.rebind(keys, parent)
+            return e
+        }
+
+        private fun recycle(env: Env) {
+            envPool.add(env)
+        }
 
         // -- array elements -----------------------------------------------------
         // A primitive-backed array shares the stack's raw-bit encoding, so an
