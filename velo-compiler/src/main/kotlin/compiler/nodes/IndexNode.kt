@@ -48,6 +48,20 @@ data class IndexNode(
             }
             return
         }
+        // Widen a narrower numeric value to a long/float element, like a variable
+        // init or a data-class field, so the slot holds a genuine element-typed
+        // value (e.g. `array[float] a; a[i] = 3` stores 3.0f, and arithmetic on it
+        // is float). Only long/float targets need a conversion op; byte/int
+        // elements already flow as int, and narrowing (e.g. int into array[byte],
+        // the common codepoint buffer) still passes through unchanged. After
+        // list.compile the stack is [value, array]; swap the value up to convert.
+        if (listType is ArrayType && (listType.derived === LongType || listType.derived === FloatType) &&
+            numWidens(listType.derived, type)
+        ) {
+            ctx.add(Op.Swap)
+            coerceNumeric(ctx, listType.derived, type, null, "array element")
+            ctx.add(Op.Swap)
+        }
         index.compile(ctx)
         if (listType !is IndexAssignable) {
             throw IllegalArgumentException("Assign on non-assignable index type $listType")

@@ -169,10 +169,15 @@ data class CallNode(
                 "Data class '${classType.name}' constructor expects ${expected.size} args, got ${args.size}"
             )
         }
-        val argTypes = args.map { it.compile(ctx) }
-        expected?.forEachIndexed { i, def ->
-            val actual = argTypes[i]
-            if (!actual.sameAs(def)) {
+        // Coerce each argument to the field type as it is compiled (while it is on
+        // top of the stack): a widening numeric value converts, like a variable
+        // init or a function argument; a genuine mismatch still errors.
+        args.forEachIndexed { i, a ->
+            val actual = a.compile(ctx)
+            val def = expected?.getOrNull(i) ?: return@forEachIndexed
+            if (coerceNumeric(ctx, def, actual, (a as? IntNode)?.value, "data class '${classType.name}' constructor arg #${i + 1}") == null &&
+                !actual.sameAs(def)
+            ) {
                 throw IllegalArgumentException(
                     "Data class '${classType.name}' constructor arg #${i + 1}: " +
                         "expected ${def.log()}, got ${actual.log()}"

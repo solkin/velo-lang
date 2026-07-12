@@ -7,14 +7,17 @@ data class Var(
     val type: Type,
     /** Reassignment is rejected at compile time (e.g. `data class` fields). */
     val immutable: Boolean = false,
+) {
     /**
-     * True only for a direct function/ext declaration — the one binding whose
-     * runtime value is guaranteed to be exactly this function. Such a call can be
-     * addressed by frame number (see [compiler.nodes.FuncType.frameNum]). A plain
-     * variable that merely holds a function value is not frame-addressable: its
-     * static type may carry a `frameNum` (copied by inference or an `if`
-     * expression) while its runtime value is a different function, so it must be
-     * called through its variable. Cleared on reassignment (see [CompilerFrame.retype]).
+     * The body frame of a **direct function/ext declaration** — the identity of
+     * the concrete function this name denotes. Set by [compiler.nodes.FuncNode]
+     * on the declaring binding; `null` on every plain variable, including one
+     * that merely holds a function value. A direct call of such a name is
+     * addressed by frame number (runs from any thread); everything else is called
+     * through its variable, which carries the real runtime value. Identity lives
+     * on the symbol, not on the type (the type is just the `(args) ret`
+     * signature), so it never leaks through inference, an `if` expression, or a
+     * reassignment — those produce a fresh [Var] with `funcFrameNum == null`.
      */
-    val frameAddressable: Boolean = false,
-)
+    var funcFrameNum: Int? = null
+}

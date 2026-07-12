@@ -210,19 +210,17 @@ data class Context(
     fun opt(name: String): Var? = lookup(name)?.frame?.vars?.get(name)
 
     /**
-     * If [name] resolves to a **free-standing** function (one that captures no
-     * enclosing scope, per [compiler.nodes.FuncNode]'s capture analysis), the
-     * frame number of its body; otherwise `null`. Such a function's code lives in
-     * the program-wide frame table, so a direct call can address it by number
-     * (`Op.Frame`) and run from any thread, including an actor's — independent of
-     * where it was declared. A closure keeps `frameNum == null`, so it stays on
-     * the variable path, which carries the captured scope it needs.
+     * The body frame of [name] iff it is a **direct, free-standing function/ext
+     * declaration** — i.e. this exact name denotes a concrete function that
+     * captures no enclosing scope ([Var.funcFrameNum], set by
+     * [compiler.nodes.FuncNode]); `null` otherwise. Such code lives in the
+     * program-wide frame table, so a direct call addresses it by number
+     * (`Op.Frame`) and runs from any thread, including an actor's. A plain
+     * variable holding a function value, or a closure, has `funcFrameNum == null`
+     * and is called through its variable, which carries the real runtime value
+     * and captured scope.
      */
-    fun directFuncNum(name: String): Int? {
-        val v = opt(name) ?: return null
-        if (!v.frameAddressable) return null
-        return (v.type as? compiler.nodes.FuncType)?.frameNum
-    }
+    fun directFuncNum(name: String): Int? = opt(name)?.funcFrameNum
 
     fun get(name: String): Var = opt(name) ?: throw IllegalArgumentException(
         "Undefined name '$name'. Declare it above this line — a Velo program runs top to bottom, " +
@@ -233,8 +231,8 @@ data class Context(
         lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name on retype")
     }
 
-    fun def(name: String, type: Type, immutable: Boolean = false, frameAddressable: Boolean = false): Var {
-        return frame.def(name, type, immutable, frameAddressable)
+    fun def(name: String, type: Type, immutable: Boolean = false): Var {
+        return frame.def(name, type, immutable)
     }
 
 }

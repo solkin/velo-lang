@@ -13,24 +13,20 @@ data class FuncNode(
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val argTypes = ArrayList<Type>()
-        val funcType = FuncType(derived = type, argTypes, typeParams = typeParams)
-        var resultType: Type = funcType
+        var resultType: Type = FuncType(derived = type, argTypes, typeParams = typeParams)
 
         // Define var before body frame creation (because var counter will be forked) if name is defined.
-        // frameAddressable: this binding IS the function, so a direct call may be
-        // addressed by frame number; a variable that later holds a function value
-        // is not marked, so it stays on the runtime-value (Load) path.
         val named = !name.isNullOrEmpty()
-        val nameVar = if (named) ctx.def(name.orEmpty(), resultType, frameAddressable = true) else null
+        val nameVar = if (named) ctx.def(name.orEmpty(), resultType) else null
 
         // Create body frame and fork var counter
         val funcOps = ctx.extend()
-        // Provisionally mark the function addressable by frame number, so a
-        // recursive call inside the body already compiles to Op.Frame (not a
-        // Load of the not-yet-stored variable). If the body turns out to capture
-        // an enclosing variable, this is cleared below and callers fall back to
-        // Load. See FuncType.frameNum.
-        funcType.frameNum = funcOps.frame.num
+        // Record this name's function identity (its body frame) on the symbol, so
+        // a direct call — including a recursive self-call, resolved here before the
+        // variable is even stored — is addressed by frame number. If the body turns
+        // out to capture an enclosing variable, this is cleared below and callers
+        // fall back to the variable path. See Var.funcFrameNum.
+        nameVar?.funcFrameNum = funcOps.frame.num
         // Mark the frame so an explicit `return` in the body (or in an inline
         // branch/loop within it) can type-check against this return type.
         funcOps.returnType = type
@@ -94,7 +90,7 @@ data class FuncNode(
                 else -> false
             }
         }
-        if (capturesEnclosing) funcType.frameNum = null
+        if (capturesEnclosing) nameVar?.funcFrameNum = null
 
         // Add function operations to the real context
         ctx.merge(funcOps)
@@ -120,19 +116,6 @@ data class FuncType(
     override val args: List<Type>? = null,
     val typeParams: List<String> = emptyList(),
 ) : Callable {
-    /**
-     * The bytecode frame of this function's body — set by [FuncNode] when the
-     * function is **free-standing** (captures no enclosing scope), and left/reset
-     * to `null` when it is a closure. A free-standing function is called by
-     * emitting this frame directly (`Op.Frame(frameNum)`) rather than loading its
-     * declaring variable: its code lives in the program-wide frame table, so the
-     * call works from any thread — including an actor's, which does not share the
-     * declaring frame's variables. A closure keeps `null` and is reached through
-     * its variable, which carries the captured scope it needs. Not part of type
-     * identity, so it stays out of the primary constructor (and `equals`/`sameAs`).
-     */
-    var frameNum: Int? = null
-
     /**
      * Return types must agree, unless the expected return is `any` — the fully
      * loose form a raw host `VeloFunction` maps to, which accepts a callback of
