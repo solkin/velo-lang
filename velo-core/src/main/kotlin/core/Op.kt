@@ -57,11 +57,6 @@ sealed interface Op {
         override val opcode get() = 0x34
     }
 
-    /** Rotate the three top values. Stack: `[a, b, c] -> [c, a, b]` */
-    object Rot : Op {
-        override val opcode get() = 0x2c
-    }
-
     // ---- Arithmetic (numeric; int/float/byte promote per vm.Numbers) ----
 
     /** Stack: `[a, b] -> [a + b]` */
@@ -135,59 +130,28 @@ sealed interface Op {
         override val opcode get() = 0x14
     }
 
-    /** Stack: `[int] -> [str]` */
-    object IntStr : Op {
-        override val opcode get() = 0x15
+    /**
+     * Convert the numeric value on top of the stack to another numeric kind.
+     * [from] is the compiler's static source kind — informational, so a
+     * disassembler and the typed-stack VM can decode the operand; the runtime
+     * result is fixed by [to] alone, applied to the value read polymorphically
+     * from the stack (each backend already knows the source kind from the value
+     * or its slot tag). Covers every byte/int/long/float pair: widening is
+     * exact, narrowing to int/long truncates toward zero, narrowing to byte
+     * takes the low 8 bits. One op replaces the former per-pair conversion
+     * opcodes. Stack: `[num] -> [num']`
+     */
+    data class Conv(val from: VmType, val to: VmType) : Op {
+        override val opcode get() = 0x63
     }
 
-    /** Stack: `[float] -> [str]` */
-    object FloatStr : Op {
-        override val opcode get() = 0x49
-    }
-
-    /** Widen an int (or byte) to a float. Stack: `[int] -> [float]` */
-    object IntToFloat : Op {
-        override val opcode get() = 0x16
-    }
-
-    /** Narrow a float to an int, truncating toward zero. Stack: `[float] -> [int]` */
-    object FloatToInt : Op {
-        override val opcode get() = 0x17
-    }
-
-    /** Narrow an int to a byte (low 8 bits, sign-extended). Stack: `[int] -> [byte]` */
-    object IntToByte : Op {
-        override val opcode get() = 0x1f
-    }
-
-    /** Widen an int (or byte) to a long. Stack: `[int] -> [long]` */
-    object IntToLong : Op {
-        override val opcode get() = 0x4a
-    }
-
-    /** Narrow a long to an int (low 32 bits). Stack: `[long] -> [int]` */
-    object LongToInt : Op {
-        override val opcode get() = 0x4b
-    }
-
-    /** Widen a long to a float. Stack: `[long] -> [float]` */
-    object LongToFloat : Op {
-        override val opcode get() = 0x4c
-    }
-
-    /** Narrow a float to a long, truncating toward zero. Stack: `[float] -> [long]` */
-    object FloatToLong : Op {
-        override val opcode get() = 0x4d
-    }
-
-    /** Stack: `[long] -> [str]` */
-    object LongStr : Op {
-        override val opcode get() = 0x4e
-    }
-
-    /** Parse a decimal string. Stack: `[str] -> [int]` */
-    object StrInt : Op {
-        override val opcode get() = 0x40
+    /**
+     * Render a numeric value as its decimal string — polymorphic over the
+     * value's runtime kind (byte/int/long print without a fraction, float with
+     * one), the string counterpart of [Hash]. Stack: `[num] -> [str]`
+     */
+    object NumStr : Op {
+        override val opcode get() = 0x64
     }
 
     /** Hash of the top value. Stack: `[a] -> [hash(a)]` */

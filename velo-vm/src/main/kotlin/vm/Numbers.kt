@@ -53,3 +53,20 @@ fun numericEquals(a: Number, b: Number): Boolean =
     if (isFloatKind(a) || isFloatKind(b)) a.toFloat() == b.toFloat()
     else if (isLongKind(a) || isLongKind(b)) a.toLong() == b.toLong()
     else a.toInt() == b.toInt()
+
+/**
+ * `Op.Conv`: convert a numeric value to the target kind. The result is fixed by
+ * [to] alone (the `from` operand is informational); the source is read
+ * polymorphically. Narrowing to int/long truncates toward zero, to byte takes
+ * the low 8 bits — matching the former per-pair conversion opcodes.
+ */
+fun Number.convertTo(to: core.VmType): Number = when (to) {
+    core.VmType.Int -> this.toInt()
+    core.VmType.Long -> this.toLong()
+    core.VmType.Float -> this.toFloat()
+    core.VmType.Byte -> this.toInt().toByte()
+    else -> throw IllegalStateException("Op.Conv: not a numeric target: $to")
+}
+
+/** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */
+fun numStr(v: Number): String = if (v is Byte) v.toInt().toString() else v.toString()

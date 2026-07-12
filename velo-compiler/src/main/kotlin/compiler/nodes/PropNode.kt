@@ -33,7 +33,11 @@ data class PropNode(
             }
             if (ext != null) {
                 val argTypes = listOf(parentType) + args.orEmpty().map { it.compile(scopeCtx) }
-                scopeCtx.add(Op.Load(ext.index))
+                // A free-standing extension is addressed by frame number so the
+                // call also works from an actor thread; otherwise load its variable.
+                val directNum = scopeCtx.directFuncNum(parentType.name() + "@" + name)
+                if (directNum != null) scopeCtx.add(Op.Frame(num = directNum))
+                else scopeCtx.add(Op.Load(ext.index))
                 val returnType = ext.type
                 if (returnType !is Callable) throw IllegalArgumentException("Call on non-function type")
                 val funcArgTypes = returnType.args ?: throw Exception("Extension arguments is not defined")

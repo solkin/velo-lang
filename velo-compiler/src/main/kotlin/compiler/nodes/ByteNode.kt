@@ -24,12 +24,12 @@ object ByteType : Numeric {
 
     override fun prop(name: String): Prop? {
         return when (name) {
-            "str" -> ByteStrProp
+            "str" -> NumStrProp
             "char" -> ByteCharProp
             "byte" -> NumIdentityProp
             "int" -> ByteToIntProp
-            "long" -> IntToLongProp
-            "float" -> IntToFloatProp
+            "long" -> ToLongProp
+            "float" -> ToFloatProp
             else -> null
         }
     }
@@ -39,13 +39,6 @@ object ByteType : Numeric {
     override fun vmType() = core.VmType.Byte
 
     override fun name() = "byte"
-}
-
-object ByteStrProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.IntStr)
-        return StringType
-    }
 }
 
 object ByteCharProp : Prop {

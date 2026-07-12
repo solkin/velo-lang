@@ -28,12 +28,12 @@ object IntType : Numeric {
         return when (name) {
             "shl" -> IntShlProp
             "shr" -> IntShrProp
-            "str" -> IntStrProp
+            "str" -> NumStrProp
             "char" -> IntCharProp
             "int" -> NumIdentityProp
-            "long" -> IntToLongProp
-            "float" -> IntToFloatProp
-            "byte" -> IntToByteProp
+            "long" -> ToLongProp
+            "float" -> ToFloatProp
+            "byte" -> ToByteProp
             else -> null
         }
     }
@@ -56,13 +56,6 @@ object IntShrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.Shr)
         return IntType
-    }
-}
-
-object IntStrProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.IntStr)
-        return StringType
     }
 }
 

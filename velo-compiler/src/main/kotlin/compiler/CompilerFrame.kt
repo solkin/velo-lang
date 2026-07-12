@@ -21,17 +21,19 @@ data class CompilerFrame(
     val varBase: Int = 0,
 ) {
 
-    fun def(name: String, type: Type, immutable: Boolean = false): Var {
+    fun def(name: String, type: Type, immutable: Boolean = false, frameAddressable: Boolean = false): Var {
         if (vars.containsKey(name)) {
             throw IllegalArgumentException("Variable $name is already defined")
         }
-        val v = Var(index = varCounter.getAndIncrement(), type = type, immutable = immutable)
+        val v = Var(index = varCounter.getAndIncrement(), type = type, immutable = immutable, frameAddressable = frameAddressable)
         vars[name] = v
         return v
     }
 
     fun retype(name: String, type: Type): Var {
         val e = vars[name] ?: throw IllegalArgumentException("Variable $name is not defined")
+        // A reassigned or refined binding is no longer a direct declaration: its
+        // runtime value may differ from its static type, so drop frame-addressing.
         val v = Var(index = e.index, type = type, immutable = e.immutable)
         vars[name] = v
         return v

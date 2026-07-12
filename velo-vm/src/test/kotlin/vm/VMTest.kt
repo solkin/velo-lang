@@ -491,27 +491,13 @@ class VMTest {
         val frames = listOf(
             createFrame(0, listOf(
                 Op.Push(42),
-                Op.IntStr
+                Op.NumStr
             ))
         )
         
         val ctx = runVM(frames)
         
         assertEquals("42", ctx.currentFrame().subs.pop().getString())
-    }
-
-    @Test
-    fun `VM executes string to int conversion`() {
-        val frames = listOf(
-            createFrame(0, listOf(
-                Op.Push("123"),
-                Op.StrInt
-            ))
-        )
-        
-        val ctx = runVM(frames)
-        
-        assertEquals(123, ctx.currentFrame().subs.pop().getInt())
     }
 
     // ========== Logical Operations Tests ==========

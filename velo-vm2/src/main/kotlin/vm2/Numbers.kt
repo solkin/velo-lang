@@ -89,9 +89,22 @@ object Numbers {
 
     fun intInt(v: Any?): Int = toInt(v)
 
-    fun longLong(v: Any?): Long = toLong(v)
+    /**
+     * `Op.Conv`: convert to the target numeric kind. The result is fixed by [to]
+     * alone (the op's `from` operand is informational); the source is read
+     * polymorphically. Narrowing to int/long truncates toward zero, to byte
+     * takes the low 8 bits — matching the former per-pair conversion opcodes.
+     */
+    fun convert(v: Any?, to: core.VmType): Any = when (to) {
+        core.VmType.Int -> toInt(v)
+        core.VmType.Long -> toLong(v)
+        core.VmType.Float -> toFloat(v)
+        core.VmType.Byte -> toInt(v).toByte()
+        else -> throw IllegalStateException("Op.Conv: not a numeric target: $to")
+    }
 
-    fun floatFloat(v: Any?): Float = toFloat(v)
+    /** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */
+    fun numStr(v: Any?): String = if (v is Byte) v.toInt().toString() else v.toString()
 
     /** `Op.Equals`: deep structural equality of any two values. */
     fun equals(a: Any?, b: Any?, dataClasses: Map<Int, DataClassInfo>): Boolean {

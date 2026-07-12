@@ -16,19 +16,25 @@ class Parser(
     }
 
     fun parse(): Node {
-        val statements = parseStatements(pratt)
+        var statements = parseStatements(pratt)
+        // str.int() resolves to the `ext(str) int()` in std/str: when the program
+        // called `.int()`, pull std/str in (parsed in isolation) and compile it
+        // ahead of the user code so the extension resolves.
+        statements = maybePrepend(SourceLoader.STDLIB_STR, context.strParseUsed, statements)
         // dict[K:V] is sugar over the stdlib Map class: when the program used
         // dict syntax and did not import the implementation itself, pull it in
         // (parsed in isolation) and compile it ahead of the user code.
-        if (context.dictUsed && !depLoader.isLoaded(SourceLoader.STDLIB_MAP)) {
-            val module = depLoader.module(SourceLoader.STDLIB_MAP, fromDir = null)
-            if (module != null) {
-                val sub = PrattParser(TokenStream(StringInput(module.text)), context, depLoader, currentDir = module.dir)
-                    .also { VeloGrammar.configure(it) }
-                return ProgramNode(prog = parseStatements(sub) + statements)
-            }
-        }
+        statements = maybePrepend(SourceLoader.STDLIB_MAP, context.dictUsed, statements)
         return ProgramNode(prog = statements)
+    }
+
+    /** Parse an auto-imported stdlib [module] in isolation and prepend it, once. */
+    private fun maybePrepend(module: String, used: Boolean, statements: List<Node>): List<Node> {
+        if (!used || depLoader.isLoaded(module)) return statements
+        val loaded = depLoader.module(module, fromDir = null) ?: return statements
+        val sub = PrattParser(TokenStream(StringInput(loaded.text)), context, depLoader, currentDir = loaded.dir)
+            .also { VeloGrammar.configure(it) }
+        return parseStatements(sub) + statements
     }
 
     private fun parseStatements(p: PrattParser): List<Node> {

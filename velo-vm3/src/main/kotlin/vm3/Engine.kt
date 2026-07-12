@@ -295,7 +295,6 @@ internal class Engine(
                 0x0c -> drop()
                 0x0d -> dup()
                 0x34 -> swap()
-                0x2c -> rot()
                 0x26 -> arith('+')
                 0x1a -> arith('-')
                 0x1e -> arith('*')
@@ -321,17 +320,14 @@ internal class Engine(
                 }
                 0x0e -> equals()
                 0x14 -> pushRef(String(Character.toChars(popInt())))
-                0x15 -> pushRef(popInt().toString())
-                0x4e -> pushRef(popLong().toString())
-                0x49 -> pushRef(popFloat().toString())
-                0x16 -> pushFloat(popFloat())
-                0x17 -> pushInt(popFloat().toInt())
-                0x1f -> pushByte(popInt().toByte())
-                0x4a -> pushLong(popLong())
-                0x4b -> pushInt(popLong().toInt())
-                0x4c -> pushFloat(popLong().toFloat())
-                0x4d -> pushLong(popFloat().toLong())
-                0x40 -> pushInt(popString().toInt())
+                0x63 -> when ((spec.ops[pc] as Op.Conv).to) {
+                    VmType.Int -> pushInt(popInt())
+                    VmType.Long -> pushLong(popLong())
+                    VmType.Float -> pushFloat(popFloat())
+                    VmType.Byte -> pushByte(popInt().toByte())
+                    else -> throw VeloError("Op.Conv: not a numeric target")
+                }
+                0x64 -> pushRef(numStr(popAny()))
                 0x48 -> pushInt(hashValue(popAny()))
                 0x2e -> { val b = popString(); val a = popString(); pushRef(a + b) }
                 0x30 -> { val s = popString(); pushInt(s.codePointCount(0, s.length)) }
@@ -846,6 +842,9 @@ internal class Engine(
             else -> value.hashCode()
         }
 
+        /** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */
+        private fun numStr(value: Any?): String = if (value is Byte) value.toInt().toString() else value.toString()
+
         private fun unwrapHost(value: Any?): Any? = when (value) {
             Uninitialized -> throw VeloError("Uninitialized value cannot cross a native boundary")
             is NativeValue -> value.value
@@ -1025,17 +1024,6 @@ internal class Engine(
             val tt = sTag[a]; sTag[a] = sTag[b]; sTag[b] = tt
             val pp = sPrim[a]; sPrim[a] = sPrim[b]; sPrim[b] = pp
             val rr = sRef[a]; sRef[a] = sRef[b]; sRef[b] = rr
-        }
-
-        private fun rot() {
-            val ci = sp - 1; val bi = sp - 2; val ai = sp - 3
-            if (ai < 0) throw VeloError("Operand stack underflow")
-            val ct = sTag[ci]; val cp = sPrim[ci]; val cr = sRef[ci]
-            val bt = sTag[bi]; val bp = sPrim[bi]; val br = sRef[bi]
-            val at = sTag[ai]; val ap = sPrim[ai]; val ar = sRef[ai]
-            sTag[ai] = ct; sPrim[ai] = cp; sRef[ai] = cr
-            sTag[bi] = at; sPrim[bi] = ap; sRef[bi] = ar
-            sTag[ci] = bt; sPrim[ci] = bp; sRef[ci] = br
         }
 
         private fun removeAt(index: Int) {

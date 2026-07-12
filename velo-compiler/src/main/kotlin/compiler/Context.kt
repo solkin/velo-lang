@@ -209,6 +209,21 @@ data class Context(
 
     fun opt(name: String): Var? = lookup(name)?.frame?.vars?.get(name)
 
+    /**
+     * If [name] resolves to a **free-standing** function (one that captures no
+     * enclosing scope, per [compiler.nodes.FuncNode]'s capture analysis), the
+     * frame number of its body; otherwise `null`. Such a function's code lives in
+     * the program-wide frame table, so a direct call can address it by number
+     * (`Op.Frame`) and run from any thread, including an actor's — independent of
+     * where it was declared. A closure keeps `frameNum == null`, so it stays on
+     * the variable path, which carries the captured scope it needs.
+     */
+    fun directFuncNum(name: String): Int? {
+        val v = opt(name) ?: return null
+        if (!v.frameAddressable) return null
+        return (v.type as? compiler.nodes.FuncType)?.frameNum
+    }
+
     fun get(name: String): Var = opt(name) ?: throw IllegalArgumentException(
         "Undefined name '$name'. Declare it above this line — a Velo program runs top to bottom, " +
             "so variables, functions and classes must be defined before they are used."
@@ -218,8 +233,8 @@ data class Context(
         lookup(name)?.frame?.retype(name, type) ?: throw IllegalArgumentException("Undefined variable $name on retype")
     }
 
-    fun def(name: String, type: Type, immutable: Boolean = false): Var {
-        return frame.def(name, type, immutable)
+    fun def(name: String, type: Type, immutable: Boolean = false, frameAddressable: Boolean = false): Var {
+        return frame.def(name, type, immutable, frameAddressable)
     }
 
 }

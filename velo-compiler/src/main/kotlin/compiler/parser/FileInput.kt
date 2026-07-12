@@ -66,6 +66,9 @@ abstract class SourceLoader(val input: InputStack = InputStack()) : DependencyLo
         /** The stdlib module dict syntax lowers onto (auto-imported). */
         const val STDLIB_MAP = STDLIB_PREFIX + "map"
 
+        /** The stdlib string module; `str.int()` lives here, auto-imported where `.int()` is used. */
+        const val STDLIB_STR = STDLIB_PREFIX + "str"
+
         fun withVel(name: String): String = if (name.endsWith(".vel")) name else "$name.vel"
     }
 }

@@ -17,8 +17,8 @@ import java.io.File
 object Bytecode {
 
     const val MAGIC = 0x5e10
-    const val VERSION_MAJOR = 0x0b
-    const val VERSION_MINOR = 0x03
+    const val VERSION_MAJOR = 0x0c
+    const val VERSION_MINOR = 0x00
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -136,6 +136,10 @@ object Bytecode {
             is Op.ActorCall -> {
                 out.writeInt(op.methodVarIndex)
                 out.writeInt(op.args)
+            }
+            is Op.Conv -> {
+                writeType(op.from, out)
+                writeType(op.to, out)
             }
             else -> Unit // the remaining ops carry no operands
         }
@@ -311,16 +315,12 @@ object Bytecode {
             0x11 -> Op.Halt
             0x12 -> Op.If(elseSkip = inp.readInt())
             0x14 -> Op.IntChar
-            0x15 -> Op.IntStr
-            0x16 -> Op.IntToFloat
-            0x17 -> Op.FloatToInt
-            0x1f -> Op.IntToByte
-            0x4a -> Op.IntToLong
-            0x4b -> Op.LongToInt
-            0x4c -> Op.LongToFloat
-            0x4d -> Op.FloatToLong
-            0x4e -> Op.LongStr
-            0x49 -> Op.FloatStr
+            0x63 -> {
+                val from = readType(inp)
+                val to = readType(inp)
+                Op.Conv(from = from, to = to)
+            }
+            0x64 -> Op.NumStr
             0x18 -> Op.Frame(num = inp.readInt())
             0x19 -> Op.MethodLoad(name = inp.readUTF())
             0x1c -> Op.InterfaceCall(method = inp.readUTF(), args = inp.readInt())
@@ -335,7 +335,6 @@ object Bytecode {
             0x29 -> Op.Push(value = readValue(inp))
             0x2a -> Op.Rem
             0x2b -> Op.Ret
-            0x2c -> Op.Rot
             0x2d -> Op.Store(index = inp.readInt())
             0x2e -> Op.StrCon
             0x2f -> Op.StrIndex
@@ -344,7 +343,6 @@ object Bytecode {
             0x33 -> Op.StrSub
             0x34 -> Op.Swap
             0x35 -> Op.Xor
-            0x40 -> Op.StrInt
             0x42 -> Op.Instance
             0x43 -> Op.NativeCall(
                 poolIndex = inp.readUnsignedShort(),

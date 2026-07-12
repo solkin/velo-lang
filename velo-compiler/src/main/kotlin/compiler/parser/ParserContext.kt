@@ -29,6 +29,15 @@ class ParserContext(
      */
     var dictUsed = false
 
+    /**
+     * Set when the program calls `.int()` on any value. `str.int()` resolves to
+     * the `ext(str) int()` in std/str, which [compiler.parser.Parser.parse] then
+     * pulls in automatically. Set syntactically (before types are known), so a
+     * numeric `.int()` also arms it — harmless: std/str is just declared, and
+     * unused extension declarations cost a couple of frames.
+     */
+    var strParseUsed = false
+
     // ---- namespaced imports (`import "x" as ns`) ----
     // A namespaced module's top-level names are mangled to `ns$name`, reached
     // from outside as `ns.name`. `currentNamespace`/`currentModuleLocals` are the

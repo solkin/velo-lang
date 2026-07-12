@@ -126,10 +126,8 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
     if (sr == tr) return target
     if (sr < tr) {                                  // widening (byte -> int -> long -> float)
         when (target) {
-            LongType -> ctx.add(Op.IntToLong)              // int/byte -> long
-            FloatType ->                                   // -> float
-                if (source === LongType) ctx.add(Op.LongToFloat)
-                else ctx.add(Op.IntToFloat)                // int/byte -> float
+            LongType -> ctx.add(Op.Conv(source.vmType(), VmType.Long))
+            FloatType -> ctx.add(Op.Conv(source.vmType(), VmType.Float))
             else -> {}                                     // byte -> int flows as int already
         }
         return target
@@ -138,7 +136,7 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
         if (intLiteral !in -128..255) {
             throw IllegalArgumentException("Byte literal $intLiteral is out of range for $what (-128..255)")
         }
-        ctx.add(Op.IntToByte)
+        ctx.add(Op.Conv(VmType.Int, VmType.Byte))
         return target
     }
     throw IllegalArgumentException(
@@ -152,35 +150,34 @@ object NumIdentityProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type = type
 }
 
-/** `int.float()` / `byte.float()` — widen to float. */
-object IntToFloatProp : Prop {
+/** `x.float()` — convert any numeric receiver to float. */
+object ToFloatProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.IntToFloat)
+        ctx.add(Op.Conv(type.vmType(), VmType.Float))
         return FloatType
     }
 }
 
-/** `float.int()` — truncate toward zero. */
-object FloatToIntProp : Prop {
+/** `x.int()` — convert any numeric receiver to int (float/long truncate toward zero). */
+object ToIntProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.FloatToInt)
+        ctx.add(Op.Conv(type.vmType(), VmType.Int))
         return IntType
     }
 }
 
-/** `int.byte()` — take the low 8 bits. */
-object IntToByteProp : Prop {
+/** `x.long()` — convert any numeric receiver to a 64-bit long. */
+object ToLongProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.IntToByte)
-        return ByteType
+        ctx.add(Op.Conv(type.vmType(), VmType.Long))
+        return LongType
     }
 }
 
-/** `float.byte()` — truncate then take the low 8 bits. */
-object FloatToByteProp : Prop {
+/** `x.byte()` — convert any numeric receiver to a byte (low 8 bits). */
+object ToByteProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.FloatToInt)
-        ctx.add(Op.IntToByte)
+        ctx.add(Op.Conv(type.vmType(), VmType.Byte))
         return ByteType
     }
 }
@@ -190,44 +187,11 @@ object ByteToIntProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type = IntType
 }
 
-/** `int.long()` / `byte.long()` — widen to a 64-bit long. */
-object IntToLongProp : Prop {
+/** `x.str()` — decimal string of any numeric receiver (byte/int/long/float). */
+object NumStrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.IntToLong)
-        return LongType
-    }
-}
-
-/** `long.int()` — take the low 32 bits. */
-object LongToIntProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.LongToInt)
-        return IntType
-    }
-}
-
-/** `long.float()` — widen to float (may lose precision). */
-object LongToFloatProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.LongToFloat)
-        return FloatType
-    }
-}
-
-/** `float.long()` — truncate toward zero to a 64-bit long. */
-object FloatToLongProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.FloatToLong)
-        return LongType
-    }
-}
-
-/** `long.byte()` — narrow to the low 32 bits then the low 8 bits. */
-object LongToByteProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.LongToInt)
-        ctx.add(Op.IntToByte)
-        return ByteType
+        ctx.add(Op.NumStr)
+        return StringType
     }
 }
 

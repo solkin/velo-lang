@@ -274,18 +274,6 @@ object Interpreter {
             pc + 1
         }
 
-        is Op.Rot -> {
-            with(ctx.currentFrame().subs) {
-                val rec1 = pop()
-                val rec2 = pop()
-                val rec3 = pop()
-                push(rec2)
-                push(rec1)
-                push(rec3)
-            }
-            pc + 1
-        }
-
         // ---- Functions / classes ----
 
         is Op.Frame -> {
@@ -404,73 +392,15 @@ object Interpreter {
             pc + 1
         }
 
-        is Op.IntStr -> {
+        is Op.Conv -> {
             val frame = ctx.currentFrame()
-            val v = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(v.toString()))
+            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().convertTo(op.to)))
             pc + 1
         }
 
-        is Op.FloatStr -> {
+        is Op.NumStr -> {
             val frame = ctx.currentFrame()
-            val v = frame.subs.pop().getFloat()
-            frame.subs.push(ValueRecord(v.toString()))
-            pc + 1
-        }
-
-        is Op.IntToFloat -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toFloat()))
-            pc + 1
-        }
-
-        is Op.FloatToInt -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toInt()))
-            pc + 1
-        }
-
-        is Op.IntToByte -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toByte()))
-            pc + 1
-        }
-
-        is Op.IntToLong -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toLong()))
-            pc + 1
-        }
-
-        is Op.LongToInt -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toInt()))
-            pc + 1
-        }
-
-        is Op.LongToFloat -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toFloat()))
-            pc + 1
-        }
-
-        is Op.FloatToLong -> {
-            val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().getNumber().toLong()))
-            pc + 1
-        }
-
-        is Op.LongStr -> {
-            val frame = ctx.currentFrame()
-            val v = frame.subs.pop().getLong()
-            frame.subs.push(ValueRecord(v.toString()))
-            pc + 1
-        }
-
-        is Op.StrInt -> {
-            val frame = ctx.currentFrame()
-            val str = frame.subs.pop().getString()
-            frame.subs.push(ValueRecord(str.toInt()))
+            frame.subs.push(ValueRecord(numStr(frame.subs.pop().getNumber())))
             pc + 1
         }
 

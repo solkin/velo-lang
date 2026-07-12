@@ -24,11 +24,11 @@ object FloatType : Numeric {
 
     override fun prop(name: String): Prop? {
         return when (name) {
-            "str" -> FloatStrProp
+            "str" -> NumStrProp
             "float" -> NumIdentityProp
-            "long" -> FloatToLongProp
-            "int" -> FloatToIntProp
-            "byte" -> FloatToByteProp
+            "long" -> ToLongProp
+            "int" -> ToIntProp
+            "byte" -> ToByteProp
             else -> null
         }
     }
@@ -38,11 +38,4 @@ object FloatType : Numeric {
     override fun vmType() = core.VmType.Float
 
     override fun name() = "float"
-}
-
-object FloatStrProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.FloatStr)
-        return StringType
-    }
 }

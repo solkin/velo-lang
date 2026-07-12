@@ -28,11 +28,11 @@ object LongType : Numeric {
         return when (name) {
             "shl" -> LongShlProp
             "shr" -> LongShrProp
-            "str" -> LongStrProp
+            "str" -> NumStrProp
             "long" -> NumIdentityProp
-            "int" -> LongToIntProp
-            "float" -> LongToFloatProp
-            "byte" -> LongToByteProp
+            "int" -> ToIntProp
+            "float" -> ToFloatProp
+            "byte" -> ToByteProp
             else -> null
         }
     }
@@ -55,12 +55,5 @@ object LongShrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.Shr)
         return LongType
-    }
-}
-
-object LongStrProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.LongStr)
-        return StringType
     }
 }

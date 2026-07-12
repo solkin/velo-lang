@@ -27,7 +27,8 @@ object StringType : Indexable {
             "sub" -> SubStrProp
             "len" -> StrLenProp
             "con" -> StrConProp
-            "int" -> StrIntProp
+            // `str.int()` is not a built-in: it resolves to the `ext(str) int()`
+            // in std/str, which the parser auto-imports wherever `.int()` appears.
             "str" -> StrStrProp
             else -> null
         }
@@ -63,13 +64,6 @@ object StrConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.StrCon)
         return StringType
-    }
-}
-
-object StrIntProp : Prop {
-    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.StrInt)
-        return IntType
     }
 }
 

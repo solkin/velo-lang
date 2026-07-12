@@ -13,14 +13,24 @@ data class FuncNode(
 ) : Node() {
     override fun compile(ctx: Context): Type {
         val argTypes = ArrayList<Type>()
-        var resultType: Type = FuncType(derived = type, argTypes, typeParams = typeParams)
+        val funcType = FuncType(derived = type, argTypes, typeParams = typeParams)
+        var resultType: Type = funcType
 
-        // Define var before body frame creation (because var counter will be forked) if name is defined
+        // Define var before body frame creation (because var counter will be forked) if name is defined.
+        // frameAddressable: this binding IS the function, so a direct call may be
+        // addressed by frame number; a variable that later holds a function value
+        // is not marked, so it stays on the runtime-value (Load) path.
         val named = !name.isNullOrEmpty()
-        val nameVar = if (named) ctx.def(name.orEmpty(), resultType) else null
+        val nameVar = if (named) ctx.def(name.orEmpty(), resultType, frameAddressable = true) else null
 
         // Create body frame and fork var counter
         val funcOps = ctx.extend()
+        // Provisionally mark the function addressable by frame number, so a
+        // recursive call inside the body already compiles to Op.Frame (not a
+        // Load of the not-yet-stored variable). If the body turns out to capture
+        // an enclosing variable, this is cleared below and callers fall back to
+        // Load. See FuncType.frameNum.
+        funcType.frameNum = funcOps.frame.num
         // Mark the frame so an explicit `return` in the body (or in an inline
         // branch/loop within it) can type-check against this return type.
         funcOps.returnType = type
@@ -46,13 +56,13 @@ data class FuncNode(
         args.forEach { v ->
             if (v.type === FloatType) {
                 funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.IntToFloat)
+                funcOps.add(Op.Conv(core.VmType.Any, core.VmType.Float))
                 funcOps.add(Op.Store(index = v.index))
             } else if (v.type === LongType) {
                 // A long parameter may be passed a narrower int/byte argument; normalise
                 // it to a genuine long on entry (no-op when it is already a long).
                 funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.IntToLong)
+                funcOps.add(Op.Conv(core.VmType.Any, core.VmType.Long))
                 funcOps.add(Op.Store(index = v.index))
             }
         }
@@ -67,6 +77,24 @@ data class FuncNode(
             )
         }
         funcOps.add(Op.Ret)
+
+        // Capture analysis: a function that reads or writes an *enclosing* slot
+        // (index below its own frame base) is a closure — it depends on the scope
+        // live where it was defined, so it must be reached through its variable
+        // (which carries that captured scope). A function that touches only its
+        // own slots (args/locals) and calls other frame-addressed functions is
+        // free-standing: it can be addressed by frame number and run from any
+        // thread, including an actor's. Only the latter keeps `frameNum` set.
+        val varBase = funcOps.frame.varBase
+        val capturesEnclosing = funcOps.operations().any { op ->
+            when (op) {
+                is Op.Load -> op.index < varBase
+                is Op.Store -> op.index < varBase
+                is Op.PtrRef -> op.varIndex < varBase
+                else -> false
+            }
+        }
+        if (capturesEnclosing) funcType.frameNum = null
 
         // Add function operations to the real context
         ctx.merge(funcOps)
@@ -92,6 +120,19 @@ data class FuncType(
     override val args: List<Type>? = null,
     val typeParams: List<String> = emptyList(),
 ) : Callable {
+    /**
+     * The bytecode frame of this function's body — set by [FuncNode] when the
+     * function is **free-standing** (captures no enclosing scope), and left/reset
+     * to `null` when it is a closure. A free-standing function is called by
+     * emitting this frame directly (`Op.Frame(frameNum)`) rather than loading its
+     * declaring variable: its code lives in the program-wide frame table, so the
+     * call works from any thread — including an actor's, which does not share the
+     * declaring frame's variables. A closure keeps `null` and is reached through
+     * its variable, which carries the captured scope it needs. Not part of type
+     * identity, so it stays out of the primary constructor (and `equals`/`sameAs`).
+     */
+    var frameNum: Int? = null
+
     /**
      * Return types must agree, unless the expected return is `any` — the fully
      * loose form a raw host `VeloFunction` maps to, which accepts a callback of

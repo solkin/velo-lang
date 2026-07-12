@@ -49,7 +49,7 @@ data class CallNode(
         val argTypes = args.map { arg ->
             arg.compile(ctx)
         }
-        val returnType = func.compile(ctx)
+        val returnType = compileCallable(ctx)
         if (returnType is Callable) {
             // [funcArgTypes] is `null` when the callable's declared type does
             // not carry argument information — most commonly the loose form
@@ -99,6 +99,25 @@ data class CallNode(
         val callbackResult = returnType is FuncType && !returnType.derived.sameAs(VoidType)
         ctx.add(Op.Call(args.size, callbackResult = callbackResult))
         return type
+    }
+
+    /**
+     * Push the callable. A direct call of a **free-standing** function (one that
+     * captures no enclosing scope) emits its frame by number (`Op.Frame`) instead
+     * of loading the declaring variable, so the call runs from an actor thread too
+     * — the variable may live in a frame the actor does not share, whereas the
+     * frame table is program-wide (the same reason `new Class` embeds its frame
+     * number). A closure, a stored function value, or a higher-order parameter
+     * carries a captured scope, so it goes through the normal variable path.
+     */
+    private fun compileCallable(ctx: Context): Type {
+        if (func is VarNode) {
+            ctx.directFuncNum(func.name)?.let { num ->
+                ctx.add(Op.Frame(num = num))
+                return ctx.get(func.name).type
+            }
+        }
+        return func.compile(ctx)
     }
 
     private fun resolveFuncArgTypes(

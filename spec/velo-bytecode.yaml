@@ -21,14 +21,17 @@ format:
   extension: .vbc
   magic: 0x5e10                 # u16 BE — the first two bytes of every file
   version:
-    major: 11                   # u8 — reader MUST reject a file whose major differs
-    minor: 3                    # u8 — informational; a reader accepts any minor
+    major: 12                   # u8 — reader MUST reject a file whose major differs
+    minor: 0                    # u8 — informational; a reader accepts any minor
   endianness: big               # all multi-byte scalars are big-endian
   rules:
     - "Reject the stream if the leading u16 != magic."
     - "Reject the stream if versionMajor != the reader's supported major."
     - "Opcodes are NEVER renumbered. Gaps in the numbering are retired opcodes."
     - "Type tag 0x09 is permanently retired (was `dict`, removed in v10)."
+    - "v12 retired the per-pair conversion opcodes (0x15-0x17, 0x1f, 0x49, 0x4a-0x4e),
+       the string parser 0x40, and 0x2c: numeric conversion collapsed into Conv (0x63),
+       number-to-string into NumStr (0x64), and str->int moved to the stdlib prelude."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -159,7 +162,7 @@ structs:
       - { name: operands, enc: "see opcodes[].operands" }
 
 # -----------------------------------------------------------------------------
-# The instruction set (61 ops). `stack` is `before -> after`, top of stack on
+# The instruction set (51 ops). `stack` is `before -> after`, top of stack on
 # the right. `operands` is the byte layout that follows the opcode byte.
 # -----------------------------------------------------------------------------
 opcodes:
@@ -169,7 +172,6 @@ opcodes:
   - { name: Pop,  code: 0x0c, category: stack, stack: "[a] -> []",        doc: "Drop the top value." }
   - { name: Dup,  code: 0x0d, category: stack, stack: "[a] -> [a, a]",    doc: "Duplicate the top value." }
   - { name: Swap, code: 0x34, category: stack, stack: "[a, b] -> [b, a]", doc: "Swap the two top values." }
-  - { name: Rot,  code: 0x2c, category: stack, stack: "[a, b, c] -> [c, a, b]", doc: "Rotate the three top values." }
 
   # ---- Arithmetic (numeric; byte/int/long/float promote to the wider type) ----
   - { name: Add, code: 0x26, category: arithmetic, stack: "[a, b] -> [a + b]" }
@@ -191,17 +193,8 @@ opcodes:
 
   # ---- Conversions / hashing ----
   - { name: IntChar,    code: 0x14, category: convert, stack: "[int] -> [str]",   doc: "Unicode code point to a 1-char string." }
-  - { name: IntStr,     code: 0x15, category: convert, stack: "[int] -> [str]" }
-  - { name: FloatStr,   code: 0x49, category: convert, stack: "[float] -> [str]" }
-  - { name: IntToFloat, code: 0x16, category: convert, stack: "[int] -> [float]", doc: "Widen int/byte to float." }
-  - { name: FloatToInt, code: 0x17, category: convert, stack: "[float] -> [int]", doc: "Narrow float to int, truncating toward zero." }
-  - { name: IntToByte,  code: 0x1f, category: convert, stack: "[int] -> [byte]",  doc: "Low 8 bits, sign-extended." }
-  - { name: IntToLong,  code: 0x4a, category: convert, stack: "[int] -> [long]",  doc: "Widen int/byte to long." }
-  - { name: LongToInt,  code: 0x4b, category: convert, stack: "[long] -> [int]",  doc: "Low 32 bits." }
-  - { name: LongToFloat,code: 0x4c, category: convert, stack: "[long] -> [float]" }
-  - { name: FloatToLong,code: 0x4d, category: convert, stack: "[float] -> [long]", doc: "Narrow float to long, truncating toward zero." }
-  - { name: LongStr,    code: 0x4e, category: convert, stack: "[long] -> [str]" }
-  - { name: StrInt,     code: 0x40, category: convert, stack: "[str] -> [int]",   doc: "Parse a decimal string." }
+  - { name: Conv,   code: 0x63, category: convert, operands: [ { name: from, enc: vmtype }, { name: to, enc: vmtype } ], stack: "[num] -> [num']", doc: "Convert a numeric value to kind `to` (a scalar byte/int/long/float type tag); `from` is the informational static source kind. Result is fixed by `to`, applied to the source read polymorphically: widening is exact, narrowing to int/long truncates toward zero, narrowing to byte takes the low 8 bits." }
+  - { name: NumStr, code: 0x64, category: convert, stack: "[num] -> [str]", doc: "Decimal string of a numeric value, polymorphic over its runtime kind (byte/int/long plain, float with a fraction)." }
   - { name: Hash,       code: 0x48, category: convert, stack: "[a] -> [hash(a)]" }
 
   # ---- Strings ----
