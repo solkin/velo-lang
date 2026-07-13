@@ -1,0 +1,24 @@
+# VEL-24: universal hash() resolves on class instances and is not shadowed
+# into a hard error by the class's own member table.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+class Box(int v) {
+    func get() int { return v }
+}
+
+data class Point(int x, int y) {
+    func sum() int { return x + y }
+}
+
+Box b = new Box(5)
+ck("class hash stable", b.hash() == b.hash())
+ck("class own method", b.get() == 5)
+
+Point p1 = new Point(1, 2)
+Point p2 = new Point(1, 2)
+ck("data hash stable", p1.hash() == p1.hash())
+ck("data hash by value", p1.hash() == p2.hash())
+ck("data own method", p1.sum() == 3)

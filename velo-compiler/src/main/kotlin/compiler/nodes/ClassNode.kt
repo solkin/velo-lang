@@ -201,9 +201,14 @@ data class ClassElementProp(val name: String) : Prop {
         val instanceType = type as? ClassType ?: throw IllegalArgumentException("Class operation on non-class type $type")
         val defType = ctx.get(instanceType.name).type as? ClassType
             ?: throw IllegalArgumentException("Class $instanceType is not defined in this scope")
-        defType.parent ?: throw IllegalStateException("Class prop parent context is not defined")
-        val v = defType.parent.frame.vars[name] ?: throw IllegalArgumentException("Class has no property $name")
-        val propCtx = ctx.discrete(parent = defType.parent)
+        val parent = defType.parent ?: throw IllegalStateException("Class prop parent context is not defined")
+        // A member declared on the class wins; when none matches, fall back to the
+        // universal any-type members (hash, …) so they resolve on instances too,
+        // instead of the class shadowing them into a hard error.
+        val v = parent.frame.vars[name]
+            ?: return AnyType.prop(name)?.compile(instanceType, args, ctx)
+                ?: throw IllegalArgumentException("Class has no property $name")
+        val propCtx = ctx.discrete(parent = parent)
         propCtx.add(Op.Load(v.index))
         var resultType = v.type
         val funcType = v.type as? FuncType
