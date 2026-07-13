@@ -46,9 +46,7 @@ data class BinaryNode(
             // and catching: a `try { compile } catch (IAE)` would also swallow a
             // genuine error from the operator body (e.g. an argument-type
             // mismatch) and mis-report it as "operator not defined".
-            val defType = ctx.opt(leftType.name)?.type as? ClassType
-            val hasOperator = defType?.parent?.frame?.vars?.containsKey(opName) == true
-            if (!hasOperator) {
+            if (leftType.memberVar(opName, ctx) == null) {
                 throw IllegalArgumentException("Operator '$operator' is not defined for class '${leftType.name}'")
             }
             return ClassElementProp(opName).compile(leftType, args = listOf(rightType), ctx)

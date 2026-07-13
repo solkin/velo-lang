@@ -194,14 +194,21 @@ data class ClassType(
     override fun name() = name
 
     fun resolveGeneric(type: Type): Type = resolveGenericType(type, typeParams, typeArgs)
+
+    /** The class body context (its member frame), resolved by name in [ctx];
+     *  null when the class is not in scope. */
+    fun classBody(ctx: Context): Context? = (ctx.opt(name)?.type as? ClassType)?.parent
+
+    /** The declaring [compiler.Var] of [member], or null if this class declares
+     *  no such member — the single place class-member lookup is expressed. */
+    fun memberVar(member: String, ctx: Context): compiler.Var? = classBody(ctx)?.frame?.vars?.get(member)
 }
 
 data class ClassElementProp(val name: String) : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         val instanceType = type as? ClassType ?: throw IllegalArgumentException("Class operation on non-class type $type")
-        val defType = ctx.get(instanceType.name).type as? ClassType
+        val parent = instanceType.classBody(ctx)
             ?: throw IllegalArgumentException("Class $instanceType is not defined in this scope")
-        val parent = defType.parent ?: throw IllegalStateException("Class prop parent context is not defined")
         // A member declared on the class wins; when none matches, fall back to the
         // universal any-type members (hash, …) so they resolve on instances too,
         // instead of the class shadowing them into a hard error.
