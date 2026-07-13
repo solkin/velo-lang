@@ -54,7 +54,7 @@ data class ForRangeNode(
         body.compile(bodyCtx)
         val bodyLen = bodyCtx.size()
         val scopeCount = ctx.frame.varCounter.get() - scopeBase
-        val scoped = bodyCtx.operations().any { it is Op.Frame }
+        val scoped = capturesLoopScope(bodyCtx, scopeBase, scopeCount)
 
         // incr: counter = counter + 1
         val incrCtx = scope.block()
@@ -123,7 +123,7 @@ data class ForEachNode(
         body.compile(bodyCtx)
         val bodyLen = bodyCtx.size()
         val scopeCount = ctx.frame.varCounter.get() - scopeBase
-        val scoped = bodyCtx.operations().any { it is Op.Frame }
+        val scoped = capturesLoopScope(bodyCtx, scopeBase, scopeCount)
 
         // incr: idx = idx + 1
         val incrCtx = scope.block()

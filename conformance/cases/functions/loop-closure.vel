@@ -1,0 +1,29 @@
+# VEL-28: a closure created inside a loop captures the per-iteration variable,
+# so each iteration's closure sees its own value (0,1,2 — not 3,3,3). The loop
+# earns a fresh per-iteration scope precisely because a body closure captures a
+# body-local slot — the capture test that replaced scanning the body for Op.Frame.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+# while-loop: closure captures a body-local declared each iteration
+array[func[int]] ws = new array[func[int]](0)
+int i = 0
+while (i < 3) {
+    int captured = i
+    ws = ws.plus(func() int { return captured })
+    i = i + 1
+}
+ck("while 0", ws[0]() == 0)
+ck("while 1", ws[1]() == 1)
+ck("while 2", ws[2]() == 2)
+
+# for-in-range: closure captures the loop variable itself
+array[func[int]] fs = new array[func[int]](0)
+for k in 0 .. 3 {
+    fs = fs.plus(func() int { return k })
+}
+ck("for 0", fs[0]() == 0)
+ck("for 1", fs[1]() == 1)
+ck("for 2", fs[2]() == 2)

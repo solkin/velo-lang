@@ -20,12 +20,12 @@ data class WhileNode(
         val type = expr.compile(exprCtx)
         val scopeCount = ctx.frame.varCounter.get() - scopeBase
 
-        // Give the body a fresh per-iteration scope only when it declares locals
-        // AND creates a closure (an `Op.Frame`) — otherwise the shared frame is
-        // fine and we keep the loop flat (zero overhead).
+        // Give the body a fresh per-iteration scope only when a closure declared
+        // in it actually captures a body-local (per-iteration) slot; otherwise
+        // the shared frame is fine and we keep the loop flat (zero overhead).
         val body = exprCtx.operations()
         val bodyLen = body.size
-        val scoped = scopeCount > 0 && body.any { it is Op.Frame }
+        val scoped = scopeCount > 0 && capturesLoopScope(exprCtx, scopeBase, scopeCount)
         // The per-iteration scope adds a ScopeEnter/Leave pair around the body
         // only when the body captures it; an unscoped loop stays flat (no dead
         // ops on the hot path). `s` folds that 0/1 into every jump distance.
@@ -73,6 +73,32 @@ internal fun backpatchLoop(
         } else if (op is Op.Move && op.count == LOOP_CONTINUE_MARKER) {
             bodyCtx.replace(m - 1, leave)
             bodyCtx.replace(m, Op.Move(count = contDist(m)))
+        }
+    }
+}
+
+/**
+ * Does the loop body need a fresh per-iteration scope? Yes exactly when a
+ * closure declared in the body captures a body-local (per-iteration) slot —
+ * i.e. some frame nested under the body reads or writes a slot in
+ * `[scopeBase, scopeBase + scopeCount)` that lies below its own [CompilerFrame.varBase]
+ * (the same "index below the frame base is an enclosing capture" test
+ * [compiler.nodes.FuncNode] uses). This replaces scanning the body for any
+ * `Op.Frame`: a body that only *calls* free-standing functions (also emitted as
+ * `Op.Frame`) or whose closures capture outer variables needs no per-iteration
+ * scope and stays flat.
+ */
+internal fun capturesLoopScope(bodyCtx: Context, scopeBase: Int, scopeCount: Int): Boolean {
+    val until = scopeBase + scopeCount
+    return bodyCtx.frames().any { frame ->
+        frame.ops.any { op ->
+            val idx = when (op) {
+                is Op.Load -> op.index
+                is Op.Store -> op.index
+                is Op.PtrRef -> op.varIndex
+                else -> return@any false
+            }
+            idx < frame.varBase && idx in scopeBase until until
         }
     }
 }
