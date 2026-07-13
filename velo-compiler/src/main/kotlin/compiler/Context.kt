@@ -117,21 +117,7 @@ data class Context(
         return if (subFrame) frames else frames.plus(frame)
     }
 
-    fun extend(): Context {
-        val base = frame.varCounter.get()
-        return Context(
-            parent = this,
-            frame = CompilerFrame(
-                num = frameCounter.incrementAndGet(),
-                ops = mutableListOf(),
-                vars = mutableMapOf(),
-                varCounter = AtomicInteger(base),
-                varBase = base,
-            ),
-            frameCounter,
-            shared = shared,
-        )
-    }
+    fun extend(): Context = discrete(parent = this)
 
     fun discrete(parent: Context? = null): Context {
         val base = frame.varCounter.get()
@@ -145,22 +131,6 @@ data class Context(
                 varBase = base,
             ),
             frameCounter,
-            shared = shared,
-        )
-    }
-
-    fun inner(): Context {
-        return Context(
-            parent = this,
-            frame = CompilerFrame(
-                num = frame.num,
-                ops = mutableListOf(),
-                vars = frame.vars,
-                varCounter = frame.varCounter,
-                varBase = frame.varBase,
-            ),
-            frameCounter,
-            subFrame = true,
             shared = shared,
         )
     }

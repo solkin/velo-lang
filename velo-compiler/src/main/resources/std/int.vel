@@ -2,10 +2,6 @@ ext(int a) abs() int {
     return if (a > 0) then a else 0 - a
 };
 
-ext(int a) neg() int {
-    return if (a < 0) then a else 0 - a
-};
-
 ext (int num) format(int radix) str {
     int MIN_RADIX = 2;
     int MAX_RADIX = 36;

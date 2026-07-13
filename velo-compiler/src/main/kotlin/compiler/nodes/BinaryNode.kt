@@ -140,34 +140,15 @@ data class BinaryNode(
             }
 
             "&" -> {
-                if (leftType is BoolType) {
-                    ctx.add(Op.If(elseSkip = 3)) // Else skip and push 'false'
-                    // Here can be compiled right argument for && implementation
-                    ctx.add(Op.If(elseSkip = 2)) // Else skip and push 'false'
-                    ctx.add(Op.Push(value = true))
-                    ctx.add(Op.Move(count = 1))
-                    ctx.add(Op.Push(value = false))
-                    BoolType
-                } else {
-                    ctx.add(Op.And)
-                    leftType
-                }
+                // Bool `&` is short-circuited above; here it is bitwise on ints.
+                ctx.add(Op.And)
+                leftType
             }
 
             "|" -> {
-                if (leftType is BoolType) {
-                    ctx.add(Op.If(elseSkip = 1)) // On false skip to second check
-                    ctx.add(Op.Move(count = 1)) // Skip second check and push 'true'
-                    // Here can be compiled right argument for || implementation
-                    ctx.add(Op.If(elseSkip = 2)) // Else skip and push 'false'
-                    ctx.add(Op.Push(value = true))
-                    ctx.add(Op.Move(count = 1))
-                    ctx.add(Op.Push(value = false))
-                    BoolType
-                } else {
-                    ctx.add(Op.Or)
-                    leftType
-                }
+                // Bool `|` is short-circuited above; here it is bitwise on ints.
+                ctx.add(Op.Or)
+                leftType
             }
 
             "^" -> {

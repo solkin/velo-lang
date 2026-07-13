@@ -1,14 +1,7 @@
 # Boolean extension functions
-
-ext(bool b) str() str {
-    return if b then "true" else "false"
-};
+#
+# `str()` is a compiler built-in (BoolStrProp); only `int()` needs stdlib.
 
 ext(bool b) int() int {
     return if b then 1 else 0
 };
-
-ext(bool b) not() bool {
-    return if b then false else true
-};
-
