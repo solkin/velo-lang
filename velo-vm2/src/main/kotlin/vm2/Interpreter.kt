@@ -55,6 +55,7 @@ private const val OP_INSTANCE = 0x42
 private const val OP_NATIVECALL = 0x43
 private const val OP_SHL = 0x46
 private const val OP_SHR = 0x47
+private const val OP_USHR = 0x66
 private const val OP_HASH = 0x48
 private const val OP_PTRNEW = 0x50
 private const val OP_PTRLOAD = 0x51
@@ -66,7 +67,7 @@ private const val OP_ACTORCALL = 0x61
 private const val OP_FUTUREAWAIT = 0x62
 
 /**
- * The execution engine: a stack machine over the 52-op instruction set, driven
+ * The execution engine: a stack machine over the 53-op instruction set, driven
  * by a cooperative **fiber scheduler**.
  *
  * Each in-flight actor message is a [Fiber] whose call stack is held as data
@@ -270,6 +271,7 @@ class Interpreter(
                     OP_XOR -> binary(s) { a, b -> Numbers.xor(a, b) }
                     OP_SHL -> binary(s) { a, b -> Numbers.shl(a, b) }
                     OP_SHR -> binary(s) { a, b -> Numbers.shr(a, b) }
+                    OP_USHR -> binary(s) { a, b -> Numbers.ushr(a, b) }
 
                     // ---- stack manipulation ----
                     OP_POP -> s.pop()

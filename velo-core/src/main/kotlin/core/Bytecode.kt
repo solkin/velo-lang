@@ -347,6 +347,7 @@ object Bytecode {
             )
             0x46 -> Op.Shl
             0x47 -> Op.Shr
+            0x66 -> Op.Ushr
             0x48 -> Op.Hash
             0x50 -> Op.PtrNew
             0x51 -> Op.PtrLoad

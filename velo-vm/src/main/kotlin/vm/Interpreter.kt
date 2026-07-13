@@ -382,6 +382,15 @@ object Interpreter {
             pc + 1
         }
 
+        is Op.Ushr -> {
+            val frame = ctx.currentFrame()
+            val bits = frame.subs.pop().getNumber().toInt()
+            val value = frame.subs.pop().getNumber()
+            val res: Any = if (value is Long) value.ushr(bits) else value.toInt().ushr(bits)
+            frame.subs.push(ValueRecord(res))
+            pc + 1
+        }
+
         // ---- Conversions / hashing ----
 
         is Op.IntChar -> {

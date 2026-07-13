@@ -86,6 +86,7 @@ object Numbers {
     fun xor(a: Any?, b: Any?): Any = if (isLong(a) || isLong(b)) toLong(a) xor toLong(b) else toInt(a) xor toInt(b)
     fun shl(a: Any?, b: Any?): Any = if (a is Long) a shl toInt(b) else toInt(a) shl toInt(b)
     fun shr(a: Any?, b: Any?): Any = if (a is Long) a shr toInt(b) else toInt(a) shr toInt(b)
+    fun ushr(a: Any?, b: Any?): Any = if (a is Long) a ushr toInt(b) else toInt(a) ushr toInt(b)
 
     fun intInt(v: Any?): Int = toInt(v)
 

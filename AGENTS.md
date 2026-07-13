@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (52 operations). It is designed to be embeddable in JVM applications.
+Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (53 operations). It is designed to be embeddable in JVM applications.
 
 Key characteristics:
 - **Source language**: Velo (`.vel` files)
@@ -35,7 +35,7 @@ Minimal external dependencies: Kotlin stdlib and JUnit only.
 ## Modules
 
 ```
-velo-core      Shared contracts: Op (52 opcodes), VmType, Bytecode (.vbc read/write),
+velo-core      Shared contracts: Op (53 opcodes), VmType, Bytecode (.vbc read/write),
                SerializedProgram/SerializedFrame, NativeRegistry/NativeDescriptor/NativeLinker
 velo-compiler  Front-end (depends on core): lexer, Pratt parser, AST nodes, type system,
                codegen; stdlib sources in src/main/resources/std/
@@ -75,7 +75,7 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 
 ## Virtual Machine (`velo-vm`)
 
-1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 52 ops.
+1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 53 ops.
 2. **Memory** — `MemoryArea.kt` heap; `Record` subclasses (`ValueRecord`, `RefRecord` array/class/native, `FuncRecord`, `PtrRecord`) hold values.
 3. **Actors** — `vm/actors/`: `ActorRuntime`, `ActorHandle` (isolated VMContext + serial dispatcher), `Dispatcher` (thread / pump / host executor), `StructuredClone` (transferable values only), `VeloFunction`/`CallbackRecord` two-way callbacks, `Pins` refcount machinery.
 4. **Native interop** — `NativeRegistry`/`NativeDescriptor` (core) synthesize descriptors from JVM classes once; `NativeLinker` links a program's native pool at load; `NativeBridge.kt` is the single Velo⇄JVM conversion point; `Op.NativeCall` dispatches via MethodHandle by pool index. `java.util.Map` does not cross the boundary (no dict in the VM).

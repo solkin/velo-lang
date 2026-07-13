@@ -114,8 +114,8 @@ literal:
 # -----------------------------------------------------------------------------
 container:
   - { name: magic,        enc: u16, const: 0x5e10 }
-  - { name: versionMajor, enc: u8,  const: 11 }
-  - { name: versionMinor, enc: u8,  const: 3 }
+  - { name: versionMajor, enc: u8,  const: 12 }
+  - { name: versionMinor, enc: u8,  const: 0 }
   - { name: natives,      enc: "list<u16, NativeRef>",       desc: "native pool: every host entry point the code references" }
   - { name: dataClasses,  enc: "list<u16, DataClassInfo>",   desc: "marshalling metadata for value types" }
   - { name: classMethods, enc: "list<u16, ClassMethodsInfo>", desc: "per-class method tables for interface dispatch" }
@@ -163,7 +163,7 @@ structs:
       - { name: operands, enc: "see opcodes[].operands" }
 
 # -----------------------------------------------------------------------------
-# The instruction set (52 ops). `stack` is `before -> after`, top of stack on
+# The instruction set (53 ops). `stack` is `before -> after`, top of stack on
 # the right. `operands` is the byte layout that follows the opcode byte.
 # -----------------------------------------------------------------------------
 opcodes:
@@ -186,7 +186,8 @@ opcodes:
   - { name: Or,  code: 0x21, category: bitwise, stack: "[a, b] -> [a | b]" }
   - { name: Xor, code: 0x35, category: bitwise, stack: "[a, b] -> [a ^ b]" }
   - { name: Shl, code: 0x46, category: bitwise, stack: "[value, bits] -> [value << bits]" }
-  - { name: Shr, code: 0x47, category: bitwise, stack: "[value, bits] -> [value >> bits]" }
+  - { name: Shr, code: 0x47, category: bitwise, stack: "[value, bits] -> [value >> bits]", doc: "Arithmetic (sign-propagating) right shift." }
+  - { name: Ushr, code: 0x66, category: bitwise, stack: "[value, bits] -> [value >>> bits]", doc: "Logical (zero-fill) right shift." }
 
   # ---- Comparison ----
   - { name: More,   code: 0x1b, category: comparison, stack: "[a, b] -> [a > b]", doc: "Numeric greater-than." }

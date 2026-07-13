@@ -28,6 +28,7 @@ object IntType : Numeric {
         return when (name) {
             "shl" -> IntShlProp
             "shr" -> IntShrProp
+            "ushr" -> IntUshrProp
             "str" -> NumStrProp
             "char" -> IntCharProp
             "int" -> NumIdentityProp
@@ -55,6 +56,13 @@ object IntShlProp : Prop {
 object IntShrProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.Shr)
+        return IntType
+    }
+}
+
+object IntUshrProp : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.Ushr)
         return IntType
     }
 }

@@ -106,9 +106,14 @@ sealed interface Op {
         override val opcode get() = 0x46
     }
 
-    /** Stack: `[value, bits] -> [value shr bits]` */
+    /** Arithmetic (sign-propagating) right shift. Stack: `[value, bits] -> [value shr bits]` */
     object Shr : Op {
         override val opcode get() = 0x47
+    }
+
+    /** Logical (zero-fill) right shift. Stack: `[value, bits] -> [value ushr bits]` */
+    object Ushr : Op {
+        override val opcode get() = 0x66
     }
 
     // ---- Comparison ----

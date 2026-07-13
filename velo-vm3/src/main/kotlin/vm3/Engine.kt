@@ -302,8 +302,9 @@ internal class Engine(
                 0x02 -> bitwise('&')
                 0x21 -> bitwise('|')
                 0x35 -> bitwise('^')
-                0x46 -> shift(left = true)
-                0x47 -> shift(left = false)
+                0x46 -> shift(0)
+                0x47 -> shift(1)
+                0x66 -> shift(2)
                 0x1b -> { val bi = sp - 1; val ai = sp - 2; val r = greaterSlots(ai, bi); sp = ai; sRef[ai] = null; pushBool(r) }
                 OP_GT_IF -> {
                     val bi = sp - 1; val ai = sp - 2
@@ -749,14 +750,15 @@ internal class Engine(
             sp = ai + 1
         }
 
-        private fun shift(left: Boolean) {
+        // op: 0 = shl, 1 = shr (arithmetic), 2 = ushr (logical).
+        private fun shift(op: Int) {
             val bits = popInt()
             val ai = sp - 1
             if (ai < 0) throw VeloError("Operand stack underflow")
             if (sTag[ai] == TAG_LONG) {
-                val v = slotLong(ai); setLong(ai, if (left) v shl bits else v shr bits)
+                val v = slotLong(ai); setLong(ai, when (op) { 0 -> v shl bits; 1 -> v shr bits; else -> v ushr bits })
             } else {
-                val v = slotInt(ai); setInt(ai, if (left) v shl bits else v shr bits)
+                val v = slotInt(ai); setInt(ai, when (op) { 0 -> v shl bits; 1 -> v shr bits; else -> v ushr bits })
             }
         }
 
