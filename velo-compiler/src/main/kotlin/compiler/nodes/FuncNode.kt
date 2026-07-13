@@ -46,22 +46,9 @@ data class FuncNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
-        // A float parameter may be passed a narrower int/byte argument (widening
-        // is allowed at the call site); normalise it to a genuine float on entry
-        // so arithmetic in the body promotes correctly.
-        args.forEach { v ->
-            if (v.type === FloatType) {
-                funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.NumConv(core.VmType.Any, core.VmType.Float))
-                funcOps.add(Op.Store(index = v.index))
-            } else if (v.type === LongType) {
-                // A long parameter may be passed a narrower int/byte argument; normalise
-                // it to a genuine long on entry (no-op when it is already a long).
-                funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.NumConv(core.VmType.Any, core.VmType.Long))
-                funcOps.add(Op.Store(index = v.index))
-            }
-        }
+        // Widen narrower int/byte arguments to float/long params on entry (same
+        // prologue normalization a class constructor uses).
+        normalizeNumericParams(funcOps, args)
         body.compile(funcOps)
         // Returns are explicit (each `return` is type-checked against `type` by
         // ReturnNode). A non-void function must therefore return on every path —

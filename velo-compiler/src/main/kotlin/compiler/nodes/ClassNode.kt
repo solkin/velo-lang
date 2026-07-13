@@ -53,6 +53,9 @@ data class ClassNode(
             v
         }.reversed()
         argTypes += args.map { it.type }
+        // Widen narrower int/byte constructor arguments to float/long fields on
+        // entry — the same prologue normalization a function uses.
+        normalizeNumericParams(classOps, args)
 
         body.compile(ctx = classOps)
         classOps.add(Op.Instance)

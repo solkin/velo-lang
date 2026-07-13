@@ -3,6 +3,7 @@ package compiler.nodes
 import core.Op
 
 import compiler.Context
+import compiler.Var
 import core.VmType
 
 interface Type {
@@ -143,6 +144,28 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
         "Cannot assign ${source.log()} to $what of type ${target.log()} without losing data. " +
             "Convert explicitly with .${target.name()}() (e.g. value.${target.name()}())."
     )
+}
+
+/**
+ * Receiver-side numeric widening for a frame's parameters. A caller may pass a
+ * narrower int/byte where a float/long is declared (widening is allowed at every
+ * value site); this normalises those params to a genuine float/long on entry, so
+ * the body's arithmetic promotes correctly. Both functions ([FuncNode]) and
+ * class/data constructors ([ClassNode]) run it — a frame normalises its own
+ * params in its prologue. The array-store opcode, having no prologue, is the one
+ * coercion done at the assignment site instead (see [IndexNode]).
+ */
+fun normalizeNumericParams(ctx: Context, params: List<Var>) {
+    params.forEach { v ->
+        val to = when (v.type) {
+            FloatType -> VmType.Float
+            LongType -> VmType.Long
+            else -> return@forEach
+        }
+        ctx.add(Op.Load(index = v.index))
+        ctx.add(Op.NumConv(VmType.Any, to))
+        ctx.add(Op.Store(index = v.index))
+    }
 }
 
 /** `.int()`/`.float()`/`.byte()` no-op conversion — keeps the receiver's type. */
