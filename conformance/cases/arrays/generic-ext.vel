@@ -1,0 +1,26 @@
+# VEL-23: generic extension functions on array[T], resolved by type inference.
+# One `array@firstOr` / `array@second` namespace serves every element type — T
+# is inferred from the actual receiver, so int and str arrays share a single
+# generic ext instead of colliding on the erased "array" key.
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+ext[T](array[T] a) firstOr(T fallback) T {
+    if (a.len() > 0) { return a[0] } else { return fallback }
+}
+
+ext[T](array[T] a) second() T {
+    return a[1]
+}
+
+array[int] nums = new array[int]{10, 20, 30}
+array[str] words = new array[str]{"alpha", "beta"}
+array[int] empty = new array[int](0)
+
+ck("int firstOr present", nums.firstOr(99) == 10)
+ck("int firstOr empty", empty.firstOr(99) == 99)
+ck("str firstOr present", words.firstOr("z") == "alpha")
+ck("int second", nums.second() == 20)
+ck("str second", words.second() == "beta")

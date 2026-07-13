@@ -1,0 +1,5 @@
+ok int firstOr present
+ok int firstOr empty
+ok str firstOr present
+ok int second
+ok str second
