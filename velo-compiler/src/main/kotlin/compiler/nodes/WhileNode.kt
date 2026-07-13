@@ -26,22 +26,24 @@ data class WhileNode(
         val body = exprCtx.operations()
         val bodyLen = body.size
         val scoped = scopeCount > 0 && body.any { it is Op.Frame }
+        // The per-iteration scope adds a ScopeEnter/Leave pair around the body
+        // only when the body captures it; an unscoped loop stays flat (no dead
+        // ops on the hot path). `s` folds that 0/1 into every jump distance.
+        val s = if (scoped) 1 else 0
 
         backpatchLoop(
             exprCtx, scoped,
-            breakDist = { m -> bodyLen - m + 1 },      // jump past the loop
-            contDist = { m -> -(condLen + m + 3) },    // jump back to the condition
+            breakDist = { m -> bodyLen + s - m },        // jump past the loop
+            contDist = { m -> -(condLen + s + m + 2) },  // jump back to the condition
         )
 
-        // Uniform layout (PRE/POST are ScopeEnter/Leave when scoped, else no-op
-        // Move(0), so op counts and jump distances don't depend on `scoped`):
-        //   [cond] If [PRE] [body] [POST] [back]
+        // Layout: [cond] If [ScopeEnter?] [body] [ScopeLeave?] [back]
         ctx.merge(condCtx)
-        ctx.add(Op.If(elseSkip = bodyLen + 3))
-        ctx.add(if (scoped) Op.ScopeEnter(scopeBase, scopeCount) else Op.Move(count = 0))
+        ctx.add(Op.If(elseSkip = bodyLen + 2 * s + 1))
+        if (scoped) ctx.add(Op.ScopeEnter(scopeBase, scopeCount))
         ctx.merge(exprCtx)
-        ctx.add(if (scoped) Op.ScopeLeave else Op.Move(count = 0))
-        ctx.add(Op.Move(count = -(condLen + bodyLen + 4)))
+        if (scoped) ctx.add(Op.ScopeLeave)
+        ctx.add(Op.Move(count = -(condLen + bodyLen + 2 * s + 2)))
 
         return type
     }

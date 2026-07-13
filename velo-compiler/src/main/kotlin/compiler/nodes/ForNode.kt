@@ -64,10 +64,11 @@ data class ForRangeNode(
         incrCtx.add(Op.Store(counter.index))
         val incrLen = incrCtx.size()
 
+        val s = if (scoped) 1 else 0
         backpatchLoop(
             bodyCtx, scoped,
-            breakDist = { m -> bodyLen + incrLen - m + 1 },
-            contDist = { m -> bodyLen - m },
+            breakDist = { m -> bodyLen + s + incrLen - m },
+            contDist = { m -> bodyLen + s - m - 1 },
         )
 
         assembleLoop(scope, condCtx, bodyCtx, incrCtx, condLen, bodyLen, incrLen, scoped, scopeBase, scopeCount)
@@ -132,10 +133,11 @@ data class ForEachNode(
         incrCtx.add(Op.Store(idxVar.index))
         val incrLen = incrCtx.size()
 
+        val s = if (scoped) 1 else 0
         backpatchLoop(
             bodyCtx, scoped,
-            breakDist = { m -> bodyLen + incrLen - m + 1 },
-            contDist = { m -> bodyLen - m },
+            breakDist = { m -> bodyLen + s + incrLen - m },
+            contDist = { m -> bodyLen + s - m - 1 },
         )
 
         assembleLoop(scope, condCtx, bodyCtx, incrCtx, condLen, bodyLen, incrLen, scoped, scopeBase, scopeCount)
@@ -157,11 +159,12 @@ private fun assembleLoop(
     scopeBase: Int,
     scopeCount: Int,
 ) {
+    val s = if (scoped) 1 else 0
     scope.merge(condCtx)
-    scope.add(Op.If(elseSkip = bodyLen + incrLen + 3))
-    scope.add(if (scoped) Op.ScopeEnter(scopeBase, scopeCount) else Op.Move(count = 0))
+    scope.add(Op.If(elseSkip = bodyLen + incrLen + 2 * s + 1))
+    if (scoped) scope.add(Op.ScopeEnter(scopeBase, scopeCount))
     scope.merge(bodyCtx)
-    scope.add(if (scoped) Op.ScopeLeave else Op.Move(count = 0))
+    if (scoped) scope.add(Op.ScopeLeave)
     scope.merge(incrCtx)
-    scope.add(Op.Move(count = -(condLen + bodyLen + incrLen + 4)))
+    scope.add(Op.Move(count = -(condLen + bodyLen + incrLen + 2 * s + 2)))
 }
