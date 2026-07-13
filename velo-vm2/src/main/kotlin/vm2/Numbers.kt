@@ -140,30 +140,17 @@ object Numbers {
     }
 
     /**
-     * `Op.Hash`: a fixed, platform-independent hash (the JVM `hashCode`
-     * algorithm spelled out, not delegated to the host) so the value is
-     * identical on every VM backend. The stdlib `Map` buckets on this, so a
-     * port that recomputed it differently would change iteration order and
-     * diverge from the golden output.
+     * `Op.Hash`: the pinned structural hash ([core.Hashing]) so the value is
+     * identical on every backend. Scalars/strings come from the shared algorithm;
+     * an array folds its elements, a `data class` instance folds its fields (by
+     * value, matching value-`Op.Equals`), and a non-data instance falls back to
+     * host identity — inherently per-VM, as its equality is by identity too.
      */
-    fun hash(v: Any?): Int = when (v) {
-        null -> 0
-        is Int -> v
-        is Byte -> v.toInt()
-        is Long -> (v xor (v ushr 32)).toInt()
-        is Boolean -> if (v) 1231 else 1237
-        is Float -> v.toRawBits()
-        is String -> { var h = 0; for (c in v) h = 31 * h + c.code; h }
-        is VArray -> { var h = 1; for (e in v.data) h = 31 * h + hash(e); h }
+    fun hash(v: Any?, dataClasses: Map<Int, DataClassInfo>): Int = core.Hashing.scalar(v) ?: when (v) {
+        is VArray -> v.data.fold(core.Hashing.SEQ_SEED) { h, e -> core.Hashing.combine(h, hash(e, dataClasses)) }
+        is Instance -> dataClasses[v.frameNum]?.fields
+            ?.fold(core.Hashing.SEQ_SEED) { h, f -> core.Hashing.combine(h, hash(v.scope.load(f.index), dataClasses)) }
+            ?: System.identityHashCode(v)
         else -> v.hashCode()
     }
-
-    /** Code point → string (`Op.IntChar`), with astral-plane surrogate handling — no host helper. */
-    fun codePointToString(cp: Int): String =
-        if (cp in 0..0xFFFF) {
-            cp.toChar().toString()
-        } else {
-            val c = cp - 0x10000
-            charArrayOf((0xD800 + (c shr 10)).toChar(), (0xDC00 + (c and 0x3FF)).toChar()).concatToString()
-        }
 }

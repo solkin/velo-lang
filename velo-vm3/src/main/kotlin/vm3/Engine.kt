@@ -319,7 +319,7 @@ internal class Engine(
                     if (!taken) frame.pc += spec.opA[pc + 1]
                 }
                 0x0e -> equals()
-                0x14 -> pushRef(String(Character.toChars(popInt())))
+                0x14 -> pushRef(core.codePointToString(popInt()))
                 0x63 -> when ((spec.ops[pc] as Op.NumConv).to) {
                     VmType.Int -> pushInt(popInt())
                     VmType.Long -> pushLong(popLong())
@@ -835,17 +835,17 @@ internal class Engine(
             else -> a.toInt() == b.toInt()
         }
 
-        private fun hashValue(value: Any?): Int = when (value) {
-            Uninitialized -> throw VeloError("Cannot hash an uninitialized value")
-            null, NullPointerValue -> 0
-            is Byte -> value.toInt()
-            is Int -> value
-            is Long -> value.hashCode()
-            is Float -> value.toRawBits()
-            is VArray -> (0 until value.size).fold(1) { h, i -> 31 * h + hashValue(value.get(i)) }
-            is InstanceValue -> engine.dataClasses[value.classFrame]?.fields?.fold(1) { h, f -> 31 * h + hashValue(value.env.get(f.index)) }
-                ?: System.identityHashCode(value)
-            else -> value.hashCode()
+        private fun hashValue(value: Any?): Int {
+            if (value === Uninitialized) throw VeloError("Cannot hash an uninitialized value")
+            if (value === NullPointerValue) return 0
+            core.Hashing.scalar(value)?.let { return it }
+            return when (value) {
+                is VArray -> (0 until value.size).fold(core.Hashing.SEQ_SEED) { h, i -> core.Hashing.combine(h, hashValue(value.get(i))) }
+                is InstanceValue -> engine.dataClasses[value.classFrame]?.fields
+                    ?.fold(core.Hashing.SEQ_SEED) { h, f -> core.Hashing.combine(h, hashValue(value.env.get(f.index))) }
+                    ?: System.identityHashCode(value)
+                else -> value.hashCode()
+            }
         }
 
         /** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */

@@ -388,7 +388,7 @@ object Interpreter {
         is Op.IntChar -> {
             val frame = ctx.currentFrame()
             val v = frame.subs.pop().getInt()
-            frame.subs.push(ValueRecord(Char(v).toString()))
+            frame.subs.push(ValueRecord(core.codePointToString(v)))
             pc + 1
         }
 
@@ -412,7 +412,7 @@ object Interpreter {
 
         is Op.Hash -> {
             val frame = ctx.currentFrame()
-            frame.subs.push(ValueRecord(frame.subs.pop().hashCode()))
+            frame.subs.push(ValueRecord(hashRecord(frame.subs.pop(), ctx)))
             pc + 1
         }
 
@@ -675,5 +675,33 @@ object Interpreter {
             }
         }
         return a == b
+    }
+
+    /**
+     * `Op.Hash` by value, mirroring [deepEquals]: an array folds its element
+     * hashes, a `data class` instance folds its field hashes (matching value
+     * equality), a non-data class / native reference stays identity-hashed (its
+     * equality is identity too), and a scalar uses the pinned [core.Hashing].
+     */
+    private fun hashRecord(r: Record, ctx: VMContext): Int {
+        if (r is RefRecord) {
+            return when (r.kind) {
+                RefKind.ARRAY -> r.get<Array<Record>>(ctx)
+                    .fold(core.Hashing.SEQ_SEED) { h, e -> core.Hashing.combine(h, hashRecord(e, ctx)) }
+                RefKind.CLASS -> {
+                    val f = r.get<Frame>(ctx)
+                    val info = ctx.dataClasses[f.num]
+                    if (info != null) {
+                        info.fields.fold(core.Hashing.SEQ_SEED) { h, field ->
+                            core.Hashing.combine(h, hashRecord(f.vars.get(field.index), ctx))
+                        }
+                    } else {
+                        r.hashCode()
+                    }
+                }
+                RefKind.NATIVE -> r.hashCode()
+            }
+        }
+        return core.Hashing.scalar((r as? ValueRecord)?.get<Any?>()) ?: r.hashCode()
     }
 }

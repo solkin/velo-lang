@@ -1,0 +1,17 @@
+Terminal term = new Terminal();
+
+# Pinned, host-independent hashes (Op.Hash via .hash()): every backend and every
+# port must agree, so the stdlib Map buckets identically. Scalars and strings use
+# the spelled-out algorithm; arrays hash by content.
+term.println((5).hash().str());          # 5
+term.println((0 - 1).hash().str());      # -1
+term.println("hi".hash().str());         # 3329
+term.println(true.hash().str());         # 1231
+
+# Arrays hash by content: two equal arrays hash equal, order matters.
+array[int] a = new array[int]{1, 2, 3};
+array[int] b = new array[int]{1, 2, 3};
+array[int] c = new array[int]{3, 2, 1};
+term.println((a.hash() == b.hash()).str());   # true
+term.println((a.hash() == c.hash()).str());   # false
+term.println(a.hash().str());                 # content hash, deterministic

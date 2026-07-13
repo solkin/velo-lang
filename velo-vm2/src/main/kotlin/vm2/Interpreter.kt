@@ -277,11 +277,11 @@ class Interpreter(
                     OP_SWAP -> { val b = s.pop(); val a = s.pop(); s.push(b); s.push(a) }
 
                     // ---- conversions / hashing ----
-                    OP_INTCHAR -> s.push(Numbers.codePointToString(Numbers.intInt(s.pop())))
+                    OP_INTCHAR -> s.push(core.codePointToString(Numbers.intInt(s.pop())))
                     OP_NUMCONV -> s.push(Numbers.convert(s.pop(), (ops[i] as Op.NumConv).to))
                     OP_NUMSTR -> s.push(Numbers.numStr(s.pop()))
                     OP_STRNUM -> s.push(Numbers.strNum(s.pop() as String, (ops[i] as Op.StrNum).to))
-                    OP_HASH -> s.push(Numbers.hash(s.pop()))
+                    OP_HASH -> s.push(Numbers.hash(s.pop(), dataClasses))
 
                     // ---- strings ----
                     OP_STRCON -> binary(s) { a, b -> (a as String) + (b as String) }
