@@ -54,6 +54,11 @@ object Bytecode {
         writeNatives(program.natives, out)
         writeDataClasses(program.dataClasses, out)
         writeClassMethods(program.classMethods, out)
+        // Frame and slot references are u16 (see version note); fail loudly rather
+        // than let writeShort silently truncate a program past the 65535 ceiling.
+        require(program.frames.size <= 0xFFFF) {
+            "program has ${program.frames.size} frames, exceeds the 65535 the .vbc format allows"
+        }
         out.writeShort(program.frames.size)
         program.frames.forEach { writeFrame(it, out) }
     }
@@ -97,6 +102,9 @@ object Bytecode {
     }
 
     private fun writeFrame(frame: SerializedFrame, out: DataOutputStream) {
+        require(frame.vars.size <= 0xFFFF) {
+            "frame ${frame.num} declares ${frame.vars.size} slots, exceeds the 65535 the .vbc format allows"
+        }
         out.writeShort(frame.num)
         out.writeShort(frame.vars.size)
         frame.vars.forEach { out.writeShort(it) }
@@ -112,7 +120,7 @@ object Bytecode {
             is Op.Store -> out.writeShort(op.index)
             is Op.If -> out.writeInt(op.elseSkip)
             is Op.Move -> out.writeInt(op.count)
-            is Op.ScopeEnter -> { out.writeShort(op.base); out.writeInt(op.count) }
+            is Op.ScopeEnter -> { out.writeShort(op.base); out.writeShort(op.count) }
             is Op.Frame -> out.writeShort(op.num)
             is Op.MethodLoad -> out.writeUTF(op.name)
             is Op.InterfaceCall -> {
@@ -326,7 +334,7 @@ object Bytecode {
             0x1a -> Op.Sub
             0x1b -> Op.More
             0x1d -> Op.Move(count = inp.readInt())
-            0x22 -> Op.ScopeEnter(base = inp.readUnsignedShort(), count = inp.readInt())
+            0x22 -> Op.ScopeEnter(base = inp.readUnsignedShort(), count = inp.readUnsignedShort())
             0x23 -> Op.ScopeLeave
             0x1e -> Op.Mul
             0x21 -> Op.Or

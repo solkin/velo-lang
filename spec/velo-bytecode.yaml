@@ -33,10 +33,11 @@ format:
        and 0x2c, collapsing number<->string/number conversion into four symmetric ops:
        NumConv 0x63 (num->num), NumStr 0x64 (num->str), StrNum 0x65 (str->num), plus the
        existing IntChar (codepoint->char). All four are host-backed representation casts."
-    - "v13 narrowed every frame reference and variable-slot reference from i32 to u16,
-       matching the u16 containers that already bound them (frame count, per-frame var
-       count): both are capped at 65535. Jump offsets (If.elseSkip, Move.count) and the
-       ScopeEnter.count span stay i32 (signed; a backward Move is negative)."
+    - "v13 narrowed every frame reference and variable-slot reference — including
+       ScopeEnter's base and count (a slot span) — from i32 to u16, matching the u16
+       containers that already bound them (frame count, per-frame var count): all are
+       capped at 65535, and the writer fails loudly rather than truncate past it. Only
+       jump offsets (If.elseSkip, Move.count) stay i32 (signed; a backward Move is negative)."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -224,7 +225,7 @@ opcodes:
   # ---- Control flow ----
   - { name: If,        code: 0x12, category: control, operands: [ { name: elseSkip, enc: i32 } ], stack: "[bool] -> []", doc: "On false, skip `elseSkip` following ops." }
   - { name: Move,      code: 0x1d, category: control, operands: [ { name: count, enc: i32 } ],    stack: "[] -> []",     doc: "Unconditional skip of `count` following ops." }
-  - { name: ScopeEnter,code: 0x22, category: control, operands: [ { name: base, enc: u16 }, { name: count, enc: i32 } ], stack: "[] -> []", doc: "Enter a fresh per-iteration loop scope of `count` slots at slot `base` (env change only, no call frame)." }
+  - { name: ScopeEnter,code: 0x22, category: control, operands: [ { name: base, enc: u16 }, { name: count, enc: u16 } ], stack: "[] -> []", doc: "Enter a fresh per-iteration loop scope of `count` slots at slot `base` (env change only, no call frame)." }
   - { name: ScopeLeave,code: 0x23, category: control, stack: "[] -> []", doc: "Leave the innermost ScopeEnter scope." }
   - { name: Halt,      code: 0x11, category: control, stack: "[] -> []", doc: "Stop the whole program." }
   - { name: Ret,       code: 0x2b, category: control, stack: "[.. value?] -> []", doc: "Return; if the frame's stack is non-empty, its top is pushed to the caller." }
