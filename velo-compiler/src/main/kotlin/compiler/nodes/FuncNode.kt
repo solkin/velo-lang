@@ -70,12 +70,8 @@ data class FuncNode(
         // thread, including an actor's. Only the latter keeps `frameNum` set.
         val varBase = funcOps.frame.varBase
         val capturesEnclosing = funcOps.operations().any { op ->
-            when (op) {
-                is Op.Load -> op.index < varBase
-                is Op.Store -> op.index < varBase
-                is Op.PtrRef -> op.varIndex < varBase
-                else -> false
-            }
+            val idx = op.slotIndex()
+            idx != null && idx < varBase
         }
         if (capturesEnclosing) nameVar?.funcFrameNum = null
 

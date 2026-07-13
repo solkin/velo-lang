@@ -92,12 +92,7 @@ internal fun capturesLoopScope(bodyCtx: Context, scopeBase: Int, scopeCount: Int
     val until = scopeBase + scopeCount
     return bodyCtx.frames().any { frame ->
         frame.ops.any { op ->
-            val idx = when (op) {
-                is Op.Load -> op.index
-                is Op.Store -> op.index
-                is Op.PtrRef -> op.varIndex
-                else -> return@any false
-            }
+            val idx = op.slotIndex() ?: return@any false
             idx < frame.varBase && idx in scopeBase until until
         }
     }
