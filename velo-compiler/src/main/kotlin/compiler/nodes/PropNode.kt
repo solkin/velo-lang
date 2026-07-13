@@ -89,10 +89,12 @@ data class PropNode(
     private fun classifyAccess(parentType: Type, name: String, ctx: Context): Access = when (parentType) {
         is TupleType -> if (name.toIntOrNull() != null) Access.FIELD else Access.COMPUTATION
         is ClassType -> {
-            val def = ctx.opt(parentType.name)?.type as? ClassType
-            val member = def?.parent?.frame?.vars?.get(name)
+            val member = parentType.memberVar(name, ctx)
             when {
-                member == null -> Access.UNKNOWN
+                // A non-member that IS a universal any-type member (hash, …) is a
+                // computation, so it needs parens like on any other type; a truly
+                // unknown name defers to the normal resolution error.
+                member == null -> if (AnyType.prop(name) != null) Access.COMPUTATION else Access.UNKNOWN
                 member.type is FuncType -> Access.COMPUTATION
                 else -> Access.FIELD
             }

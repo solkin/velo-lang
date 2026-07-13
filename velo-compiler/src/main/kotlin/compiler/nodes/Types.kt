@@ -52,6 +52,7 @@ object AnyType : Type {
 
 object AnyHashProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        if (args.isNotEmpty()) throw IllegalArgumentException("hash() takes no arguments")
         ctx.add(Op.Hash)
         return IntType
     }

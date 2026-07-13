@@ -139,10 +139,12 @@ class ClassTable {
     val classBounds: MutableMap<String, List<InterfaceType?>> = HashMap()
 
     fun register(className: String, methods: Map<String, FuncType>) {
+        require(this !== EMPTY) { "the shared empty ClassTable must not be mutated" }
         classMethods[className] = methods
     }
 
     fun registerBounds(className: String, bounds: List<InterfaceType?>) {
+        require(this !== EMPTY) { "the shared empty ClassTable must not be mutated" }
         if (bounds.any { it != null }) classBounds[className] = bounds
     }
 
