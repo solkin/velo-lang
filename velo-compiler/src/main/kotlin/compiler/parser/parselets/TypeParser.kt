@@ -58,7 +58,7 @@ object TypeParser {
                 // must mirror the `class Map[K, V]` declaration so generic
                 // members resolve against these typeArgs.
                 val types = parseDerivedTypes(parser, count = 2, separator = ':')
-                parser.context.dictUsed = true
+                parser.context.requireModule(compiler.parser.SourceLoader.STDLIB_MAP)
                 ClassType(name = DICT_CLASS, typeParams = listOf("K", "V"), typeArgs = types)
             }
             FUNC -> parseFuncType(parser)

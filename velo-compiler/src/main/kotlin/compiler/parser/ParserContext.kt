@@ -24,11 +24,17 @@ class ParserContext(
     private val genericTypes = mutableMapOf<String, GenericType>()
 
     /**
-     * Set when the program uses `dict` syntax. Dict lowers onto the stdlib
-     * Map class, which [compiler.parser.Parser.parse] then pulls in
-     * automatically.
+     * stdlib modules to auto-import ahead of the user code, requested during
+     * parsing when a construct lowers onto a library type (e.g. `dict` lowers
+     * onto std/map). A general dependency set, not a per-type flag: the parser
+     * ([compiler.parser.Parser.parse]) prepends each one unless the program
+     * imported it explicitly. Insertion-ordered for deterministic output.
      */
-    var dictUsed = false
+    val autoImports: MutableSet<String> = linkedSetOf()
+
+    fun requireModule(module: String) {
+        autoImports.add(module)
+    }
 
     // ---- namespaced imports (`import "x" as ns`) ----
     // A namespaced module's top-level names are mangled to `ns$name`, reached

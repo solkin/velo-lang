@@ -18,16 +18,25 @@ class Parser(
 
     fun parse(): Node {
         var statements = parseStatements(pratt)
-        // dict[K:V] is sugar over the stdlib Map class: when the program used
-        // dict syntax and did not import the implementation itself, pull it in
-        // (parsed in isolation) and compile it ahead of the user code.
-        statements = maybePrepend(SourceLoader.STDLIB_MAP, context.dictUsed, statements)
+        // Prepend every stdlib module requested during parsing (e.g. dict[K:V]
+        // lowers onto std/map), each parsed in isolation and compiled ahead of
+        // the user code, unless the program imported it explicitly. A prepended
+        // module may itself request more, so drain until the set is exhausted.
+        val prepended = mutableSetOf<String>()
+        while (true) {
+            val pending = context.autoImports.filterNot { it in prepended }
+            if (pending.isEmpty()) break
+            for (module in pending) {
+                prepended.add(module)
+                statements = prependModule(module, statements)
+            }
+        }
         return ProgramNode(prog = statements)
     }
 
     /** Parse an auto-imported stdlib [module] in isolation and prepend it, once. */
-    private fun maybePrepend(module: String, used: Boolean, statements: List<Node>): List<Node> {
-        if (!used || depLoader.isLoaded(module)) return statements
+    private fun prependModule(module: String, statements: List<Node>): List<Node> {
+        if (depLoader.isLoaded(module)) return statements
         val loaded = depLoader.module(module, fromDir = null) ?: return statements
         val sub = PrattParser(TokenStream(StringInput(loaded.text)), context, depLoader, currentDir = loaded.dir)
             .also { VeloGrammar.configure(it) }

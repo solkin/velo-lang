@@ -78,7 +78,7 @@ class NewParselet : PrefixParselet {
     }
 
     private fun parseDictInit(parser: ExpressionParser): Node {
-        parser.context.dictUsed = true
+        parser.context.requireModule(compiler.parser.SourceLoader.STDLIB_MAP)
         val types = TypeParser.parseDerivedTypes(parser, count = 2, separator = ':')
         val pairs = mutableListOf<Pair<Node, Node>>()
         parser.consume(compiler.parser.TokenType.PUNCTUATION, '{')
