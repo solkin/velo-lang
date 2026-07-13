@@ -40,20 +40,14 @@ data class PropNode(
                 else scopeCtx.add(Op.Load(ext.index))
                 val funcType = ext.type as? FuncType
                     ?: throw IllegalArgumentException("Call on non-function type")
-                var funcArgTypes = funcType.args ?: throw Exception("Extension arguments is not defined")
-                if (funcArgTypes.size != argTypes.size) {
-                    throw Exception("Call args count ${argTypes.size} is differ from required ${funcArgTypes.size}")
+                val declaredArgs = funcType.args ?: throw Exception("Extension arguments is not defined")
+                if (declaredArgs.size != argTypes.size) {
+                    throw Exception("Call args count ${argTypes.size} is differ from required ${declaredArgs.size}")
                 }
                 // A generic extension (`ext[T](array[T]) ...`) infers its type
-                // parameters from the actual receiver + argument types, then
-                // resolves the parameter and return types before checking — the
-                // same inference a generic free function or method uses.
-                var resultType = funcType.derived
-                if (funcType.typeParams.isNotEmpty()) {
-                    val bindings = inferTypeBindings(funcType.typeParams, funcArgTypes, argTypes)
-                    funcArgTypes = funcArgTypes.map { resolveGenericType(it, funcType.typeParams, bindings) }
-                    resultType = resolveGenericType(resultType, funcType.typeParams, bindings)
-                }
+                // parameters from the actual receiver + argument types in one
+                // pass — the same inference the call site uses.
+                val (funcArgTypes, resultType) = resolveGenericCall(funcType, argTypes)
                 funcArgTypes.forEachIndexed { i, def ->
                     val argType = argTypes[i]
                     if (!assignableArg(def, argType)) {

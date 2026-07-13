@@ -50,6 +50,7 @@ data class CallNode(
             arg.compile(ctx)
         }
         val returnType = compileCallable(ctx)
+        var funcReturn: Type? = null
         if (returnType is Callable) {
             // [funcArgTypes] is `null` when the callable's declared type does
             // not carry argument information — most commonly the loose form
@@ -64,7 +65,11 @@ data class CallNode(
                     throw Exception("Call args count ${argTypes.size} is differ from required ${funcArgTypes.size}")
                 }
                 val resolvedArgTypes = if (returnType is FuncType) {
-                    resolveFuncArgTypes(returnType, funcArgTypes, argTypes)
+                    // One inference pass resolves both the argument types (checked
+                    // here) and the return type (used below).
+                    val (resolvedArgs, resolvedRet) = resolveGenericCall(returnType, argTypes)
+                    funcReturn = resolvedRet
+                    resolvedArgs
                 } else {
                     funcArgTypes
                 }
@@ -89,7 +94,9 @@ data class CallNode(
             }
         }
         val type = when (returnType) {
-            is FuncType -> resolveReturnType(returnType, argTypes)
+            // funcReturn is set when the callable had declared args (resolved in
+            // one pass above); a loose `func[T]` falls back to its declared return.
+            is FuncType -> funcReturn ?: returnType.derived
             is ClassType -> returnType
             else -> throw IllegalArgumentException("Call on non-function type")
         }
@@ -118,23 +125,6 @@ data class CallNode(
             }
         }
         return func.compile(ctx)
-    }
-
-    private fun resolveFuncArgTypes(
-        funcType: FuncType,
-        funcArgTypes: List<Type>,
-        actualArgTypes: List<Type>,
-    ): List<Type> {
-        if (funcType.typeParams.isEmpty()) return funcArgTypes
-        val bindings = inferTypeBindings(funcType.typeParams, funcArgTypes, actualArgTypes)
-        return funcArgTypes.map { resolveGenericType(it, funcType.typeParams, bindings) }
-    }
-
-    private fun resolveReturnType(funcType: FuncType, actualArgTypes: List<Type>): Type {
-        if (funcType.typeParams.isEmpty()) return funcType.derived
-        val funcArgTypes = funcType.args ?: return funcType.derived
-        val bindings = inferTypeBindings(funcType.typeParams, funcArgTypes, actualArgTypes)
-        return resolveGenericType(funcType.derived, funcType.typeParams, bindings)
     }
 
     private fun compileNativeNew(descriptor: NativeClassDescriptor, ctx: Context): Type {

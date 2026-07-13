@@ -291,3 +291,21 @@ fun resolveGenericType(type: Type, typeParams: List<String>, typeArgs: List<Type
         else -> type
     }
 }
+
+/**
+ * Resolve a callable's parameter and return types from the actual argument
+ * types in a **single** inference pass: infer the type-parameter bindings once
+ * (`ext[T](array[T])`, `func first[T](array[T])`, …) then substitute them into
+ * both. A non-generic callable (empty `typeParams`) yields its declared
+ * parameters and return unchanged. Callers check arity separately; a loose
+ * callable with `args == null` yields an empty parameter list and its declared
+ * return. Shared by the call and extension-call sites so the inference rule
+ * lives in one place.
+ */
+fun resolveGenericCall(funcType: FuncType, argTypes: List<Type>): Pair<List<Type>, Type> {
+    val params = funcType.args ?: return emptyList<Type>() to funcType.derived
+    if (funcType.typeParams.isEmpty()) return params to funcType.derived
+    val bindings = inferTypeBindings(funcType.typeParams, params, argTypes)
+    val resolvedParams = params.map { resolveGenericType(it, funcType.typeParams, bindings) }
+    return resolvedParams to resolveGenericType(funcType.derived, funcType.typeParams, bindings)
+}
