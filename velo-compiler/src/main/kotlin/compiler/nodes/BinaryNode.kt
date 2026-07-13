@@ -42,12 +42,16 @@ data class BinaryNode(
         }
         if (leftType is ClassType) {
             val opName = "op@$operator"
-            val prop = ClassElementProp(opName)
-            try {
-                return prop.compile(leftType, args = listOf(rightType), ctx)
-            } catch (e: IllegalArgumentException) {
+            // Resolve the operator by an explicit member lookup, not by compiling
+            // and catching: a `try { compile } catch (IAE)` would also swallow a
+            // genuine error from the operator body (e.g. an argument-type
+            // mismatch) and mis-report it as "operator not defined".
+            val defType = ctx.opt(leftType.name)?.type as? ClassType
+            val hasOperator = defType?.parent?.frame?.vars?.containsKey(opName) == true
+            if (!hasOperator) {
                 throw IllegalArgumentException("Operator '$operator' is not defined for class '${leftType.name}'")
             }
+            return ClassElementProp(opName).compile(leftType, args = listOf(rightType), ctx)
         }
         // Mixed numeric operands (e.g. int + float) are allowed: the VM promotes
         // by value at runtime, and the static result is the wider of the two.
