@@ -221,7 +221,7 @@ data class ClassElementProp(val name: String) : Prop {
                     throw Exception("Method '$name' args count ${forwardArgs.size} differs from required ${resolvedParamTypes.size}")
                 }
                 resolvedParamTypes.forEachIndexed { i, expectedType ->
-                    if (!expectedType.sameAs(forwardArgs[i])) {
+                    if (!assignableArg(expectedType, forwardArgs[i])) {
                         throw Exception("Method '$name' argument type ${forwardArgs[i].log()} differs from required ${expectedType.log()}")
                     }
                 }

@@ -180,7 +180,7 @@ data class InterfaceElementProp(val methodName: String, val sig: FuncType) : Pro
                 )
             }
             expected.forEachIndexed { i, e ->
-                if (!e.sameAs(forwardArgs[i])) {
+                if (!assignableArg(e, forwardArgs[i])) {
                     throw IllegalArgumentException(
                         "Interface method '$methodName' argument #${i + 1}: expected ${e.log()}, got ${forwardArgs[i].log()}"
                     )

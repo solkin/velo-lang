@@ -81,17 +81,21 @@ data class GenericType(val name: String, val bound: InterfaceType? = null) : Typ
 }
 
 /**
- * Is a value of [source] acceptable where [target] is expected at an argument
- * or element position? Argument sites in this compiler historically test
- * `source.sameAs(target)` (a near-symmetric relation for the original types).
- * Structural interface satisfaction is directional — only `interface.sameAs(class)`
- * holds — so this helper adds that one case without disturbing the existing
- * behaviour for every other target type.
+ * Is a value of type [arg] acceptable where a parameter/element of type [param]
+ * is expected? The single assignability predicate for every argument position —
+ * a call argument, a constructor field, an array element, a method/actor/ext
+ * argument — so widening, `any`, and interface satisfaction behave identically
+ * everywhere. Raw `sameAs` is reserved for invariant type identity (map keys,
+ * same-type comparisons), not argument positions. Accepts: an `any` parameter
+ * takes any value; a narrower numeric widens (byte -> int -> long -> float,
+ * normalized in the receiver's prologue); the same type; or a concrete type
+ * satisfying an interface parameter (structural satisfaction is directional).
  */
-fun assignableArg(target: Type, source: Type): Boolean =
-    numWidens(target, source) ||
-        source.sameAs(target) ||
-        (target is InterfaceType && target.sameAs(source))
+fun assignableArg(param: Type, arg: Type): Boolean =
+    param is AnyType ||
+        numWidens(param, arg) ||
+        arg.sameAs(param) ||
+        (param is InterfaceType && param.sameAs(arg))
 
 /** Widening order of the primitive numeric types; `null` for anything else. */
 fun numericRank(t: Type): Int? = when (t) {

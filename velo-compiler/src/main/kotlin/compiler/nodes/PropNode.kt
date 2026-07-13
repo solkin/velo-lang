@@ -46,7 +46,7 @@ data class PropNode(
                 }
                 funcArgTypes.forEachIndexed { i, def ->
                     val argType = argTypes[i]
-                    if (!argType.sameAs(def)) {
+                    if (!assignableArg(def, argType)) {
                         throw Exception("Argument \"${argType.log()}\" is differ from required type ${def.log()}")
                     }
                 }

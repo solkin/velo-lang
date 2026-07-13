@@ -148,7 +148,7 @@ data class CallNode(
         // the same stack shape NativeCall sees for method dispatch.
         val actual = args.reversed().map { it.compile(ctx) }.reversed()
         expected.forEachIndexed { i, exp ->
-            if (!exp.sameAs(actual[i])) {
+            if (!assignableArg(exp, actual[i])) {
                 throw IllegalArgumentException(
                     "Native class '${descriptor.veloName}' constructor arg #${i + 1}: " +
                         "expected ${exp.log()}, got ${actual[i].log()}"
@@ -231,7 +231,7 @@ data class CallNode(
         if (expected != null) {
             expected.forEachIndexed { i, def ->
                 val actual = argTypes[i]
-                if (!actual.sameAs(def)) {
+                if (!assignableArg(def, actual)) {
                     throw IllegalArgumentException(
                         "Actor '${classType.name}' constructor arg #${i + 1}: " +
                             "expected ${def.log()}, got ${actual.log()}"

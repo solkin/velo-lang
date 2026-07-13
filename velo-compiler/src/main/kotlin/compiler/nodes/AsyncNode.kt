@@ -61,7 +61,7 @@ data class AsyncNode(val expr: Node) : Node() {
             }
             expectedTypes.forEachIndexed { i, expected ->
                 val actual = argTypes[i]
-                if (!actual.sameAs(expected)) {
+                if (!assignableArg(expected, actual)) {
                     throw IllegalArgumentException(
                         "Actor method '${classType.name}.${expr.name}' arg #${i + 1}: " +
                             "expected ${expected.log()}, got ${actual.log()}"

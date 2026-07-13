@@ -60,7 +60,7 @@ class NativeMethodProp(
             )
         }
         expected.forEachIndexed { i, exp ->
-            if (!exp.sameAs(actual[i])) {
+            if (!assignableArg(exp, actual[i])) {
                 throw IllegalArgumentException(
                     "Native method '${owner.veloName}.${method.name}' arg #${i + 1}: " +
                         "expected ${exp.log()}, got ${actual[i].log()}"
