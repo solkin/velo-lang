@@ -23,9 +23,8 @@ data class WhileNode(
         // Give the body a fresh per-iteration scope only when a closure declared
         // in it actually captures a body-local (per-iteration) slot; otherwise
         // the shared frame is fine and we keep the loop flat (zero overhead).
-        val body = exprCtx.operations()
-        val bodyLen = body.size
-        val scoped = scopeCount > 0 && capturesLoopScope(exprCtx, scopeBase, scopeCount)
+        val bodyLen = exprCtx.size()
+        val scoped = capturesLoopScope(exprCtx, scopeBase, scopeCount)
         // The per-iteration scope adds a ScopeEnter/Leave pair around the body
         // only when the body captures it; an unscoped loop stays flat (no dead
         // ops on the hot path). `s` folds that 0/1 into every jump distance.
@@ -87,8 +86,15 @@ internal fun backpatchLoop(
  * `Op.Frame`: a body that only *calls* free-standing functions (also emitted as
  * `Op.Frame`) or whose closures capture outer variables needs no per-iteration
  * scope and stays flat.
+ *
+ * Not perfectly precise: a method/interface call merges a one-op wrapper frame
+ * whose `Op.Load` indexes the *receiver class's* slot space, so its index can
+ * numerically fall in this loop's range and trigger a benign, correctness-safe
+ * spurious scope. This matches the old heuristic's behaviour on method calls; an
+ * exact fix would need per-frame provenance.
  */
 internal fun capturesLoopScope(bodyCtx: Context, scopeBase: Int, scopeCount: Int): Boolean {
+    if (scopeCount == 0) return false
     val until = scopeBase + scopeCount
     return bodyCtx.frames().any { frame ->
         frame.ops.any { op ->
