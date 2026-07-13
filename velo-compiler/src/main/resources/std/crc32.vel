@@ -11,21 +11,11 @@ class Crc32() {
     };
 
     func ushr1(int value) int {
-        if (value < 0) {
-            return ((value & 2147483647) / 2) + 1073741824;
-        } else {
-            return value / 2;
-        };
+        return value.ushr(1);
     };
 
     func ushr(int value, int count) int {
-        int result = value;
-        int i = 0;
-        while (i < count) {
-            result = ushr1(result);
-            i = i + 1;
-        };
-        return result;
+        return value.ushr(count);
     };
 
     func initTable() void {
