@@ -21,7 +21,7 @@ format:
   extension: .vbc
   magic: 0x5e10                 # u16 BE — the first two bytes of every file
   version:
-    major: 12                   # u8 — reader MUST reject a file whose major differs
+    major: 13                   # u8 — reader MUST reject a file whose major differs
     minor: 0                    # u8 — informational; a reader accepts any minor
   endianness: big               # all multi-byte scalars are big-endian
   rules:
@@ -33,6 +33,10 @@ format:
        and 0x2c, collapsing number<->string/number conversion into four symmetric ops:
        NumConv 0x63 (num->num), NumStr 0x64 (num->str), StrNum 0x65 (str->num), plus the
        existing IntChar (codepoint->char). All four are host-backed representation casts."
+    - "v13 narrowed every frame reference and variable-slot reference from i32 to u16,
+       matching the u16 containers that already bound them (frame count, per-frame var
+       count): both are capped at 65535. Jump offsets (If.elseSkip, Move.count) and the
+       ScopeEnter.count span stay i32 (signed; a backward Move is negative)."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -40,7 +44,7 @@ format:
 # -----------------------------------------------------------------------------
 primitives:
   u8:   { bytes: 1, desc: "unsigned byte" }
-  u16:  { bytes: 2, endian: big, desc: "unsigned short (also used for signed frame refs 0..65535)" }
+  u16:  { bytes: 2, endian: big, desc: "unsigned short; also every frame ref and variable-slot ref (0..65535)" }
   i32:  { bytes: 4, endian: big, desc: "signed two's-complement 32-bit int" }
   i64:  { bytes: 8, endian: big, desc: "signed two's-complement 64-bit long" }
   f32:  { bytes: 4, endian: big, desc: "IEEE-754 single precision" }
@@ -114,7 +118,7 @@ literal:
 # -----------------------------------------------------------------------------
 container:
   - { name: magic,        enc: u16, const: 0x5e10 }
-  - { name: versionMajor, enc: u8,  const: 12 }
+  - { name: versionMajor, enc: u8,  const: 13 }
   - { name: versionMinor, enc: u8,  const: 0 }
   - { name: natives,      enc: "list<u16, NativeRef>",       desc: "native pool: every host entry point the code references" }
   - { name: dataClasses,  enc: "list<u16, DataClassInfo>",   desc: "marshalling metadata for value types" }
@@ -133,23 +137,23 @@ structs:
   DataClassInfo:
     doc: "A `data class`, keyed by its frame; fields let the runtime copy it across boundaries by re-running the constructor."
     fields:
-      - { name: frameNum, enc: i32 }
+      - { name: frameNum, enc: u16 }
       - { name: name,     enc: utf }
       - { name: fields,   enc: "list<u8, DataField>" }
   DataField:
     fields:
       - { name: name,  enc: utf }
-      - { name: index, enc: i32, desc: "the instance-scope variable slot holding this field" }
+      - { name: index, enc: u16, desc: "the instance-scope variable slot holding this field" }
       - { name: type,  enc: vmtype }
   ClassMethodsInfo:
     doc: "The method table for one class frame — method name -> instance-scope slot, for Op.MethodLoad dispatch."
     fields:
-      - { name: frameNum, enc: i32 }
+      - { name: frameNum, enc: u16 }
       - { name: methods,  enc: "list<u16, ClassMethod>" }
   ClassMethod:
     fields:
       - { name: name,  enc: utf }
-      - { name: index, enc: i32 }
+      - { name: index, enc: u16 }
   Frame:
     doc: "One compiled frame: its number (referenced by Op.Frame/Op.Call), the variable slots it declares, and its ops."
     fields:
@@ -214,17 +218,17 @@ opcodes:
   - { name: ArrCopy,  code: 0x32, category: array, stack: "[dst, src, length, dstPos, srcPos] -> []", doc: "System.arraycopy equivalent." }
 
   # ---- Variables ----
-  - { name: Load,  code: 0x0f, category: variable, operands: [ { name: index, enc: i32 } ], stack: "[] -> [value]", doc: "Load local variable [index]." }
-  - { name: Store, code: 0x2d, category: variable, operands: [ { name: index, enc: i32 } ], stack: "[value] -> []", doc: "Store into local variable [index]." }
+  - { name: Load,  code: 0x0f, category: variable, operands: [ { name: index, enc: u16 } ], stack: "[] -> [value]", doc: "Load local variable [index]." }
+  - { name: Store, code: 0x2d, category: variable, operands: [ { name: index, enc: u16 } ], stack: "[value] -> []", doc: "Store into local variable [index]." }
 
   # ---- Control flow ----
   - { name: If,        code: 0x12, category: control, operands: [ { name: elseSkip, enc: i32 } ], stack: "[bool] -> []", doc: "On false, skip `elseSkip` following ops." }
   - { name: Move,      code: 0x1d, category: control, operands: [ { name: count, enc: i32 } ],    stack: "[] -> []",     doc: "Unconditional skip of `count` following ops." }
-  - { name: ScopeEnter,code: 0x22, category: control, operands: [ { name: base, enc: i32 }, { name: count, enc: i32 } ], stack: "[] -> []", doc: "Enter a fresh per-iteration loop scope of `count` slots at `base` (env change only, no call frame)." }
+  - { name: ScopeEnter,code: 0x22, category: control, operands: [ { name: base, enc: u16 }, { name: count, enc: i32 } ], stack: "[] -> []", doc: "Enter a fresh per-iteration loop scope of `count` slots at slot `base` (env change only, no call frame)." }
   - { name: ScopeLeave,code: 0x23, category: control, stack: "[] -> []", doc: "Leave the innermost ScopeEnter scope." }
   - { name: Halt,      code: 0x11, category: control, stack: "[] -> []", doc: "Stop the whole program." }
   - { name: Ret,       code: 0x2b, category: control, stack: "[.. value?] -> []", doc: "Return; if the frame's stack is non-empty, its top is pushed to the caller." }
-  - { name: Frame,     code: 0x18, category: control, operands: [ { name: num, enc: i32 } ], stack: "[] -> [func]", doc: "Push a function value for frame [num], capturing the current variable chain (lexical scoping)." }
+  - { name: Frame,     code: 0x18, category: control, operands: [ { name: num, enc: u16 } ], stack: "[] -> [func]", doc: "Push a function value for frame [num], capturing the current variable chain (lexical scoping)." }
   - { name: Instance,  code: 0x42, category: control, stack: "[] -> [instance]", doc: "Materialise the executing class frame as an instance (what `new X(...)` leaves behind)." }
   - { name: MethodLoad,code: 0x19, category: control, operands: [ { name: name, enc: utf } ], stack: "[] -> [func]", doc: "Resolve method [name] on the receiver (this frame's lexical parent); dynamic half of interface dispatch." }
   - { name: InterfaceCall, code: 0x1c, category: control, operands: [ { name: method, enc: utf }, { name: args, enc: i32 } ], stack: "[receiver, arg_args ... arg_1, wrapper] -> [result?]", doc: "Invoke [method] on an interface-typed receiver, dispatching on its runtime kind (Velo instance or native handle)." }
@@ -234,13 +238,13 @@ opcodes:
   - { name: PtrNew,      code: 0x50, category: pointer, stack: "[value] -> [ptr]", doc: "Box the top value into a fresh pointer." }
   - { name: PtrLoad,     code: 0x51, category: pointer, stack: "[ptr] -> [value]", doc: "Dereference." }
   - { name: PtrStore,    code: 0x52, category: pointer, stack: "[value, ptr] -> []", doc: "Store through a pointer." }
-  - { name: PtrRef,      code: 0x53, category: pointer, operands: [ { name: varIndex, enc: i32 } ], stack: "[] -> [ptr]", doc: "Pointer to local variable [varIndex] (`&x`)." }
+  - { name: PtrRef,      code: 0x53, category: pointer, operands: [ { name: varIndex, enc: u16 } ], stack: "[] -> [ptr]", doc: "Pointer to local variable [varIndex] (`&x`)." }
   - { name: PtrRefIndex, code: 0x54, category: pointer, stack: "[array, index] -> [ptr]", doc: "Pointer to an array element (`&a[i]`)." }
 
   # ---- Native interop ----
   - { name: NativeCall, code: 0x43, category: native, operands: [ { name: poolIndex, enc: u16 }, { name: args, enc: "list<u8, vmtype>" } ], stack: "[receiver?, arg_args ... arg_1] -> [result?]", doc: "Invoke native-pool entry [poolIndex]; `args` carries call-site types for boundary conversion." }
 
   # ---- Actors / futures ----
-  - { name: ActorSpawn, code: 0x60, category: actor, operands: [ { name: classFrameNum, enc: i32 }, { name: className, enc: utf }, { name: args, enc: i32 } ], stack: "[arg_args ... arg_1] -> [actor]", doc: "Instantiate an actor class: clone args, run constructor frame, push an actor handle." }
-  - { name: ActorCall,  code: 0x61, category: actor, operands: [ { name: methodVarIndex, enc: i32 }, { name: args, enc: i32 } ], stack: "[actor, arg_args ... arg_1] -> [future]", doc: "Async cross-actor call; clone args, submit to the receiver, push a future[T]." }
+  - { name: ActorSpawn, code: 0x60, category: actor, operands: [ { name: classFrameNum, enc: u16 }, { name: className, enc: utf }, { name: args, enc: i32 } ], stack: "[arg_args ... arg_1] -> [actor]", doc: "Instantiate an actor class: clone args, run constructor frame, push an actor handle." }
+  - { name: ActorCall,  code: 0x61, category: actor, operands: [ { name: methodVarIndex, enc: u16 }, { name: args, enc: i32 } ], stack: "[actor, arg_args ... arg_1] -> [future]", doc: "Async cross-actor call; clone args, submit to the receiver, push a future[T]." }
   - { name: FutureAwait,code: 0x62, category: actor, stack: "[future] -> [value]", doc: "Block/park until a future completes; push its value (decoded into caller memory)." }

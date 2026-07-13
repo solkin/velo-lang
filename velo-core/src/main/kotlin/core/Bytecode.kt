@@ -17,7 +17,9 @@ import java.io.File
 object Bytecode {
 
     const val MAGIC = 0x5e10
-    const val VERSION_MAJOR = 0x0c
+    // v13: frame/slot references narrowed to u16 to match their u16 containers
+    // (frame count, per-frame var count). Jump offsets and arities stay i32.
+    const val VERSION_MAJOR = 0x0d
     const val VERSION_MINOR = 0x00
 
     // Tags for inline values and serialized VmTypes.
@@ -59,11 +61,11 @@ object Bytecode {
     private fun writeClassMethods(classMethods: List<ClassMethodsInfo>, out: DataOutputStream) {
         out.writeShort(classMethods.size)
         classMethods.forEach { info ->
-            out.writeInt(info.frameNum)
+            out.writeShort(info.frameNum)
             out.writeShort(info.methods.size)
             info.methods.forEach { method ->
                 out.writeUTF(method.name)
-                out.writeInt(method.index)
+                out.writeShort(method.index)
             }
         }
     }
@@ -71,12 +73,12 @@ object Bytecode {
     private fun writeDataClasses(dataClasses: List<DataClassInfo>, out: DataOutputStream) {
         out.writeShort(dataClasses.size)
         dataClasses.forEach { info ->
-            out.writeInt(info.frameNum)
+            out.writeShort(info.frameNum)
             out.writeUTF(info.name)
             out.writeByte(info.fields.size)
             info.fields.forEach { field ->
                 out.writeUTF(field.name)
-                out.writeInt(field.index)
+                out.writeShort(field.index)
                 writeType(field.type, out)
             }
         }
@@ -106,18 +108,18 @@ object Bytecode {
         out.writeByte(op.opcode)
         when (op) {
             is Op.Push -> writeValue(op.value, out)
-            is Op.Load -> out.writeInt(op.index)
-            is Op.Store -> out.writeInt(op.index)
+            is Op.Load -> out.writeShort(op.index)
+            is Op.Store -> out.writeShort(op.index)
             is Op.If -> out.writeInt(op.elseSkip)
             is Op.Move -> out.writeInt(op.count)
-            is Op.ScopeEnter -> { out.writeInt(op.base); out.writeInt(op.count) }
-            is Op.Frame -> out.writeInt(op.num)
+            is Op.ScopeEnter -> { out.writeShort(op.base); out.writeInt(op.count) }
+            is Op.Frame -> out.writeShort(op.num)
             is Op.MethodLoad -> out.writeUTF(op.name)
             is Op.InterfaceCall -> {
                 out.writeUTF(op.method)
                 out.writeInt(op.args)
             }
-            is Op.PtrRef -> out.writeInt(op.varIndex)
+            is Op.PtrRef -> out.writeShort(op.varIndex)
             is Op.Call -> {
                 out.writeInt(op.args)
                 out.writeBoolean(op.classParent)
@@ -130,12 +132,12 @@ object Bytecode {
                 op.args.forEach { writeType(it, out) }
             }
             is Op.ActorSpawn -> {
-                out.writeInt(op.classFrameNum)
+                out.writeShort(op.classFrameNum)
                 out.writeUTF(op.className)
                 out.writeInt(op.args)
             }
             is Op.ActorCall -> {
-                out.writeInt(op.methodVarIndex)
+                out.writeShort(op.methodVarIndex)
                 out.writeInt(op.args)
             }
             is Op.NumConv -> writeType(op.to, out)
@@ -253,9 +255,9 @@ object Bytecode {
 
     private fun readClassMethods(inp: DataInputStream): List<ClassMethodsInfo> {
         return List(inp.readUnsignedShort()) {
-            val frameNum = inp.readInt()
+            val frameNum = inp.readUnsignedShort()
             val methods = List(inp.readUnsignedShort()) {
-                ClassMethod(name = inp.readUTF(), index = inp.readInt())
+                ClassMethod(name = inp.readUTF(), index = inp.readUnsignedShort())
             }
             ClassMethodsInfo(frameNum = frameNum, methods = methods)
         }
@@ -263,10 +265,10 @@ object Bytecode {
 
     private fun readDataClasses(inp: DataInputStream): List<DataClassInfo> {
         return List(inp.readUnsignedShort()) {
-            val frameNum = inp.readInt()
+            val frameNum = inp.readUnsignedShort()
             val name = inp.readUTF()
             val fields = List(inp.readUnsignedByte()) {
-                DataField(name = inp.readUTF(), index = inp.readInt(), type = readType(inp))
+                DataField(name = inp.readUTF(), index = inp.readUnsignedShort(), type = readType(inp))
             }
             DataClassInfo(frameNum = frameNum, name = name, fields = fields)
         }
@@ -311,20 +313,20 @@ object Bytecode {
             0x0c -> Op.Pop
             0x0d -> Op.Dup
             0x0e -> Op.Equals
-            0x0f -> Op.Load(index = inp.readInt())
+            0x0f -> Op.Load(index = inp.readUnsignedShort())
             0x11 -> Op.Halt
             0x12 -> Op.If(elseSkip = inp.readInt())
             0x14 -> Op.IntChar
             0x63 -> Op.NumConv(to = readType(inp))
             0x64 -> Op.NumStr
             0x65 -> Op.StrNum(to = readType(inp))
-            0x18 -> Op.Frame(num = inp.readInt())
+            0x18 -> Op.Frame(num = inp.readUnsignedShort())
             0x19 -> Op.MethodLoad(name = inp.readUTF())
             0x1c -> Op.InterfaceCall(method = inp.readUTF(), args = inp.readInt())
             0x1a -> Op.Sub
             0x1b -> Op.More
             0x1d -> Op.Move(count = inp.readInt())
-            0x22 -> Op.ScopeEnter(base = inp.readInt(), count = inp.readInt())
+            0x22 -> Op.ScopeEnter(base = inp.readUnsignedShort(), count = inp.readInt())
             0x23 -> Op.ScopeLeave
             0x1e -> Op.Mul
             0x21 -> Op.Or
@@ -332,7 +334,7 @@ object Bytecode {
             0x29 -> Op.Push(value = readValue(inp))
             0x2a -> Op.Rem
             0x2b -> Op.Ret
-            0x2d -> Op.Store(index = inp.readInt())
+            0x2d -> Op.Store(index = inp.readUnsignedShort())
             0x2e -> Op.StrCon
             0x2f -> Op.StrIndex
             0x30 -> Op.StrLen
@@ -352,15 +354,15 @@ object Bytecode {
             0x50 -> Op.PtrNew
             0x51 -> Op.PtrLoad
             0x52 -> Op.PtrStore
-            0x53 -> Op.PtrRef(varIndex = inp.readInt())
+            0x53 -> Op.PtrRef(varIndex = inp.readUnsignedShort())
             0x54 -> Op.PtrRefIndex
             0x60 -> Op.ActorSpawn(
-                classFrameNum = inp.readInt(),
+                classFrameNum = inp.readUnsignedShort(),
                 className = inp.readUTF(),
                 args = inp.readInt(),
             )
             0x61 -> Op.ActorCall(
-                methodVarIndex = inp.readInt(),
+                methodVarIndex = inp.readUnsignedShort(),
                 args = inp.readInt(),
             )
             0x62 -> Op.FutureAwait
