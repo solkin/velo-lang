@@ -221,5 +221,13 @@ data class InterfaceElementProp(val methodName: String, val sig: FuncType) : Pro
  * interface has no runtime frame.
  */
 data class InterfaceNode(val type: InterfaceType) : Node() {
-    override fun compile(ctx: Context): Type = VoidType
+    override fun compile(ctx: Context): Type {
+        // Bind the interface to this compilation's class table (the single one in
+        // CompilerShared) so its structural checks — InterfaceType.sameAs, which
+        // runs without a Context — reach class method signatures. Done here from
+        // ctx.shared rather than injected by the parser, so there is exactly one
+        // table and no way to pair a parser with a different CompilerShared.
+        type.classTable = ctx.shared.classTable
+        return VoidType
+    }
 }

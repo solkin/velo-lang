@@ -17,7 +17,6 @@ import core.NativeRegistry
  */
 class ParserContext(
     private val nativeRegistry: NativeRegistry? = null,
-    private val classTable: compiler.nodes.ClassTable = compiler.nodes.ClassTable(),
 ) {
     val classTypes = mutableMapOf<String, ClassType>()
     private val interfaceTypes = mutableMapOf<String, InterfaceType>()
@@ -90,10 +89,6 @@ class ParserContext(
     }
 
     fun registerInterface(name: String, type: InterfaceType) {
-        // Hand the interface the per-compilation class table so its structural
-        // checks (InterfaceType.sameAs, which has no Context) can reach class
-        // method signatures without a global singleton.
-        type.classTable = classTable
         interfaceTypes[name] = type
     }
 

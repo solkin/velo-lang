@@ -99,13 +99,7 @@ class VeloCompiler(
             // way as type errors instead of propagating as raw exceptions.
             val stream = TokenStream(input)
             val rootDir = input.dir?.let { java.io.File(it) }
-            val parser = Parser(
-                stream,
-                depLoader = input,
-                nativeRegistry = nativeRegistry,
-                rootDir = rootDir,
-                classTable = shared.classTable,
-            )
+            val parser = Parser(stream, depLoader = input, nativeRegistry = nativeRegistry, rootDir = rootDir)
             val node = parser.parse()
             node.compile(ctx)
             return SerializedProgram(
