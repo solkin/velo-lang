@@ -27,3 +27,13 @@ for k in 0 .. 3 {
 ck("for 0", fs[0]() == 0)
 ck("for 1", fs[1]() == 1)
 ck("for 2", fs[2]() == 2)
+
+# for-each: closure captures the per-iteration element (ForEachNode path)
+array[str] labels = new array[str]{"a", "b", "c"}
+array[func[str]] gs = new array[func[str]](0)
+for w in labels {
+    gs = gs.plus(func() str { return w })
+}
+ck("each 0", gs[0]() == "a")
+ck("each 1", gs[1]() == "b")
+ck("each 2", gs[2]() == "c")
