@@ -7,31 +7,3 @@ ext(str s) bytes() array[byte] {
     };
     return result
 };
-
-# `str.int()` — parse a decimal string. Lives here as ordinary Velo, not a VM
-# opcode, so the instruction set stays minimal and every backend runs identical
-# parsing. The compiler auto-imports this module wherever `.int()` is used, so
-# the call needs no explicit `import "std/str"`. Surrounding spaces are trimmed
-# and a leading '+'/'-' is honoured; the language has no exceptions, so invalid
-# characters are a best-effort parse rather than an error.
-ext(str s) int() int {
-    int start = 0;
-    int end = s.len();
-    while ((start < end) & (s[start] == ' ')) {
-        start = start + 1;
-    };
-    while ((end > start) & (s[end - 1] == ' ')) {
-        end = end - 1;
-    };
-    bool neg = false;
-    if ((start < end) & ((s[start] == '-') | (s[start] == '+'))) {
-        neg = s[start] == '-';
-        start = start + 1;
-    };
-    int result = 0;
-    while (start < end) {
-        result = result * 10 + (s[start] - '0');
-        start = start + 1;
-    };
-    return if (neg) then (0 - result) else result
-};

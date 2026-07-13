@@ -90,7 +90,7 @@ object Numbers {
     fun intInt(v: Any?): Int = toInt(v)
 
     /**
-     * `Op.Conv`: convert to the target numeric kind. The result is fixed by [to]
+     * `Op.NumConv`: convert to the target numeric kind. The result is fixed by [to]
      * alone (the op's `from` operand is informational); the source is read
      * polymorphically. Narrowing to int/long truncates toward zero, to byte
      * takes the low 8 bits — matching the former per-pair conversion opcodes.
@@ -100,11 +100,23 @@ object Numbers {
         core.VmType.Long -> toLong(v)
         core.VmType.Float -> toFloat(v)
         core.VmType.Byte -> toInt(v).toByte()
-        else -> throw IllegalStateException("Op.Conv: not a numeric target: $to")
+        else -> throw IllegalStateException("Op.NumConv: not a numeric target: $to")
     }
 
     /** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */
     fun numStr(v: Any?): String = if (v is Byte) v.toInt().toString() else v.toString()
+
+    /**
+     * `Op.StrNum`: parse a decimal string into the target numeric kind, trimming
+     * surrounding whitespace. Host-backed (a correct float parse needs the
+     * platform routine); an invalid string throws, as `.toInt()`/`.toFloat()` do.
+     */
+    fun strNum(s: String, to: core.VmType): Any = when (to) {
+        core.VmType.Int -> s.trim().toInt()
+        core.VmType.Long -> s.trim().toLong()
+        core.VmType.Float -> s.trim().toFloat()
+        else -> throw IllegalStateException("Op.StrNum: not a numeric target: $to")
+    }
 
     /** `Op.Equals`: deep structural equality of any two values. */
     fun equals(a: Any?, b: Any?, dataClasses: Map<Int, DataClassInfo>): Boolean {

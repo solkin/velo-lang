@@ -392,7 +392,7 @@ object Interpreter {
             pc + 1
         }
 
-        is Op.Conv -> {
+        is Op.NumConv -> {
             val frame = ctx.currentFrame()
             frame.subs.push(ValueRecord(frame.subs.pop().getNumber().convertTo(op.to)))
             pc + 1
@@ -401,6 +401,12 @@ object Interpreter {
         is Op.NumStr -> {
             val frame = ctx.currentFrame()
             frame.subs.push(ValueRecord(numStr(frame.subs.pop().getNumber())))
+            pc + 1
+        }
+
+        is Op.StrNum -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(strNum(frame.subs.pop().getString(), op.to)))
             pc + 1
         }
 

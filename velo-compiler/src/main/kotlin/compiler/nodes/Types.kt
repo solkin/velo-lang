@@ -126,8 +126,8 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
     if (sr == tr) return target
     if (sr < tr) {                                  // widening (byte -> int -> long -> float)
         when (target) {
-            LongType -> ctx.add(Op.Conv(source.vmType(), VmType.Long))
-            FloatType -> ctx.add(Op.Conv(source.vmType(), VmType.Float))
+            LongType -> ctx.add(Op.NumConv(source.vmType(), VmType.Long))
+            FloatType -> ctx.add(Op.NumConv(source.vmType(), VmType.Float))
             else -> {}                                     // byte -> int flows as int already
         }
         return target
@@ -136,7 +136,7 @@ fun coerceNumeric(ctx: Context, target: Type, source: Type, intLiteral: Int?, wh
         if (intLiteral !in -128..255) {
             throw IllegalArgumentException("Byte literal $intLiteral is out of range for $what (-128..255)")
         }
-        ctx.add(Op.Conv(VmType.Int, VmType.Byte))
+        ctx.add(Op.NumConv(VmType.Int, VmType.Byte))
         return target
     }
     throw IllegalArgumentException(
@@ -153,7 +153,7 @@ object NumIdentityProp : Prop {
 /** `x.float()` — convert any numeric receiver to float. */
 object ToFloatProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.Conv(type.vmType(), VmType.Float))
+        ctx.add(Op.NumConv(type.vmType(), VmType.Float))
         return FloatType
     }
 }
@@ -161,7 +161,7 @@ object ToFloatProp : Prop {
 /** `x.int()` — convert any numeric receiver to int (float/long truncate toward zero). */
 object ToIntProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.Conv(type.vmType(), VmType.Int))
+        ctx.add(Op.NumConv(type.vmType(), VmType.Int))
         return IntType
     }
 }
@@ -169,7 +169,7 @@ object ToIntProp : Prop {
 /** `x.long()` — convert any numeric receiver to a 64-bit long. */
 object ToLongProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.Conv(type.vmType(), VmType.Long))
+        ctx.add(Op.NumConv(type.vmType(), VmType.Long))
         return LongType
     }
 }
@@ -177,7 +177,7 @@ object ToLongProp : Prop {
 /** `x.byte()` — convert any numeric receiver to a byte (low 8 bits). */
 object ToByteProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
-        ctx.add(Op.Conv(type.vmType(), VmType.Byte))
+        ctx.add(Op.NumConv(type.vmType(), VmType.Byte))
         return ByteType
     }
 }

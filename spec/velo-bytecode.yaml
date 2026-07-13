@@ -29,9 +29,10 @@ format:
     - "Reject the stream if versionMajor != the reader's supported major."
     - "Opcodes are NEVER renumbered. Gaps in the numbering are retired opcodes."
     - "Type tag 0x09 is permanently retired (was `dict`, removed in v10)."
-    - "v12 retired the per-pair conversion opcodes (0x15-0x17, 0x1f, 0x49, 0x4a-0x4e),
-       the string parser 0x40, and 0x2c: numeric conversion collapsed into Conv (0x63),
-       number-to-string into NumStr (0x64), and str->int moved to the stdlib prelude."
+    - "v12 retired the per-pair conversion opcodes (0x15-0x17, 0x1f, 0x40, 0x49, 0x4a-0x4e)
+       and 0x2c, collapsing number<->string/number conversion into four symmetric ops:
+       NumConv 0x63 (num->num), NumStr 0x64 (num->str), StrNum 0x65 (str->num), plus the
+       existing IntChar (codepoint->char). All four are host-backed representation casts."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -162,7 +163,7 @@ structs:
       - { name: operands, enc: "see opcodes[].operands" }
 
 # -----------------------------------------------------------------------------
-# The instruction set (51 ops). `stack` is `before -> after`, top of stack on
+# The instruction set (52 ops). `stack` is `before -> after`, top of stack on
 # the right. `operands` is the byte layout that follows the opcode byte.
 # -----------------------------------------------------------------------------
 opcodes:
@@ -193,8 +194,9 @@ opcodes:
 
   # ---- Conversions / hashing ----
   - { name: IntChar,    code: 0x14, category: convert, stack: "[int] -> [str]",   doc: "Unicode code point to a 1-char string." }
-  - { name: Conv,   code: 0x63, category: convert, operands: [ { name: from, enc: vmtype }, { name: to, enc: vmtype } ], stack: "[num] -> [num']", doc: "Convert a numeric value to kind `to` (a scalar byte/int/long/float type tag); `from` is the informational static source kind. Result is fixed by `to`, applied to the source read polymorphically: widening is exact, narrowing to int/long truncates toward zero, narrowing to byte takes the low 8 bits." }
-  - { name: NumStr, code: 0x64, category: convert, stack: "[num] -> [str]", doc: "Decimal string of a numeric value, polymorphic over its runtime kind (byte/int/long plain, float with a fraction)." }
+  - { name: NumConv, code: 0x63, category: convert, operands: [ { name: from, enc: vmtype }, { name: to, enc: vmtype } ], stack: "[num] -> [num']", doc: "Number->number conversion to kind `to` (a scalar byte/int/long/float type tag); `from` is the informational static source kind. Result is fixed by `to`, applied to the source read polymorphically: widening is exact, narrowing to int/long truncates toward zero, narrowing to byte takes the low 8 bits." }
+  - { name: NumStr, code: 0x64, category: convert, stack: "[num] -> [str]", doc: "Number->string: decimal string of a numeric value, polymorphic over its runtime kind (byte/int/long plain, float with a fraction). Host-backed (shortest round-trip float format)." }
+  - { name: StrNum, code: 0x65, category: convert, operands: [ { name: to, enc: vmtype } ], stack: "[str] -> [num]", doc: "String->number: parse a decimal string into kind `to` (int/long/float), trimming surrounding whitespace. Host-backed; an invalid string errors." }
   - { name: Hash,       code: 0x48, category: convert, stack: "[a] -> [hash(a)]" }
 
   # ---- Strings ----

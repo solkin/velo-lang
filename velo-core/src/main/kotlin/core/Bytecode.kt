@@ -137,10 +137,11 @@ object Bytecode {
                 out.writeInt(op.methodVarIndex)
                 out.writeInt(op.args)
             }
-            is Op.Conv -> {
+            is Op.NumConv -> {
                 writeType(op.from, out)
                 writeType(op.to, out)
             }
+            is Op.StrNum -> writeType(op.to, out)
             else -> Unit // the remaining ops carry no operands
         }
     }
@@ -318,9 +319,10 @@ object Bytecode {
             0x63 -> {
                 val from = readType(inp)
                 val to = readType(inp)
-                Op.Conv(from = from, to = to)
+                Op.NumConv(from = from, to = to)
             }
             0x64 -> Op.NumStr
+            0x65 -> Op.StrNum(to = readType(inp))
             0x18 -> Op.Frame(num = inp.readInt())
             0x19 -> Op.MethodLoad(name = inp.readUTF())
             0x1c -> Op.InterfaceCall(method = inp.readUTF(), args = inp.readInt())

@@ -34,11 +34,6 @@ class PropertyParselet : InfixParselet {
             } else {
                 null
             }
-            // `.int()` may be `str.int()`, which resolves to std/str's ext;
-            // arm its auto-import (the receiver type isn't known until compile).
-            if (name == "int" && args != null) {
-                parser.context.strParseUsed = true
-            }
             return PropNode(name = name, args = args, parent = left)
         }
         parser.peek()?.let { parser.consume(it.type) }

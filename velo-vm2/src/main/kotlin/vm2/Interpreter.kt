@@ -26,8 +26,9 @@ private const val OP_LOAD = 0x0f
 private const val OP_HALT = 0x11
 private const val OP_IF = 0x12
 private const val OP_INTCHAR = 0x14
-private const val OP_CONV = 0x63
+private const val OP_NUMCONV = 0x63
 private const val OP_NUMSTR = 0x64
+private const val OP_STRNUM = 0x65
 private const val OP_FRAME = 0x18
 private const val OP_METHODLOAD = 0x19
 private const val OP_INTERFACECALL = 0x1c
@@ -65,7 +66,7 @@ private const val OP_ACTORCALL = 0x61
 private const val OP_FUTUREAWAIT = 0x62
 
 /**
- * The execution engine: a stack machine over the 48-op instruction set, driven
+ * The execution engine: a stack machine over the 52-op instruction set, driven
  * by a cooperative **fiber scheduler**.
  *
  * Each in-flight actor message is a [Fiber] whose call stack is held as data
@@ -277,8 +278,9 @@ class Interpreter(
 
                     // ---- conversions / hashing ----
                     OP_INTCHAR -> s.push(Numbers.codePointToString(Numbers.intInt(s.pop())))
-                    OP_CONV -> s.push(Numbers.convert(s.pop(), (ops[i] as Op.Conv).to))
+                    OP_NUMCONV -> s.push(Numbers.convert(s.pop(), (ops[i] as Op.NumConv).to))
                     OP_NUMSTR -> s.push(Numbers.numStr(s.pop()))
+                    OP_STRNUM -> s.push(Numbers.strNum(s.pop() as String, (ops[i] as Op.StrNum).to))
                     OP_HASH -> s.push(Numbers.hash(s.pop()))
 
                     // ---- strings ----

@@ -17,10 +17,6 @@ class Parser(
 
     fun parse(): Node {
         var statements = parseStatements(pratt)
-        // str.int() resolves to the `ext(str) int()` in std/str: when the program
-        // called `.int()`, pull std/str in (parsed in isolation) and compile it
-        // ahead of the user code so the extension resolves.
-        statements = maybePrepend(SourceLoader.STDLIB_STR, context.strParseUsed, statements)
         // dict[K:V] is sugar over the stdlib Map class: when the program used
         // dict syntax and did not import the implementation itself, pull it in
         // (parsed in isolation) and compile it ahead of the user code.

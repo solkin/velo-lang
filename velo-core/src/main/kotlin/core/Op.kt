@@ -131,27 +131,39 @@ sealed interface Op {
     }
 
     /**
-     * Convert the numeric value on top of the stack to another numeric kind.
-     * [from] is the compiler's static source kind — informational, so a
-     * disassembler and the typed-stack VM can decode the operand; the runtime
-     * result is fixed by [to] alone, applied to the value read polymorphically
-     * from the stack (each backend already knows the source kind from the value
-     * or its slot tag). Covers every byte/int/long/float pair: widening is
-     * exact, narrowing to int/long truncates toward zero, narrowing to byte
-     * takes the low 8 bits. One op replaces the former per-pair conversion
-     * opcodes. Stack: `[num] -> [num']`
+     * Convert the numeric value on top of the stack to another numeric kind —
+     * the number↔number representation conversion. [from] is the compiler's
+     * static source kind — informational, so a disassembler and the typed-stack
+     * VM can decode the operand; the runtime result is fixed by [to] alone,
+     * applied to the value read polymorphically from the stack (each backend
+     * already knows the source kind from the value or its slot tag). Covers every
+     * byte/int/long/float pair: widening is exact, narrowing to int/long
+     * truncates toward zero, narrowing to byte takes the low 8 bits. One op
+     * replaces the former per-pair conversion opcodes. Stack: `[num] -> [num']`
      */
-    data class Conv(val from: VmType, val to: VmType) : Op {
+    data class NumConv(val from: VmType, val to: VmType) : Op {
         override val opcode get() = 0x63
     }
 
     /**
-     * Render a numeric value as its decimal string — polymorphic over the
-     * value's runtime kind (byte/int/long print without a fraction, float with
-     * one), the string counterpart of [Hash]. Stack: `[num] -> [str]`
+     * Render a numeric value as its decimal string — the number→string
+     * conversion, polymorphic over the value's runtime kind (byte/int/long print
+     * without a fraction, float with one). Host-backed: a correct float format
+     * needs the platform's shortest-round-trip routine. Stack: `[num] -> [str]`
      */
     object NumStr : Op {
         override val opcode get() = 0x64
+    }
+
+    /**
+     * Parse a decimal string into the numeric kind [to] (int/long/float),
+     * trimming surrounding whitespace — the string→number conversion, the
+     * inbound sibling of [NumStr] and [NumConv]. Host-backed for the same reason
+     * as [NumStr] (a correct float parse needs the platform's routine).
+     * Stack: `[str] -> [num]`
+     */
+    data class StrNum(val to: VmType) : Op {
+        override val opcode get() = 0x65
     }
 
     /** Hash of the top value. Stack: `[a] -> [hash(a)]` */

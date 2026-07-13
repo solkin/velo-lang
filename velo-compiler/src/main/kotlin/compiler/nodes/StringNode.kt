@@ -27,8 +27,9 @@ object StringType : Indexable {
             "sub" -> SubStrProp
             "len" -> StrLenProp
             "con" -> StrConProp
-            // `str.int()` is not a built-in: it resolves to the `ext(str) int()`
-            // in std/str, which the parser auto-imports wherever `.int()` appears.
+            "int" -> StrNumProp(IntType, core.VmType.Int)
+            "float" -> StrNumProp(FloatType, core.VmType.Float)
+            "long" -> StrNumProp(LongType, core.VmType.Long)
             "str" -> StrStrProp
             else -> null
         }
@@ -64,6 +65,14 @@ object StrConProp : Prop {
     override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
         ctx.add(Op.StrCon)
         return StringType
+    }
+}
+
+/** `str.int()`/`str.float()`/`str.long()` — parse a decimal string (Op.StrNum). */
+class StrNumProp(private val target: Type, private val to: core.VmType) : Prop {
+    override fun compile(type: Type, args: List<Type>, ctx: Context): Type {
+        ctx.add(Op.StrNum(to))
+        return target
     }
 }
 

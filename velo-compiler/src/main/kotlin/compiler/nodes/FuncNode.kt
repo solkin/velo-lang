@@ -52,13 +52,13 @@ data class FuncNode(
         args.forEach { v ->
             if (v.type === FloatType) {
                 funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.Conv(core.VmType.Any, core.VmType.Float))
+                funcOps.add(Op.NumConv(core.VmType.Any, core.VmType.Float))
                 funcOps.add(Op.Store(index = v.index))
             } else if (v.type === LongType) {
                 // A long parameter may be passed a narrower int/byte argument; normalise
                 // it to a genuine long on entry (no-op when it is already a long).
                 funcOps.add(Op.Load(index = v.index))
-                funcOps.add(Op.Conv(core.VmType.Any, core.VmType.Long))
+                funcOps.add(Op.NumConv(core.VmType.Any, core.VmType.Long))
                 funcOps.add(Op.Store(index = v.index))
             }
         }

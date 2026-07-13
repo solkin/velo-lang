@@ -320,14 +320,20 @@ internal class Engine(
                 }
                 0x0e -> equals()
                 0x14 -> pushRef(String(Character.toChars(popInt())))
-                0x63 -> when ((spec.ops[pc] as Op.Conv).to) {
+                0x63 -> when ((spec.ops[pc] as Op.NumConv).to) {
                     VmType.Int -> pushInt(popInt())
                     VmType.Long -> pushLong(popLong())
                     VmType.Float -> pushFloat(popFloat())
                     VmType.Byte -> pushByte(popInt().toByte())
-                    else -> throw VeloError("Op.Conv: not a numeric target")
+                    else -> throw VeloError("Op.NumConv: not a numeric target")
                 }
                 0x64 -> pushRef(numStr(popAny()))
+                0x65 -> when ((spec.ops[pc] as Op.StrNum).to) {
+                    VmType.Int -> pushInt(popString().trim().toInt())
+                    VmType.Long -> pushLong(popString().trim().toLong())
+                    VmType.Float -> pushFloat(popString().trim().toFloat())
+                    else -> throw VeloError("Op.StrNum: not a numeric target")
+                }
                 0x48 -> pushInt(hashValue(popAny()))
                 0x2e -> { val b = popString(); val a = popString(); pushRef(a + b) }
                 0x30 -> { val s = popString(); pushInt(s.codePointCount(0, s.length)) }

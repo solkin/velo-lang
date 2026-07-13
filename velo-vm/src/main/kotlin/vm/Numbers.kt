@@ -55,7 +55,7 @@ fun numericEquals(a: Number, b: Number): Boolean =
     else a.toInt() == b.toInt()
 
 /**
- * `Op.Conv`: convert a numeric value to the target kind. The result is fixed by
+ * `Op.NumConv`: convert a numeric value to the target kind. The result is fixed by
  * [to] alone (the `from` operand is informational); the source is read
  * polymorphically. Narrowing to int/long truncates toward zero, to byte takes
  * the low 8 bits — matching the former per-pair conversion opcodes.
@@ -65,8 +65,20 @@ fun Number.convertTo(to: core.VmType): Number = when (to) {
     core.VmType.Long -> this.toLong()
     core.VmType.Float -> this.toFloat()
     core.VmType.Byte -> this.toInt().toByte()
-    else -> throw IllegalStateException("Op.Conv: not a numeric target: $to")
+    else -> throw IllegalStateException("Op.NumConv: not a numeric target: $to")
 }
 
 /** `Op.NumStr`: decimal string of a numeric value (byte/int/long plain, float with a fraction). */
 fun numStr(v: Number): String = if (v is Byte) v.toInt().toString() else v.toString()
+
+/**
+ * `Op.StrNum`: parse a decimal string into the target numeric kind, trimming
+ * surrounding whitespace. Host-backed (a correct float parse needs the platform
+ * routine); an invalid string throws, as `.toInt()`/`.toFloat()` do.
+ */
+fun strNum(s: String, to: core.VmType): Number = when (to) {
+    core.VmType.Int -> s.trim().toInt()
+    core.VmType.Long -> s.trim().toLong()
+    core.VmType.Float -> s.trim().toFloat()
+    else -> throw IllegalStateException("Op.StrNum: not a numeric target: $to")
+}
