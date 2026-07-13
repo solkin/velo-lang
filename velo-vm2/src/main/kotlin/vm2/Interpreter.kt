@@ -487,7 +487,7 @@ class Interpreter(
     private fun callOp(fiber: Fiber, op: Op.Call): Boolean {
         val vs = fiber.vs
         val callable = vs.pop()
-        val n = if (op.args < 0) -op.args else op.args
+        val n = op.args
 
         // Foreign-actor callback: arguments are shipped to the owner's
         // dispatcher, not entered locally — the rare path keeps the list build.
@@ -504,7 +504,7 @@ class Interpreter(
         // The callee's window simply starts there; on return the stack rewinds to
         // `retBase`, which also drops the args and (for a class call) the receiver.
         val opBase = vs.top - n
-        if (op.args < 0) {                           // tuple/spread call: callee wants the args reversed
+        if (op.reverseArgs) {                        // method wrapper: callee wants the args reversed
             var lo = opBase
             var hi = vs.top - 1
             while (lo < hi) { val t = vs.a[lo]; vs.a[lo] = vs.a[hi]; vs.a[hi] = t; lo++; hi-- }

@@ -226,7 +226,7 @@ data class ClassElementProp(val name: String) : Prop {
                     }
                 }
             }
-            propCtx.add(Op.Call(args = -args.size))
+            propCtx.add(Op.Call(args = args.size, reverseArgs = true))
             resultType = funcType.derived
         }
         propCtx.add(Op.Ret)

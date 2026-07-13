@@ -131,17 +131,15 @@ sealed interface Op {
     }
 
     /**
-     * Convert the numeric value on top of the stack to another numeric kind —
-     * the number↔number representation conversion. [from] is the compiler's
-     * static source kind — informational, so a disassembler and the typed-stack
-     * VM can decode the operand; the runtime result is fixed by [to] alone,
-     * applied to the value read polymorphically from the stack (each backend
-     * already knows the source kind from the value or its slot tag). Covers every
-     * byte/int/long/float pair: widening is exact, narrowing to int/long
-     * truncates toward zero, narrowing to byte takes the low 8 bits. One op
-     * replaces the former per-pair conversion opcodes. Stack: `[num] -> [num']`
+     * Convert the numeric value on top of the stack to kind [to] — the
+     * number↔number representation conversion. The source kind is read
+     * polymorphically from the value (or its slot tag), so only the target is
+     * carried. Covers every byte/int/long/float pair: widening is exact,
+     * narrowing to int/long truncates toward zero, narrowing to byte takes the
+     * low 8 bits. One op replaces the former per-pair conversion opcodes.
+     * Stack: `[num] -> [num']`
      */
-    data class NumConv(val from: VmType, val to: VmType) : Op {
+    data class NumConv(val to: VmType) : Op {
         override val opcode get() = 0x63
     }
 
@@ -347,10 +345,10 @@ sealed interface Op {
      * Otherwise the function's captured (definition-site) scope is used,
      * which is what makes escaping closures work.
      *
-     * [args] is normally the non-negative arity. A negative value is emitted
-     * only inside class/interface method wrappers: `abs(args)` is the arity and
-     * the wrapper reverses its argument slice before entering the method, undoing
-     * property-evaluation order.
+     * [args] is the (non-negative) arity. [reverseArgs] is set only inside
+     * class/interface method wrappers: they push arguments in property-evaluation
+     * order, so the callee reverses its argument slice on entry to restore the
+     * ordinary call order.
      *
      * A callback owned by another actor is not entered locally; its arguments
      * are structurally cloned and delivered to the owner's dispatcher. When
@@ -358,7 +356,12 @@ sealed interface Op {
      * fire-and-forget; when true (a value-returning callback) the caller
      * blocks for the owner's reply and the decoded result is pushed.
      */
-    data class Call(val args: Int, val classParent: Boolean = false, val callbackResult: Boolean = false) : Op {
+    data class Call(
+        val args: Int,
+        val classParent: Boolean = false,
+        val callbackResult: Boolean = false,
+        val reverseArgs: Boolean = false,
+    ) : Op {
         override val opcode get() = 0x09
     }
 

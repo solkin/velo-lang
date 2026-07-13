@@ -122,6 +122,7 @@ object Bytecode {
                 out.writeInt(op.args)
                 out.writeBoolean(op.classParent)
                 out.writeBoolean(op.callbackResult)
+                out.writeBoolean(op.reverseArgs)
             }
             is Op.NativeCall -> {
                 out.writeShort(op.poolIndex)
@@ -137,10 +138,7 @@ object Bytecode {
                 out.writeInt(op.methodVarIndex)
                 out.writeInt(op.args)
             }
-            is Op.NumConv -> {
-                writeType(op.from, out)
-                writeType(op.to, out)
-            }
+            is Op.NumConv -> writeType(op.to, out)
             is Op.StrNum -> writeType(op.to, out)
             else -> Unit // the remaining ops carry no operands
         }
@@ -307,6 +305,7 @@ object Bytecode {
                 args = inp.readInt(),
                 classParent = inp.readBoolean(),
                 callbackResult = inp.readBoolean(),
+                reverseArgs = inp.readBoolean(),
             )
             0x0b -> Op.Div
             0x0c -> Op.Pop
@@ -316,11 +315,7 @@ object Bytecode {
             0x11 -> Op.Halt
             0x12 -> Op.If(elseSkip = inp.readInt())
             0x14 -> Op.IntChar
-            0x63 -> {
-                val from = readType(inp)
-                val to = readType(inp)
-                Op.NumConv(from = from, to = to)
-            }
+            0x63 -> Op.NumConv(to = readType(inp))
             0x64 -> Op.NumStr
             0x65 -> Op.StrNum(to = readType(inp))
             0x18 -> Op.Frame(num = inp.readInt())

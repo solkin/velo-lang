@@ -189,7 +189,7 @@ data class InterfaceElementProp(val methodName: String, val sig: FuncType) : Pro
         }
         val propCtx = ctx.discrete()
         propCtx.add(Op.MethodLoad(methodName))
-        propCtx.add(Op.Call(args = -args.size))
+        propCtx.add(Op.Call(args = args.size, reverseArgs = true))
         propCtx.add(Op.Ret)
         ctx.merge(propCtx)
         ctx.add(Op.Frame(num = propCtx.frame.num))

@@ -15,7 +15,6 @@ import vm.records.PtrRecord
 import vm.records.RefKind
 import vm.records.RefRecord
 import vm.records.ValueRecord
-import kotlin.math.abs
 
 /**
  * The instruction interpreter — the single place where bytecode executes.
@@ -112,8 +111,8 @@ object Interpreter {
             } else {
                 val callable = thisFrame.subs.pop()
                 if (callable is CallbackRecord && ctx.currentActor !== callable.handle) {
-                    val argsArray = Array(size = abs(op.args), init = { thisFrame.subs.pop() })
-                        .let { arr -> if (op.args > 0) arr.reversedArray() else arr }
+                    val argsArray = Array(size = op.args, init = { thisFrame.subs.pop() })
+                        .let { arr -> if (!op.reverseArgs) arr.reversedArray() else arr }
                     val encoded = argsArray.map { StructuredClone.encode(it, ctx) }
                     if (op.callbackResult) {
                         // Value-returning callback. Post to the owner and, rather
@@ -155,8 +154,8 @@ object Interpreter {
                             capturedVars = null
                         }
                     }
-                    val argsArray = Array(size = abs(op.args), init = { thisFrame.subs.pop() })
-                        .let { arr -> if (op.args > 0) arr.reversedArray() else arr }
+                    val argsArray = Array(size = op.args, init = { thisFrame.subs.pop() })
+                        .let { arr -> if (!op.reverseArgs) arr.reversedArray() else arr }
                     val parentVars: Vars? = if (op.classParent) {
                         thisFrame.subs.pop().getFrame().vars
                     } else {

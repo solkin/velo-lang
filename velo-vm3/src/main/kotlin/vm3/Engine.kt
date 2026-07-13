@@ -16,7 +16,6 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.math.abs
 
 /**
  * Compact interpreter state. Guest calls share one contiguous, tagged operand
@@ -198,7 +197,7 @@ internal class Engine(
                 }
                 is Op.If -> requireJump(frame, index, op.elseSkip)
                 is Op.Move -> requireJump(frame, index, op.count)
-                is Op.Call -> require(op.args != Int.MIN_VALUE) { "Frame ${frame.num} has invalid call arity" }
+                is Op.Call -> require(op.args >= 0) { "Frame ${frame.num} has negative call arity" }
                 is Op.InterfaceCall -> require(op.args >= 0) { "Frame ${frame.num} has negative interface arity" }
                 is Op.ActorCall -> require(op.args >= 0) { "Frame ${frame.num} has negative actor arity" }
                 is Op.ScopeEnter -> require(op.count >= 0) { "Frame ${frame.num} has negative scope size" }
@@ -389,7 +388,7 @@ internal class Engine(
                 }
                 0x09 -> {
                     val op = spec.ops[pc] as Op.Call
-                    call(op.args, op.classParent, op.callbackResult)
+                    call(op.args, op.classParent, op.callbackResult, op.reverseArgs)
                 }
                 0x1c -> interfaceCall(spec.ops[pc] as Op.InterfaceCall)
                 0x50 -> pushRef(BoxPointer(popAny()))
@@ -405,8 +404,7 @@ internal class Engine(
             }
         }
 
-        private fun call(rawArgs: Int, classParent: Boolean, callbackResult: Boolean) {
-            val argc = abs(rawArgs)
+        private fun call(argc: Int, classParent: Boolean, callbackResult: Boolean, reverseArgs: Boolean) {
             val callable = popRef()
             val foreign = callable is CallbackValue
             val fn = when (callable) {
@@ -417,7 +415,7 @@ internal class Engine(
             // Method wrappers receive their arguments in property-evaluation
             // order. A negative arity is the bytecode marker that restores the
             // ordinary function-call order before entering the actual method.
-            if (rawArgs < 0) reverse(sp - argc, sp)
+            if (reverseArgs) reverse(sp - argc, sp)
             if (foreign) {
                 val base = sp - argc
                 val args = ArrayList<Any?>(argc)

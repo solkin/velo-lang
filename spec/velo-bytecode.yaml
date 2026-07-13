@@ -194,7 +194,7 @@ opcodes:
 
   # ---- Conversions / hashing ----
   - { name: IntChar,    code: 0x14, category: convert, stack: "[int] -> [str]",   doc: "Unicode code point to a 1-char string." }
-  - { name: NumConv, code: 0x63, category: convert, operands: [ { name: from, enc: vmtype }, { name: to, enc: vmtype } ], stack: "[num] -> [num']", doc: "Number->number conversion to kind `to` (a scalar byte/int/long/float type tag); `from` is the informational static source kind. Result is fixed by `to`, applied to the source read polymorphically: widening is exact, narrowing to int/long truncates toward zero, narrowing to byte takes the low 8 bits." }
+  - { name: NumConv, code: 0x63, category: convert, operands: [ { name: to, enc: vmtype } ], stack: "[num] -> [num']", doc: "Number->number conversion to kind `to` (a scalar byte/int/long/float type tag). The source kind is read polymorphically from the value: widening is exact, narrowing to int/long truncates toward zero, narrowing to byte takes the low 8 bits." }
   - { name: NumStr, code: 0x64, category: convert, stack: "[num] -> [str]", doc: "Number->string: decimal string of a numeric value, polymorphic over its runtime kind (byte/int/long plain, float with a fraction). Host-backed (shortest round-trip float format)." }
   - { name: StrNum, code: 0x65, category: convert, operands: [ { name: to, enc: vmtype } ], stack: "[str] -> [num]", doc: "String->number: parse a decimal string into kind `to` (int/long/float), trimming surrounding whitespace. Host-backed; an invalid string errors." }
   - { name: Hash,       code: 0x48, category: convert, stack: "[a] -> [hash(a)]" }
