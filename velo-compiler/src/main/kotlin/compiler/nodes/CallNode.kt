@@ -197,7 +197,7 @@ data class CallNode(
         val frameNum = classType.num
             ?: throw IllegalStateException("Class '${classType.name}' has no frame number")
         val returnType = if (typeArgs.isNotEmpty()) classType.copy(typeArgs = typeArgs) else classType
-        if (typeArgs.isNotEmpty()) checkTypeArgBounds(classType.name, typeArgs)
+        if (typeArgs.isNotEmpty()) checkTypeArgBounds(ctx.shared.classTable, classType.name, typeArgs)
         val argTypes = args.map { it.compile(ctx) }
         if (returnType.typeArgs.isNotEmpty()) {
             val classArgTypes = returnType.args ?: emptyList()

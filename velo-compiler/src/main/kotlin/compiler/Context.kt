@@ -28,6 +28,14 @@ class CompilerShared(
     /** Per-class method tables (name -> instance slot) for interface dispatch. */
     val classMethods = mutableListOf<core.ClassMethodsInfo>()
 
+    /**
+     * Compile-time table of class method signatures and generic bounds, keyed
+     * by class name — the source of truth for structural interface checks.
+     * Shared with the parser so [compiler.nodes.InterfaceType]s can reach it
+     * from `sameAs` (which has no [Context]).
+     */
+    val classTable = compiler.nodes.ClassTable()
+
     fun intern(ref: NativeRef): Int {
         val existing = nativePool.indexOf(ref)
         if (existing >= 0) return existing

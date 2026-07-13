@@ -65,8 +65,8 @@ data class ClassNode(
         // (which run without a Context) can resolve them by name, and emit the
         // runtime method table that backs Op.MethodLoad interface dispatch.
         val methodVars = classOps.frame.vars.filter { it.value.type is FuncType }
-        TypeRegistry.register(name, methodVars.mapValues { it.value.type as FuncType })
-        TypeRegistry.registerBounds(name, typeParamBounds)
+        ctx.shared.classTable.register(name, methodVars.mapValues { it.value.type as FuncType })
+        ctx.shared.classTable.registerBounds(name, typeParamBounds)
         ctx.shared.classMethods.add(
             core.ClassMethodsInfo(
                 frameNum = classOps.frame.num,

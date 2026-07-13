@@ -9,8 +9,9 @@ class Parser(
     private val depLoader: DependencyLoader,
     nativeRegistry: NativeRegistry? = null,
     rootDir: java.io.File? = null,
+    classTable: compiler.nodes.ClassTable = compiler.nodes.ClassTable(),
 ) {
-    private val context = ParserContext(nativeRegistry)
+    private val context = ParserContext(nativeRegistry, classTable)
     private val pratt = PrattParser(stream, context, depLoader, currentDir = rootDir).also {
         VeloGrammar.configure(it)
     }
