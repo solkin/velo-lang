@@ -94,6 +94,13 @@ class Frame(@JvmField val spec: FrameSpec, @JvmField val parent: Frame?) {
     /** Where the value stack's `top` rewinds to when this frame returns (drops args + receiver). */
     @JvmField var retBase: Int = 0
 
+    /**
+     * Active `try` error handlers, innermost last (VEL-9). Null until the first
+     * [core.Op.TryEnter] in this frame. Kept on the frame, so it rides along with
+     * the fiber's heap-resident call stack across an `await` suspension.
+     */
+    @JvmField var handlers: ArrayDeque<Handler>? = null
+
     // ---- scope (locals along the lexical chain) ----
     private val slots: Array<Any?>? = if (spec.slotCount > 0) Array(spec.slotCount) { EMPTY } else null
     private var overflow: HashMap<Int, Any?>? = null

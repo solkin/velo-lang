@@ -1,0 +1,20 @@
+# Error — the value carried by `try`/`catch` and `throw` (VEL-9).
+#
+# An immutable value type: `kind` is a machine-readable category (one of the
+# ERR_* constants below), `message` a human-readable description. Runtime
+# failures (arithmetic, bounds, null, native, actor) surface as an Error with
+# the matching kind; user code raises its own with `throw new Error(kind, msg)`
+# — or the `throw "text"` shorthand, which uses ERR_GENERIC.
+#
+# Convention: every error-kind constant is named ERR_*.
+#
+# Auto-imported when a program uses try/catch/throw — no explicit import needed.
+
+let ERR_ARITHMETIC = "arithmetic"   # division or remainder by zero
+let ERR_BOUNDS = "bounds"           # array or string index out of range
+let ERR_NULL = "null"               # null pointer dereference
+let ERR_NATIVE = "native"           # a native (host) call threw
+let ERR_ACTOR = "actor"             # an actor failed, surfaced through await
+let ERR_GENERIC = "generic"         # `throw "text"` with no explicit kind
+
+data class Error(str kind, str message) {}

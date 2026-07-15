@@ -35,6 +35,17 @@ class VMContext(
     val methodTables: Map<Int, Map<String, Int>> = emptyMap(),
 ) {
     /**
+     * Bytecode frame of the stdlib `Error` data class (VEL-9), resolved by name —
+     * the name is unique because a user `class Error` collides at compile time.
+     * A runtime failure (arithmetic, null, native, actor …) is rebuilt into an
+     * `Error` instance from this frame via [reconstructData]. Null when the
+     * program never imported `std/error` (no try/catch/throw), in which case no
+     * error can be caught anyway.
+     */
+    val errorClassFrameNum: Int? =
+        dataClasses.values.firstOrNull { it.name == "Error" }?.frameNum
+
+    /**
      * Get current frame from stack
      */
     fun currentFrame(): Frame = stack.peek()

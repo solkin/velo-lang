@@ -96,6 +96,33 @@ data class Context(
         return false
     }
 
+    /**
+     * Marks the body context of a `try` (VEL-9), set by [compiler.nodes.TryNode]
+     * on the try body's [block] — not the catch body, whose handler is already
+     * removed on entry. A `break`/`continue` jumping out of a try body flies over
+     * its [core.Op.TryLeave], so it must pop that handler itself.
+     */
+    var tryBody: Boolean = false
+
+    /**
+     * How many enclosing `try` bodies sit between here and the innermost loop —
+     * the number of handlers a `break`/`continue` must pop ([core.Op.TryLeave])
+     * before it jumps, so a jump out of a `try` never leaves a stale handler
+     * behind. Counting stops at the loop (a `try` *around* the loop is not exited
+     * by a jump that stays in the loop) and at the function root.
+     */
+    fun enclosingTryDepthInLoop(): Int {
+        var depth = 0
+        var context: Context? = this
+        while (context != null) {
+            if (context.tryBody) depth++
+            if (context.loopBody) return depth
+            if (!context.subFrame) return depth
+            context = context.parent
+        }
+        return depth
+    }
+
     fun add(op: Op) {
         frame.ops.add(op)
     }

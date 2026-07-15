@@ -1,0 +1,10 @@
+ok throw kind
+ok throw message
+ok string throw kind
+ok arithmetic kind
+ok bounds kind
+ok no error skips catch
+ok nested rethrow
+ok re-throw message
+ok loop caught once
+ok loop done twice

@@ -45,6 +45,7 @@ ESCAPE         = "\" ( "n" | "t" | "\" | '"' | "$" | "'" ) ;</code></pre>
                | funcDecl  | extDecl  | operatorDecl
                | classDecl | dataDecl | actorDecl | interfaceDecl
                | if | while | for | return | "break" | "continue"
+               | try | throw
                | expression ;
 
 import         = "import" STRING [ "as" IDENT ] ;
@@ -71,6 +72,8 @@ while          = "while" [ "(" ] expression [ ")" ] block ;
 for            = "for" IDENT "in" ( expression ".." expression   (* range, end exclusive *)
                                   | expression ) block ;         (* array iteration       *)
 return         = "return" [ expression ] ;
+try            = "try" block "catch" "(" "Error" IDENT ")" block ;  (* the caught type is always Error *)
+throw          = "throw" expression ;                (* an Error value, or a string literal shorthand *)
 
 block          = "{" { statement [ terminator ] } "}" ;
 
@@ -139,7 +142,7 @@ awaitExpr      = "await" expression ;</code></pre>
 <p>Notes:</p>
 <ul><li><strong><code>&amp;&amp;</code>/<code>||</code> are logical with short-circuit; <code>&amp;</code>/<code>|</code>/<code>^</code> are bitwise</strong> on ints (and <code>&amp;</code>/<code>|</code> also short-circuit on bools, kept as aliases). Prefer <code>&amp;&amp;</code>/<code>||</code>.</li><li><strong><code>..</code></strong> (range) is not a general operator — it appears only in <code>for i in a..b</code>.</li><li>There are <strong>no shift operators</strong>; use <code>x.shl(n)</code> / <code>x.shr(n)</code>.</li><li><code>&lt;</code> is lowered internally but behaves as a normal left-associative comparison.</li></ul>
 <hr>
-<p><a href="30-llm-guide.html">Previous: LLM Guide ←</a> | <a href="index.html">Back to README →</a></p>
+<p><a href="30-llm-guide.html">Previous: LLM Guide ←</a> | <a href="32-error-handling.html">Next: Error Handling →</a></p>
     </main>
     <footer class="site-footer">
         <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;

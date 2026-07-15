@@ -38,6 +38,8 @@ format:
        containers that already bound them (frame count, per-frame var count): all are
        capped at 65535, and the writer fails loudly rather than truncate past it. Only
        jump offsets (If.elseSkip, Move.count) stay i32 (signed; a backward Move is negative)."
+    - "v13.1 added the try/catch/throw opcodes: TryEnter 0x24 (i32 catchOffset), TryLeave
+       0x25, Throw 0x27. A minor bump — purely additive, so a v13.0 stream still reads."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -120,7 +122,7 @@ literal:
 container:
   - { name: magic,        enc: u16, const: 0x5e10 }
   - { name: versionMajor, enc: u8,  const: 13 }
-  - { name: versionMinor, enc: u8,  const: 0 }
+  - { name: versionMinor, enc: u8,  const: 1 }
   - { name: natives,      enc: "list<u16, NativeRef>",       desc: "native pool: every host entry point the code references" }
   - { name: dataClasses,  enc: "list<u16, DataClassInfo>",   desc: "marshalling metadata for value types" }
   - { name: classMethods, enc: "list<u16, ClassMethodsInfo>", desc: "per-class method tables for interface dispatch" }
@@ -229,6 +231,9 @@ opcodes:
   - { name: ScopeLeave,code: 0x23, category: control, stack: "[] -> []", doc: "Leave the innermost ScopeEnter scope." }
   - { name: Halt,      code: 0x11, category: control, stack: "[] -> []", doc: "Stop the whole program." }
   - { name: Ret,       code: 0x2b, category: control, stack: "[.. value?] -> []", doc: "Return; if the frame's stack is non-empty, its top is pushed to the caller." }
+  - { name: TryEnter,  code: 0x24, category: control, operands: [ { name: catchOffset, enc: i32 } ], stack: "[] -> []", doc: "Install a try handler; on a catchable error, unwind to this frame and jump `catchOffset` ops ahead (the catch block) with the Error value pushed." }
+  - { name: TryLeave,  code: 0x25, category: control, stack: "[] -> []", doc: "Remove the innermost TryEnter handler (the normal try exit)." }
+  - { name: Throw,     code: 0x27, category: control, stack: "[error] -> []", doc: "Raise the Error on top of the stack to the nearest try handler, or stop the program if none." }
   - { name: Frame,     code: 0x18, category: control, operands: [ { name: num, enc: u16 } ], stack: "[] -> [func]", doc: "Push a function value for frame [num], capturing the current variable chain (lexical scoping)." }
   - { name: Instance,  code: 0x42, category: control, stack: "[] -> [instance]", doc: "Materialise the executing class frame as an instance (what `new X(...)` leaves behind)." }
   - { name: MethodLoad,code: 0x19, category: control, operands: [ { name: name, enc: utf } ], stack: "[] -> [func]", doc: "Resolve method [name] on the receiver (this frame's lexical parent); dynamic half of interface dispatch." }

@@ -29,6 +29,9 @@ object BreakNode : Node() {
         if (!ctx.isInLoop()) {
             throw IllegalStateException("'break' is only allowed inside a loop")
         }
+        // Pop the handler of every `try` body this jump escapes (VEL-9); it flies
+        // over their normal-exit TryLeave, so leave them here or they go stale.
+        repeat(ctx.enclosingTryDepthInLoop()) { ctx.add(Op.TryLeave) }
         ctx.add(Op.Move(count = LOOP_SCOPE_LEAVE))
         ctx.add(Op.Move(count = LOOP_BREAK_MARKER))
         return VoidType
@@ -40,6 +43,9 @@ object ContinueNode : Node() {
         if (!ctx.isInLoop()) {
             throw IllegalStateException("'continue' is only allowed inside a loop")
         }
+        // Pop the handler of every `try` body this jump escapes (VEL-9) — same as
+        // break; the next iteration re-enters the try and re-installs it.
+        repeat(ctx.enclosingTryDepthInLoop()) { ctx.add(Op.TryLeave) }
         ctx.add(Op.Move(count = LOOP_SCOPE_LEAVE))
         ctx.add(Op.Move(count = LOOP_CONTINUE_MARKER))
         return VoidType

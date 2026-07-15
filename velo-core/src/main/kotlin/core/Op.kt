@@ -279,6 +279,34 @@ sealed interface Op {
         override val opcode get() = 0x23
     }
 
+    /**
+     * Install an error handler for the enclosing `try` block. While it is active,
+     * any catchable runtime error (a thrown `Error`, a failed native call, or an
+     * awaited actor failure) unwinds the call stack back to the frame that owns
+     * this handler and jumps [catchOffset] ops ahead — the start of the `catch`
+     * block — with the `Error` value left on the operand stack. Paired with
+     * [TryLeave], which removes it on normal completion: the same enter/leave
+     * shape as [ScopeEnter]/[ScopeLeave]. A user `halt` is never catchable.
+     * Stack: `[] -> []`
+     */
+    data class TryEnter(val catchOffset: Int) : Op {
+        override val opcode get() = 0x24
+    }
+
+    /** Remove the innermost handler installed by [TryEnter] — the normal `try` exit. Stack: `[] -> []` */
+    object TryLeave : Op {
+        override val opcode get() = 0x25
+    }
+
+    /**
+     * Raise the `Error` value on top of the stack: unwind to the nearest active
+     * [TryEnter] handler, or stop the program loudly if there is none. The
+     * `throw` statement compiles to this. Stack: `[error] -> []`
+     */
+    object Throw : Op {
+        override val opcode get() = 0x27
+    }
+
     /** Stop the whole program. */
     object Halt : Op {
         override val opcode get() = 0x11

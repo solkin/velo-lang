@@ -97,6 +97,7 @@ internal class FrameSpec(frame: SerializedFrame) {
             is Op.Move -> opA[i] = op.count
             is Op.Frame -> opA[i] = op.num
             is Op.PtrRef -> opA[i] = op.varIndex
+            is Op.TryEnter -> opA[i] = op.catchOffset
             is Op.Push -> consts[i] = if (op.value === NullPtr) NullPointerValue else op.value
             else -> Unit
         }

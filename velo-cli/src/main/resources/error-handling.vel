@@ -1,0 +1,79 @@
+# Error handling — try / catch / throw.
+#
+# A runtime failure is an `Error` with a machine-readable `kind` and a human
+# `message`. `try`/`catch` recovers from one; `throw` raises your own. The
+# `Error` type and the ERR_* kind constants are auto-imported the moment a
+# program uses try/throw — no explicit import needed.
+
+Terminal term = new Terminal()
+
+# --- Catching a runtime failure --------------------------------------------
+# Division by zero fails at runtime; a try around it turns the crash into a
+# value we choose.
+func safeDiv(int a, int b) int {
+    int result = 0
+    try {
+        result = a / b
+    } catch (Error e) {
+        term.println("  recovered from a ${e.kind} error")
+    }
+    return result
+}
+term.println("10 / 2 = ${safeDiv(10, 2).str()}")
+term.println("10 / 0 = ${safeDiv(10, 0).str()}")
+
+# --- Throwing your own, and discriminating by kind -------------------------
+# Name error kinds as ERR_* constants, exactly like any set of constants, so a
+# throw and its matching catch can never drift apart.
+let ERR_EMPTY = "empty"
+
+func firstOr(str s, str fallback) str {
+    str picked = fallback
+    try {
+        if (s.len() == 0) {
+            throw new Error(ERR_EMPTY, "no input given")
+        }
+        picked = s
+    } catch (Error e) {
+        if (e.kind == ERR_EMPTY) {
+            term.println("  (empty — using fallback)")
+        } else {
+            throw e                 # not ours: let an outer handler deal with it
+        }
+    }
+    return picked
+}
+term.println("name: ${firstOr("velo", "anon")}")
+term.println("name: ${firstOr("", "anon")}")
+
+# --- The string shorthand ---------------------------------------------------
+# `throw "text"` is `throw new Error(ERR_GENERIC, "text")`.
+try {
+    throw "something slipped"
+} catch (Error e) {
+    term.println("shorthand: kind=${e.kind} msg=${e.message}")
+}
+
+# --- Catching an actor failure through await -------------------------------
+# A failure inside an actor method surfaces where you await it, with kind
+# ERR_ACTOR — so a try around the await recovers, keeping the caller alive.
+actor class Loader() {
+    func load(int id) str {
+        if (id < 0) {
+            throw new Error("bad_id", "id must be >= 0")
+        }
+        return "item-${id.str()}"
+    }
+}
+
+actor[Loader] loader = new Loader()
+func fetch(int id) void {
+    try {
+        str item = await async loader.load(id)
+        term.println("loaded $item")
+    } catch (Error e) {
+        term.println("  load failed — kind is ${e.kind}")
+    }
+}
+fetch(7)
+fetch(-1)

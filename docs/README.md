@@ -33,6 +33,7 @@
 29. [Interfaces](29-interfaces.md)
 30. [LLM Guide (cheat-sheet)](30-llm-guide.md)
 31. [Grammar & Precedence](31-grammar.md)
+32. [Error Handling](32-error-handling.md)
 
 ---
 

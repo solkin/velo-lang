@@ -106,6 +106,28 @@ term.println(pair.1.str())      # 1
 term.println(pair.2)            # "one"
 ```
 
+## Errors: try / catch / throw
+
+```velo
+# Using try/throw auto-imports std/error — no `import` needed.
+try {
+    int x = 1 / 0                        # a runtime failure...
+} catch (Error e) {                      # caught type is always Error
+    term.println("${e.kind}: ${e.message}")   # e.kind, e.message are str
+}
+
+throw new Error("timeout", "too slow")   # raise your own: kind + message
+throw "quick"                            # shorthand → new Error(ERR_GENERIC, "quick")
+```
+
+- `try`/`catch` is a **statement** (no value, unlike `if`); the catch variable is
+  visible only inside its block.
+- `e.kind` is a machine-readable category — compare to an `ERR_*` constant, don't
+  hard-code the literal. Built-ins: `ERR_ARITHMETIC`, `ERR_BOUNDS`, `ERR_NULL`,
+  `ERR_NATIVE`, `ERR_ACTOR`, `ERR_GENERIC`. Name your own the same way (`let ERR_X = "x"`).
+- A `try` around an `await` catches an actor failure (`e.kind == ERR_ACTOR`).
+- An uncaught error is fatal; `throw e` inside a `catch` re-raises. `halt` is never catchable.
+
 ## Classes, data classes, interfaces
 
 ```velo

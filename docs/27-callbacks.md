@@ -97,7 +97,7 @@ A live `VeloFunction` **pins** its owner: the program (or actor) stays serviceab
 
 ## Errors
 
-Velo has no exception handling: every unhandled runtime error stops the program loudly. Callbacks follow the same rule. A failure inside a `post`-mode callback (no observer) is **program-fatal**; a failure inside `call` completes the returned future exceptionally and the program lives on — someone observed it.
+An unhandled runtime error stops the program loudly; a `try`/`catch` around it recovers (see [Error Handling](32-error-handling.md)). Callbacks follow the same rule. A failure inside a `post`-mode callback (no observer) is **program-fatal** — unless the callback body catches it with its own `try`; a failure inside `call` completes the returned future exceptionally and the program lives on — someone observed it.
 
 ## Embedding: callbacks on the host's main thread
 

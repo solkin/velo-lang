@@ -1,0 +1,95 @@
+# try/catch/throw: thrown and runtime errors, kind/message, nesting, loops (VEL-9).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+# a thrown Error carries kind and message
+str k = ""
+str m = ""
+try {
+    throw new Error("io", "disk gone")
+} catch (Error e) {
+    k = e.kind
+    m = e.message
+}
+ck("throw kind", k == "io")
+ck("throw message", m == "disk gone")
+
+# the string-literal shorthand uses ERR_GENERIC
+try {
+    throw "boom"
+} catch (Error e) {
+    k = e.kind
+}
+ck("string throw kind", k == ERR_GENERIC)
+
+# a runtime failure — division by zero — is catchable
+str rk = ""
+try {
+    int bad = 1 / 0
+} catch (Error e) {
+    rk = e.kind
+}
+ck("arithmetic kind", rk == ERR_ARITHMETIC)
+
+# an out-of-bounds index is catchable
+str bk = ""
+try {
+    array[int] a = new array[int](2)
+    int y = a[9]
+} catch (Error e) {
+    bk = e.kind
+}
+ck("bounds kind", bk == ERR_BOUNDS)
+
+# a try with no error does not run its catch
+bool ran = false
+try {
+    ran = true
+} catch (Error e) {
+    ran = false
+}
+ck("no error skips catch", ran)
+
+# nested try: the inner catch runs, and its own throw reaches the outer catch
+str outer = ""
+try {
+    try {
+        throw new Error("a", "1")
+    } catch (Error e) {
+        throw new Error("b", "2")
+    }
+} catch (Error e) {
+    outer = e.kind
+}
+ck("nested rethrow", outer == "b")
+
+# `throw e` re-raises the caught error
+str rt = ""
+try {
+    try {
+        throw "orig"
+    } catch (Error e) {
+        throw e
+    }
+} catch (Error e) {
+    rt = e.message
+}
+ck("re-throw message", rt == "orig")
+
+# a try inside a loop recovers on every iteration
+int caught = 0
+int done = 0
+int i = 0
+while (i < 3) {
+    try {
+        if (i == 1) { throw "x" }
+        done = done + 1
+    } catch (Error e) {
+        caught = caught + 1
+    }
+    i = i + 1
+}
+ck("loop caught once", caught == 1)
+ck("loop done twice", done == 2)

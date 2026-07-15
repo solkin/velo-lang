@@ -65,6 +65,9 @@ private const val OP_PTRREFINDEX = 0x54
 private const val OP_ACTORSPAWN = 0x60
 private const val OP_ACTORCALL = 0x61
 private const val OP_FUTUREAWAIT = 0x62
+private const val OP_TRY_ENTER = 0x24
+private const val OP_TRY_LEAVE = 0x25
+private const val OP_THROW = 0x27
 
 /**
  * The execution engine: a stack machine over the 53-op instruction set, driven
@@ -112,6 +115,13 @@ class Interpreter(
 
     /** Velo `data class` metadata keyed by name, for host → Velo re-materialisation. */
     private val dataByName: Map<String, DataClassInfo> = dataClasses.values.associateBy { it.name }
+
+    /**
+     * Frame of the stdlib `Error` data class (VEL-9), resolved by its unique name.
+     * A runtime failure is rebuilt into an `Error(kind, message)` from this frame;
+     * null when the program never imported `std/error` (so nothing can be caught).
+     */
+    private val errorClassFrameNum: Int? = dataByName["Error"]?.frameNum
 
     /** A neutral owner for data instances materialised from host values (data is immutable). */
     private val systemActor by lazy { ActorRef(Instance(Frame(FrameSpec.EMPTY, null), -1), LoopDispatcher(loop), "system") }
@@ -244,6 +254,7 @@ class Interpreter(
                 // frame (locals + lexical scope). Operands go through `s`, locals
                 // through `act`.
                 val s = fiber.vs
+                try {
                 when (spec.tags[i]) {
                     // ---- hottest: locals, arithmetic, branches ----
                     OP_LOAD -> s.push(act.scope.load((ops[i] as Op.Load).index))
@@ -353,7 +364,24 @@ class Interpreter(
                     OP_ACTORSPAWN -> actorSpawn(fiber, act, ops[i] as Op.ActorSpawn)
                     OP_ACTORCALL -> actorCall(fiber, act, ops[i] as Op.ActorCall)
 
+                    // VEL-9. TryEnter records a handler on the current frame;
+                    // TryLeave drops it on the normal path; Throw raises the Error
+                    // on the stack. The unwind itself is in the per-op catch below.
+                    OP_TRY_ENTER -> {
+                        val h = act.handlers ?: ArrayDeque<Handler>().also { act.handlers = it }
+                        h.addLast(Handler(i + 1 + (ops[i] as Op.TryEnter).catchOffset, act.scope, s.top))
+                    }
+                    OP_TRY_LEAVE -> act.handlers?.removeLast()
+                    OP_THROW -> { val e = s.pop(); throw VeloThrow(e, errorText(e)) }
+
                     else -> error("unhandled op tag 0x${spec.tags[i].toString(16)}")
+                }
+                } catch (ex: Throwable) {
+                    // VEL-9: route a catchable failure to the nearest `try` handler,
+                    // else rethrow to the fiber-level handler in drive's outer catch.
+                    // (A user `halt` is OP_HALT — inline, never thrown — so it is
+                    // never seen here.)
+                    if (!unwindToHandler(fiber, ex)) throw ex
                 }
             }
         } catch (t: Throwable) {
@@ -427,7 +455,13 @@ class Interpreter(
                 awaiting.decrementAndGet() // resuming — no longer parked
                 fiber.suspended = false
                 if (err != null) {
-                    fiber.onSettled(null, tag(fiber.actor, err))
+                    // VEL-9: a failed await must reach a `try` around it, exactly
+                    // like the synchronous already-done path (which throws into the
+                    // drive loop). Route through a handler; only settle as a failure
+                    // when nothing catches it.
+                    val tagged = tag(fiber.actor, err)
+                    if (unwindToHandler(fiber, tagged)) drive(fiber)
+                    else fiber.onSettled(null, tagged)
                 } else {
                     fiber.vs.push(value)
                     drive(fiber)
@@ -565,7 +599,15 @@ class Interpreter(
         val args = ArrayList<Any?>(op.args.size)
         repeat(op.args.size) { args.add(s.pop()) }
         val receiver = if (entry.isConstructor) null else s.pop()
-        val result = bridge.call(entry, receiver, args, fiber.actor, this)
+        // Tag a host-call failure so it surfaces as an Error with kind "native"
+        // (VEL-9), matching velo-vm. A plain RuntimeException (not VeloError) so an
+        // actor still re-tags it with its own context on the way out — `tag()`
+        // leaves an existing VeloError untouched.
+        val result = try {
+            bridge.call(entry, receiver, args, fiber.actor, this)
+        } catch (t: Throwable) {
+            throw RuntimeException("Native call ${entry.ref} failed: ${t.message ?: t}", t)
+        }
         if (result !== NO_VALUE) s.push(result)
     }
 
@@ -626,6 +668,70 @@ class Interpreter(
         failure?.let { throw it }
         check(!fiber.suspended) { "this context cannot suspend (await is not allowed here)" }
         return result
+    }
+
+    // ---- VEL-9: try/catch/throw ----
+
+    /**
+     * Route a raised failure to the nearest active `try` handler, or report none
+     * (call stack untouched, so drive's outer catch reports it). On a hit: drop
+     * the frames above the handler's, restore that frame's scope and operand-stack
+     * depth, push the Error value and jump to the catch block. Handlers live on
+     * frames, so a fiber parked on an `await` inside a `try` keeps them for free.
+     */
+    private fun unwindToHandler(fiber: Fiber, ex: Throwable): Boolean {
+        val cs = fiber.callStack
+        if (cs.none { it.handlers?.isNotEmpty() == true }) return false
+        val error = errorValue(ex)
+        val s = fiber.vs
+        while (cs.isNotEmpty()) {
+            val act = cs.last()
+            val handler = act.handlers?.takeIf { it.isNotEmpty() }?.removeLast()
+            if (handler != null) {
+                act.scope = handler.savedScope
+                s.top = handler.savedTop
+                s.push(error)
+                act.ip = handler.catchIp
+                return true
+            }
+            cs.removeLast()
+        }
+        return false // unreachable: the pre-scan found a handler
+    }
+
+    /**
+     * The Velo `Error` value for a raised failure. A user `throw` already carries
+     * one ([VeloThrow]); a runtime/actor failure is rebuilt into an
+     * `Error(kind, message)` by re-running the stdlib constructor — the same path
+     * actor/native marshalling uses.
+     */
+    private fun errorValue(ex: Throwable): Any? {
+        if (ex is VeloThrow) return ex.error
+        val frameNum = errorClassFrameNum
+            ?: throw IllegalStateException("cannot build an Error: std/error is not in the program", ex)
+        val fields = listOf<Any?>(errorKind(ex), ex.message ?: ex.toString())
+        return runSync(FuncValue(frames[frameNum]!!, systemActor.instance.scope), fields, systemActor)
+    }
+
+    /** Classify a failure into an `ERR_*` kind (see std/error.vel). */
+    private fun errorKind(ex: Throwable): String = when {
+        ex is ArithmeticException -> "arithmetic"
+        ex is IndexOutOfBoundsException -> "bounds"
+        ex is NullPointerException -> "null"
+        ex.message?.startsWith("Native call ") == true -> "native"
+        ex is VeloError && ex.message?.startsWith("actor '") == true -> "actor"
+        else -> "generic"
+    }
+
+    /** Best-effort "kind: message" from an Error instance — readable diagnostics. */
+    private fun errorText(err: Any?): String? {
+        if (err !is Instance) return null
+        val info = dataClasses[err.frameNum] ?: return null
+        return try {
+            "${err.scope.load(info.fields[0].index)}: ${err.scope.load(info.fields[1].index)}"
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     private fun transfer(v: Any?, owner: ActorRef): Any? = when (v) {

@@ -23,6 +23,10 @@ class LifoStack<T> : Stack<T> {
         return deque.isEmpty()
     }
 
+    override fun size(): Int {
+        return deque.size
+    }
+
     override fun forEach(action: (T) -> Unit) {
         deque.forEach(action)
     }

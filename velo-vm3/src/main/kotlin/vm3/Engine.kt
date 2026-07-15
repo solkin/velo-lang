@@ -36,6 +36,8 @@ internal class Engine(
     private val natives: Array<BoundNative>
     private val dataClasses: Map<Int, DataClassInfo>
     private val dataClassesByName: Map<String, DataClassInfo>
+    /** Frame of the stdlib `Error` data class (VEL-9), resolved by its unique name. */
+    val errorClassFrameNum: Int?
     private val methods: Map<Int, Map<String, Int>>
     private val pins = AtomicInteger()
     private val instructions = AtomicLong()
@@ -79,6 +81,7 @@ internal class Engine(
         natives = NativeLinker.link(program.natives, registry)
         dataClasses = program.dataClasses.associateBy { it.frameNum }
         dataClassesByName = program.dataClasses.associateBy { it.name }
+        errorClassFrameNum = dataClassesByName["Error"]?.frameNum
         methods = program.classMethods.associate { info ->
             info.frameNum to info.methods.associate { it.name to it.index }
         }
@@ -197,6 +200,7 @@ internal class Engine(
                 }
                 is Op.If -> requireJump(frame, index, op.elseSkip)
                 is Op.Move -> requireJump(frame, index, op.count)
+                is Op.TryEnter -> requireJump(frame, index, op.catchOffset)
                 is Op.Call -> require(op.args >= 0) { "Frame ${frame.num} has negative call arity" }
                 is Op.InterfaceCall -> require(op.args >= 0) { "Frame ${frame.num} has negative interface arity" }
                 is Op.ActorCall -> require(op.args >= 0) { "Frame ${frame.num} has negative actor arity" }
@@ -218,7 +222,10 @@ internal class Engine(
         var env: Env,
         val base: Int,
         var pc: Int = 0,
-    )
+    ) {
+        /** Active `try` handlers (VEL-9), innermost last; null until the first TryEnter. */
+        @JvmField var handlers: ArrayDeque<Handler>? = null
+    }
 
     private class Owner(
         private val engine: Engine,
@@ -274,7 +281,15 @@ internal class Engine(
                     if ((ins and CHECK_MASK) == 0L && engine.stopped.get()) break
                     val pc = frame.pc++
                     ins++
-                    execute(pc, frame)
+                    try {
+                        execute(pc, frame)
+                    } catch (s: FiberSuspend) {
+                        throw s // suspension rides its own exception — never a catchable error
+                    } catch (t: Throwable) {
+                        // VEL-9: route a catchable failure to the nearest `try`
+                        // handler; otherwise rethrow (drive/run report it as before).
+                        if (!unwindToHandler(t)) throw t
+                    }
                 }
                 engine.failure?.let { throw it }
                 return if (sp == 0) null else popAny()
@@ -374,6 +389,15 @@ internal class Engine(
                 }
                 0x11 -> engine.stop()
                 0x2b -> finishFrame(frame)
+                // VEL-9. TryEnter records a handler on the current activation;
+                // TryLeave drops it on the normal path; Throw raises the Error on
+                // the stack. The unwind is in run()'s per-op catch below.
+                0x24 -> {
+                    val h = frame.handlers ?: ArrayDeque<Handler>().also { frame.handlers = it }
+                    h.addLast(Handler(pc + 1 + spec.opA[pc], frame.env, sp))
+                }
+                0x25 -> frame.handlers?.removeLast()
+                0x27 -> { val e = popAny(); throw VeloThrow(e, errorText(e)) }
                 0x18 -> pushRef(FuncValue(engine.frames.getValue(spec.opA[pc]), frame.env, owner))
                 0x42 -> {
                     frame.env.classFrame = spec.num
@@ -637,6 +661,69 @@ internal class Engine(
             val nested = Fiber(engine, spec, parent, owner)
             args.forEach { nested.push(it) }
             return nested.run()
+        }
+
+        // ---- VEL-9: try/catch/throw ----
+
+        /**
+         * Route a raised failure to the nearest active `try` handler, or report
+         * none (call stack untouched, so run/drive report it as before). On a hit:
+         * drop the activations above the handler's, restore that frame's env and
+         * operand-stack depth (nulling freed refs), push the Error and jump to the
+         * catch block. Handlers live on activations, so a fiber parked on an
+         * `await` inside a `try` keeps them across the suspension for free.
+         */
+        fun unwindToHandler(ex: Throwable): Boolean {
+            if (calls.none { it.handlers?.isNotEmpty() == true }) return false
+            val error = errorValue(ex)
+            while (calls.isNotEmpty()) {
+                val frame = calls[calls.size - 1]
+                val handler = frame.handlers?.takeIf { it.isNotEmpty() }?.removeLast()
+                if (handler != null) {
+                    frame.env = handler.savedEnv
+                    while (sp > handler.savedSp) { sp--; sRef[sp] = null }
+                    pushRef(error)
+                    frame.pc = handler.catchPc
+                    return true
+                }
+                if (!frame.spec.escapes) recycle(frame.env)
+                calls.removeAt(calls.lastIndex)
+            }
+            return false // unreachable: the pre-scan found a handler
+        }
+
+        /**
+         * The Velo `Error` value for a raised failure. A user `throw` already
+         * carries one ([VeloThrow]); a runtime/actor failure is rebuilt into an
+         * `Error(kind, message)` by re-running the stdlib constructor.
+         */
+        private fun errorValue(ex: Throwable): Any? {
+            if (ex is VeloThrow) return ex.error
+            val frameNum = engine.errorClassFrameNum
+                ?: throw IllegalStateException("cannot build an Error: std/error is not in the program", ex)
+            val fields = listOf<Any?>(errorKind(ex), ex.message ?: ex.toString())
+            return invokeFrame(engine.frames.getValue(frameNum), fields, null)
+        }
+
+        /** Classify a failure into an `ERR_*` kind (see std/error.vel). */
+        private fun errorKind(ex: Throwable): String = when {
+            ex is ArithmeticException -> "arithmetic"
+            ex is IndexOutOfBoundsException -> "bounds"
+            ex is NullPointerException -> "null"
+            ex.message?.startsWith("Native call ") == true -> "native"
+            ex is VeloError && ex.message?.startsWith("actor '") == true -> "actor"
+            else -> "generic"
+        }
+
+        /** Best-effort "kind: message" from an Error instance — readable diagnostics. */
+        private fun errorText(err: Any?): String? {
+            if (err !is InstanceValue) return null
+            val info = engine.dataClasses[err.classFrame] ?: return null
+            return try {
+                "${err.env.get(info.fields[0].index)}: ${err.env.get(info.fields[1].index)}"
+            } catch (_: Throwable) {
+                null
+            }
         }
 
         private fun actorSpawn(op: Op.ActorSpawn) {
@@ -1217,11 +1304,19 @@ internal class Engine(
         } catch (suspend: FiberSuspend) {
             suspend.future.onComplete {
                 owner.submit(Runnable {
-                    try {
-                        fiber.push(suspend.future.result())
-                        drive(fiber, owner, complete)
-                    } catch (t: Throwable) {
-                        complete(null, t)
+                    val settled = runCatching { suspend.future.result() }
+                    val err = settled.exceptionOrNull()
+                    when {
+                        err == null -> {
+                            fiber.push(settled.getOrNull())
+                            drive(fiber, owner, complete)
+                        }
+                        // VEL-9: a failed await must reach a `try` that wraps it,
+                        // exactly as the non-suspending path does via run()'s per-op
+                        // catch (and as vm2 does on its resume). Only settle as a
+                        // failure when nothing catches it.
+                        fiber.unwindToHandler(err) -> drive(fiber, owner, complete)
+                        else -> complete(null, err)
                     }
                 })
             }

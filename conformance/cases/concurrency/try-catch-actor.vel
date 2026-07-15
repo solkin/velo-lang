@@ -1,0 +1,21 @@
+# A failure inside an actor method surfaces through `await` and is catchable (VEL-9).
+Terminal term = new Terminal()
+func ck(str name, bool cond) void {
+    if (cond) { term.println("ok " + name) } else { term.println("FAIL " + name) }
+}
+
+actor class Worker() {
+    func boom() int {
+        throw new Error("w", "kaboom")
+        return 0
+    }
+}
+
+actor[Worker] w = new Worker()
+str k = ""
+try {
+    int r = await async w.boom()
+} catch (Error e) {
+    k = e.kind
+}
+ck("actor failure kind", k == ERR_ACTOR)

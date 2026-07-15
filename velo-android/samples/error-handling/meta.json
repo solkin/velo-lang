@@ -1,0 +1,6 @@
+{
+  "id": "error-handling",
+  "name": "Error Handling",
+  "description": "try / catch / throw — recover from thrown and runtime errors, discriminating by kind.",
+  "interactive": false
+}

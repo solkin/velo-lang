@@ -20,4 +20,25 @@ data class Frame(
     var vars: Vars,
     val ops: List<Op>,
     val num: Int = -1,
+) {
+    /**
+     * Active `try` error handlers, innermost last (VEL-9). Null until the first
+     * [Op.TryEnter] in this frame, so frames without a `try` pay nothing. Kept on
+     * the frame — not in a context-wide stack — so it rides along for free when a
+     * fiber's stack is detached/restored across an `await`. Declared outside the
+     * constructor so it stays out of the data-class `equals`/`copy`/identity.
+     */
+    var handlers: ArrayDeque<Handler>? = null
+}
+
+/**
+ * One active `try`: where to resume on a caught error ([catchPc]), plus the
+ * marks needed to restore this frame to its pre-`try` shape while unwinding —
+ * the variable scope ([savedVars], undoing any open [Op.ScopeEnter]) and the
+ * operand-stack depth ([subsDepth], dropping half-evaluated operands).
+ */
+class Handler(
+    val catchPc: Int,
+    val savedVars: Vars,
+    val subsDepth: Int,
 )

@@ -84,6 +84,33 @@ object Interpreter {
             pc + 1
         }
 
+        // VEL-9. TryEnter records a handler on the current frame; the actual
+        // unwind-to-handler happens in [VMExecutor] when an op raises. TryLeave
+        // pops it on the normal path. Throw raises the Error on the stack, which
+        // the same unwind machinery routes to the nearest handler.
+        is Op.TryEnter -> {
+            val frame = ctx.currentFrame()
+            val handlers = frame.handlers ?: ArrayDeque<Handler>().also { frame.handlers = it }
+            handlers.addLast(
+                Handler(
+                    catchPc = pc + 1 + op.catchOffset,
+                    savedVars = frame.vars,
+                    subsDepth = frame.subs.size(),
+                )
+            )
+            pc + 1
+        }
+
+        is Op.TryLeave -> {
+            ctx.currentFrame().handlers?.removeLast()
+            pc + 1
+        }
+
+        is Op.Throw -> {
+            val err = ctx.currentFrame().subs.pop()
+            throw VeloThrow(err, errorText(err, ctx))
+        }
+
         /*
          * The callable on top of the stack is a FuncRecord (plain function),
          * a CallbackRecord (function owned by another actor), or — legacy
@@ -648,6 +675,25 @@ object Interpreter {
                 frame.subs.push(StructuredClone.decode(response, ctx))
                 pc + 1
             }
+        }
+    }
+
+    /**
+     * Best-effort "kind: message" rendered from an `Error` record, so an uncaught
+     * `throw` (and an actor failure crossing `await`) carries a readable message
+     * instead of the carrier's class name. Null if the value is not a recognisable
+     * Error — diagnostics must never fail.
+     */
+    private fun errorText(err: Record, ctx: VMContext): String? {
+        val info = ctx.errorClassFrameNum?.let { ctx.dataClasses[it] } ?: return null
+        if (err !is RefRecord || err.kind != RefKind.CLASS) return null
+        return try {
+            val frame = err.get<Frame>(ctx)
+            val kind = frame.vars.get(info.fields[0].index).getString()
+            val message = frame.vars.get(info.fields[1].index).getString()
+            "$kind: $message"
+        } catch (_: Throwable) {
+            null
         }
     }
 

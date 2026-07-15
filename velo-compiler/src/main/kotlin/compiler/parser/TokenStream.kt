@@ -26,6 +26,9 @@ class TokenStream(private val input: Input) {
         "continue",
         "for",
         "in",
+        "try",
+        "catch",
+        "throw",
     ).plus(stdTypesSet)
 
     private fun isKeyword(str: String): Boolean {
@@ -375,7 +378,9 @@ class TokenStream(private val input: Input) {
     private var sawNewline = false
 
     private val enderKeywords = setOf("true", "false", "null", "return", "break", "continue")
-    private val continuerKeywords = setOf("else", "then")
+    // `catch` continues a `try` statement across a newline after the `}` (like
+    // `else` after an `if` block), so ASI must not split them.
+    private val continuerKeywords = setOf("else", "then", "catch")
 
     private fun isEnder(t: Token): Boolean = when (t.type) {
         TokenType.NUMBER, TokenType.STRING, TokenType.VARIABLE -> true

@@ -1,0 +1,42 @@
+# Error handling — try / catch / throw.
+#
+# A runtime failure is an `Error` with a machine-readable `kind` and a
+# `message`. `try`/`catch` recovers; `throw` raises your own. `Error` and the
+# ERR_* kind constants are auto-imported the moment you use try/throw.
+Terminal term = new Terminal()
+
+let ERR_RANGE = "range"
+
+# Validate input by throwing; the caller recovers and keeps going.
+func percent(int v) int {
+    if (v < 0) { throw new Error(ERR_RANGE, "${v.str()} is below 0") }
+    if (v > 100) { throw new Error(ERR_RANGE, "${v.str()} is above 100") }
+    return v
+}
+
+func show(int v) void {
+    try {
+        term.println("${v.str()}% -> ok (${percent(v).str()})")
+    } catch (Error e) {
+        term.println("${v.str()}% -> rejected [${e.kind}] ${e.message}")
+    }
+}
+
+show(50)
+show(150)
+show(-10)
+
+# Runtime failures are catchable too — no special syntax.
+try {
+    array[int] a = new array[int](3)
+    term.println("a[9] = ${a[9].str()}")
+} catch (Error e) {
+    term.println("array read failed [${e.kind}]")
+}
+
+# `throw "text"` is the shorthand for new Error(ERR_GENERIC, "text").
+try {
+    throw "unexpected"
+} catch (Error e) {
+    term.println("shorthand [${e.kind}] ${e.message}")
+}

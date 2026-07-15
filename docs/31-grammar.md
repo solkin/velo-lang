@@ -44,6 +44,7 @@ statement      = import
                | funcDecl  | extDecl  | operatorDecl
                | classDecl | dataDecl | actorDecl | interfaceDecl
                | if | while | for | return | "break" | "continue"
+               | try | throw
                | expression ;
 
 import         = "import" STRING [ "as" IDENT ] ;
@@ -70,6 +71,8 @@ while          = "while" [ "(" ] expression [ ")" ] block ;
 for            = "for" IDENT "in" ( expression ".." expression   (* range, end exclusive *)
                                   | expression ) block ;         (* array iteration       *)
 return         = "return" [ expression ] ;
+try            = "try" block "catch" "(" "Error" IDENT ")" block ;  (* the caught type is always Error *)
+throw          = "throw" expression ;                (* an Error value, or a string literal shorthand *)
 
 block          = "{" { statement [ terminator ] } "}" ;
 
@@ -173,4 +176,4 @@ Notes:
 
 ---
 
-[Previous: LLM Guide ←](30-llm-guide.md) | [Back to README →](README.md)
+[Previous: LLM Guide ←](30-llm-guide.md) | [Next: Error Handling →](32-error-handling.md)

@@ -35,6 +35,8 @@ object VeloGrammar {
         parser.registerKeyword("return", ReturnParselet())
         parser.registerKeyword("break", BreakParselet())
         parser.registerKeyword("continue", ContinueParselet())
+        parser.registerKeyword("try", TryParselet())
+        parser.registerKeyword("throw", ThrowParselet())
         
         // Type keywords (will be handled by DefParselet)
         parser.registerKeyword(BYTE, DefParselet())

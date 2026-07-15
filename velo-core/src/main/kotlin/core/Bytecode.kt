@@ -19,8 +19,9 @@ object Bytecode {
     const val MAGIC = 0x5e10
     // v13: frame/slot references narrowed to u16 to match their u16 containers
     // (frame count, per-frame var count). Jump offsets and arities stay i32.
+    // v13.1: added the try/catch/throw opcodes (TryEnter/TryLeave/Throw).
     const val VERSION_MAJOR = 0x0d
-    const val VERSION_MINOR = 0x00
+    const val VERSION_MINOR = 0x01
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -120,6 +121,7 @@ object Bytecode {
             is Op.Store -> out.writeShort(op.index)
             is Op.If -> out.writeInt(op.elseSkip)
             is Op.Move -> out.writeInt(op.count)
+            is Op.TryEnter -> out.writeInt(op.catchOffset)
             is Op.ScopeEnter -> { out.writeShort(op.base); out.writeShort(op.count) }
             is Op.Frame -> out.writeShort(op.num)
             is Op.MethodLoad -> out.writeUTF(op.name)
@@ -336,6 +338,9 @@ object Bytecode {
             0x1d -> Op.Move(count = inp.readInt())
             0x22 -> Op.ScopeEnter(base = inp.readUnsignedShort(), count = inp.readUnsignedShort())
             0x23 -> Op.ScopeLeave
+            0x24 -> Op.TryEnter(catchOffset = inp.readInt())
+            0x25 -> Op.TryLeave
+            0x27 -> Op.Throw
             0x1e -> Op.Mul
             0x21 -> Op.Or
             0x26 -> Op.Add

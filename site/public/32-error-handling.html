@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="index.html">Velo Lang</a>
+            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+        </div>
+    </header>
+    <main class="content">
+<h1 id="error-handling">Error Handling</h1>
+<p>A runtime failure in Velo is an <strong><code>Error</code></strong> — a small value with a machine-readable <code>kind</code> and a human-readable <code>message</code>. <code>try</code>/<code>catch</code> recovers from one; <code>throw</code> raises your own. An error that is never caught stops the program loudly, exactly as before this feature existed — catching is purely additive.</p>
+<pre class="code"><code>try {
+    <span class="ty">int</span> n <span class="op">=</span> risky()
+    term.println(<span class="st">"got $n"</span>)
+} catch (<span class="ty">Error</span> e) {
+    term.println(<span class="st">"failed (${e.kind}): ${e.message}"</span>)
+}</code></pre>
+<p>The <code>Error</code> type and the <code>ERR_*</code> constants come from <code>std/error</code>, which is <strong>imported automatically</strong> wherever a program uses <code>try</code> or <code>throw</code> — no explicit <code>import</code> is needed.</p>
+<h2 id="the-error-value">The <code>Error</code> value</h2>
+<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Error</span>(<span class="ty">str</span> kind, <span class="ty">str</span> message) {}</code></pre>
+<p>An <code>Error</code> is an immutable <a href="28-data-classes.html">data class</a>: <code>kind</code> categorises the failure, <code>message</code> describes it. Because it is a data class it compares by value and crosses actor and native boundaries like any other.</p>
+<p>Branch on <code>kind</code> — it is the portable, machine-readable discriminator and is identical on every backend. <code>message</code> is a human-readable diagnostic; for a built-in runtime failure its exact wording is host-dependent (a division by zero may read differently from one VM to the next), so log it rather than parse it.</p>
+<p><code>kind</code> is a plain string, compared against the <code>ERR_*</code> constants rather than hard-coded literals (the same way you would name any set of constants with a top-level <code>let</code>). The runtime uses these kinds:</p>
+<div class="table-wrap"><table><thead><tr><th>Constant</th><th><code>kind</code></th><th>Raised by</th></tr></thead><tbody><tr><td><code>ERR_ARITHMETIC</code></td><td><code>"arithmetic"</code></td><td>division or remainder by zero</td></tr><tr><td><code>ERR_BOUNDS</code></td><td><code>"bounds"</code></td><td>array / string index out of range</td></tr><tr><td><code>ERR_NULL</code></td><td><code>"null"</code></td><td>null pointer dereference</td></tr><tr><td><code>ERR_NATIVE</code></td><td><code>"native"</code></td><td>a native (host) call threw</td></tr><tr><td><code>ERR_ACTOR</code></td><td><code>"actor"</code></td><td>an actor failed, surfaced through <code>await</code></td></tr><tr><td><code>ERR_GENERIC</code></td><td><code>"generic"</code></td><td><code>throw "text"</code> with no explicit kind</td></tr></tbody></table></div>
+<p>By convention every error-kind constant is named <code>ERR_*</code>. Define your own the same way, and use it for both <code>throw</code> and the matching <code>catch</code> check so the two can never drift:</p>
+<pre class="code"><code><span class="kw">let</span> <span class="ty">ERR_NOT_FOUND</span> <span class="op">=</span> <span class="st">"not_found"</span>
+
+try {
+    fetch(id)
+} catch (<span class="ty">Error</span> e) {
+    <span class="kw">if</span> (e.kind <span class="op">==</span> <span class="ty">ERR_NOT_FOUND</span>) {
+        showPlaceholder()
+    } <span class="kw">else</span> {
+        throw e                 <span class="cm"># not ours — re-raise for an outer handler</span>
+    }
+}</code></pre>
+<h2 id="catching-try-catch">Catching: <code>try</code> / <code>catch</code></h2>
+<p><code>try</code> runs a block; if any catchable error occurs — anywhere in the block or in a function it calls — control jumps to the <code>catch</code> block with the <code>Error</code> bound to the named variable. That variable is visible only inside the <code>catch</code>.</p>
+<pre class="code"><code>try {
+    <span class="ty">array</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">2</span>)
+    <span class="ty">int</span> x <span class="op">=</span> a[<span class="nu">9</span>]                <span class="cm"># ERR_BOUNDS</span>
+} catch (<span class="ty">Error</span> e) {
+    term.println(e.kind)        <span class="cm"># bounds</span>
+}</code></pre>
+<p>The caught type is always <code>Error</code>. <code>try</code>/<code>catch</code> is a statement — it produces no value (unlike <code>if</code>, which can be an expression). A <code>try</code> with no error simply skips its <code>catch</code>.</p>
+<h2 id="throwing-throw">Throwing: <code>throw</code></h2>
+<p><code>throw</code> raises an <code>Error</code>:</p>
+<pre class="code"><code>throw <span class="kw">new</span> <span class="ty">Error</span>(<span class="ty">ERR_NOT_FOUND</span>, <span class="st">"item $id is missing"</span>)</code></pre>
+<p>As a shorthand, <code>throw "text"</code> on a bare string literal is <code>throw new Error(ERR_GENERIC, "text")</code>:</p>
+<pre class="code"><code>throw <span class="st">"something went wrong"</span>    <span class="cm"># kind is "generic"</span></code></pre>
+<p>Inside a <code>catch</code>, <code>throw e</code> re-raises the caught error for an outer <code>try</code> to handle.</p>
+<h2 id="what-is-and-isnt-catchable">What is and isn't catchable</h2>
+<p><strong>Catchable</strong> — routed to the nearest <code>try</code>:</p>
+<ul><li>a <code>throw</code>;</li><li>a runtime failure (arithmetic, bounds, null dereference);</li><li>a failing <strong>native</strong> call;</li><li>an <strong>actor</strong> failure observed at an <code>await</code> — <code>try</code> around the <code>await</code> catches it, with <code>kind == ERR_ACTOR</code>:</li></ul>
+<pre class="code"><code>try {
+    <span class="ty">Data</span> d <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> worker.load(id)
+    render(d)
+} catch (<span class="ty">Error</span> e) {
+    render(fallback())          <span class="cm"># the actor threw; recover here</span>
+}</code></pre>
+<p><strong>Not catchable</strong> — a user <code>halt</code> stops the program unconditionally and no <code>try</code> intercepts it (a future execution-budget limit will behave the same way).</p>
+<h2 id="uncaught-errors-are-fatal">Uncaught errors are fatal</h2>
+<p>An error with no enclosing <code>try</code> terminates the program and prints a diagnostic — the pre-existing "every runtime error is fatal" behaviour. This is why a fire-and-forget callback whose body throws (with no observer) is program-fatal: there is nothing to catch it. Wrap the body in a <code>try</code> to recover.</p>
+<hr>
+<p><a href="31-grammar.html">Previous: Grammar ←</a> | <a href="index.html">Back to README →</a></p>
+    </main>
+    <footer class="site-footer">
+        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
+        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
+        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+    </footer>
+</body>
+</html>
