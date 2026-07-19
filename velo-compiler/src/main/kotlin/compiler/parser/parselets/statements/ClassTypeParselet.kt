@@ -16,6 +16,9 @@ class ClassTypeParselet : PrefixParselet {
         parser.context.getNativeType(className)?.let { nativeType ->
             return TypeParser.parseDefBody(parser, nativeType)
         }
+        parser.context.getEnumType(className)?.let { enumType ->
+            return TypeParser.parseDefBody(parser, enumType)
+        }
         val classType = parser.context.getClassType(className)
             ?: throw IllegalArgumentException("Unknown class type: $className")
         val resolvedType = if (classType.typeParams.isNotEmpty()

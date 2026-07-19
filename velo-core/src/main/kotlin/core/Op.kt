@@ -339,6 +339,18 @@ sealed interface Op {
     }
 
     /**
+     * Push the class discriminant (the class frame number) of the instance on
+     * top — the runtime identity the VM already stamps on every instance and
+     * uses to tell data-class values apart in `Op.Equals`/`Op.Hash`. The
+     * single primitive `when` needs to dispatch on an enum variant: the
+     * compiler knows each variant's frame number statically, so a match lowers
+     * to `ClassId` + integer compares. Stack: `[instance] -> [int]`
+     */
+    object ClassId : Op {
+        override val opcode get() = 0x67
+    }
+
+    /**
      * Resolve the method [name] on the receiver instance whose scope is this
      * frame's lexical parent, and push its function value — the dynamic half of
      * **interface dispatch**. A concrete `instance.method(...)` knows the

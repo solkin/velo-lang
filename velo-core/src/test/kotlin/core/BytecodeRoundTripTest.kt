@@ -78,6 +78,7 @@ class BytecodeRoundTripTest {
         Op.MethodLoad(name = "padding"),
         Op.InterfaceCall(method = "padding", args = 1),
         Op.Instance,
+        Op.ClassId,
         Op.Call(args = 2, classParent = true),
         Op.Call(args = 1, classParent = false, reverseArgs = true),
         Op.Call(args = 1, classParent = false, callbackResult = true),

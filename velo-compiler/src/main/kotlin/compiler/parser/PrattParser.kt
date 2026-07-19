@@ -64,6 +64,11 @@ class PrattParser(
                     // `InterfaceName varname ...` — a definition typed by a
                     // structural interface.
                     keywordParselets["__class_type__"]
+                } else if (varName != null && context.isEnumType(varName) &&
+                    nextToken?.type == TokenType.VARIABLE
+                ) {
+                    // `EnumName varname ...` — a definition typed by an enum.
+                    keywordParselets["__class_type__"]
                 } else if (varName != null && context.isNativeType(varName) &&
                     nextToken?.type == TokenType.VARIABLE
                 ) {

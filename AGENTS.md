@@ -35,7 +35,7 @@ Minimal external dependencies: Kotlin stdlib and JUnit only.
 ## Modules
 
 ```
-velo-core      Shared contracts: Op (53 opcodes), VmType, Bytecode (.vbc read/write),
+velo-core      Shared contracts: Op (57 opcodes), VmType, Bytecode (.vbc read/write),
                SerializedProgram/SerializedFrame, NativeRegistry/NativeDescriptor/NativeLinker
 velo-compiler  Front-end (depends on core): lexer, Pratt parser, AST nodes, type system,
                codegen; stdlib sources in src/main/resources/std/

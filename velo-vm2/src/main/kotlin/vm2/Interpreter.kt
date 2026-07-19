@@ -57,6 +57,7 @@ private const val OP_SHL = 0x46
 private const val OP_SHR = 0x47
 private const val OP_USHR = 0x66
 private const val OP_HASH = 0x48
+private const val OP_CLASSID = 0x67
 private const val OP_PTRNEW = 0x50
 private const val OP_PTRLOAD = 0x51
 private const val OP_PTRSTORE = 0x52
@@ -295,6 +296,7 @@ class Interpreter(
                     OP_NUMSTR -> s.push(Numbers.numStr(s.pop()))
                     OP_STRNUM -> s.push(Numbers.strNum(s.pop() as String, (ops[i] as Op.StrNum).to))
                     OP_HASH -> s.push(Numbers.hash(s.pop(), dataClasses))
+                    OP_CLASSID -> s.push((s.pop() as Instance).frameNum)
 
                     // ---- strings ----
                     OP_STRCON -> binary(s) { a, b -> (a as String) + (b as String) }

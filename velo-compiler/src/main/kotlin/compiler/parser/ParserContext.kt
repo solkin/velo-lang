@@ -1,6 +1,7 @@
 package compiler.parser
 
 import compiler.nodes.ClassType
+import compiler.nodes.EnumType
 import compiler.nodes.GenericType
 import compiler.nodes.InterfaceType
 import compiler.nodes.NativeClassType
@@ -20,6 +21,7 @@ class ParserContext(
 ) {
     val classTypes = mutableMapOf<String, ClassType>()
     private val interfaceTypes = mutableMapOf<String, InterfaceType>()
+    private val enumTypes = mutableMapOf<String, EnumType>()
     private val genericTypes = mutableMapOf<String, GenericType>()
 
     /**
@@ -87,6 +89,17 @@ class ParserContext(
     fun getClassType(name: String): ClassType? {
         return classTypes[name]
     }
+
+    fun registerEnum(name: String, type: EnumType) {
+        if (classTypes.containsKey(name) || interfaceTypes.containsKey(name) || enumTypes.containsKey(name)) {
+            throw IllegalStateException("Type '$name' is already defined; an enum cannot reuse an existing type name.")
+        }
+        enumTypes[name] = type
+    }
+
+    fun isEnumType(name: String): Boolean = enumTypes.containsKey(name)
+
+    fun getEnumType(name: String): EnumType? = enumTypes[name]
 
     fun registerInterface(name: String, type: InterfaceType) {
         interfaceTypes[name] = type

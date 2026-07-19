@@ -7,6 +7,8 @@ class TokenStream(private val input: Input) {
         "if",
         "then",
         "else",
+        "when",
+        "enum",
         "while",
         "new",
         "actor",

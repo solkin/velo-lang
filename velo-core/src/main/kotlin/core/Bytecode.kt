@@ -20,8 +20,9 @@ object Bytecode {
     // v13: frame/slot references narrowed to u16 to match their u16 containers
     // (frame count, per-frame var count). Jump offsets and arities stay i32.
     // v13.1: added the try/catch/throw opcodes (TryEnter/TryLeave/Throw).
+    // v13.2: added the ClassId opcode (enum variant discriminant, backs `when`).
     const val VERSION_MAJOR = 0x0d
-    const val VERSION_MINOR = 0x01
+    const val VERSION_MINOR = 0x02
 
     // Tags for inline values and serialized VmTypes.
     // 0x09 was TYPE_DICT — retired in v10 along with the dict opcodes.
@@ -364,6 +365,7 @@ object Bytecode {
             0x47 -> Op.Shr
             0x66 -> Op.Ushr
             0x48 -> Op.Hash
+            0x67 -> Op.ClassId
             0x50 -> Op.PtrNew
             0x51 -> Op.PtrLoad
             0x52 -> Op.PtrStore

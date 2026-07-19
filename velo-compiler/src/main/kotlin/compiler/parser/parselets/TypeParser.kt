@@ -19,6 +19,7 @@ object TypeParser {
                 val value = parser.context.localRef(raw)
                 parser.context.isClassType(value) ||
                     parser.context.isInterfaceType(value) ||
+                    parser.context.isEnumType(value) ||
                     parser.context.isGenericType(value) ||
                     parser.context.isNativeType(value)
             }
@@ -98,6 +99,7 @@ object TypeParser {
                 }
                 parser.context.getGenericType(className)?.let { return it }
                 parser.context.getInterfaceType(className)?.let { return it }
+                parser.context.getEnumType(className)?.let { return it }
                 parser.context.getNativeType(className)?.let { return it }
                 val classType = parser.context.getClassType(className)
                     ?: throw IllegalArgumentException("Unknown type: $className")

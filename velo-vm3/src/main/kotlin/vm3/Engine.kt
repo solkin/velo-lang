@@ -350,6 +350,8 @@ internal class Engine(
                     else -> throw VeloError("Op.StrNum: not a numeric target")
                 }
                 0x48 -> pushInt(hashValue(popAny()))
+                0x67 -> pushInt((popAny() as? InstanceValue)?.classFrame
+                    ?: throw VeloError("Op.ClassId on a non-instance value"))
                 0x2e -> { val b = popString(); val a = popString(); pushRef(a + b) }
                 0x30 -> { val s = popString(); pushInt(s.codePointCount(0, s.length)) }
                 0x2f -> {

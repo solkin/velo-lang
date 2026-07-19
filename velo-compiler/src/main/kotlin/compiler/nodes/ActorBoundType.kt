@@ -117,6 +117,9 @@ fun Type.isTransferable(): Boolean = when (this) {
     // Its fields are checked transferable at its own declaration, so the
     // type itself is always transferable.
     is ClassType -> isData
+    // An enum value is always one of its data-class variants, each transferable
+    // by the rule above — so the enum type is transferable as well.
+    is EnumType -> true
     else -> false
 }
 

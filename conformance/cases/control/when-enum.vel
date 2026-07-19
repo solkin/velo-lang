@@ -1,0 +1,65 @@
+# `when` / `enum`: pattern matching over a closed sum type, plus an int switch.
+Terminal term = new Terminal()
+
+# A recursive sum type; each variant is a value-type record.
+enum Expr {
+    Lit(int n)
+    Add(Expr l, Expr r)
+    Neg(Expr e)
+}
+
+# Exhaustive match with positional field binding; self-recursive.
+func eval(Expr e) int {
+    return when e {
+        Lit(n)    -> n
+        Add(l, r) -> eval(l) + eval(r)
+        Neg(x)    -> 0 - eval(x)
+    }
+}
+
+Expr program = new Add(new Lit(3), new Neg(new Lit(1)))
+term.println(eval(program).str())
+
+# Nullary variants.
+enum Color { Red, Green, Blue }
+func hex(Color c) str {
+    return when c {
+        Red   -> "#f00"
+        Green -> "#0f0"
+        Blue  -> "#00f"
+    }
+}
+term.println(hex(new Green()))
+
+# Int switch: literal patterns, `else` catch-all, used as an expression.
+int day = 6
+str label = when day {
+    0 -> "Sun"
+    6 -> "Sat"
+    else -> "other"
+}
+term.println(label)
+
+# `when` as a statement.
+Expr node = new Neg(new Lit(7))
+when node {
+    Lit(n)    -> term.println("lit")
+    Add(l, r) -> term.println("add")
+    Neg(x)    -> term.println("neg")
+}
+
+# bool has a closed domain: true + false is exhaustive, no `else` needed.
+bool on = true
+term.println(when on {
+    true  -> "yes"
+    false -> "no"
+})
+
+# single-variant enum reused across two `when`s: bindings must not leak.
+enum One { Only(int x) }
+func sumFirst(One a, One b) int {
+    int p = when a { Only(x) -> x }
+    int q = when b { Only(x) -> x }
+    return p + q
+}
+term.println(sumFirst(new Only(3), new Only(4)).str())

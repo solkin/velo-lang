@@ -96,7 +96,8 @@ fun assignableArg(param: Type, arg: Type): Boolean =
     param is AnyType ||
         numWidens(param, arg) ||
         arg.sameAs(param) ||
-        (param is InterfaceType && param.sameAs(arg))
+        (param is InterfaceType && param.sameAs(arg)) ||
+        (param is EnumType && param.accepts(arg))
 
 /** Widening order of the primitive numeric types; `null` for anything else. */
 fun numericRank(t: Type): Int? = when (t) {

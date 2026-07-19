@@ -314,6 +314,12 @@ object Interpreter {
             pc + 1
         }
 
+        is Op.ClassId -> {
+            val frame = ctx.currentFrame()
+            frame.subs.push(ValueRecord(frame.subs.pop().getFrame().num))
+            pc + 1
+        }
+
         // Dynamic interface dispatch: this op runs inside the one-op wrapper an
         // interface call builds, entered with the receiver instance's scope as its
         // parent (classParent dispatch). That parent scope carries the receiver's

@@ -95,6 +95,7 @@ Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads
 | You want… | Use |
 |---|---|
 | An immutable bundle of data to move between actors / native | `data class` |
+| A value that is **one of several shapes** (a closed set) | [`enum`](06-conditionals.md#sum-types--enum) (its variants are data classes) |
 | A mutable object with shared identity within one thread | `class` |
 | A live service with private state on its own thread | `actor class` |
 | An opaque host object you only call methods on | a registered native class |

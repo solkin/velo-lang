@@ -18,6 +18,8 @@ object VeloGrammar {
         parser.registerKeyword("null", NullParselet())
         parser.registerKeyword("void", VoidParselet())
         parser.registerKeyword("if", IfParselet())
+        parser.registerKeyword("when", WhenParselet())
+        parser.registerKeyword("enum", EnumParselet())
         parser.registerKeyword("while", WhileParselet())
         parser.registerKeyword("for", ForParselet())
         parser.registerKeyword("func", FuncParselet())

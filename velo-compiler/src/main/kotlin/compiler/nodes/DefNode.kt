@@ -21,7 +21,8 @@ data class DefNode(
         val staticType = if (coerced != null) {
             coerced
         } else {
-            if (!type.sameAs(defType) && !type.sameAs(AnyType)) {
+            val enumAccepts = type is EnumType && type.accepts(defType)
+            if (!type.sameAs(defType) && !type.sameAs(AnyType) && !enumAccepts) {
                 if (type is StringType && defType !is StringType) {
                     throw IllegalArgumentException(
                         "Cannot assign ${defType.log()} to '$name' of type str. Convert it with .str() " +
@@ -30,10 +31,10 @@ data class DefNode(
                 }
                 throw IllegalArgumentException("Cannot assign ${defType.log()} to '$name' of type ${type.log()}")
             }
-            // An interface-typed declaration keeps the interface as the variable's
-            // static type (dispatch stays dynamic, only interface methods callable);
-            // other declarations keep the more precise initializer type.
-            if (type is InterfaceType) type else defType
+            // An interface- or enum-typed declaration keeps the declared type as the
+            // variable's static type (a variant widens to its enum; dispatch on it
+            // stays through `when`), so a later `when` sees the closed variant set.
+            if (type is InterfaceType || type is EnumType) type else defType
         }
         val v = ctx.def(name, staticType)
         ctx.add(Op.Store(v.index))

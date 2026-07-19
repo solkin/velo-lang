@@ -67,6 +67,28 @@ func sign(int n) int {           # every path returns
 # `if` is also an expression with then/else (parens around the condition optional):
 let label = if x > 0 then "positive" else "non-positive"
 
+# `when` is the switch / pattern match — an expression, arms are `pattern -> body`
+# (one per line, no commas), `else ->` is the catch-all. Over a primitive an
+# `else` is required (bool is exhaustive when it covers true and false).
+let day = 6
+let d = when day {
+    0 -> "Sun"
+    6 -> "Sat"
+    else -> "weekday"
+}
+
+# `enum`: a closed sum type; variants are value-type records, may hold fields and
+# recurse. `when` over an enum binds fields and is checked exhaustive (all
+# variants, or an else). Construct a variant with `new`, match it bare.
+enum Expr { Lit(int n), Add(Expr l, Expr r) }
+func eval(Expr e) int {
+    return when e {
+        Lit(n)    -> n
+        Add(l, r) -> eval(l) + eval(r)
+    }
+}
+let two = eval(new Add(new Lit(1), new Lit(1)))
+
 # Loops: while, for-range (end exclusive), for-each. break / continue work anywhere.
 int sum = 0
 for i in 0..5 {                  # 0,1,2,3,4

@@ -42,8 +42,8 @@ A statement is any of these forms or a bare `expression`.
 statement      = import
                | typedDecl | letDecl
                | funcDecl  | extDecl  | operatorDecl
-               | classDecl | dataDecl | actorDecl | interfaceDecl
-               | if | while | for | return | "break" | "continue"
+               | classDecl | dataDecl | actorDecl | interfaceDecl | enumDecl
+               | if | when | while | for | return | "break" | "continue"
                | try | throw
                | expression ;
 
@@ -63,10 +63,17 @@ classDecl      = "class"  IDENT [ typeParams ] "(" params ")" [ ":" typeList ] b
 dataDecl       = "data" classDecl ;                        (* immutable value type *)
 actorDecl      = "actor" classDecl ;                       (* concurrent, message-driven *)
 interfaceDecl  = "interface" IDENT block ;                 (* body holds method signatures *)
+enumDecl       = "enum" IDENT "{" { variant [ terminator ] } "}" ; (* closed sum type *)
+variant        = IDENT [ "(" params ")" ] ;               (* each variant is a value-type record *)
 
 if             = "if" [ "(" ] expression [ ")" ]
                  ( block [ "else" ( block | if ) ]
                  | "then" expression "else" expression ) ; (* the then/else form is an expression *)
+when           = "when" expression "{"                    (* pattern match / switch, an expression *)
+                 { pattern "->" expression [ terminator ] }
+                 [ "else" "->" expression [ terminator ] ] "}" ;
+pattern        = IDENT [ "(" [ IDENT { "," IDENT } ] ")" ] (* enum variant, optional field bindings *)
+               | expression ;                             (* literal value (primitive switch)      *)
 while          = "while" [ "(" ] expression [ ")" ] block ;
 for            = "for" IDENT "in" ( expression ".." expression   (* range, end exclusive *)
                                   | expression ) block ;         (* array iteration       *)
