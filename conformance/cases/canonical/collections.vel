@@ -1,0 +1,24 @@
+# Canonical arrays, dictionaries and tuples.
+Terminal term = new Terminal()
+
+func check(str name, bool condition) void {
+    if (condition) {
+        term.println("ok " + name)
+    } else {
+        term.println("FAIL " + name)
+    }
+}
+
+array[int] numbers = new array[int]{2, 4, 6}
+array[int] doubled = numbers.map(func(int value) int {
+    return value * 2
+})
+
+dict[str:int] scores = new dict[str:int]{"ada": 10}
+scores["lin"] = 12
+
+tuple[int, str] entry = new tuple(scores["lin"], "lin")
+
+check("array method", numbers.len() == 3 && doubled[2] == 12)
+check("dict field and index", scores.len == 2 && scores["ada"] == 10)
+check("tuple fields", entry.1 == 12 && entry.2 == "lin")

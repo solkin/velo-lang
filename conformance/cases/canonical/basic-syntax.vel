@@ -1,0 +1,44 @@
+# Canonical primitives, bindings, operators, control flow, functions and closures.
+Terminal term = new Terminal()
+
+func check(str name, bool condition) void {
+    if (condition) {
+        term.println("ok " + name)
+    } else {
+        term.println("FAIL " + name)
+    }
+}
+
+func makeAdder(int amount) func[(int) int] {
+    return func(int value) int {
+        return value + amount
+    }
+}
+
+byte small = 7
+int mutable = small
+mutable += 3
+long wide = mutable
+float ratio = wide
+str language = "Velo"
+bool logical = ((6 & 3) == 2) && !false
+let inferred = language + "!"
+
+int sum = 0
+for i in 0..4 {
+    sum += i
+}
+
+int steps = 0
+while (steps < 2) {
+    steps += 1
+}
+
+let label = if sum == 6 then "sum" else "bad"
+func[(int) int] addFour = makeAdder(4)
+
+check("bindings", mutable == 10 && inferred == "Velo!")
+check("numeric widening", (ratio / 4) == 2.5)
+check("operators", logical)
+check("control flow", label == "sum" && steps == 2)
+check("closure", addFour(8) == 12)

@@ -1,0 +1,41 @@
+# Canonical classes, data classes, structural interfaces and generics.
+Terminal term = new Terminal()
+
+func check(str name, bool condition) void {
+    if (condition) {
+        term.println("ok " + name)
+    } else {
+        term.println("FAIL " + name)
+    }
+}
+
+interface Named {
+    func label() str
+}
+
+data class Point(int x, int y) {
+    func sum() int {
+        return x + y
+    }
+}
+
+class NamedPoint(Point point) : Named {
+    func label() str {
+        return "${point.x},${point.y}"
+    }
+}
+
+class Box[T](T value) {
+    func get() T {
+        return value
+    }
+}
+
+Point p = new Point(2, 3)
+Point same = new Point(2, 3)
+Named named = new NamedPoint(p)
+Box[Point] boxed = new Box[Point](p)
+
+check("data value", p == same && p.x == 2)
+check("class method", named.label() == "2,3")
+check("generic", boxed.get().sum() == 5)

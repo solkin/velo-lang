@@ -1,0 +1,37 @@
+# Canonical try/catch/throw and Error field access.
+Terminal term = new Terminal()
+let ERR_INPUT = "input"
+
+func check(str name, bool condition) void {
+    if (condition) {
+        term.println("ok " + name)
+    } else {
+        term.println("FAIL " + name)
+    }
+}
+
+func requirePositive(int value) int {
+    if (value < 1) {
+        throw new Error(ERR_INPUT, "positive value required")
+    }
+    return value
+}
+
+str kind = ""
+str message = ""
+try {
+    int ignored = requirePositive(0)
+} catch (Error e) {
+    kind = e.kind
+    message = e.message
+}
+
+check("custom error", kind == ERR_INPUT && message == "positive value required")
+
+try {
+    int invalid = 1 / 0
+} catch (Error e) {
+    kind = e.kind
+}
+
+check("runtime error", kind == ERR_ARITHMETIC)

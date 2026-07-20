@@ -1,0 +1,30 @@
+# Canonical actor calls, futures, await and a cross-actor callback.
+Terminal term = new Terminal()
+
+func check(str name, bool condition) void {
+    if (condition) {
+        term.println("ok " + name)
+    } else {
+        term.println("FAIL " + name)
+    }
+}
+
+actor class Worker() {
+    func double(int value) int {
+        return value * 2
+    }
+
+    func notify(int value, func[(int) void] done) void {
+        done(value + 1)
+        return
+    }
+}
+
+actor[Worker] worker = new Worker()
+future[int] pending = async worker.double(21)
+check("future await", (await pending) == 42)
+
+await async worker.notify(9, func(int value) void {
+    check("callback", value == 10)
+})
+check("async completed", true)
