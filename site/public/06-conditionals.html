@@ -5,28 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conditional Statements — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html" class="active">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Control flow</p>
 <h1 id="conditional-statements">Conditional Statements</h1>
+<h2 id="if-statement">If (Statement)</h2>
+<p>The everyday form: a condition and a block body, run for its side effects. There is no <code>then</code>, and the <code>else</code> branch is optional. Parentheses around the condition are optional:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">60</span> {
+    term.println(<span class="st">"pass"</span>)
+} <span class="kw">else</span> {
+    term.println(<span class="st">"fail"</span>)
+}
+
+<span class="kw">if</span> (ready) {
+    start()          <span class="cm"># no else needed</span>
+}</code></pre></div>
 <h2 id="if-then-else-expression">If-then-else (Expression)</h2>
-<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
-<span class="ty">str</span> result <span class="op">=</span> <span class="kw">if</span> a <span class="op">==</span> <span class="nu">2</span> <span class="kw">then</span> <span class="st">"two"</span> <span class="kw">else</span> <span class="st">"not two"</span>;</code></pre>
+<p><code>if</code> is also an <strong>expression</strong> that yields a value. In this form the keyword <code>then</code> introduces the value, and <code>else</code> is required (there must be a value on every path):</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>
+<span class="ty">str</span> result <span class="op">=</span> <span class="kw">if</span> a <span class="op">==</span> <span class="nu">2</span> <span class="kw">then</span> <span class="st">"two"</span> <span class="kw">else</span> <span class="st">"not two"</span></code></pre></div>
 <h2 id="if-then-else-block">If-then-else (Block)</h2>
-<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>
 <span class="ty">str</span> result <span class="op">=</span> <span class="kw">if</span> a <span class="op">==</span> <span class="nu">2</span> <span class="kw">then</span> {
     <span class="st">"two"</span>
 } <span class="kw">else</span> {
     <span class="st">"not two"</span>
-};</code></pre>
+}</code></pre></div>
 <h2 id="nested-conditionals">Nested Conditionals</h2>
-<pre class="code"><code><span class="ty">int</span> score <span class="op">=</span> <span class="nu">85</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> score <span class="op">=</span> <span class="nu">85</span>
 <span class="ty">str</span> grade <span class="op">=</span> <span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">90</span> <span class="kw">then</span> {
     <span class="st">"A"</span>
 } <span class="kw">else</span> <span class="kw">if</span> score <span class="op">&gt;=</span> <span class="nu">80</span> <span class="kw">then</span> {
@@ -35,14 +64,80 @@
     <span class="st">"C"</span>
 } <span class="kw">else</span> {
     <span class="st">"F"</span>
-};</code></pre>
-<hr>
-<p><a href="05-operators.html">Previous: Operators ←</a> | <a href="07-loops.html">Next: Loops →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+}</code></pre></div>
+<h2 id="pattern-matching-with-when">Pattern matching with <code>when</code></h2>
+<p><code>when</code> is the multi-way branch — a switch and a pattern match in one form. Like <code>if</code>, it is an <strong>expression</strong>: each arm's body yields a value (a block yields its last expression, no <code>return</code>). Arms are <code>pattern -&gt; body</code>, one per line (a comma between arms is also allowed), and <code>else -&gt;</code> is the catch-all.</p>
+<p>Over a <strong>primitive</strong> (<code>int</code>, <code>byte</code>, <code>long</code>, <code>float</code>, <code>str</code>, <code>bool</code>) the patterns are literals compared with <code>==</code> — the same comparison <code>if</code> uses (matching a <code>float</code> is exact equality, with the usual precision caveat). An <code>else</code> is required, except a <code>bool</code> that covers both <code>true</code> and <code>false</code> (a closed domain):</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> name <span class="op">=</span> <span class="kw">when</span> day {
+    <span class="nu">0</span> <span class="op">-&gt;</span> <span class="st">"Sunday"</span>
+    <span class="nu">6</span> <span class="op">-&gt;</span> <span class="st">"Saturday"</span>
+    <span class="kw">else</span> <span class="op">-&gt;</span> <span class="st">"weekday"</span>
+}
+
+<span class="ty">str</span> answer <span class="op">=</span> <span class="kw">when</span> ok {
+    <span class="kw">true</span>  <span class="op">-&gt;</span> <span class="st">"yes"</span>
+    <span class="kw">false</span> <span class="op">-&gt;</span> <span class="st">"no"</span>
+}</code></pre></div>
+<h3 id="sum-types-enum">Sum types — <code>enum</code></h3>
+<p>An <code>enum</code> is a <strong>closed set of variants</strong>, each a value-type record (immutable, compared by value, transferable across actors — like a <a href="28-data-classes.html"><code>data class</code></a>). A variant may carry fields, and may reference the enum recursively:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">enum</span> <span class="ty">Expr</span> {
+    <span class="ty">Lit</span>(<span class="ty">int</span> n)
+    <span class="ty">Add</span>(<span class="ty">Expr</span> l, <span class="ty">Expr</span> r)
+    <span class="ty">Neg</span>(<span class="ty">Expr</span> e)
+}
+
+<span class="ty">Expr</span> program <span class="op">=</span> <span class="kw">new</span> <span class="ty">Add</span>(<span class="kw">new</span> <span class="ty">Lit</span>(<span class="nu">3</span>), <span class="kw">new</span> <span class="ty">Neg</span>(<span class="kw">new</span> <span class="ty">Lit</span>(<span class="nu">1</span>)))</code></pre></div>
+<p>A <code>when</code> over an enum matches variants and binds their fields positionally. The compiler checks the arms are <strong>exhaustive</strong> — every variant must be covered, or an <code>else</code> provided — so a forgotten case is a compile error, not a runtime bug:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> eval(<span class="ty">Expr</span> e) <span class="ty">int</span> {
+    <span class="kw">return</span> <span class="kw">when</span> e {
+        <span class="ty">Lit</span>(n)    <span class="op">-&gt;</span> n
+        <span class="ty">Add</span>(l, r) <span class="op">-&gt;</span> eval(l) <span class="op">+</span> eval(r)
+        <span class="ty">Neg</span>(x)    <span class="op">-&gt;</span> <span class="nu">0</span> <span class="op">-</span> eval(x)
+    }
+}</code></pre></div>
+<p>A variant with no fields is written bare in a pattern and constructed with <code>new</code>:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">enum</span> <span class="ty">Color</span> { <span class="ty">Red</span>, <span class="ty">Green</span>, <span class="ty">Blue</span> }
+
+<span class="ty">str</span> hex <span class="op">=</span> <span class="kw">when</span> c {
+    <span class="ty">Red</span>   <span class="op">-&gt;</span> <span class="st">"#f00"</span>
+    <span class="ty">Green</span> <span class="op">-&gt;</span> <span class="st">"#0f0"</span>
+    <span class="ty">Blue</span>  <span class="op">-&gt;</span> <span class="st">"#00f"</span>
+}
+<span class="cm"># ... constructed as: Color c = new Green()</span></code></pre></div>
+<h3 id="what-when-matches-and-what-it-doesnt">What <code>when</code> matches — and what it doesn't</h3>
+<p>A pattern goes <strong>one level deep</strong>: a variant name and its immediate field bindings. There is deliberately no nested-pattern matching and no arm guard — both are expressible with what the language already has, at no extra cost:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Nested match: bind one level, then match the field with another `when`.</span>
+<span class="kw">when</span> e {
+    <span class="ty">Add</span>(l, r) <span class="op">-&gt;</span> <span class="kw">when</span> l {
+        <span class="ty">Lit</span>(a) <span class="op">-&gt;</span> a
+        <span class="kw">else</span>   <span class="op">-&gt;</span> <span class="nu">0</span>
+    }
+    <span class="ty">Lit</span>(n) <span class="op">-&gt;</span> n
+    <span class="ty">Neg</span>(x) <span class="op">-&gt;</span> <span class="nu">0</span> <span class="op">-</span> eval(x)
+}
+
+<span class="cm"># A condition on a variant: use `if` inside the arm body.</span>
+<span class="kw">when</span> e {
+    <span class="ty">Lit</span>(n) <span class="op">-&gt;</span> <span class="kw">if</span> n <span class="op">&gt;</span> <span class="nu">0</span> <span class="kw">then</span> <span class="st">"positive"</span> <span class="kw">else</span> <span class="st">"non-positive"</span>
+    <span class="ty">Add</span>(l, r) <span class="op">-&gt;</span> <span class="st">"sum"</span>
+    <span class="ty">Neg</span>(x) <span class="op">-&gt;</span> <span class="st">"negated"</span>
+}</code></pre></div>
+<p>Enums are not generic in this version (<code>enum Option[T] { ... }</code> is not supported) — a variant's fields take concrete types.</p>
+<p>Arms are separated by a newline, or a comma. Prefer commas when a pattern begins with an operator (a negative literal), so it is not read as a continuation of the previous arm:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="kw">when</span> n { <span class="nu">1</span> <span class="op">-&gt;</span> <span class="st">"one"</span>, <span class="nu">-1</span> <span class="op">-&gt;</span> <span class="st">"neg"</span>, <span class="kw">else</span> <span class="op">-&gt;</span> <span class="st">"other"</span> }</code></pre></div>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="05-operators.html"><span class="pager-dir">← Previous</span><span class="pager-title">Operators</span></a>
+                    <a class="pager next" href="07-loops.html"><span class="pager-dir">→ Next</span><span class="pager-title">Loops</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#if-statement">If (Statement)</a></li><li class="lvl2"><a href="#if-then-else-expression">If-then-else (Expression)</a></li><li class="lvl2"><a href="#if-then-else-block">If-then-else (Block)</a></li><li class="lvl2"><a href="#nested-conditionals">Nested Conditionals</a></li><li class="lvl2"><a href="#pattern-matching-with-when">Pattern matching with when</a></li><li class="lvl3"><a href="#sum-types-enum">Sum types — enum</a></li><li class="lvl3"><a href="#what-when-matches-and-what-it-doesnt">What when matches — and what it doesn't</a></li></ul></nav></aside>
+    </div>

@@ -5,58 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Classes — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html" class="active">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Types &amp; objects</p>
 <h1 id="data-classes">Data Classes</h1>
 <p>A <strong>data class</strong> is an immutable <em>value type</em>. Where a plain <a href="13-classes.html"><code>class</code></a> is a mutable object you share by reference, a <code>data class</code> is a small bundle of data that is compared <strong>by value</strong> and <strong>copied</strong> whenever it crosses a thread or native boundary. It is the natural way to move structured data between <a href="26-actors.html">actors</a> and to and from <a href="15-native-classes.html">native code</a>.</p>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
-    <span class="kw">func</span> sum() <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> y; };
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">func</span> sum() <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> y; }
+}
 
-<span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">3</span>, <span class="nu">4</span>);
-term.println(p.x.<span class="ty">str</span>());       <span class="cm"># 3</span>
-term.println(p.sum().<span class="ty">str</span>());   <span class="cm"># 7</span></code></pre>
+<span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">3</span>, <span class="nu">4</span>)
+term.println(p.x.<span class="ty">str</span>())  <span class="cm"># 3</span>
+term.println(p.sum().<span class="ty">str</span>())  <span class="cm"># 7</span></code></pre></div>
 <h2 id="the-value-type-contract">The value-type contract</h2>
 <p>A data class is deliberately rigid — that rigidity is what makes copying and comparing it well-defined:</p>
-<ul><li><strong>State is exactly the constructor parameters.</strong> The body may declare methods, but not extra fields. There are no computed or mutable members.</li><li><strong>Fields are immutable.</strong> They are set once at construction; reassigning one (even inside a method) is a compile-time error.</li><li><strong>Every field must be transferable</strong> — a primitive, an <code>array</code>/<code>tuple</code> of transferable values, another <code>data class</code>, or an <code>actor[T]</code> handle. This guarantees the whole value can always cross a boundary.</li><li><strong>No generics.</strong> A data class is not parameterised.</li></ul>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Bad</span>(<span class="ty">int</span> x) {
-    <span class="ty">int</span> y <span class="op">=</span> <span class="nu">10</span>;        <span class="cm"># error: a data class body may only declare methods</span>
-};</code></pre>
+<ul><li><strong>State is exactly the constructor parameters.</strong> The body may declare methods, but not extra fields. There are no computed or mutable members.</li><li><strong>Fields are immutable.</strong> They are set once at construction; reassigning one (even inside a method) is a compile-time error.</li><li><strong>Every field must be transferable</strong> — a primitive, an <code>array</code>/<code>tuple</code> of transferable values, another <code>data class</code>, an <code>enum</code> value, or an <code>actor[T]</code> handle. This guarantees the whole value can always cross a boundary.</li><li><strong>No generics.</strong> A data class is not parameterised.</li></ul>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Bad</span>(<span class="ty">int</span> x) {
+    <span class="ty">int</span> y <span class="op">=</span> <span class="nu">10</span>  <span class="cm"># error: a data class body may only declare methods</span>
+}</code></pre></div>
 <h2 id="equality-by-value">Equality by value</h2>
 <p>Two data class values are equal when they are the same class and all their fields are equal, recursively (nested data classes and arrays compare deeply). This is built in — no operator overload required:</p>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {}
 
-<span class="ty">Point</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>);
-<span class="ty">Point</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>);
-term.println(<span class="kw">if</span> (a <span class="op">==</span> b) <span class="kw">then</span> <span class="st">"equal"</span> <span class="kw">else</span> <span class="st">"different"</span>);   <span class="cm"># equal</span></code></pre>
+<span class="ty">Point</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>)
+<span class="ty">Point</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>)
+term.println(<span class="kw">if</span> (a <span class="op">==</span> b) <span class="kw">then</span> <span class="st">"equal"</span> <span class="kw">else</span> <span class="st">"different"</span>)  <span class="cm"># equal</span></code></pre></div>
 <p>Plain classes keep identity (reference) equality; only data classes compare structurally.</p>
 <h2 id="across-actors-copied-by-value">Across actors: copied by value</h2>
 <p>A data class is <a href="26-actors.html#what-crosses-the-boundary">transferable</a>: passing one to an actor, or returning one, hands over an independent <strong>copy</strong>. The receiver cannot observe later changes on the sender's side — there are none to observe, because the value is immutable — and no mutable state is ever aliased across threads.</p>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
-    <span class="kw">func</span> sum() <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> y; };
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+    <span class="kw">func</span> sum() <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> y; }
+}
 
 <span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Geometry</span>() {
     <span class="kw">func</span> translate(<span class="ty">Point</span> p, <span class="ty">int</span> dx, <span class="ty">int</span> dy) <span class="ty">Point</span> {
-        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Point</span>(p.x <span class="op">+</span> dx, p.y <span class="op">+</span> dy);
-    };
-};
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Point</span>(p.x <span class="op">+</span> dx, p.y <span class="op">+</span> dy)
+    }
+}
 
-<span class="kw">actor</span>[<span class="ty">Geometry</span>] geo <span class="op">=</span> <span class="kw">new</span> <span class="ty">Geometry</span>();
-<span class="ty">Point</span> moved <span class="op">=</span> <span class="kw">await</span> geo.translate(<span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>), <span class="nu">5</span>, <span class="nu">6</span>);
-term.println(moved.x.<span class="ty">str</span>());      <span class="cm"># 15</span>
-term.println(moved.sum().<span class="ty">str</span>());  <span class="cm"># 41</span></code></pre>
+<span class="kw">actor</span>[<span class="ty">Geometry</span>] geo <span class="op">=</span> <span class="kw">new</span> <span class="ty">Geometry</span>()
+<span class="ty">Point</span> moved <span class="op">=</span> <span class="kw">await</span> geo.translate(<span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>), <span class="nu">5</span>, <span class="nu">6</span>)
+term.println(moved.x.<span class="ty">str</span>())  <span class="cm"># 15</span>
+term.println(moved.sum().<span class="ty">str</span>())  <span class="cm"># 41</span></code></pre></div>
 <p>The copy is a deep one: nested data classes and arrays of data classes travel too.</p>
 <h2 id="across-the-native-boundary-by-value">Across the native boundary: by value</h2>
 <p>A data class can also be passed to and returned from <a href="15-native-classes.html">native methods</a>. The host registers the counterpart JVM type — a Kotlin <code>data class</code> works as-is (one constructor taking the fields in order; <code>getX()</code> accessors):</p>
-<pre class="code"><code>data class NativePoint(val x: Int, val y: Int)
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code>data class NativePoint(val x: Int, val y: Int)
 
 class Geometry {
     fun translate(p: NativePoint, dx: Int, dy: Int) = NativePoint(p.x + dx, p.y + dy)
@@ -64,22 +81,28 @@ class Geometry {
 
 val natives = NativeRegistry()
     .registerData("Point", NativePoint::class)   // Velo `data class Point` &lt;-&gt; NativePoint
-    .register(Geometry::class)</code></pre>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {};
+    .register(Geometry::class)</code></pre></div>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {}
 
-<span class="ty">Geometry</span> g <span class="op">=</span> <span class="kw">new</span> <span class="ty">Geometry</span>();
-<span class="ty">Point</span> moved <span class="op">=</span> g.translate(<span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">3</span>, <span class="nu">4</span>), <span class="nu">10</span>, <span class="nu">20</span>);
-term.println(moved.x.<span class="ty">str</span>());   <span class="cm"># 13</span></code></pre>
+<span class="ty">Geometry</span> g <span class="op">=</span> <span class="kw">new</span> <span class="ty">Geometry</span>()
+<span class="ty">Point</span> moved <span class="op">=</span> g.translate(<span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">3</span>, <span class="nu">4</span>), <span class="nu">10</span>, <span class="nu">20</span>)
+term.println(moved.x.<span class="ty">str</span>())  <span class="cm"># 13</span></code></pre></div>
 <p>Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads the host value's fields (by name) and rebuilds the Velo value. Unlike a <a href="15-native-classes.html">native class</a> — which travels as an opaque handle — a data class is marshalled field by field, so both sides hold plain, independent values.</p>
 <h2 id="when-to-use-which">When to use which</h2>
-<div class="table-wrap"><table><thead><tr><th>You want…</th><th>Use</th></tr></thead><tbody><tr><td>An immutable bundle of data to move between actors / native</td><td><code>data class</code></td></tr><tr><td>A mutable object with shared identity within one thread</td><td><code>class</code></td></tr><tr><td>A live service with private state on its own thread</td><td><code>actor class</code></td></tr><tr><td>An opaque host object you only call methods on</td><td>a registered native class</td></tr></tbody></table></div>
-<hr>
-<p><a href="27-callbacks.html">Previous: Callbacks ←</a> | <a href="29-interfaces.html">Next: Interfaces →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+<div class="table-wrap"><table><thead><tr><th>You want…</th><th>Use</th></tr></thead><tbody><tr><td>An immutable bundle of data to move between actors / native</td><td><code>data class</code></td></tr><tr><td>A value that is <strong>one of several shapes</strong> (a closed set)</td><td><a href="06-conditionals.html#sum-types-enum"><code>enum</code></a> (its variants are data classes)</td></tr><tr><td>A mutable object with shared identity within one thread</td><td><code>class</code></td></tr><tr><td>A live service with private state on its own thread</td><td><code>actor class</code></td></tr><tr><td>An opaque host object you only call methods on</td><td>a registered native class</td></tr></tbody></table></div>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="13-classes.html"><span class="pager-dir">← Previous</span><span class="pager-title">Classes</span></a>
+                    <a class="pager next" href="29-interfaces.html"><span class="pager-dir">→ Next</span><span class="pager-title">Interfaces</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#the-value-type-contract">The value-type contract</a></li><li class="lvl2"><a href="#equality-by-value">Equality by value</a></li><li class="lvl2"><a href="#across-actors-copied-by-value">Across actors: copied by value</a></li><li class="lvl2"><a href="#across-the-native-boundary-by-value">Across the native boundary: by value</a></li><li class="lvl2"><a href="#when-to-use-which">When to use which</a></li></ul></nav></aside>
+    </div>

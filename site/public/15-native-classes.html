@@ -5,20 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Native Classes — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html" class="active">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Systems &amp; interop</p>
 <h1 id="native-classes">Native Classes</h1>
 <p>Native classes are plain JVM (Kotlin/Java) classes exposed to Velo. There is no declaration on the Velo side at all: <strong>registering the class on the runtime is the single source of truth</strong>. The compiler synthesizes the Velo type from the class itself, checks every call against it, and the VM links all native entry points before the first opcode runs.</p>
 <h2 id="binding-a-class">Binding a Class</h2>
 <p>Host side — any plain class, no annotations:</p>
-<pre class="code"><code>class Counter(start: Int) {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code>class Counter(start: Int) {
     private var n = start
     fun bump(): Int = ++n
     fun value(): Int = n
@@ -29,54 +46,63 @@ val natives = NativeRegistry()
     .register("Ticker", Clock::class)      // custom Velo name
 
 val compiler = VeloCompiler(natives)       // compile-time checking
-val runtime = VeloRuntime(natives)         // load-time linking</code></pre>
+val runtime = VeloRuntime(natives)         // load-time linking</code></pre></div>
 <p>The same registry serves both sides; <code>VeloCompiler</code> and <code>VeloRuntime</code> also expose <code>register(...)</code> directly when only one of them is in the process.</p>
 <p>Velo side — just use it:</p>
-<pre class="code"><code><span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">10</span>);
-term.println(c.bump().<span class="ty">str</span>());   <span class="cm"># 11</span>
-term.println(c.value().<span class="ty">str</span>());  <span class="cm"># 11</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">10</span>)
+term.println(c.bump().<span class="ty">str</span>())  <span class="cm"># 11</span>
+term.println(c.value().<span class="ty">str</span>())  <span class="cm"># 11</span></code></pre></div>
 <p>The CLI registers <code>Terminal</code>, <code>Time</code>, <code>FileSystem</code>, <code>Http</code> and <code>Socket</code> for every program it runs; an embedding application picks its own set. A program just constructs what it needs (<code>Terminal term = new Terminal();</code>) — native classes need no <code>import</code>.</p>
 <h2 id="how-it-works">How It Works</h2>
 <ol><li><strong>Registration</strong> stores a Velo-name → JVM-class mapping. On first use the registry introspects the class once: public declared methods, the single public constructor, signatures mapped to Velo types, <code>MethodHandle</code>s resolved. No KSP, no codegen, no per-call reflection.</li><li><strong>Compilation</strong> resolves <code>new Counter(...)</code> and <code>c.bump()</code> against that descriptor — argument counts and types are verified at compile time — and interns each used entry point into the program's <strong>native pool</strong>.</li><li><strong>Loading</strong> links the pool against the host registry (<code>.vbc</code> carries the pool by Velo names, so the same bytecode links against different host implementations). Every missing or mismatched entry is reported in one error, before execution.</li><li><strong>Calling</strong> is a direct <code>MethodHandle</code> invocation through a single <code>NativeCall</code> opcode.</li></ol>
 <h2 id="binding-rules">Binding Rules</h2>
-<ul><li>Exactly <strong>one public constructor</strong>.</li><li>Every <strong>public declared method</strong> is exposed; method names must be unique (Velo has no overloads). Inherited <code>Object</code> methods are not exposed.</li><li>Every signature must be expressible in Velo types (see below). Violations are reported at registration/compile time — all problems at once.</li></ul>
+<ul><li>Exactly <strong>one public constructor</strong>.</li><li>Every <strong>public method</strong> of the class and its user-defined superclasses is exposed; method names must be unique (Velo has no overloads). Methods inherited from framework types (<code>Object</code>, <code>java.*</code>, <code>kotlin.*</code>, <code>android.*</code>) are not exposed.</li><li>Every signature must be expressible in Velo types (see below). Violations are reported at registration/compile time — all problems at once.</li></ul>
 <h2 id="type-mapping-velo-jvm">Type Mapping: Velo ⇄ JVM</h2>
-<div class="table-wrap"><table><thead><tr><th>Velo</th><th>JVM parameter / return</th></tr></thead><tbody><tr><td><code>int</code></td><td><code>Int</code></td></tr><tr><td><code>float</code></td><td><code>Float</code></td></tr><tr><td><code>bool</code></td><td><code>Boolean</code></td></tr><tr><td><code>byte</code></td><td><code>Byte</code></td></tr><tr><td><code>str</code></td><td><code>String</code></td></tr><tr><td><code>array[T]</code></td><td><code>Array&lt;T&gt;</code> (boxed), <code>ByteArray</code>/<code>IntArray</code>/... for returns, <code>List&lt;T&gt;</code></td></tr><tr><td><code>dict[K:V]</code></td><td><code>Map&lt;K, V&gt;</code></td></tr><tr><td>registered native class</td><td>the class itself</td></tr><tr><td><code>func[(args) void]</code></td><td><code>VeloFunction</code> or Kotlin <code>(args) -&gt; Unit</code></td></tr><tr><td><code>void</code></td><td><code>Unit</code> / <code>void</code></td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Velo</th><th>JVM parameter / return</th></tr></thead><tbody><tr><td><code>int</code></td><td><code>Int</code></td></tr><tr><td><code>long</code></td><td><code>Long</code></td></tr><tr><td><code>float</code></td><td><code>Float</code></td></tr><tr><td><code>bool</code></td><td><code>Boolean</code></td></tr><tr><td><code>byte</code></td><td><code>Byte</code></td></tr><tr><td><code>str</code></td><td><code>String</code></td></tr><tr><td><code>any</code></td><td><code>Any</code> / <code>Object</code></td></tr><tr><td><code>array[T]</code></td><td><code>Array&lt;T&gt;</code> (boxed), <code>ByteArray</code>/<code>IntArray</code>/... for returns, <code>List&lt;T&gt;</code></td></tr><tr><td>registered native class</td><td>the class itself</td></tr><tr><td><code>func[(args) void]</code></td><td><code>VeloFunction</code> or Kotlin <code>(args) -&gt; Unit</code></td></tr><tr><td><code>void</code></td><td><code>Unit</code> / <code>void</code></td></tr></tbody></table></div>
+<p><code>dict</code> / <code>Map</code> does <strong>not</strong> cross the native boundary — a native method cannot take or return a <code>Map</code>. Pass collections as <code>array[T]</code> (which maps to <code>List&lt;T&gt;</code>) instead.</p>
 <p>Native instances are opaque handles in Velo — no fields, only method calls. They can be passed to and returned from other native methods freely:</p>
-<pre class="code"><code><span class="ty">Socket</span> client <span class="op">=</span> server.accept();   <span class="cm"># returns a new native instance</span>
-time.print(term);                  <span class="cm"># passes one native to another</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Socket</span> client <span class="op">=</span> server.accept()  <span class="cm"># returns a new native instance</span>
+time.print(term)  <span class="cm"># passes one native to another</span></code></pre></div>
 <p>They cannot cross actor boundaries (an actor must create its own). Extension functions work on native types like on any other:</p>
-<pre class="code"><code><span class="kw">ext</span>(<span class="ty">Terminal</span> t) printInt(<span class="ty">int</span> a) <span class="kw">void</span> {
-    t.println(a.<span class="ty">str</span>());
-};
-term.printInt(<span class="nu">42</span>);</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">ext</span>(<span class="ty">Terminal</span> t) printInt(<span class="ty">int</span> a) <span class="kw">void</span> {
+    t.println(a.<span class="ty">str</span>())
+}
+term.printInt(<span class="nu">42</span>)</code></pre></div>
 <h2 id="callbacks-native-code-calling-velo">Callbacks: native code calling Velo</h2>
 <p>A <code>func[(args) void]</code> argument arrives on the host either as an explicit <code>VeloFunction</code> (<code>post</code>/<code>call</code> from any thread) or as a plain Kotlin function value when the parameter is declared as one:</p>
-<pre class="code"><code>class Notifications {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code>class Notifications {
     fun subscribe(cb: (String) -&gt; Unit) { onMessage = cb }
-}</code></pre>
-<pre class="code"><code><span class="ty">Notifications</span> n <span class="op">=</span> <span class="kw">new</span> <span class="ty">Notifications</span>();
+}</code></pre></div>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Notifications</span> n <span class="op">=</span> <span class="kw">new</span> <span class="ty">Notifications</span>()
 n.subscribe(<span class="kw">func</span>(<span class="ty">str</span> text) <span class="kw">void</span> {
-    term.println(<span class="st">"message: "</span>.con(text));
+    term.println(<span class="st">"message: "</span>.con(text))
     <span class="kw">void</span>
-});</code></pre>
+})</code></pre></div>
 <p>The Kotlin-function form carries the full signature, so the compiler checks the Velo lambda against it. Either way the body always executes on the thread that owns the closure. See <a href="27-callbacks.html">Callbacks</a> for the whole model.</p>
 <h2 id="satisfying-interfaces">Satisfying interfaces</h2>
 <p>Because a native class is bound by <strong>shape</strong>, it can satisfy a Velo <a href="29-interfaces.html">interface</a> with no annotation or wrapper on the host side — exactly like a Velo class. If the registered class has methods whose names and signatures match the interface, a native handle can be assigned to an interface-typed variable, passed to a function expecting the interface, or dropped into an <code>array[Interface]</code> alongside Velo instances. Calls dispatch by name across the native boundary, and a fluent host method that returns itself fulfils a <a href="29-interfaces.html#self-return-type"><code>Self</code></a>-returning requirement.</p>
-<pre class="code"><code><span class="cm"># A registered host class with `area() int` and `kind() str` satisfies this:</span>
-<span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; };
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># A registered host class with `area() int` and `kind() str` satisfies this:</span>
+<span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; <span class="kw">func</span> kind() <span class="ty">str</span>; }
 
-<span class="ty">Widget</span> w <span class="op">=</span> <span class="kw">new</span> <span class="ty">Widget</span>(<span class="st">"hello"</span>);
-<span class="ty">Shape</span> s <span class="op">=</span> w;
-term.println(s.kind());        <span class="cm"># widget:hello</span>
-term.println(s.area().<span class="ty">str</span>());    <span class="cm"># 5</span></code></pre>
+<span class="ty">Widget</span> w <span class="op">=</span> <span class="kw">new</span> <span class="ty">Widget</span>(<span class="st">"hello"</span>)
+<span class="ty">Shape</span> s <span class="op">=</span> w
+term.println(s.kind())  <span class="cm"># widget:hello</span>
+term.println(s.area().<span class="ty">str</span>())  <span class="cm"># 5</span></code></pre></div>
 <h2 id="errors">Errors</h2>
 <ul><li>Unregistered class, missing method, wrong signature → compile-time error.</li><li>Program loaded into a host missing some registrations → one load-time error listing <strong>every</strong> unresolved entry.</li><li>A native method throwing at runtime → Velo runtime error tagged with the native entry (<code>Native call Http.get(Str) failed: ...</code>).</li></ul>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="21-pointers.html"><span class="pager-dir">← Previous</span><span class="pager-title">Pointers</span></a>
+                    <a class="pager next" href="17-standard-library.html"><span class="pager-dir">→ Next</span><span class="pager-title">Standard Library</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#binding-a-class">Binding a Class</a></li><li class="lvl2"><a href="#how-it-works">How It Works</a></li><li class="lvl2"><a href="#binding-rules">Binding Rules</a></li><li class="lvl2"><a href="#type-mapping-velo-jvm">Type Mapping: Velo ⇄ JVM</a></li><li class="lvl2"><a href="#callbacks-native-code-calling-velo">Callbacks: native code calling Velo</a></li><li class="lvl2"><a href="#satisfying-interfaces">Satisfying interfaces</a></li><li class="lvl2"><a href="#errors">Errors</a></li></ul></nav></aside>
+    </div>

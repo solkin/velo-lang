@@ -5,26 +5,28 @@
 Extension functions for boolean type:
 
 ```velo
-import "std/bool";
+import "std/bool"
 
-bool flag = true;
-str s = flag.str();        # "true" or "false" (parentheses optional)
-int i = flag.int();        # 1 or 0
-bool neg = flag.not();   # Logical NOT (or use the built-in !flag)
+bool flag = true
+str s = flag.str()  # "true" or "false"
+int i = flag.int()  # 1 or 0
+bool neg = !flag  # logical NOT — use the ! operator
 ```
+
+`bool.str()` is a compiler built-in, available without any import; `import
+"std/bool"` is what adds `.int()`.
 
 ## Integer Extensions
 
 Extension functions for integer type:
 
 ```velo
-import "std/int";
+import "std/int"
 
-int x = -42;
-int absVal = x.abs();           # 42
-int negVal = x.neg();           # -42 (always negative)
-str hex = (255).format(16);     # "ff"
-str bin = (10).format(2);       # "1010"
+int x = -42
+int absVal = x.abs()  # 42
+str hex = (255).format(16)  # "ff"  — format(radix), radix 2..36
+str bin = (10).format(2)  # "1010"
 ```
 
 ## String Extensions
@@ -32,10 +34,10 @@ str bin = (10).format(2);       # "1010"
 Extension functions for string type:
 
 ```velo
-import "std/str";
+import "std/str"
 
-str text = "Hello";
-array[byte] bytes = text.bytes();    # [72, 101, 108, 108, 111]
+str text = "Hello"
+array[byte] bytes = text.bytes()  # [72, 101, 108, 108, 111]
 ```
 
 ## Array Extensions
@@ -43,10 +45,10 @@ array[byte] bytes = text.bytes();    # [72, 101, 108, 108, 111]
 Extension functions for array type:
 
 ```velo
-import "std/array";
+import "std/array"
 
-array[byte] bytes = new array[byte]{72, 101, 108, 108, 111};
-str text = bytes.str();              # "Hello"
+array[byte] bytes = new array[byte]{72, 101, 108, 108, 111}
+str text = bytes.str()  # "Hello"
 ```
 
 Both extensions enable roundtrip conversion: `text.bytes().str() == text`.
@@ -61,10 +63,10 @@ examples use `term` as the conventional name for a `Terminal` instance.
 Class for terminal operations:
 
 ```velo
-Terminal term = new Terminal();
-term.print("Hello");           # Output without newline
-term.println("World");         # Output with newline
-str input = term.input();      # Read string from console
+Terminal term = new Terminal()
+term.print("Hello")  # Output without newline
+term.println("World")  # Output with newline
+str input = term.input()  # Read string from console
 ```
 
 ## Time
@@ -72,9 +74,10 @@ str input = term.input();      # Read string from console
 Class for time operations:
 
 ```velo
-Time time = new Time();
-time.sleep(1000);              # Sleep for 1000 milliseconds
-int unixTime = time.unix();     # Unix timestamp in seconds
+Time time = new Time()
+time.sleep(1000)  # Sleep for 1000 milliseconds
+int unixTime = time.unix()  # Unix timestamp in seconds
+int t = time.millis()  # monotonic milliseconds (for measuring elapsed time)
 ```
 
 ## Http
@@ -82,13 +85,13 @@ int unixTime = time.unix();     # Unix timestamp in seconds
 Class for making HTTP requests:
 
 ```velo
-Http http = new Http();
-str response = http.get("https://example.com");
-int status = http.statusCode();
+Http http = new Http()
+str response = http.get("https://example.com")
+int status = http.statusCode()
 
 # POST request
-str jsonBody = "{\"key\": \"value\"}";
-str postResponse = http.post("https://api.example.com/data", jsonBody, "");
+str jsonBody = "{\"key\": \"value\"}"
+str postResponse = http.post("https://api.example.com/data", jsonBody, "")
 ```
 
 ## FileSystem
@@ -96,36 +99,36 @@ str postResponse = http.post("https://api.example.com/data", jsonBody, "");
 Class for file system operations:
 
 ```velo
-FileSystem fs = new FileSystem();
+FileSystem fs = new FileSystem()
 
 # Reading and writing strings
-fs.write("file.txt", "Content");
-str content = fs.read("file.txt");
-fs.append("file.txt", "\nMore content");
+fs.write("file.txt", "Content")
+str content = fs.read("file.txt")
+fs.append("file.txt", "\nMore content")
 
 # Reading and writing byte arrays
-import "std/str";
-array[byte] data = "binary data".bytes();
-fs.writeBytes("file.bin", data);
-array[byte] loaded = fs.readBytes("file.bin");
-fs.appendBytes("file.bin", data);
+import "std/str"
+array[byte] data = "binary data".bytes()
+fs.writeBytes("file.bin", data)
+array[byte] loaded = fs.readBytes("file.bin")
+fs.appendBytes("file.bin", data)
 
 # Checks
-bool exists = fs.exists("file.txt");
-bool isFile = fs.isFile("file.txt");
-bool isDir = fs.isDir("directory");
+bool exists = fs.exists("file.txt")
+bool isFile = fs.isFile("file.txt")
+bool isDir = fs.isDir("directory")
 
 # Directory operations
-fs.mkdir("new_dir");
-array[str] files = fs.list(".");
+fs.mkdir("new_dir")
+array[str] files = fs.list(".")
 
 # File operations
-fs.copy("source.txt", "dest.txt");
-fs.move("old.txt", "new.txt");
-fs.delete("file.txt");
+fs.copy("source.txt", "dest.txt")
+fs.move("old.txt", "new.txt")
+fs.delete("file.txt")
 
 # Information
-int fileSize = fs.size("file.txt");
+int fileSize = fs.size("file.txt")
 ```
 
 ## Socket
@@ -135,27 +138,27 @@ Class for TCP socket communication. Supports both client and server modes.
 ### Client
 
 ```velo
-Socket sock = new Socket();
-sock.connect("127.0.0.1", 9876);
+Socket sock = new Socket()
+sock.connect("127.0.0.1", 9876)
 
-sock.writeLine("Hello!");
-str reply = sock.readLine();
+sock.writeLine("Hello!")
+str reply = sock.readLine()
 
-sock.close();
+sock.close()
 ```
 
 ### Server
 
 ```velo
-Socket srv = new Socket();
-srv.bind(9876);
+Socket srv = new Socket()
+srv.bind(9876)
 
-Socket client = srv.accept();         # blocks until a client connects
-str msg = client.readLine();
-client.writeLine("Echo: " + msg);
+Socket client = srv.accept()  # blocks until a client connects
+str msg = client.readLine()
+client.writeLine("Echo: " + msg)
 
-client.close();
-srv.close();
+client.close()
+srv.close()
 ```
 
 ### Full API Reference
@@ -185,70 +188,70 @@ A generic hash map (`Map[K, V]`) with separate chaining and automatic resizing. 
 ### Creating and Populating
 
 ```velo
-import "std/map";
+import "std/map"
 
-Map[str, int] ages = new Map[str, int]();
+Map[str, int] ages = new Map[str, int]()
 
 # Operator syntax
-ages["Alice"] = 30;
-ages["Bob"] = 25;
+ages["Alice"] = 30
+ages["Bob"] = 25
 
 # Method syntax
-ages.put("Charlie", 35);
+ages.put("Charlie", 35)
 ```
 
 ### Lookup
 
 ```velo
 # operator [] returns V directly
-int age = ages["Alice"];               # 30
+int age = ages["Alice"]  # 30
 
 # get() returns ptr[V] — null if key is not found
-ptr[int] val = ages.get("Alice");
+ptr[int] val = ages.get("Alice")
 if (val != null) {
-    int a = val.val();
-};
+    int a = val.val()
+}
 
 # getOrDefault() returns V directly, with a fallback
-int eveAge = ages.getOrDefault("Eve", 0);  # 0
+int eveAge = ages.getOrDefault("Eve", 0)  # 0
 ```
 
 ### Checking and Conditional Insert
 
 ```velo
-bool has = ages.key("Bob");            # true
-bool empty = ages.empty();             # false
-int count = ages.len();                  # number of entries
+bool has = ages.key("Bob")  # true
+bool empty = ages.empty()  # false
+int count = ages.len  # number of entries (a field — no parentheses)
 
 # putIfAbsent — inserts only if key is missing, returns true if inserted
-bool added = ages.putIfAbsent("Diana", 28);     # true
-bool again = ages.putIfAbsent("Diana", 99);     # false, value stays 28
+bool added = ages.putIfAbsent("Diana", 28)  # true
+bool again = ages.putIfAbsent("Diana", 99)  # false, value stays 28
 ```
 
 ### Removing Entries
 
 ```velo
-bool removed = ages.del("Charlie");    # true
-bool noop = ages.del("Charlie");       # false (already gone)
+bool removed = ages.del("Charlie")  # true
+bool noop = ages.del("Charlie")  # false (already gone)
 ```
 
 ### Iterating
 
 ```velo
-array[str] k = ages.keys();     # array of all keys
-array[int] v = ages.vals();     # array of all values
+array[str] k = ages.keys()  # array of all keys
+array[int] v = ages.vals()  # array of all values
 
-int i = 0;
+int i = 0
 while (i < k.len()) {
     # process k[i] and v[i]
-    i = i + 1;
-};
+    i = i + 1
+}
 ```
 
 ### Clearing
 
 ```velo
-ages.clear();
+ages.clear()
 # ages.len is 0, ages.empty() is true
 ```
 
@@ -257,12 +260,12 @@ ages.clear();
 The map starts with capacity 16 and doubles when the load factor exceeds 75%. All entries are rehashed into the new table automatically. This is transparent — no API changes are needed:
 
 ```velo
-Map[int, int] big = new Map[int, int]();
-int n = 0;
+Map[int, int] big = new Map[int, int]()
+int n = 0
 while (n < 100) {
-    big[n] = n * n;
-    n = n + 1;
-};
+    big[n] = n * n
+    n = n + 1
+}
 # capacity has grown automatically, all 100 entries are accessible
 ```
 
@@ -294,14 +297,14 @@ linear congruential generator (multiplier `0x5DEECE66D`, addend `0xB`, modulus
 `2^48`), so a given seed produces **exactly** the same sequence as the JVM.
 
 ```velo
-import "std/random";
+import "std/random"
 
-Random r = new Random(42);          # seed it like java.util.Random(long)
-r.nextInt();                        # -1170105035 (same as the JVM)
-r.nextIntBound(100);                # uniform in [0, 100)
-r.nextBoolean();                    # true / false
-r.nextFloat();                      # float in [0, 1)
-r.setSeed(12345);                   # reseed in place
+Random r = new Random(42)  # seed it like java.util.Random(long)
+r.nextInt()  # -1170105035 (same as the JVM)
+r.nextIntBound(100)  # uniform in [0, 100)
+r.nextBoolean()  # true / false
+r.nextFloat()  # float in [0, 1)
+r.setSeed(12345)  # reseed in place
 ```
 
 Velo has no `double`, so the `nextDouble` and `nextGaussian` parts of
@@ -321,7 +324,40 @@ overloading, the bounded draw is named `nextIntBound` rather than overloading
 | `nextBoolean` | `() bool` | Next pseudorandom `bool` |
 | `nextFloat` | `() float` | Uniform `float` in `[0, 1)` |
 
+## Encoding & Compression
+
+Pure-Velo modules for byte-level work. Each exposes a class and a ready-made
+global instance you can use directly after importing:
+
+```velo
+import "std/base64"
+import "std/crc32"
+import "std/deflate"
+import "std/zip"
+import "std/str"  # for .bytes()
+
+# Base64 — text in, text out
+str encoded = base64.encode("hello")  # "aGVsbG8="
+str decoded = base64.decode(encoded)  # "hello"
+
+# CRC-32 checksum of a byte array
+int sum = crc32.checksum("hello".bytes())  # 907060870
+
+# Raw DEFLATE compression (inflate with any standard zlib, wbits = -15)
+array[byte] packed = rawDeflate.compress("hello".bytes())
+
+# Build a single-entry ZIP archive
+array[byte] archive = zip.create("hello".bytes(), "greeting.txt")
+```
+
+| Module | Global | Method |
+|---|---|---|
+| `std/base64` | `base64` | `encode(str) str`, `decode(str) str` |
+| `std/crc32` | `crc32` | `checksum(array[byte]) int` |
+| `std/deflate` | `rawDeflate` | `compress(array[byte]) array[byte]` |
+| `std/zip` | `zip` | `create(array[byte] data, str entryName) array[byte]` |
+
 ---
 
-[Previous: Modules and Imports ←](16-modules-and-includes.md) | [Next: Running Programs →](18-running-programs.md)
+[Previous: Modules and Imports ←](16-modules-and-imports.md) | [Next: Running Programs →](18-running-programs.md)
 

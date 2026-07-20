@@ -5,15 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pointers — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html" class="active">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Systems &amp; interop</p>
 <h1 id="pointers">Pointers</h1>
 <p>Velo Lang supports safe pointers that allow pass-by-reference semantics and indirect value modification.</p>
 <h2 id="overview">Overview</h2>
@@ -21,156 +38,162 @@
 <ul><li><strong>Type-safe</strong> - A <code>ptr[int]</code> can only point to <code>int</code> values</li><li><strong>Null-safe</strong> - Null pointers can be explicitly checked</li><li><strong>Memory-safe</strong> - No pointer arithmetic, automatic memory management</li></ul>
 <h2 id="creating-pointers">Creating Pointers</h2>
 <h3 id="with-initial-value">With Initial Value</h3>
-<pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)</code></pre></div>
 <h3 id="null-pointer">Null Pointer</h3>
-<pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>];
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>]
 <span class="cm"># or using null literal</span>
-<span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr2 <span class="op">=</span> <span class="kw">null</span>;</code></pre>
+<span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr2 <span class="op">=</span> <span class="kw">null</span></code></pre></div>
 <h3 id="assigning-null">Assigning Null</h3>
 <p>You can assign <code>null</code> to any pointer to nullify it:</p>
-<pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>
 
-<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
-term.println(p.val().<span class="ty">str</span>());  <span class="cm"># 42</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)
+term.println(p.val().<span class="ty">str</span>())  <span class="cm"># 42</span>
 
-p <span class="op">=</span> <span class="kw">null</span>;                  <span class="cm"># nullify the pointer</span>
-term.println((p <span class="op">==</span> <span class="kw">null</span>).<span class="ty">str</span>()); <span class="cm"># true</span></code></pre>
+p <span class="op">=</span> <span class="kw">null</span>  <span class="cm"># nullify the pointer</span>
+term.println((p <span class="op">==</span> <span class="kw">null</span>).<span class="ty">str</span>())  <span class="cm"># true</span></code></pre></div>
 <h2 id="dereferencing">Dereferencing</h2>
 <p>Read through a pointer with <code>.val()</code> (or the prefix <code>*</code> operator). Write through it by assigning to <code>.val</code> or to <code>*p</code> — as an assignment target <code>val</code> is written bare:</p>
-<pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)
 
 <span class="cm"># Reading</span>
-<span class="ty">int</span> value <span class="op">=</span> p.val();  <span class="cm"># value = 42</span>
-<span class="ty">int</span> value2 <span class="op">=</span> <span class="op">*</span>p;      <span class="cm"># prefix-operator form</span>
+<span class="ty">int</span> value <span class="op">=</span> p.val()  <span class="cm"># value = 42</span>
+<span class="ty">int</span> value2 <span class="op">=</span> <span class="op">*</span>p  <span class="cm"># prefix-operator form</span>
 
 <span class="cm"># Writing</span>
-p.val <span class="op">=</span> <span class="nu">100</span>;
-<span class="op">*</span>p <span class="op">=</span> <span class="nu">200</span>;             <span class="cm"># prefix-operator form</span></code></pre>
+p.val <span class="op">=</span> <span class="nu">100</span>
+<span class="op">*</span>p <span class="op">=</span> <span class="nu">200</span>  <span class="cm"># prefix-operator form</span></code></pre></div>
 <h3 id="using-the-operator">Using the <code>*</code> Operator</h3>
 <p>The prefix <code>*</code> operator reads and writes through a pointer:</p>
-<pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)
 
-<span class="ty">int</span> value <span class="op">=</span> <span class="op">*</span>p;       <span class="cm"># read</span>
-<span class="op">*</span>p <span class="op">=</span> <span class="nu">100</span>;             <span class="cm"># write</span></code></pre>
+<span class="ty">int</span> value <span class="op">=</span> <span class="op">*</span>p  <span class="cm"># read</span>
+<span class="op">*</span>p <span class="op">=</span> <span class="nu">100</span>  <span class="cm"># write</span></code></pre></div>
 <h2 id="address-of-operator">Address-of Operator</h2>
 <p>Use <code>&amp;</code> to create a pointer to an existing variable:</p>
-<pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
-<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x
 
-px.val <span class="op">=</span> <span class="nu">20</span>;
-<span class="cm"># x is now 20</span></code></pre>
+px.val <span class="op">=</span> <span class="nu">20</span>
+<span class="cm"># x is now 20</span></code></pre></div>
 <h3 id="pointer-to-array-element">Pointer to Array Element</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>};
-<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="op">&amp;</span>arr[<span class="nu">1</span>];
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>}
+<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="op">&amp;</span>arr[<span class="nu">1</span>]
 
-p.val <span class="op">=</span> <span class="nu">999</span>;
-<span class="cm"># arr is now {10, 999, 30}</span></code></pre>
+p.val <span class="op">=</span> <span class="nu">999</span>
+<span class="cm"># arr is now {10, 999, 30}</span></code></pre></div>
 <h2 id="null-checking">Null Checking</h2>
 <p>Use <code>== null</code> or <code>!= null</code> to check if a pointer is null:</p>
-<pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>
 
-<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>];
+<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>]
 
 <span class="kw">if</span> (p <span class="op">==</span> <span class="kw">null</span>) {
-    term.println(<span class="st">"Pointer is null"</span>);
+    term.println(<span class="st">"Pointer is null"</span>)
 } <span class="kw">else</span> {
-    term.println(<span class="st">"Value: "</span>.con(p.val().<span class="ty">str</span>()));
-};
+    term.println(<span class="st">"Value: "</span>.con(p.val().<span class="ty">str</span>()))
+}
 
 <span class="cm"># Using bool.str extension</span>
-term.println(<span class="st">"Is null: "</span>.con((p <span class="op">==</span> <span class="kw">null</span>).<span class="ty">str</span>()));
-term.println(<span class="st">"Not null: "</span>.con((p <span class="op">!=</span> <span class="kw">null</span>).<span class="ty">str</span>()));</code></pre>
+term.println(<span class="st">"Is null: "</span>.con((p <span class="op">==</span> <span class="kw">null</span>).<span class="ty">str</span>()))
+term.println(<span class="st">"Not null: "</span>.con((p <span class="op">!=</span> <span class="kw">null</span>).<span class="ty">str</span>()))</code></pre></div>
 <h2 id="common-use-cases">Common Use Cases</h2>
 <h3 id="swap-function">Swap Function</h3>
-<pre class="code"><code><span class="kw">func</span> swap(<span class="ty">ptr</span>[<span class="ty">int</span>] a, <span class="ty">ptr</span>[<span class="ty">int</span>] b) <span class="kw">void</span> {
-    <span class="ty">int</span> tmp <span class="op">=</span> a.val();
-    a.val <span class="op">=</span> b.val();
-    b.val <span class="op">=</span> tmp;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> swap(<span class="ty">ptr</span>[<span class="ty">int</span>] a, <span class="ty">ptr</span>[<span class="ty">int</span>] b) <span class="kw">void</span> {
+    <span class="ty">int</span> tmp <span class="op">=</span> a.val()
+    a.val <span class="op">=</span> b.val()
+    b.val <span class="op">=</span> tmp
+}
 
-<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
-<span class="ty">int</span> y <span class="op">=</span> <span class="nu">20</span>;
-swap(<span class="op">&amp;</span>x, <span class="op">&amp;</span>y);
-<span class="cm"># x = 20, y = 10</span></code></pre>
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>
+<span class="ty">int</span> y <span class="op">=</span> <span class="nu">20</span>
+swap(<span class="op">&amp;</span>x, <span class="op">&amp;</span>y)
+<span class="cm"># x = 20, y = 10</span></code></pre></div>
 <h3 id="output-parameters">Output Parameters</h3>
-<pre class="code"><code><span class="kw">func</span> divmod(<span class="ty">int</span> a, <span class="ty">int</span> b, <span class="ty">ptr</span>[<span class="ty">int</span>] quotient, <span class="ty">ptr</span>[<span class="ty">int</span>] remainder) <span class="kw">void</span> {
-    quotient.val <span class="op">=</span> a <span class="op">/</span> b;
-    remainder.val <span class="op">=</span> a <span class="op">%</span> b;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> divmod(<span class="ty">int</span> a, <span class="ty">int</span> b, <span class="ty">ptr</span>[<span class="ty">int</span>] quotient, <span class="ty">ptr</span>[<span class="ty">int</span>] remainder) <span class="kw">void</span> {
+    quotient.val <span class="op">=</span> a <span class="op">/</span> b
+    remainder.val <span class="op">=</span> a <span class="op">%</span> b
+}
 
-<span class="ty">int</span> q <span class="op">=</span> <span class="nu">0</span>;
-<span class="ty">int</span> r <span class="op">=</span> <span class="nu">0</span>;
-divmod(<span class="nu">17</span>, <span class="nu">5</span>, <span class="op">&amp;</span>q, <span class="op">&amp;</span>r);
-<span class="cm"># q = 3, r = 2</span></code></pre>
+<span class="ty">int</span> q <span class="op">=</span> <span class="nu">0</span>
+<span class="ty">int</span> r <span class="op">=</span> <span class="nu">0</span>
+divmod(<span class="nu">17</span>, <span class="nu">5</span>, <span class="op">&amp;</span>q, <span class="op">&amp;</span>r)
+<span class="cm"># q = 3, r = 2</span></code></pre></div>
 <h3 id="increment-function">Increment Function</h3>
-<pre class="code"><code><span class="kw">func</span> increment(<span class="ty">ptr</span>[<span class="ty">int</span>] counter) <span class="kw">void</span> {
-    counter.val <span class="op">=</span> counter.val() <span class="op">+</span> <span class="nu">1</span>;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> increment(<span class="ty">ptr</span>[<span class="ty">int</span>] counter) <span class="kw">void</span> {
+    counter.val <span class="op">=</span> counter.val() <span class="op">+</span> <span class="nu">1</span>
+}
 
-<span class="ty">int</span> count <span class="op">=</span> <span class="nu">0</span>;
-increment(<span class="op">&amp;</span>count);  <span class="cm"># count = 1</span>
-increment(<span class="op">&amp;</span>count);  <span class="cm"># count = 2</span></code></pre>
+<span class="ty">int</span> count <span class="op">=</span> <span class="nu">0</span>
+increment(<span class="op">&amp;</span>count)  <span class="cm"># count = 1</span>
+increment(<span class="op">&amp;</span>count)  <span class="cm"># count = 2</span></code></pre></div>
 <h3 id="modify-multiple-values">Modify Multiple Values</h3>
-<pre class="code"><code><span class="kw">func</span> addToAll(<span class="ty">ptr</span>[<span class="ty">int</span>] a, <span class="ty">ptr</span>[<span class="ty">int</span>] b, <span class="ty">ptr</span>[<span class="ty">int</span>] c, <span class="ty">int</span> delta) <span class="kw">void</span> {
-    a.val <span class="op">=</span> a.val() <span class="op">+</span> delta;
-    b.val <span class="op">=</span> b.val() <span class="op">+</span> delta;
-    c.val <span class="op">=</span> c.val() <span class="op">+</span> delta;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> addToAll(<span class="ty">ptr</span>[<span class="ty">int</span>] a, <span class="ty">ptr</span>[<span class="ty">int</span>] b, <span class="ty">ptr</span>[<span class="ty">int</span>] c, <span class="ty">int</span> delta) <span class="kw">void</span> {
+    a.val <span class="op">=</span> a.val() <span class="op">+</span> delta
+    b.val <span class="op">=</span> b.val() <span class="op">+</span> delta
+    c.val <span class="op">=</span> c.val() <span class="op">+</span> delta
+}
 
-<span class="ty">int</span> v1 <span class="op">=</span> <span class="nu">1</span>;
-<span class="ty">int</span> v2 <span class="op">=</span> <span class="nu">2</span>;
-<span class="ty">int</span> v3 <span class="op">=</span> <span class="nu">3</span>;
-addToAll(<span class="op">&amp;</span>v1, <span class="op">&amp;</span>v2, <span class="op">&amp;</span>v3, <span class="nu">10</span>);
-<span class="cm"># v1 = 11, v2 = 12, v3 = 13</span></code></pre>
+<span class="ty">int</span> v1 <span class="op">=</span> <span class="nu">1</span>
+<span class="ty">int</span> v2 <span class="op">=</span> <span class="nu">2</span>
+<span class="ty">int</span> v3 <span class="op">=</span> <span class="nu">3</span>
+addToAll(<span class="op">&amp;</span>v1, <span class="op">&amp;</span>v2, <span class="op">&amp;</span>v3, <span class="nu">10</span>)
+<span class="cm"># v1 = 11, v2 = 12, v3 = 13</span></code></pre></div>
 <h2 id="pointers-in-classes">Pointers in Classes</h2>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">SharedCounter</span>() {
-    <span class="ty">ptr</span>[<span class="ty">int</span>] valuePtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">0</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">SharedCounter</span>() {
+    <span class="ty">ptr</span>[<span class="ty">int</span>] valuePtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">0</span>)
     
     <span class="kw">func</span> increment() <span class="kw">void</span> {
-        valuePtr.val <span class="op">=</span> valuePtr.val() <span class="op">+</span> <span class="nu">1</span>;
-    };
+        valuePtr.val <span class="op">=</span> valuePtr.val() <span class="op">+</span> <span class="nu">1</span>
+    }
     
     <span class="kw">func</span> getValue() <span class="ty">int</span> {
-        <span class="kw">return</span> valuePtr.val();
-    };
-};
+        <span class="kw">return</span> valuePtr.val()
+    }
+}
 
-<span class="ty">SharedCounter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">SharedCounter</span>();
-c.increment();
-c.increment();
-<span class="ty">int</span> value <span class="op">=</span> c.getValue();  <span class="cm"># 2</span></code></pre>
+<span class="ty">SharedCounter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">SharedCounter</span>()
+c.increment()
+c.increment()
+<span class="ty">int</span> value <span class="op">=</span> c.getValue()  <span class="cm"># 2</span></code></pre></div>
 <h2 id="pointer-types">Pointer Types</h2>
 <p>Pointers can reference any type:</p>
-<pre class="code"><code><span class="cm"># Primitive types</span>
-<span class="ty">ptr</span>[<span class="ty">int</span>] pi <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
-<span class="ty">ptr</span>[<span class="ty">float</span>] pf <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">float</span>](<span class="nu">3.14</span>);
-<span class="ty">ptr</span>[<span class="ty">str</span>] ps <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">str</span>](<span class="st">"hello"</span>);
-<span class="ty">ptr</span>[<span class="ty">bool</span>] pb <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">bool</span>](<span class="kw">true</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Primitive types</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] pi <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)
+<span class="ty">ptr</span>[<span class="ty">float</span>] pf <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">float</span>](<span class="nu">3.14</span>)
+<span class="ty">ptr</span>[<span class="ty">str</span>] ps <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">str</span>](<span class="st">"hello"</span>)
+<span class="ty">ptr</span>[<span class="ty">bool</span>] pb <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">bool</span>](<span class="kw">true</span>)
 
 <span class="cm"># Arrays</span>
-<span class="ty">ptr</span>[<span class="ty">array</span>[<span class="ty">int</span>]] parr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">array</span>[<span class="ty">int</span>]](<span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>});
+<span class="ty">ptr</span>[<span class="ty">array</span>[<span class="ty">int</span>]] parr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">array</span>[<span class="ty">int</span>]](<span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>})
 
 <span class="cm"># Classes</span>
-<span class="ty">Point</span> point <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>);
-<span class="ty">ptr</span>[<span class="ty">Point</span>] pp <span class="op">=</span> <span class="op">&amp;</span>point;
+<span class="ty">Point</span> point <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>)
+<span class="ty">ptr</span>[<span class="ty">Point</span>] pp <span class="op">=</span> <span class="op">&amp;</span>point
 
 <span class="cm"># Pointers to pointers are allowed (deref twice)</span>
-<span class="ty">ptr</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">5</span>);
-<span class="ty">ptr</span>[<span class="ty">ptr</span>[<span class="ty">int</span>]] ppi <span class="op">=</span> <span class="op">&amp;</span>a;
-<span class="ty">int</span> deref <span class="op">=</span> ppi.val().val();   <span class="cm"># 5</span></code></pre>
+<span class="ty">ptr</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">5</span>)
+<span class="ty">ptr</span>[<span class="ty">ptr</span>[<span class="ty">int</span>]] ppi <span class="op">=</span> <span class="op">&amp;</span>a
+<span class="ty">int</span> deref <span class="op">=</span> ppi.val().val()  <span class="cm"># 5</span></code></pre></div>
 <h2 id="restrictions">Restrictions</h2>
 <ol><li><strong>No Pointer Arithmetic</strong> - You cannot add/subtract from pointers</li><li><strong>No Null Dereference</strong> - Dereferencing a null pointer throws an exception</li></ol>
 <h2 id="best-practices">Best Practices</h2>
-<ol><li><p><strong>Check for null</strong> before dereferencing if pointer may be null:</p><pre class="code"><code><span class="kw">if</span> (p <span class="op">!=</span> <span class="kw">null</span>) {
-    <span class="ty">int</span> value <span class="op">=</span> p.val();
-};</code></pre></li><li><strong>Prefer address-of</strong> (<code>&amp;</code>) for existing variables instead of creating new boxes</li><li><strong>Use for output parameters</strong> when function needs to return multiple values</li><li><strong>Document ownership</strong> - make it clear who "owns" the pointed-to data</li></ol>
-<hr>
-<p><a href="20-best-practices.html">Previous: Best Practices ←</a> | <a href="22-apply-blocks.html">Next: Apply Blocks →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+<ol><li><p><strong>Check for null</strong> before dereferencing if pointer may be null:</p><div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">if</span> (p <span class="op">!=</span> <span class="kw">null</span>) {
+    <span class="ty">int</span> value <span class="op">=</span> p.val()
+}</code></pre></div></li><li><strong>Prefer address-of</strong> (<code>&amp;</code>) for existing variables instead of creating new boxes</li><li><strong>Use for output parameters</strong> when function needs to return multiple values</li><li><strong>Document ownership</strong> - make it clear who "owns" the pointed-to data</li></ol>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="32-error-handling.html"><span class="pager-dir">← Previous</span><span class="pager-title">Error Handling</span></a>
+                    <a class="pager next" href="15-native-classes.html"><span class="pager-dir">→ Next</span><span class="pager-title">Native Classes</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#overview">Overview</a></li><li class="lvl2"><a href="#creating-pointers">Creating Pointers</a></li><li class="lvl3"><a href="#with-initial-value">With Initial Value</a></li><li class="lvl3"><a href="#null-pointer">Null Pointer</a></li><li class="lvl3"><a href="#assigning-null">Assigning Null</a></li><li class="lvl2"><a href="#dereferencing">Dereferencing</a></li><li class="lvl3"><a href="#using-the-operator">Using the * Operator</a></li><li class="lvl2"><a href="#address-of-operator">Address-of Operator</a></li><li class="lvl3"><a href="#pointer-to-array-element">Pointer to Array Element</a></li><li class="lvl2"><a href="#null-checking">Null Checking</a></li><li class="lvl2"><a href="#common-use-cases">Common Use Cases</a></li><li class="lvl3"><a href="#swap-function">Swap Function</a></li><li class="lvl3"><a href="#output-parameters">Output Parameters</a></li><li class="lvl3"><a href="#increment-function">Increment Function</a></li><li class="lvl3"><a href="#modify-multiple-values">Modify Multiple Values</a></li><li class="lvl2"><a href="#pointers-in-classes">Pointers in Classes</a></li><li class="lvl2"><a href="#pointer-types">Pointer Types</a></li><li class="lvl2"><a href="#restrictions">Restrictions</a></li><li class="lvl2"><a href="#best-practices">Best Practices</a></li></ul></nav></aside>
+    </div>

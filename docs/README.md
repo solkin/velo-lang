@@ -17,7 +17,7 @@
 13. [Classes](13-classes.md)
 14. [Extension Functions](14-extension-functions.md)
 15. [Native Classes](15-native-classes.md)
-16. [Modules and Imports](16-modules-and-includes.md)
+16. [Modules and Imports](16-modules-and-imports.md)
 17. [Standard Library](17-standard-library.md)
 18. [Running Programs](18-running-programs.md)
 19. [Language Features](19-language-features.md)

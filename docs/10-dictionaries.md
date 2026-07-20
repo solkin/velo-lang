@@ -12,7 +12,7 @@ dict[int:str] map = new dict[int:str]{
     1: "one",
     2: "two",
     3: "three"
-};
+}
 ```
 
 ## Accessing Elements
@@ -21,10 +21,10 @@ dict[int:str] map = new dict[int:str]{
 dict[int:str] d = new dict[int:str]{
     1: "a",
     2: "b"
-};
+}
 
-str value = d[1];        # "a"
-d[3] = "c";              # Add/change
+str value = d[1]  # "a"
+d[3] = "c"  # Add/change
 ```
 
 ## Dictionary Methods
@@ -32,50 +32,54 @@ d[3] = "c";              # Add/change
 ### `len` — Number of Elements
 
 ```velo
-int count = d.len;
+int count = d.len
 ```
 
 ### `put(key, value)` — Set Value
 
 ```velo
-d.put(5, "e");
+d.put(5, "e")
 ```
 
 ### `del(key)` — Delete Element
 
 ```velo
-bool deleted = d.del(2);  # true if element was deleted
+bool deleted = d.del(2)  # true if element was deleted
 ```
 
 ### `key(key)` — Check Key Existence
 
 ```velo
-bool exists = d.key(5);   # true if key exists
+bool exists = d.key(5)  # true if key exists
 ```
 
 ### `val(value)` — Check Value Existence
 
 ```velo
-bool hasValue = d.val("c");  # true if value exists
+bool hasValue = d.val("c")  # true if value exists
 ```
 
 ### `keys` — Array of Keys
 
 ```velo
-array[int] allKeys = d.keys();
+array[int] allKeys = d.keys()
 ```
 
 ### `vals` — Array of Values
 
 ```velo
-array[str] allValues = d.vals();
+array[str] allValues = d.vals()
 ```
 
 ### `arr` — Array of Tuples (key, value)
 
 ```velo
-array[tuple[int, str]] pairs = d.arr();
+array[tuple[int, str]] pairs = d.arr()
 ```
+
+Because a dict *is* a `Map`, the rest of the `Map` API works on it too —
+`get`, `getOrDefault`, `at`, `putIfAbsent`, `empty`, `clear`, and more. See
+[Standard Library → Map](17-standard-library.md#map) for the full list.
 
 ---
 

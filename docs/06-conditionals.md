@@ -1,27 +1,49 @@
 # Conditional Statements
 
-## If-then-else (Expression)
+## If (Statement)
+
+The everyday form: a condition and a block body, run for its side effects. There
+is no `then`, and the `else` branch is optional. Parentheses around the condition
+are optional:
 
 ```velo
-int a = 5;
-str result = if a == 2 then "two" else "not two";
+if score >= 60 {
+    term.println("pass")
+} else {
+    term.println("fail")
+}
+
+if (ready) {
+    start()          # no else needed
+}
+```
+
+## If-then-else (Expression)
+
+`if` is also an **expression** that yields a value. In this form the keyword
+`then` introduces the value, and `else` is required (there must be a value on
+every path):
+
+```velo
+int a = 5
+str result = if a == 2 then "two" else "not two"
 ```
 
 ## If-then-else (Block)
 
 ```velo
-int a = 5;
+int a = 5
 str result = if a == 2 then {
     "two"
 } else {
     "not two"
-};
+}
 ```
 
 ## Nested Conditionals
 
 ```velo
-int score = 85;
+int score = 85
 str grade = if score >= 90 then {
     "A"
 } else if score >= 80 then {
@@ -30,15 +52,15 @@ str grade = if score >= 90 then {
     "C"
 } else {
     "F"
-};
+}
 ```
 
 ## Pattern matching with `when`
 
 `when` is the multi-way branch — a switch and a pattern match in one form. Like
 `if`, it is an **expression**: each arm's body yields a value (a block yields its
-last expression, no `return`). Arms are `pattern -> body`, one per line (no
-commas), and `else ->` is the catch-all.
+last expression, no `return`). Arms are `pattern -> body`, one per line (a comma
+between arms is also allowed), and `else ->` is the catch-all.
 
 Over a **primitive** (`int`, `byte`, `long`, `float`, `str`, `bool`) the patterns
 are literals compared with `==` — the same comparison `if` uses (matching a

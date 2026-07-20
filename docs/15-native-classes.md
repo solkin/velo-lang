@@ -27,9 +27,9 @@ expose `register(...)` directly when only one of them is in the process.
 Velo side — just use it:
 
 ```velo
-Counter c = new Counter(10);
-term.println(c.bump().str());   # 11
-term.println(c.value().str());  # 11
+Counter c = new Counter(10)
+term.println(c.bump().str())  # 11
+term.println(c.value().str())  # 11
 ```
 
 The CLI registers `Terminal`, `Time`, `FileSystem`, `Http` and `Socket` for
@@ -47,7 +47,7 @@ classes need no `import`.
 ## Binding Rules
 
 - Exactly **one public constructor**.
-- Every **public declared method** is exposed; method names must be unique (Velo has no overloads). Inherited `Object` methods are not exposed.
+- Every **public method** of the class and its user-defined superclasses is exposed; method names must be unique (Velo has no overloads). Methods inherited from framework types (`Object`, `java.*`, `kotlin.*`, `android.*`) are not exposed.
 - Every signature must be expressible in Velo types (see below). Violations are reported at registration/compile time — all problems at once.
 
 ## Type Mapping: Velo ⇄ JVM
@@ -55,30 +55,35 @@ classes need no `import`.
 | Velo | JVM parameter / return |
 |------|------------------------|
 | `int` | `Int` |
+| `long` | `Long` |
 | `float` | `Float` |
 | `bool` | `Boolean` |
 | `byte` | `Byte` |
 | `str` | `String` |
+| `any` | `Any` / `Object` |
 | `array[T]` | `Array<T>` (boxed), `ByteArray`/`IntArray`/... for returns, `List<T>` |
-| `dict[K:V]` | `Map<K, V>` |
 | registered native class | the class itself |
 | `func[(args) void]` | `VeloFunction` or Kotlin `(args) -> Unit` |
 | `void` | `Unit` / `void` |
 
+`dict` / `Map` does **not** cross the native boundary — a native method cannot
+take or return a `Map`. Pass collections as `array[T]` (which maps to `List<T>`)
+instead.
+
 Native instances are opaque handles in Velo — no fields, only method calls. They can be passed to and returned from other native methods freely:
 
 ```velo
-Socket client = server.accept();   # returns a new native instance
-time.print(term);                  # passes one native to another
+Socket client = server.accept()  # returns a new native instance
+time.print(term)  # passes one native to another
 ```
 
 They cannot cross actor boundaries (an actor must create its own). Extension functions work on native types like on any other:
 
 ```velo
 ext(Terminal t) printInt(int a) void {
-    t.println(a.str());
-};
-term.printInt(42);
+    t.println(a.str())
+}
+term.printInt(42)
 ```
 
 ## Callbacks: native code calling Velo
@@ -92,11 +97,11 @@ class Notifications {
 ```
 
 ```velo
-Notifications n = new Notifications();
+Notifications n = new Notifications()
 n.subscribe(func(str text) void {
-    term.println("message: ".con(text));
+    term.println("message: ".con(text))
     void
-});
+})
 ```
 
 The Kotlin-function form carries the full signature, so the compiler checks the Velo lambda against it. Either way the body always executes on the thread that owns the closure. See [Callbacks](27-callbacks.md) for the whole model.
@@ -107,12 +112,12 @@ Because a native class is bound by **shape**, it can satisfy a Velo [interface](
 
 ```velo
 # A registered host class with `area() int` and `kind() str` satisfies this:
-interface Shape { func area() int; func kind() str; };
+interface Shape { func area() int; func kind() str; }
 
-Widget w = new Widget("hello");
-Shape s = w;
-term.println(s.kind());        # widget:hello
-term.println(s.area().str());    # 5
+Widget w = new Widget("hello")
+Shape s = w
+term.println(s.kind())  # widget:hello
+term.println(s.area().str())  # 5
 ```
 
 ## Errors

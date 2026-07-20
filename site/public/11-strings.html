@@ -5,51 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strings — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html" class="active">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Collections &amp; text</p>
 <h1 id="strings">Strings</h1>
 <h2 id="creating-strings">Creating Strings</h2>
-<pre class="code"><code><span class="ty">str</span> greeting <span class="op">=</span> <span class="st">"Hello, World!"</span>;
-<span class="ty">str</span> empty <span class="op">=</span> <span class="st">""</span>;
-<span class="ty">str</span> multiline <span class="op">=</span> <span class="st">"Line 1\nLine 2"</span>;</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> greeting <span class="op">=</span> <span class="st">"Hello, World!"</span>
+<span class="ty">str</span> empty <span class="op">=</span> <span class="st">""</span>
+<span class="ty">str</span> multiline <span class="op">=</span> <span class="st">"Line 1\nLine 2"</span></code></pre></div>
 <h2 id="string-properties-and-methods">String Properties and Methods</h2>
 <h3 id="len-string-length"><code>len</code> — String Length</h3>
-<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>;
-<span class="ty">int</span> length <span class="op">=</span> s.len();  <span class="cm"># 5</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>
+<span class="ty">int</span> length <span class="op">=</span> s.len()  <span class="cm"># 5</span></code></pre></div>
 <h3 id="substart-end-substring"><code>sub(start, end)</code> — Substring</h3>
-<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello, World!"</span>;
-<span class="ty">str</span> sub <span class="op">=</span> s.sub(<span class="nu">7</span>, <span class="nu">12</span>);  <span class="cm"># "World"</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello, World!"</span>
+<span class="ty">str</span> sub <span class="op">=</span> s.sub(<span class="nu">7</span>, <span class="nu">12</span>)  <span class="cm"># "World"</span></code></pre></div>
 <h3 id="concatenation">Concatenation</h3>
 <p>Use the <code>+</code> operator to concatenate strings:</p>
-<pre class="code"><code><span class="ty">str</span> a <span class="op">=</span> <span class="st">"Hello"</span>;
-<span class="ty">str</span> b <span class="op">=</span> <span class="st">"World"</span>;
-<span class="ty">str</span> combined <span class="op">=</span> a <span class="op">+</span> <span class="st">", "</span> <span class="op">+</span> b;  <span class="cm"># "Hello, World"</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> a <span class="op">=</span> <span class="st">"Hello"</span>
+<span class="ty">str</span> b <span class="op">=</span> <span class="st">"World"</span>
+<span class="ty">str</span> combined <span class="op">=</span> a <span class="op">+</span> <span class="st">", "</span> <span class="op">+</span> b  <span class="cm"># "Hello, World"</span></code></pre></div>
 <p>Alternatively, use the <code>con(other)</code> method:</p>
-<pre class="code"><code><span class="ty">str</span> combined <span class="op">=</span> a.con(<span class="st">", "</span>).con(b);  <span class="cm"># "Hello, World"</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> combined <span class="op">=</span> a.con(<span class="st">", "</span>).con(b)  <span class="cm"># "Hello, World"</span></code></pre></div>
 <h3 id="index-access">Index Access</h3>
-<pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>;
-<span class="ty">int</span> charCode <span class="op">=</span> s[<span class="nu">0</span>];      <span class="cm"># Character code for 'H'</span>
-<span class="ty">str</span> firstChar <span class="op">=</span> s[<span class="nu">0</span>].char(); <span class="cm"># "H"</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> s <span class="op">=</span> <span class="st">"Hello"</span>
+<span class="ty">int</span> charCode <span class="op">=</span> s[<span class="nu">0</span>]  <span class="cm"># Character code for 'H'</span>
+<span class="ty">str</span> firstChar <span class="op">=</span> s[<span class="nu">0</span>].char()  <span class="cm"># "H"</span></code></pre></div>
 <h2 id="type-conversion">Type Conversion</h2>
-<pre class="code"><code><span class="ty">int</span> num <span class="op">=</span> <span class="nu">42</span>;
-<span class="ty">str</span> numStr <span class="op">=</span> num.<span class="ty">str</span>();     <span class="cm"># "42"</span>
+<p>Any number becomes a string with <code>.str()</code>; a string parses back into a number with <code>.int()</code>, <code>.long()</code>, or <code>.float()</code>:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> numStr <span class="op">=</span> <span class="nu">42.</span><span class="ty">str</span>()  <span class="cm"># "42"</span>
+<span class="ty">str</span> piStr  <span class="op">=</span> <span class="nu">3.14.</span><span class="ty">str</span>()  <span class="cm"># "3.14"</span>
 
-<span class="ty">str</span> text <span class="op">=</span> <span class="st">"123"</span>;
-<span class="ty">int</span> num <span class="op">=</span> text.<span class="ty">int</span>();       <span class="cm"># 123</span></code></pre>
-<hr>
-<p><a href="10-dictionaries.html">Previous: Dictionaries ←</a> | <a href="12-tuples.html">Next: Tuples →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+<span class="ty">int</span>   i <span class="op">=</span> <span class="st">"123"</span>.<span class="ty">int</span>()  <span class="cm"># 123</span>
+<span class="ty">long</span>  l <span class="op">=</span> <span class="st">"5000000000"</span>.<span class="ty">long</span>()  <span class="cm"># 5000000000</span>
+<span class="ty">float</span> f <span class="op">=</span> <span class="st">"3.14"</span>.<span class="ty">float</span>()  <span class="cm"># 3.14</span></code></pre></div>
+<p>A string that is not a valid number raises an error when parsed.</p>
+<h2 id="string-interpolation">String Interpolation</h2>
+<p>Embed values directly in a string literal with <code>$name</code> for a simple variable, or <code>${expr}</code> for any expression:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> name <span class="op">=</span> <span class="st">"Velo"</span>
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">3</span>
+term.println(<span class="st">"Hello, $name!"</span>)  <span class="cm"># Hello, Velo!</span>
+term.println(<span class="st">"x = $x, x + 1 = ${x + 1}"</span>)  <span class="cm"># x = 3, x + 1 = 4</span></code></pre></div>
+<p>Write <code>\$</code> for a literal dollar sign.</p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="10-dictionaries.html"><span class="pager-dir">← Previous</span><span class="pager-title">Dictionaries</span></a>
+                    <a class="pager next" href="12-tuples.html"><span class="pager-dir">→ Next</span><span class="pager-title">Tuples</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#creating-strings">Creating Strings</a></li><li class="lvl2"><a href="#string-properties-and-methods">String Properties and Methods</a></li><li class="lvl3"><a href="#len-string-length">len — String Length</a></li><li class="lvl3"><a href="#substart-end-substring">sub(start, end) — Substring</a></li><li class="lvl3"><a href="#concatenation">Concatenation</a></li><li class="lvl3"><a href="#index-access">Index Access</a></li><li class="lvl2"><a href="#type-conversion">Type Conversion</a></li><li class="lvl2"><a href="#string-interpolation">String Interpolation</a></li></ul></nav></aside>
+    </div>

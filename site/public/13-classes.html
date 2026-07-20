@@ -5,159 +5,182 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classes — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html" class="active">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Types &amp; objects</p>
 <h1 id="classes">Classes</h1>
 <h2 id="class-definition">Class Definition</h2>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Point</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
     <span class="cm"># Class fields</span>
-    <span class="ty">int</span> xCoord <span class="op">=</span> x;
-    <span class="ty">int</span> yCoord <span class="op">=</span> y;
+    <span class="ty">int</span> xCoord <span class="op">=</span> x
+    <span class="ty">int</span> yCoord <span class="op">=</span> y
     
     <span class="cm"># Methods</span>
     <span class="kw">func</span> distanceSquared() <span class="ty">int</span> {
-        <span class="kw">return</span> xCoord <span class="op">*</span> xCoord <span class="op">+</span> yCoord <span class="op">*</span> yCoord;
-    };
+        <span class="kw">return</span> xCoord <span class="op">*</span> xCoord <span class="op">+</span> yCoord <span class="op">*</span> yCoord
+    }
     
     <span class="kw">func</span> move(<span class="ty">int</span> dx, <span class="ty">int</span> dy) <span class="kw">void</span> {
-        xCoord <span class="op">=</span> xCoord <span class="op">+</span> dx;
-        yCoord <span class="op">=</span> yCoord <span class="op">+</span> dy;
-    };
-};</code></pre>
+        xCoord <span class="op">=</span> xCoord <span class="op">+</span> dx
+        yCoord <span class="op">=</span> yCoord <span class="op">+</span> dy
+    }
+}</code></pre></div>
 <h2 id="creating-instances">Creating Instances</h2>
-<pre class="code"><code><span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>);</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>)</code></pre></div>
 <h2 id="accessing-fields-and-methods">Accessing Fields and Methods</h2>
 <p><strong>Parentheses rule (one obvious way):</strong> anything that <em>computes</em> — a method, a built-in conversion (<code>x.str()</code>, <code>arr.len()</code>), an extension call — is written with <code>()</code>, even when it takes no arguments. Only a <em>stored field</em> (a class field, a tuple element) is accessed bare. Reading a field with <code>()</code> or calling a method without it is a compile error.</p>
 <p><strong>Important:</strong> Class fields are read-only from outside the class. To modify fields, you must use class methods.</p>
-<pre class="code"><code><span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>);
-<span class="ty">int</span> x <span class="op">=</span> p.xCoord;        <span class="cm"># Reading a field — no parens</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Point</span>(<span class="nu">10</span>, <span class="nu">20</span>)
+<span class="ty">int</span> x <span class="op">=</span> p.xCoord  <span class="cm"># Reading a field — no parens</span>
 <span class="cm"># p.xCoord = 15;         # ERROR: cannot modify field from outside</span>
-p.move(<span class="nu">5</span>, <span class="nu">5</span>);            <span class="cm"># Calling a method — parens (even if it took none)</span>
-<span class="ty">int</span> d <span class="op">=</span> p.distanceSquared();   <span class="cm"># A zero-argument method still needs ()</span></code></pre>
+p.move(<span class="nu">5</span>, <span class="nu">5</span>)  <span class="cm"># Calling a method — parens (even if it took none)</span>
+<span class="ty">int</span> d <span class="op">=</span> p.distanceSquared()  <span class="cm"># A zero-argument method still needs ()</span></code></pre></div>
 <p>Example class with methods for modifying fields:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Counter</span>() {
-    <span class="ty">int</span> value <span class="op">=</span> <span class="nu">0</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Counter</span>() {
+    <span class="ty">int</span> value <span class="op">=</span> <span class="nu">0</span>
     
     <span class="cm"># Method to modify field from outside</span>
     <span class="kw">func</span> increment() <span class="kw">void</span> {
-        value <span class="op">=</span> value <span class="op">+</span> <span class="nu">1</span>;
-    };
+        value <span class="op">=</span> value <span class="op">+</span> <span class="nu">1</span>
+    }
     
     <span class="kw">func</span> add(<span class="ty">int</span> amount) <span class="kw">void</span> {
-        value <span class="op">=</span> value <span class="op">+</span> amount;
-    };
+        value <span class="op">=</span> value <span class="op">+</span> amount
+    }
     
     <span class="kw">func</span> getValue() <span class="ty">int</span> {
-        <span class="kw">return</span> value;
-    };
-};
+        <span class="kw">return</span> value
+    }
+}
 
-<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();
-<span class="ty">int</span> current <span class="op">=</span> c.value;     <span class="cm"># Reading: OK</span>
-c.increment();             <span class="cm"># Modifying through method: OK</span>
-<span class="cm"># c.value = 10;            # Direct modification: ERROR</span></code></pre>
+<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>()
+<span class="ty">int</span> current <span class="op">=</span> c.value  <span class="cm"># Reading: OK</span>
+c.increment()  <span class="cm"># Modifying through method: OK</span>
+<span class="cm"># c.value = 10;            # Direct modification: ERROR</span></code></pre></div>
 <h2 id="nested-classes">Nested Classes</h2>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">LinkedList</span>() {
-    <span class="kw">class</span> <span class="ty">Item</span>(<span class="ty">Item</span> prev, <span class="ty">any</span> value) {};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">LinkedList</span>() {
+    <span class="kw">class</span> <span class="ty">Item</span>(<span class="ty">Item</span> prev, <span class="ty">any</span> value) {}
     
-    <span class="ty">Item</span> start;
-    <span class="ty">Item</span> end;
-    <span class="ty">int</span> length <span class="op">=</span> <span class="nu">0</span>;
+    <span class="ty">Item</span> start
+    <span class="ty">Item</span> end
+    <span class="ty">int</span> length <span class="op">=</span> <span class="nu">0</span>
     
     <span class="kw">func</span> add(<span class="ty">any</span> value) <span class="kw">void</span> {
-        end <span class="op">=</span> <span class="kw">new</span> <span class="ty">Item</span>(end, value);
+        end <span class="op">=</span> <span class="kw">new</span> <span class="ty">Item</span>(end, value)
         <span class="kw">if</span> (length <span class="op">==</span> <span class="nu">0</span>) {
-            start <span class="op">=</span> end;
-        };
-        length <span class="op">=</span> length <span class="op">+</span> <span class="nu">1</span>;
-    };
-};</code></pre>
+            start <span class="op">=</span> end
+        }
+        length <span class="op">=</span> length <span class="op">+</span> <span class="nu">1</span>
+    }
+}</code></pre></div>
 <h2 id="constructor">Constructor</h2>
 <p>The class body is executed as a constructor:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">ValueStorage</span>(<span class="ty">int</span> h, <span class="ty">str</span> b) {
-    <span class="ty">int</span> a <span class="op">=</span> h <span class="op">+</span> <span class="nu">1</span>;  <span class="cm"># Initialization in constructor</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">ValueStorage</span>(<span class="ty">int</span> h, <span class="ty">str</span> b) {
+    <span class="ty">int</span> a <span class="op">=</span> h <span class="op">+</span> <span class="nu">1</span>  <span class="cm"># Initialization in constructor</span>
     
     <span class="kw">func</span> getValue() <span class="ty">int</span> {
         <span class="kw">return</span> a
-    };
-};</code></pre>
+    }
+}</code></pre></div>
 <h2 id="field-mutability">Field Mutability</h2>
 <p><strong>Important:</strong> Class fields can only be modified inside class methods. From outside the class, fields are read-only.</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Counter</span>() {
-    <span class="ty">int</span> value <span class="op">=</span> <span class="nu">0</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Counter</span>() {
+    <span class="ty">int</span> value <span class="op">=</span> <span class="nu">0</span>
     
     <span class="cm"># Method to modify field from outside</span>
     <span class="kw">func</span> increment() <span class="kw">void</span> {
-        value <span class="op">=</span> value <span class="op">+</span> <span class="nu">1</span>;  <span class="cm"># Modifying inside method: OK</span>
-    };
+        value <span class="op">=</span> value <span class="op">+</span> <span class="nu">1</span>  <span class="cm"># Modifying inside method: OK</span>
+    }
     
     <span class="kw">func</span> add(<span class="ty">int</span> amount) <span class="kw">void</span> {
-        value <span class="op">=</span> value <span class="op">+</span> amount;  <span class="cm"># Modifying inside method: OK</span>
-    };
+        value <span class="op">=</span> value <span class="op">+</span> amount  <span class="cm"># Modifying inside method: OK</span>
+    }
     
     <span class="kw">func</span> getValue() <span class="ty">int</span> {
-        <span class="kw">return</span> value;
-    };
-};
+        <span class="kw">return</span> value
+    }
+}
 
-<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>();
-<span class="ty">int</span> current <span class="op">=</span> c.value;     <span class="cm"># Reading field: OK</span>
-c.increment();             <span class="cm"># Modifying through method: OK</span>
-<span class="cm"># c.value = 10;            # Direct modification from outside: ERROR</span></code></pre>
+<span class="ty">Counter</span> c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>()
+<span class="ty">int</span> current <span class="op">=</span> c.value  <span class="cm"># Reading field: OK</span>
+c.increment()  <span class="cm"># Modifying through method: OK</span>
+<span class="cm"># c.value = 10;            # Direct modification from outside: ERROR</span></code></pre></div>
 <p>Another example:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Random</span>(<span class="ty">int</span> seed) {
-    <span class="ty">int</span> previous <span class="op">=</span> <span class="nu">0</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Random</span>(<span class="ty">int</span> seed) {
+    <span class="ty">int</span> previous <span class="op">=</span> <span class="nu">0</span>
     
     <span class="kw">func</span> setSeed(<span class="ty">int</span> seed) <span class="kw">void</span> {
-        previous <span class="op">=</span> seed;  <span class="cm"># Modifying field inside method: OK</span>
-    };
+        previous <span class="op">=</span> seed  <span class="cm"># Modifying field inside method: OK</span>
+    }
     
     <span class="kw">func</span> next() <span class="ty">int</span> {
-        <span class="ty">int</span> r <span class="op">=</span> previous <span class="op">*</span> <span class="nu">2</span>;
-        previous <span class="op">=</span> r;     <span class="cm"># Modifying field inside method: OK</span>
-        <span class="kw">return</span> r;
-    };
-};
+        <span class="ty">int</span> r <span class="op">=</span> previous <span class="op">*</span> <span class="nu">2</span>
+        previous <span class="op">=</span> r  <span class="cm"># Modifying field inside method: OK</span>
+        <span class="kw">return</span> r
+    }
+}
 
-<span class="ty">Random</span> r <span class="op">=</span> <span class="kw">new</span> <span class="ty">Random</span>(<span class="nu">10</span>);
-<span class="ty">int</span> val <span class="op">=</span> r.previous;     <span class="cm"># Reading field: OK</span>
-r.setSeed(<span class="nu">20</span>);            <span class="cm"># Modifying through method: OK</span>
-<span class="cm"># r.previous = 30;        # Direct modification from outside: ERROR</span></code></pre>
+<span class="ty">Random</span> r <span class="op">=</span> <span class="kw">new</span> <span class="ty">Random</span>(<span class="nu">10</span>)
+<span class="ty">int</span> val <span class="op">=</span> r.previous  <span class="cm"># Reading field: OK</span>
+r.setSeed(<span class="nu">20</span>)  <span class="cm"># Modifying through method: OK</span>
+<span class="cm"># r.previous = 30;        # Direct modification from outside: ERROR</span></code></pre></div>
 <h2 id="operator-overloading">Operator Overloading</h2>
 <p>Classes can define custom behavior for built-in operators using the <code>operator</code> keyword:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Vector</span>(<span class="ty">int</span> x, <span class="ty">int</span> y) {
     <span class="kw">operator</span> <span class="op">+</span>(<span class="ty">Vector</span> other) <span class="ty">Vector</span> {
-        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y);
-    };
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Vector</span>(x <span class="op">+</span> other.x, y <span class="op">+</span> other.y)
+    }
 
     <span class="kw">operator</span> [](<span class="ty">int</span> index) <span class="ty">int</span> {
-        <span class="kw">return</span> <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="kw">else</span> y;
-    };
-};
+        <span class="kw">return</span> <span class="kw">if</span> (index <span class="op">==</span> <span class="nu">0</span>) <span class="kw">then</span> x <span class="kw">else</span> y
+    }
+}
 
-<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>);
-<span class="ty">Vector</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">4</span>);
-<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> b;          <span class="cm"># Vector(4, 6)</span>
-<span class="ty">int</span> first <span class="op">=</span> a[<span class="nu">0</span>];            <span class="cm"># 1</span></code></pre>
+<span class="ty">Vector</span> a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">1</span>, <span class="nu">2</span>)
+<span class="ty">Vector</span> b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Vector</span>(<span class="nu">3</span>, <span class="nu">4</span>)
+<span class="ty">Vector</span> sum <span class="op">=</span> a <span class="op">+</span> b  <span class="cm"># Vector(4, 6)</span>
+<span class="ty">int</span> first <span class="op">=</span> a[<span class="nu">0</span>]  <span class="cm"># 1</span></code></pre></div>
 <p>For the full list of overloadable operators and detailed usage, see <a href="24-operator-overloading.html">Operator Overloading</a>.</p>
 <h2 id="data-classes">Data classes</h2>
 <p>The classes above are mutable objects shared by reference. For an <strong>immutable value type</strong> — compared by value and copied across actor and native boundaries — use a <a href="28-data-classes.html"><code>data class</code></a> instead.</p>
 <h2 id="interfaces">Interfaces</h2>
 <p>A class can be used through an <a href="29-interfaces.html">interface</a> — a contract of method signatures it satisfies by shape, with no base class to extend. A class may also name an interface explicitly after its constructor parameters (<code>class Square(int side) : Shape { ... }</code>) to document intent and get errors at the declaration. A method whose return type is <a href="29-interfaces.html#self-return-type"><code>Self</code></a> keeps the concrete type through a fluent chain.</p>
-<hr>
-<p><a href="12-tuples.html">Previous: Tuples ←</a> | <a href="14-extension-functions.html">Next: Extension Functions →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="12-tuples.html"><span class="pager-dir">← Previous</span><span class="pager-title">Tuples</span></a>
+                    <a class="pager next" href="28-data-classes.html"><span class="pager-dir">→ Next</span><span class="pager-title">Data Classes</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#class-definition">Class Definition</a></li><li class="lvl2"><a href="#creating-instances">Creating Instances</a></li><li class="lvl2"><a href="#accessing-fields-and-methods">Accessing Fields and Methods</a></li><li class="lvl2"><a href="#nested-classes">Nested Classes</a></li><li class="lvl2"><a href="#constructor">Constructor</a></li><li class="lvl2"><a href="#field-mutability">Field Mutability</a></li><li class="lvl2"><a href="#operator-overloading">Operator Overloading</a></li><li class="lvl2"><a href="#data-classes">Data classes</a></li><li class="lvl2"><a href="#interfaces">Interfaces</a></li></ul></nav></aside>
+    </div>

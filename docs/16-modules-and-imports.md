@@ -57,13 +57,16 @@ Rules:
 
 The standard library lives under `std/` — real Velo code you import:
 
-- `std/bool` — Boolean extensions (`str`, `int`, `not`)
-- `std/int` — Integer extensions (`abs`, `neg`, `format`)
+- `std/bool` — Boolean extensions (`int`; `bool.str()` is a built-in, no import needed)
+- `std/int` — Integer extensions (`abs`, `format`)
 - `std/str` — String extensions (`bytes`)
 - `std/array` — Array extensions (`str`)
 - `std/map` — Generic hash map (`dict[K:V]` imports this automatically)
-- `std/base64` — BASE64 encoding/decoding
-- `std/crc32`, `std/deflate`, `std/zip` — checksums and DEFLATE/ZIP
+- `std/error` — the `Error` type and `ERR_*` codes (auto-imported by `try`/`catch`/`throw`; see [Error Handling](32-error-handling.md))
+- `std/base64` — Base64 encoding/decoding
+- `std/crc32` — CRC-32 checksum
+- `std/deflate` — raw DEFLATE compression
+- `std/zip` — single-entry ZIP archives
 - `std/random` — `Random`, a bit-for-bit reimplementation of `java.util.Random`
 
 The native classes Terminal, Time, Http, FileSystem and Socket need **no**

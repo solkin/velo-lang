@@ -22,7 +22,7 @@ format:
   magic: 0x5e10                 # u16 BE — the first two bytes of every file
   version:
     major: 13                   # u8 — reader MUST reject a file whose major differs
-    minor: 0                    # u8 — informational; a reader accepts any minor
+    minor: 2                    # u8 — informational; a reader accepts any minor
   endianness: big               # all multi-byte scalars are big-endian
   rules:
     - "Reject the stream if the leading u16 != magic."
@@ -40,6 +40,8 @@ format:
        jump offsets (If.elseSkip, Move.count) stay i32 (signed; a backward Move is negative)."
     - "v13.1 added the try/catch/throw opcodes: TryEnter 0x24 (i32 catchOffset), TryLeave
        0x25, Throw 0x27. A minor bump — purely additive, so a v13.0 stream still reads."
+    - "v13.2 added ClassId 0x67 (the runtime class-frame discriminant backing `when` on
+       enum variants). Also a minor, additive bump."
 
 # -----------------------------------------------------------------------------
 # Primitive wire encodings. These mirror java.io.DataOutput but are defined here
@@ -122,7 +124,7 @@ literal:
 container:
   - { name: magic,        enc: u16, const: 0x5e10 }
   - { name: versionMajor, enc: u8,  const: 13 }
-  - { name: versionMinor, enc: u8,  const: 1 }
+  - { name: versionMinor, enc: u8,  const: 2 }
   - { name: natives,      enc: "list<u16, NativeRef>",       desc: "native pool: every host entry point the code references" }
   - { name: dataClasses,  enc: "list<u16, DataClassInfo>",   desc: "marshalling metadata for value types" }
   - { name: classMethods, enc: "list<u16, ClassMethodsInfo>", desc: "per-class method tables for interface dispatch" }
@@ -170,7 +172,7 @@ structs:
       - { name: operands, enc: "see opcodes[].operands" }
 
 # -----------------------------------------------------------------------------
-# The instruction set (53 ops). `stack` is `before -> after`, top of stack on
+# The instruction set (57 ops). `stack` is `before -> after`, top of stack on
 # the right. `operands` is the byte layout that follows the opcode byte.
 # -----------------------------------------------------------------------------
 opcodes:

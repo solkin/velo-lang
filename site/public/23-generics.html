@@ -5,199 +5,233 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generics — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html" class="active">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Types &amp; objects</p>
 <h1 id="generics">Generics</h1>
 <p>Velo supports generic types for classes and functions, allowing you to write type-safe, reusable code. Generics are a compile-time feature — type parameters are erased at the VM level, so there is no runtime overhead.</p>
 <h2 id="generic-classes">Generic Classes</h2>
 <h3 id="declaration">Declaration</h3>
 <p>Use square brackets <code>[T, U, ...]</code> after the class name to declare type parameters:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Box</span>[<span class="ty">T</span>](<span class="ty">T</span> value) {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Box</span>[<span class="ty">T</span>](<span class="ty">T</span> value) {
     <span class="kw">func</span> get() <span class="ty">T</span> {
-        <span class="kw">return</span> value;
-    };
+        <span class="kw">return</span> value
+    }
     <span class="kw">func</span> set(<span class="ty">T</span> newValue) <span class="kw">void</span> {
-        value <span class="op">=</span> newValue;
-    };
-};</code></pre>
+        value <span class="op">=</span> newValue
+    }
+}</code></pre></div>
 <p>Type parameters can be used as field types, method parameter types, and return types within the class body.</p>
 <h3 id="instantiation">Instantiation</h3>
 <p>Specify type arguments when declaring the variable type and after <code>new</code>:</p>
-<pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] intBox <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">42</span>);
-<span class="ty">Box</span>[<span class="ty">str</span>] strBox <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">str</span>](<span class="st">"hello"</span>);</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] intBox <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">42</span>)
+<span class="ty">Box</span>[<span class="ty">str</span>] strBox <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">str</span>](<span class="st">"hello"</span>)</code></pre></div>
 <h3 id="accessing-members">Accessing Members</h3>
 <p>When accessing fields or calling methods on a generic instance, the return types are automatically resolved to the concrete types:</p>
-<pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">10</span>);
-<span class="ty">int</span> x <span class="op">=</span> b.get();    <span class="cm"># Returns int, not T</span>
-b.set(<span class="nu">20</span>);          <span class="cm"># Accepts int, not any type</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">10</span>)
+<span class="ty">int</span> x <span class="op">=</span> b.get()  <span class="cm"># Returns int, not T</span>
+b.set(<span class="nu">20</span>)  <span class="cm"># Accepts int, not any type</span></code></pre></div>
 <h3 id="multiple-type-parameters">Multiple Type Parameters</h3>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Pair</span>[<span class="ty">T</span>, <span class="ty">U</span>](<span class="ty">T</span> first, <span class="ty">U</span> second) {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Pair</span>[<span class="ty">T</span>, <span class="ty">U</span>](<span class="ty">T</span> first, <span class="ty">U</span> second) {
     <span class="kw">func</span> getFirst() <span class="ty">T</span> {
-        <span class="kw">return</span> first;
-    };
+        <span class="kw">return</span> first
+    }
     <span class="kw">func</span> getSecond() <span class="ty">U</span> {
-        <span class="kw">return</span> second;
-    };
-};
+        <span class="kw">return</span> second
+    }
+}
 
-<span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>](<span class="nu">42</span>, <span class="st">"hello"</span>);
-<span class="ty">int</span> n <span class="op">=</span> p.getFirst();    <span class="cm"># 42</span>
-<span class="ty">str</span> s <span class="op">=</span> p.getSecond();   <span class="cm"># "hello"</span></code></pre>
+<span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>](<span class="nu">42</span>, <span class="st">"hello"</span>)
+<span class="ty">int</span> n <span class="op">=</span> p.getFirst()  <span class="cm"># 42</span>
+<span class="ty">str</span> s <span class="op">=</span> p.getSecond()  <span class="cm"># "hello"</span></code></pre></div>
 <h3 id="nested-generics">Nested Generics</h3>
 <p>Type parameters work with composite types like arrays:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Container</span>[<span class="ty">T</span>]() {
-    <span class="ty">array</span>[<span class="ty">T</span>] items <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">T</span>](<span class="nu">0</span>);
-    <span class="ty">int</span> size <span class="op">=</span> <span class="nu">0</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Container</span>[<span class="ty">T</span>]() {
+    <span class="ty">array</span>[<span class="ty">T</span>] items <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">T</span>](<span class="nu">0</span>)
+    <span class="ty">int</span> size <span class="op">=</span> <span class="nu">0</span>
 
     <span class="kw">func</span> add(<span class="ty">T</span> item) <span class="kw">void</span> {
-        items <span class="op">=</span> items.plus(item);
-        size <span class="op">=</span> size <span class="op">+</span> <span class="nu">1</span>;
-    };
+        items <span class="op">=</span> items.plus(item)
+        size <span class="op">=</span> size <span class="op">+</span> <span class="nu">1</span>
+    }
 
     <span class="kw">func</span> get(<span class="ty">int</span> index) <span class="ty">T</span> {
-        <span class="kw">return</span> items[index];
-    };
+        <span class="kw">return</span> items[index]
+    }
 
     <span class="kw">func</span> getSize() <span class="ty">int</span> {
-        <span class="kw">return</span> size;
-    };
-};
+        <span class="kw">return</span> size
+    }
+}
 
-<span class="ty">Container</span>[<span class="ty">str</span>] c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Container</span>[<span class="ty">str</span>]();
-c.add(<span class="st">"x"</span>);
-c.add(<span class="st">"y"</span>);
-<span class="ty">str</span> item <span class="op">=</span> c.get(<span class="nu">0</span>);    <span class="cm"># "x"</span></code></pre>
+<span class="ty">Container</span>[<span class="ty">str</span>] c <span class="op">=</span> <span class="kw">new</span> <span class="ty">Container</span>[<span class="ty">str</span>]()
+c.add(<span class="st">"x"</span>)
+c.add(<span class="st">"y"</span>)
+<span class="ty">str</span> item <span class="op">=</span> c.get(<span class="nu">0</span>)  <span class="cm"># "x"</span></code></pre></div>
 <h3 id="generic-class-composition">Generic Class Composition</h3>
 <p>A generic class can use another generic class in its fields, with partial or full type argument substitution:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Entry</span>[<span class="ty">K</span>, <span class="ty">V</span>](<span class="ty">K</span> key, <span class="ty">V</span> val) {
-    <span class="kw">func</span> getKey() <span class="ty">K</span> { <span class="kw">return</span> key; };
-    <span class="kw">func</span> getVal() <span class="ty">V</span> { <span class="kw">return</span> val; };
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Entry</span>[<span class="ty">K</span>, <span class="ty">V</span>](<span class="ty">K</span> key, <span class="ty">V</span> val) {
+    <span class="kw">func</span> getKey() <span class="ty">K</span> { <span class="kw">return</span> key; }
+    <span class="kw">func</span> getVal() <span class="ty">V</span> { <span class="kw">return</span> val; }
+}
 
 <span class="kw">class</span> <span class="ty">Registry</span>[<span class="ty">V</span>]() {
-    <span class="ty">array</span>[<span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>]] entries <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>]](<span class="nu">0</span>);
+    <span class="ty">array</span>[<span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>]] entries <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>]](<span class="nu">0</span>)
 
     <span class="kw">func</span> put(<span class="ty">str</span> key, <span class="ty">V</span> value) <span class="kw">void</span> {
-        <span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>] e <span class="op">=</span> <span class="kw">new</span> <span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>](key, value);
-        entries <span class="op">=</span> entries.plus(e);
-    };
+        <span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>] e <span class="op">=</span> <span class="kw">new</span> <span class="ty">Entry</span>[<span class="ty">str</span>, <span class="ty">V</span>](key, value)
+        entries <span class="op">=</span> entries.plus(e)
+    }
 
     <span class="kw">func</span> getByIndex(<span class="ty">int</span> index) <span class="ty">V</span> {
-        <span class="kw">return</span> entries[index].getVal();
-    };
-};
+        <span class="kw">return</span> entries[index].getVal()
+    }
+}
 
-<span class="ty">Registry</span>[<span class="ty">int</span>] reg <span class="op">=</span> <span class="kw">new</span> <span class="ty">Registry</span>[<span class="ty">int</span>]();
-reg.put(<span class="st">"a"</span>, <span class="nu">100</span>);
-<span class="ty">int</span> val <span class="op">=</span> reg.getByIndex(<span class="nu">0</span>);    <span class="cm"># 100</span></code></pre>
+<span class="ty">Registry</span>[<span class="ty">int</span>] reg <span class="op">=</span> <span class="kw">new</span> <span class="ty">Registry</span>[<span class="ty">int</span>]()
+reg.put(<span class="st">"a"</span>, <span class="nu">100</span>)
+<span class="ty">int</span> val <span class="op">=</span> reg.getByIndex(<span class="nu">0</span>)  <span class="cm"># 100</span></code></pre></div>
 <p>Here <code>Registry[V]</code> uses <code>Entry[str, V]</code> — the key type is fixed as <code>str</code>, while the value type <code>V</code> is passed through from the outer class.</p>
 <h3 id="bounded-type-parameters">Bounded type parameters</h3>
 <p>By default a type parameter is opaque: you can store and pass a <code>T</code> but not call methods on it. Bounding it with an <a href="29-interfaces.html">interface</a> — <code>[T: Shape]</code> — lets the generic call that interface's methods on a <code>T</code>, and forces every type argument to satisfy the bound:</p>
-<pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; };
-<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) { <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; }; };
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">interface</span> <span class="ty">Shape</span> { <span class="kw">func</span> area() <span class="ty">int</span>; }
+<span class="kw">class</span> <span class="ty">Square</span>(<span class="ty">int</span> side) { <span class="kw">func</span> area() <span class="ty">int</span> { <span class="kw">return</span> side <span class="op">*</span> side; }; }
 
 <span class="kw">class</span> <span class="ty">Boxed</span>[<span class="ty">T</span>: <span class="ty">Shape</span>](<span class="ty">T</span> item) {
-    <span class="kw">func</span> areaOf() <span class="ty">int</span> { <span class="kw">return</span> item.area(); };   <span class="cm"># allowed because T is bounded by Shape</span>
-};
+    <span class="kw">func</span> areaOf() <span class="ty">int</span> { <span class="kw">return</span> item.area(); }  <span class="cm"># allowed because T is bounded by Shape</span>
+}
 
-<span class="ty">Boxed</span>[<span class="ty">Square</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Boxed</span>[<span class="ty">Square</span>](<span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">5</span>));
-term.println(b.areaOf().<span class="ty">str</span>());   <span class="cm"># 25</span></code></pre>
+<span class="ty">Boxed</span>[<span class="ty">Square</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Boxed</span>[<span class="ty">Square</span>](<span class="kw">new</span> <span class="ty">Square</span>(<span class="nu">5</span>))
+term.println(b.areaOf().<span class="ty">str</span>())  <span class="cm"># 25</span></code></pre></div>
 <p>The bound must be an interface — see <a href="29-interfaces.html#bounded-generics">Interfaces → Bounded generics</a>.</p>
 <h2 id="generic-functions">Generic Functions</h2>
 <h3 id="declaration">Declaration</h3>
 <p>Use square brackets after the function name to declare type parameters:</p>
-<pre class="code"><code><span class="kw">func</span> identity[<span class="ty">T</span>](<span class="ty">T</span> value) <span class="ty">T</span> {
-    <span class="kw">return</span> value;
-};</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> identity[<span class="ty">T</span>](<span class="ty">T</span> value) <span class="ty">T</span> {
+    <span class="kw">return</span> value
+}</code></pre></div>
 <h3 id="type-inference">Type Inference</h3>
 <p>Unlike generic classes, generic functions <strong>infer type arguments automatically</strong> from the call arguments — you don't need to specify them explicitly:</p>
-<pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> identity(<span class="nu">42</span>);       <span class="cm"># T inferred as int</span>
-<span class="ty">str</span> s <span class="op">=</span> identity(<span class="st">"hello"</span>);  <span class="cm"># T inferred as str</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> identity(<span class="nu">42</span>)  <span class="cm"># T inferred as int</span>
+<span class="ty">str</span> s <span class="op">=</span> identity(<span class="st">"hello"</span>)  <span class="cm"># T inferred as str</span></code></pre></div>
 <p>The compiler matches argument types against parameter types to deduce what each type parameter should be. This works with composite types too:</p>
-<pre class="code"><code><span class="kw">func</span> first[<span class="ty">T</span>](<span class="ty">array</span>[<span class="ty">T</span>] items) <span class="ty">T</span> {
-    <span class="kw">return</span> items[<span class="nu">0</span>];
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> first[<span class="ty">T</span>](<span class="ty">array</span>[<span class="ty">T</span>] items) <span class="ty">T</span> {
+    <span class="kw">return</span> items[<span class="nu">0</span>]
+}
 
-<span class="ty">array</span>[<span class="ty">int</span>] nums <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>};
-<span class="ty">int</span> n <span class="op">=</span> first(nums);    <span class="cm"># T inferred as int from array[int]</span></code></pre>
+<span class="ty">array</span>[<span class="ty">int</span>] nums <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>}
+<span class="ty">int</span> n <span class="op">=</span> first(nums)  <span class="cm"># T inferred as int from array[int]</span></code></pre></div>
 <h3 id="multiple-type-parameters">Multiple Type Parameters</h3>
 <p>Generic functions can have multiple type parameters and return generic class instances:</p>
-<pre class="code"><code><span class="kw">func</span> makePair[<span class="ty">A</span>, <span class="ty">B</span>](<span class="ty">A</span> a, <span class="ty">B</span> b) <span class="ty">Pair</span>[<span class="ty">A</span>, <span class="ty">B</span>] {
-    <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Pair</span>[<span class="ty">A</span>, <span class="ty">B</span>](a, b);
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> makePair[<span class="ty">A</span>, <span class="ty">B</span>](<span class="ty">A</span> a, <span class="ty">B</span> b) <span class="ty">Pair</span>[<span class="ty">A</span>, <span class="ty">B</span>] {
+    <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Pair</span>[<span class="ty">A</span>, <span class="ty">B</span>](a, b)
+}
 
-<span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> makePair(<span class="nu">7</span>, <span class="st">"seven"</span>);
-<span class="ty">int</span> n <span class="op">=</span> p.getFirst();     <span class="cm"># 7</span>
-<span class="ty">str</span> s <span class="op">=</span> p.getSecond();    <span class="cm"># "seven"</span></code></pre>
+<span class="ty">Pair</span>[<span class="ty">int</span>, <span class="ty">str</span>] p <span class="op">=</span> makePair(<span class="nu">7</span>, <span class="st">"seven"</span>)
+<span class="ty">int</span> n <span class="op">=</span> p.getFirst()  <span class="cm"># 7</span>
+<span class="ty">str</span> s <span class="op">=</span> p.getSecond()  <span class="cm"># "seven"</span></code></pre></div>
 <p>Both <code>A</code> and <code>B</code> are inferred from the arguments — <code>A = int</code> from <code>7</code>, <code>B = str</code> from <code>"seven"</code>.</p>
 <h2 id="generic-methods">Generic Methods</h2>
 <p>Methods inside classes can have their own type parameters, independent of the class-level type parameters.</p>
 <h3 id="generic-method-in-a-non-generic-class">Generic Method in a Non-Generic Class</h3>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Utils</span>() {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Utils</span>() {
     <span class="kw">func</span> wrap[<span class="ty">T</span>](<span class="ty">T</span> value) <span class="ty">Box</span>[<span class="ty">T</span>] {
-        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">T</span>](value);
-    };
-};
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">T</span>](value)
+    }
+}
 
-<span class="ty">Utils</span> u <span class="op">=</span> <span class="kw">new</span> <span class="ty">Utils</span>();
-<span class="ty">Box</span>[<span class="ty">int</span>] bi <span class="op">=</span> u.wrap(<span class="nu">42</span>);       <span class="cm"># T inferred as int</span>
-<span class="ty">Box</span>[<span class="ty">str</span>] bs <span class="op">=</span> u.wrap(<span class="st">"test"</span>);   <span class="cm"># T inferred as str</span></code></pre>
+<span class="ty">Utils</span> u <span class="op">=</span> <span class="kw">new</span> <span class="ty">Utils</span>()
+<span class="ty">Box</span>[<span class="ty">int</span>] bi <span class="op">=</span> u.wrap(<span class="nu">42</span>)  <span class="cm"># T inferred as int</span>
+<span class="ty">Box</span>[<span class="ty">str</span>] bs <span class="op">=</span> u.wrap(<span class="st">"test"</span>)  <span class="cm"># T inferred as str</span></code></pre></div>
 <h3 id="generic-method-in-a-generic-class">Generic Method in a Generic Class</h3>
 <p>A generic method can introduce its own type parameter alongside the class-level parameters:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Mapper</span>[<span class="ty">T</span>]() {
-    <span class="ty">array</span>[<span class="ty">T</span>] items <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">T</span>](<span class="nu">0</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Mapper</span>[<span class="ty">T</span>]() {
+    <span class="ty">array</span>[<span class="ty">T</span>] items <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">T</span>](<span class="nu">0</span>)
 
     <span class="kw">func</span> add(<span class="ty">T</span> item) <span class="kw">void</span> {
-        items <span class="op">=</span> items.plus(item);
-    };
+        items <span class="op">=</span> items.plus(item)
+    }
 
     <span class="kw">func</span> transform[<span class="ty">U</span>](<span class="kw">func</span>[<span class="ty">U</span>] fn) <span class="ty">array</span>[<span class="ty">U</span>] {
-        <span class="kw">return</span> items.map(fn);
-    };
-};
+        <span class="kw">return</span> items.map(fn)
+    }
+}
 
 <span class="kw">func</span> strLen(<span class="ty">str</span> item, <span class="ty">int</span> idx) <span class="ty">int</span> {
-    <span class="kw">return</span> item.len();
-};
+    <span class="kw">return</span> item.len()
+}
 
-<span class="ty">Mapper</span>[<span class="ty">str</span>] m <span class="op">=</span> <span class="kw">new</span> <span class="ty">Mapper</span>[<span class="ty">str</span>]();
-m.add(<span class="st">"hi"</span>);
-m.add(<span class="st">"world"</span>);
-<span class="ty">array</span>[<span class="ty">int</span>] lengths <span class="op">=</span> m.transform(strLen);    <span class="cm"># U inferred as int</span></code></pre>
+<span class="ty">Mapper</span>[<span class="ty">str</span>] m <span class="op">=</span> <span class="kw">new</span> <span class="ty">Mapper</span>[<span class="ty">str</span>]()
+m.add(<span class="st">"hi"</span>)
+m.add(<span class="st">"world"</span>)
+<span class="ty">array</span>[<span class="ty">int</span>] lengths <span class="op">=</span> m.transform(strLen)  <span class="cm"># U inferred as int</span></code></pre></div>
 <p>Here <code>T</code> comes from the class (<code>str</code>) and <code>U</code> comes from the method, inferred as <code>int</code> from the callback's return type.</p>
+<h2 id="generic-extension-functions">Generic Extension Functions</h2>
+<p>An <a href="14-extension-functions.html">extension function</a> can declare its own type parameter in <code>[...]</code> before the receiver, so a single extension serves every element type. The parameter is inferred from the receiver at the call site:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">ext</span>[<span class="ty">T</span>](<span class="ty">array</span>[<span class="ty">T</span>] a) firstOr(<span class="ty">T</span> fallback) <span class="ty">T</span> {
+    <span class="kw">return</span> <span class="kw">if</span> a.len() <span class="op">&gt;</span> <span class="nu">0</span> <span class="kw">then</span> a[<span class="nu">0</span>] <span class="kw">else</span> fallback
+}
+
+<span class="ty">array</span>[<span class="ty">int</span>] xs <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>}
+<span class="ty">int</span> first <span class="op">=</span> xs.firstOr(<span class="nu">0</span>)  <span class="cm"># 10 — T inferred as int</span>
+
+<span class="ty">array</span>[<span class="ty">str</span>] empty <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">str</span>]{}
+<span class="ty">str</span> s <span class="op">=</span> empty.firstOr(<span class="st">"none"</span>)  <span class="cm"># "none" — T inferred as str</span></code></pre></div>
 <h2 id="type-safety">Type Safety</h2>
 <p>Generic types enforce strict type checking at two levels:</p>
 <h3 id="inside-the-generic-body">Inside the Generic Body</h3>
 <p>Within a generic class or function, a type parameter <code>T</code> is treated as an opaque type. You can only use <code>T</code> where <code>T</code> is expected — the compiler prevents mixing <code>T</code> with concrete types:</p>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Box</span>[<span class="ty">T</span>](<span class="ty">T</span> value) {
-    <span class="kw">func</span> get() <span class="ty">T</span> { <span class="kw">return</span> value; };       <span class="cm"># OK: T matches T</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Box</span>[<span class="ty">T</span>](<span class="ty">T</span> value) {
+    <span class="kw">func</span> get() <span class="ty">T</span> { <span class="kw">return</span> value; }  <span class="cm"># OK: T matches T</span>
     <span class="cm"># func bad() int { value; };   # ERROR: T is not int</span>
-};</code></pre>
+}</code></pre></div>
 <h3 id="at-the-usage-site">At the Usage Site</h3>
 <p>When concrete types are provided, the compiler checks that all arguments and return values match:</p>
-<pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">42</span>);      <span class="cm"># OK: 42 is int</span>
-<span class="cm"># Box[int] b = new Box[int]("no");  # ERROR: "no" is not int</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Box</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">int</span>](<span class="nu">42</span>)  <span class="cm"># OK: 42 is int</span>
+<span class="cm"># Box[int] b = new Box[int]("no");  # ERROR: "no" is not int</span></code></pre></div>
 <p>Type arguments must be consistent between the declaration and <code>new</code>:</p>
-<pre class="code"><code><span class="cm"># Box[str] b = new Box[int](42);    # ERROR: Box[int] != Box[str]</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Box[str] b = new Box[int](42);    # ERROR: Box[int] != Box[str]</span></code></pre></div>
 <p>Method arguments are also checked against the resolved types:</p>
-<pre class="code"><code><span class="ty">Box</span>[<span class="ty">str</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">str</span>](<span class="st">"ok"</span>);
-<span class="cm"># b.set(42);                        # ERROR: int differs from required str</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Box</span>[<span class="ty">str</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Box</span>[<span class="ty">str</span>](<span class="st">"ok"</span>)
+<span class="cm"># b.set(42);                        # ERROR: int differs from required str</span></code></pre></div>
 <h2 id="limitations">Limitations</h2>
 <ul><li><strong>Bounds must be interfaces</strong> — a type parameter is unconstrained by default (bounded by <code>any</code>), but it may be bounded by an <a href="29-interfaces.html">interface</a> with <code>[T: Shape]</code>. That is the only form of constraint; there is no <code>T extends SomeClass</code>.</li><li><strong>No property access on unbounded type parameters</strong> — an unbounded <code>T</code> is opaque, so you cannot call type-specific properties (like <code>.str</code>) on a <code>T</code> value inside the generic body. A <code>T</code> bounded by an interface lets you call that interface's methods.</li><li><strong>No variance</strong> — there is no <code>in</code>/<code>out</code> variance annotation.</li><li><strong>Type arguments required for classes</strong> — unlike functions, generic classes require explicit type arguments at both the declaration and <code>new</code> site.</li></ul>
-<hr>
-<p><a href="22-apply-blocks.html">Previous: Apply Blocks ←</a> | <a href="24-operator-overloading.html">Next: Operator Overloading →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="24-operator-overloading.html"><span class="pager-dir">← Previous</span><span class="pager-title">Operator Overloading</span></a>
+                    <a class="pager next" href="25-closures.html"><span class="pager-dir">→ Next</span><span class="pager-title">Closures</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#generic-classes">Generic Classes</a></li><li class="lvl3"><a href="#declaration">Declaration</a></li><li class="lvl3"><a href="#instantiation">Instantiation</a></li><li class="lvl3"><a href="#accessing-members">Accessing Members</a></li><li class="lvl3"><a href="#multiple-type-parameters">Multiple Type Parameters</a></li><li class="lvl3"><a href="#nested-generics">Nested Generics</a></li><li class="lvl3"><a href="#generic-class-composition">Generic Class Composition</a></li><li class="lvl3"><a href="#bounded-type-parameters">Bounded type parameters</a></li><li class="lvl2"><a href="#generic-functions">Generic Functions</a></li><li class="lvl3"><a href="#declaration">Declaration</a></li><li class="lvl3"><a href="#type-inference">Type Inference</a></li><li class="lvl3"><a href="#multiple-type-parameters">Multiple Type Parameters</a></li><li class="lvl2"><a href="#generic-methods">Generic Methods</a></li><li class="lvl3"><a href="#generic-method-in-a-non-generic-class">Generic Method in a Non-Generic Class</a></li><li class="lvl3"><a href="#generic-method-in-a-generic-class">Generic Method in a Generic Class</a></li><li class="lvl2"><a href="#generic-extension-functions">Generic Extension Functions</a></li><li class="lvl2"><a href="#type-safety">Type Safety</a></li><li class="lvl3"><a href="#inside-the-generic-body">Inside the Generic Body</a></li><li class="lvl3"><a href="#at-the-usage-site">At the Usage Site</a></li><li class="lvl2"><a href="#limitations">Limitations</a></li></ul></nav></aside>
+    </div>

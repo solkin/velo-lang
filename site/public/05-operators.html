@@ -5,82 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Operators — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html" class="active">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Getting started</p>
 <h1 id="operators">Operators</h1>
 <h2 id="arithmetic-operators">Arithmetic Operators</h2>
-<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>;
-<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>
+<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>
 
-<span class="ty">int</span> sum <span class="op">=</span> a <span class="op">+</span> b;      <span class="cm"># 13</span>
-<span class="ty">int</span> diff <span class="op">=</span> a <span class="op">-</span> b;     <span class="cm"># 7</span>
-<span class="ty">int</span> prod <span class="op">=</span> a <span class="op">*</span> b;     <span class="cm"># 30</span>
-<span class="ty">int</span> quot <span class="op">=</span> a <span class="op">/</span> b;     <span class="cm"># 3</span>
-<span class="ty">int</span> rem <span class="op">=</span> a <span class="op">%</span> b;      <span class="cm"># 1</span></code></pre>
+<span class="ty">int</span> sum <span class="op">=</span> a <span class="op">+</span> b  <span class="cm"># 13</span>
+<span class="ty">int</span> diff <span class="op">=</span> a <span class="op">-</span> b  <span class="cm"># 7</span>
+<span class="ty">int</span> prod <span class="op">=</span> a <span class="op">*</span> b  <span class="cm"># 30</span>
+<span class="ty">int</span> quot <span class="op">=</span> a <span class="op">/</span> b  <span class="cm"># 3</span>
+<span class="ty">int</span> rem <span class="op">=</span> a <span class="op">%</span> b  <span class="cm"># 1</span></code></pre></div>
 <h2 id="unary-operators">Unary Operators</h2>
-<pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">-10</span>;          <span class="cm"># Unary minus</span>
-<span class="ty">int</span> y <span class="op">=</span> <span class="op">-</span>x;           <span class="cm"># y = 10</span>
-<span class="ty">int</span> z <span class="op">=</span> <span class="nu">5</span> <span class="op">+</span> <span class="nu">-3</span>;       <span class="cm"># z = 2</span>
-<span class="ty">int</span> w <span class="op">=</span> <span class="op">-</span>(<span class="nu">-2</span>);        <span class="cm"># w = 2 (double negation)</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> x <span class="op">=</span> <span class="nu">-10</span>  <span class="cm"># Unary minus</span>
+<span class="ty">int</span> y <span class="op">=</span> <span class="op">-</span>x  <span class="cm"># y = 10</span>
+<span class="ty">int</span> z <span class="op">=</span> <span class="nu">5</span> <span class="op">+</span> <span class="nu">-3</span>  <span class="cm"># z = 2</span>
+<span class="ty">int</span> w <span class="op">=</span> <span class="op">-</span>(<span class="nu">-2</span>)  <span class="cm"># w = 2 (double negation)</span></code></pre></div>
 <h2 id="compound-assignment-operators">Compound Assignment Operators</h2>
-<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">10</span>
 
-a <span class="op">+=</span> <span class="nu">5</span>;               <span class="cm"># a = a + 5, result: 15</span>
-a <span class="op">-=</span> <span class="nu">3</span>;               <span class="cm"># a = a - 3, result: 12</span>
-a <span class="op">*=</span> <span class="nu">2</span>;               <span class="cm"># a = a * 2, result: 24</span>
-a <span class="op">/=</span> <span class="nu">4</span>;               <span class="cm"># a = a / 4, result: 6</span>
-a <span class="op">%=</span> <span class="nu">4</span>;               <span class="cm"># a = a % 4, result: 2</span></code></pre>
+a <span class="op">+=</span> <span class="nu">5</span>  <span class="cm"># a = a + 5, result: 15</span>
+a <span class="op">-=</span> <span class="nu">3</span>  <span class="cm"># a = a - 3, result: 12</span>
+a <span class="op">*=</span> <span class="nu">2</span>  <span class="cm"># a = a * 2, result: 24</span>
+a <span class="op">/=</span> <span class="nu">4</span>  <span class="cm"># a = a / 4, result: 6</span>
+a <span class="op">%=</span> <span class="nu">4</span>  <span class="cm"># a = a % 4, result: 2</span></code></pre></div>
 <p>Works with array elements and in loops:</p>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>] { <span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span> };
-arr[<span class="nu">0</span>] <span class="op">+=</span> <span class="nu">10</span>;         <span class="cm"># arr[0] = 11</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>] { <span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span> }
+arr[<span class="nu">0</span>] <span class="op">+=</span> <span class="nu">10</span>  <span class="cm"># arr[0] = 11</span>
 
-<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>
 <span class="kw">while</span> i <span class="op">&lt;</span> <span class="nu">10</span> {
     i <span class="op">+=</span> <span class="nu">1</span>            <span class="cm"># Increment</span>
-}</code></pre>
+}</code></pre></div>
 <h2 id="comparison-operators">Comparison Operators</h2>
-<pre class="code"><code><span class="ty">bool</span> eq <span class="op">=</span> a <span class="op">==</span> b;     <span class="cm"># Equality</span>
-<span class="ty">bool</span> ne <span class="op">=</span> a <span class="op">!=</span> b;     <span class="cm"># Inequality</span>
-<span class="ty">bool</span> lt <span class="op">=</span> a <span class="op">&lt;</span> b;      <span class="cm"># Less than</span>
-<span class="ty">bool</span> gt <span class="op">=</span> a <span class="op">&gt;</span> b;      <span class="cm"># Greater than</span>
-<span class="ty">bool</span> le <span class="op">=</span> a <span class="op">&lt;=</span> b;     <span class="cm"># Less than or equal</span>
-<span class="ty">bool</span> ge <span class="op">=</span> a <span class="op">&gt;=</span> b;     <span class="cm"># Greater than or equal</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">bool</span> eq <span class="op">=</span> a <span class="op">==</span> b  <span class="cm"># Equality</span>
+<span class="ty">bool</span> ne <span class="op">=</span> a <span class="op">!=</span> b  <span class="cm"># Inequality</span>
+<span class="ty">bool</span> lt <span class="op">=</span> a <span class="op">&lt;</span> b  <span class="cm"># Less than</span>
+<span class="ty">bool</span> gt <span class="op">=</span> a <span class="op">&gt;</span> b  <span class="cm"># Greater than</span>
+<span class="ty">bool</span> le <span class="op">=</span> a <span class="op">&lt;=</span> b  <span class="cm"># Less than or equal</span>
+<span class="ty">bool</span> ge <span class="op">=</span> a <span class="op">&gt;=</span> b  <span class="cm"># Greater than or equal</span></code></pre></div>
 <h2 id="logical-operators">Logical Operators</h2>
 <p>Velo has short-circuit logical operators <code>&amp;&amp;</code>, <code>||</code>, and the unary <code>!</code>:</p>
-<pre class="code"><code><span class="ty">bool</span> a <span class="op">=</span> <span class="kw">true</span>;
-<span class="ty">bool</span> b <span class="op">=</span> <span class="kw">false</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">bool</span> a <span class="op">=</span> <span class="kw">true</span>
+<span class="ty">bool</span> b <span class="op">=</span> <span class="kw">false</span>
 
-<span class="ty">bool</span> and <span class="op">=</span> a <span class="op">&amp;&amp;</span> b;    <span class="cm"># false (short-circuits: b only evaluated if a is true)</span>
-<span class="ty">bool</span> or  <span class="op">=</span> a <span class="op">||</span> b;    <span class="cm"># true  (short-circuits: b only evaluated if a is false)</span>
-<span class="ty">bool</span> neg <span class="op">=</span> <span class="op">!</span>a;        <span class="cm"># false</span></code></pre>
-<p><code>&amp;</code> and <code>|</code> also work on booleans as short-circuit aliases of <code>&amp;&amp;</code> / <code>||</code>, but prefer <code>&amp;&amp;</code> / <code>||</code> for clarity.</p>
+<span class="ty">bool</span> and <span class="op">=</span> a <span class="op">&amp;&amp;</span> b  <span class="cm"># false (short-circuits: b only evaluated if a is true)</span>
+<span class="ty">bool</span> or  <span class="op">=</span> a <span class="op">||</span> b  <span class="cm"># true  (short-circuits: b only evaluated if a is false)</span>
+<span class="ty">bool</span> neg <span class="op">=</span> <span class="op">!</span>a  <span class="cm"># false</span></code></pre></div>
+<p><code>&amp;</code> and <code>|</code> also work on booleans as short-circuit aliases of <code>&amp;&amp;</code> / <code>||</code>, but prefer <code>&amp;&amp;</code> / <code>||</code> for clarity. <code>^</code> on two <code>bool</code> values is a logical XOR (returns a <code>bool</code>); unlike <code>&amp;</code> / <code>|</code> it always evaluates both sides.</p>
 <h2 id="bitwise-operators">Bitwise Operators</h2>
 <p><code>&amp;</code>, <code>|</code>, <code>^</code> are bitwise operators on <code>int</code> and <code>long</code>:</p>
-<pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>;
-<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> a <span class="op">=</span> <span class="nu">5</span>
+<span class="ty">int</span> b <span class="op">=</span> <span class="nu">3</span>
 
-<span class="ty">int</span> band <span class="op">=</span> a <span class="op">&amp;</span> b;     <span class="cm"># 1  (bitwise AND)</span>
-<span class="ty">int</span> bor  <span class="op">=</span> a <span class="op">|</span> b;     <span class="cm"># 7  (bitwise OR)</span>
-<span class="ty">int</span> bxor <span class="op">=</span> a <span class="op">^</span> b;     <span class="cm"># 6  (bitwise XOR)</span></code></pre>
-<p>There are <strong>no shift operators</strong> (<code>&lt;&lt;</code> / <code>&gt;&gt;</code>). Shift with the <code>.shl(n)</code> / <code>.shr(n)</code> methods instead:</p>
-<pre class="code"><code><span class="ty">int</span> shl <span class="op">=</span> a.shl(<span class="nu">1</span>);   <span class="cm"># 10 (left shift by 1)</span>
-<span class="ty">int</span> shr <span class="op">=</span> a.shr(<span class="nu">1</span>);   <span class="cm"># 2  (right shift by 1)</span></code></pre>
+<span class="ty">int</span> band <span class="op">=</span> a <span class="op">&amp;</span> b  <span class="cm"># 1  (bitwise AND)</span>
+<span class="ty">int</span> bor  <span class="op">=</span> a <span class="op">|</span> b  <span class="cm"># 7  (bitwise OR)</span>
+<span class="ty">int</span> bxor <span class="op">=</span> a <span class="op">^</span> b  <span class="cm"># 6  (bitwise XOR)</span></code></pre></div>
+<p>There are <strong>no shift operators</strong> (<code>&lt;&lt;</code> / <code>&gt;&gt;</code>). Shift with the <code>.shl(n)</code> / <code>.shr(n)</code> / <code>.ushr(n)</code> methods instead:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> shl  <span class="op">=</span> a.shl(<span class="nu">1</span>)  <span class="cm"># 10 (left shift by 1)</span>
+<span class="ty">int</span> shr  <span class="op">=</span> a.shr(<span class="nu">1</span>)  <span class="cm"># 2  (arithmetic right shift, sign-propagating)</span>
+<span class="ty">int</span> ushr <span class="op">=</span> a.ushr(<span class="nu">1</span>)  <span class="cm"># 2  (logical right shift, zero-fill)</span></code></pre></div>
 <h2 id="operator-overloading">Operator Overloading</h2>
 <p>All arithmetic, comparison, unary, and index operators can be overloaded for user-defined classes using the <code>operator</code> keyword. See <a href="24-operator-overloading.html">Operator Overloading</a> for details.</p>
-<hr>
-<p><a href="04-variables-and-assignment.html">Previous: Variables and Assignment ←</a> | <a href="06-conditionals.html">Next: Conditional Statements →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="04-variables-and-assignment.html"><span class="pager-dir">← Previous</span><span class="pager-title">Variables and Assignment</span></a>
+                    <a class="pager next" href="06-conditionals.html"><span class="pager-dir">→ Next</span><span class="pager-title">Conditional Statements</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#arithmetic-operators">Arithmetic Operators</a></li><li class="lvl2"><a href="#unary-operators">Unary Operators</a></li><li class="lvl2"><a href="#compound-assignment-operators">Compound Assignment Operators</a></li><li class="lvl2"><a href="#comparison-operators">Comparison Operators</a></li><li class="lvl2"><a href="#logical-operators">Logical Operators</a></li><li class="lvl2"><a href="#bitwise-operators">Bitwise Operators</a></li><li class="lvl2"><a href="#operator-overloading">Operator Overloading</a></li></ul></nav></aside>
+    </div>

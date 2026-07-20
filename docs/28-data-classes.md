@@ -4,12 +4,12 @@ A **data class** is an immutable *value type*. Where a plain [`class`](13-classe
 
 ```velo
 data class Point(int x, int y) {
-    func sum() int { return x + y; };
-};
+    func sum() int { return x + y; }
+}
 
-Point p = new Point(3, 4);
-term.println(p.x.str());       # 3
-term.println(p.sum().str());   # 7
+Point p = new Point(3, 4)
+term.println(p.x.str())  # 3
+term.println(p.sum().str())  # 7
 ```
 
 ## The value-type contract
@@ -18,13 +18,13 @@ A data class is deliberately rigid — that rigidity is what makes copying and c
 
 - **State is exactly the constructor parameters.** The body may declare methods, but not extra fields. There are no computed or mutable members.
 - **Fields are immutable.** They are set once at construction; reassigning one (even inside a method) is a compile-time error.
-- **Every field must be transferable** — a primitive, an `array`/`tuple` of transferable values, another `data class`, or an `actor[T]` handle. This guarantees the whole value can always cross a boundary.
+- **Every field must be transferable** — a primitive, an `array`/`tuple` of transferable values, another `data class`, an `enum` value, or an `actor[T]` handle. This guarantees the whole value can always cross a boundary.
 - **No generics.** A data class is not parameterised.
 
 ```velo
 data class Bad(int x) {
-    int y = 10;        # error: a data class body may only declare methods
-};
+    int y = 10  # error: a data class body may only declare methods
+}
 ```
 
 ## Equality by value
@@ -32,11 +32,11 @@ data class Bad(int x) {
 Two data class values are equal when they are the same class and all their fields are equal, recursively (nested data classes and arrays compare deeply). This is built in — no operator overload required:
 
 ```velo
-data class Point(int x, int y) {};
+data class Point(int x, int y) {}
 
-Point a = new Point(1, 2);
-Point b = new Point(1, 2);
-term.println(if (a == b) then "equal" else "different");   # equal
+Point a = new Point(1, 2)
+Point b = new Point(1, 2)
+term.println(if (a == b) then "equal" else "different")  # equal
 ```
 
 Plain classes keep identity (reference) equality; only data classes compare structurally.
@@ -47,19 +47,19 @@ A data class is [transferable](26-actors.md#what-crosses-the-boundary): passing 
 
 ```velo
 data class Point(int x, int y) {
-    func sum() int { return x + y; };
-};
+    func sum() int { return x + y; }
+}
 
 actor class Geometry() {
     func translate(Point p, int dx, int dy) Point {
-        return new Point(p.x + dx, p.y + dy);
-    };
-};
+        return new Point(p.x + dx, p.y + dy)
+    }
+}
 
-actor[Geometry] geo = new Geometry();
-Point moved = await geo.translate(new Point(10, 20), 5, 6);
-term.println(moved.x.str());      # 15
-term.println(moved.sum().str());  # 41
+actor[Geometry] geo = new Geometry()
+Point moved = await geo.translate(new Point(10, 20), 5, 6)
+term.println(moved.x.str())  # 15
+term.println(moved.sum().str())  # 41
 ```
 
 The copy is a deep one: nested data classes and arrays of data classes travel too.
@@ -81,11 +81,11 @@ val natives = NativeRegistry()
 ```
 
 ```velo
-data class Point(int x, int y) {};
+data class Point(int x, int y) {}
 
-Geometry g = new Geometry();
-Point moved = g.translate(new Point(3, 4), 10, 20);
-term.println(moved.x.str());   # 13
+Geometry g = new Geometry()
+Point moved = g.translate(new Point(3, 4), 10, 20)
+term.println(moved.x.str())  # 13
 ```
 
 Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads the host value's fields (by name) and rebuilds the Velo value. Unlike a [native class](15-native-classes.md) — which travels as an opaque handle — a data class is marshalled field by field, so both sides hold plain, independent values.
@@ -95,7 +95,7 @@ Velo → JVM reads the fields and calls the host constructor; JVM → Velo reads
 | You want… | Use |
 |---|---|
 | An immutable bundle of data to move between actors / native | `data class` |
-| A value that is **one of several shapes** (a closed set) | [`enum`](06-conditionals.md#sum-types--enum) (its variants are data classes) |
+| A value that is **one of several shapes** (a closed set) | [`enum`](06-conditionals.md#sum-types-enum) (its variants are data classes) |
 | A mutable object with shared identity within one thread | `class` |
 | A live service with private state on its own thread | `actor class` |
 | An opaque host object you only call methods on | a registered native class |

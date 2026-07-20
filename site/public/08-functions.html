@@ -5,106 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Functions — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html" class="active">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Control flow</p>
 <h1 id="functions">Functions</h1>
 <h2 id="function-declaration">Function Declaration</h2>
-<pre class="code"><code><span class="kw">func</span> add(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
-    <span class="kw">return</span> a <span class="op">+</span> b;
-};</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> add(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    <span class="kw">return</span> a <span class="op">+</span> b
+}</code></pre></div>
 <h2 id="function-calls">Function Calls</h2>
-<pre class="code"><code><span class="ty">int</span> result <span class="op">=</span> add(<span class="nu">5</span>, <span class="nu">3</span>);  <span class="cm"># result = 8</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> result <span class="op">=</span> add(<span class="nu">5</span>, <span class="nu">3</span>)  <span class="cm"># result = 8</span></code></pre></div>
 <h2 id="functions-without-parameters">Functions Without Parameters</h2>
-<pre class="code"><code><span class="kw">func</span> getAnswer() <span class="ty">int</span> {
-    <span class="kw">return</span> <span class="nu">42</span>;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> getAnswer() <span class="ty">int</span> {
+    <span class="kw">return</span> <span class="nu">42</span>
+}
 
-<span class="ty">int</span> answer <span class="op">=</span> getAnswer();</code></pre>
+<span class="ty">int</span> answer <span class="op">=</span> getAnswer()</code></pre></div>
 <h2 id="functions-without-return-value">Functions Without Return Value</h2>
-<pre class="code"><code><span class="kw">func</span> printHello() <span class="kw">void</span> {
-    term.println(<span class="st">"Hello"</span>);
-};</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> printHello() <span class="kw">void</span> {
+    term.println(<span class="st">"Hello"</span>)
+}</code></pre></div>
 <h2 id="lambda-functions">Lambda Functions</h2>
-<pre class="code"><code><span class="ty">any</span> add <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
-    <span class="kw">return</span> a <span class="op">+</span> b;
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">any</span> add <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
+    <span class="kw">return</span> a <span class="op">+</span> b
+}
 
-<span class="ty">int</span> result <span class="op">=</span> add(<span class="nu">5</span>, <span class="nu">3</span>);</code></pre>
+<span class="ty">int</span> result <span class="op">=</span> add(<span class="nu">5</span>, <span class="nu">3</span>)</code></pre></div>
 <h2 id="recursion">Recursion</h2>
 <p>Velo Lang supports recursive calls:</p>
-<pre class="code"><code><span class="kw">func</span> factorial(<span class="ty">int</span> n) <span class="ty">int</span> {
-    <span class="kw">return</span> <span class="kw">if</span> n <span class="op">&lt;=</span> <span class="nu">1</span> <span class="kw">then</span> <span class="nu">1</span> <span class="kw">else</span> n <span class="op">*</span> factorial(n <span class="op">-</span> <span class="nu">1</span>);
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> factorial(<span class="ty">int</span> n) <span class="ty">int</span> {
+    <span class="kw">return</span> <span class="kw">if</span> n <span class="op">&lt;=</span> <span class="nu">1</span> <span class="kw">then</span> <span class="nu">1</span> <span class="kw">else</span> n <span class="op">*</span> factorial(n <span class="op">-</span> <span class="nu">1</span>)
+}
 
 <span class="kw">func</span> fibonacci(<span class="ty">int</span> n) <span class="ty">int</span> {
-    <span class="kw">return</span> <span class="kw">if</span> n <span class="op">&lt;</span> <span class="nu">2</span> <span class="kw">then</span> n <span class="kw">else</span> fibonacci(n <span class="op">-</span> <span class="nu">1</span>) <span class="op">+</span> fibonacci(n <span class="op">-</span> <span class="nu">2</span>);
-};</code></pre>
+    <span class="kw">return</span> <span class="kw">if</span> n <span class="op">&lt;</span> <span class="nu">2</span> <span class="kw">then</span> n <span class="kw">else</span> fibonacci(n <span class="op">-</span> <span class="nu">1</span>) <span class="op">+</span> fibonacci(n <span class="op">-</span> <span class="nu">2</span>)
+}</code></pre></div>
 <h2 id="function-values-and-types">Function Values and Types</h2>
 <p>Lambda expressions produce ordinary first-class values. They can be:</p>
 <ul><li>assigned to variables,</li><li>passed as arguments,</li><li>returned from functions,</li><li>stored in fields, arrays, dictionaries, or tuples.</li></ul>
-<p>When the full signature is known, use the rich form <code>func(&lt;args&gt;) &lt;ret&gt;</code> (typically inferred via <code>any</code> for the variable). When only the return type matters — for example, declaring a parameter that accepts any callback — use the loose form <code>func[&lt;ret&gt;]</code>:</p>
-<pre class="code"><code><span class="cm"># Full signature is preserved when assigned to `any`.</span>
-<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; };
+<p>Keep two things apart: the <strong>lambda literal</strong> — the value — is written <code>func(&lt;args&gt;) &lt;ret&gt; { ... }</code>, while the <strong>function type</strong> — the annotation — is written in brackets. The type has a full form <code>func[(&lt;args&gt;) &lt;ret&gt;]</code> (checked at every call site — preferred) and a loose form <code>func[&lt;ret&gt;]</code> (only the return type):</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Lambda literal, annotated with its full function type:</span>
+<span class="kw">func</span>[(<span class="ty">int</span>) <span class="ty">int</span>] square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; }
+<span class="ty">int</span> y <span class="op">=</span> square(<span class="nu">7</span>)  <span class="cm"># 49</span>
 
-<span class="cm"># Loose form — only the return type is part of the type.</span>
-<span class="kw">func</span>[<span class="ty">int</span>] callback <span class="op">=</span> square;
-<span class="ty">int</span> y <span class="op">=</span> callback(<span class="nu">7</span>);   <span class="cm"># 49</span></code></pre>
+<span class="cm"># Assigning to `any` also keeps the full signature:</span>
+<span class="ty">any</span> cube <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x <span class="op">*</span> x; }
+
+<span class="cm"># Loose form — only the return type is part of the type:</span>
+<span class="kw">func</span>[<span class="ty">int</span>] callback <span class="op">=</span> square</code></pre></div>
 <blockquote><p><strong>The loose form <code>func[T]</code> is an unchecked escape hatch.</strong> It declares only the return type, so calls through such a value are <strong>not</strong> checked for argument count or types at compile time — <code>f(1, 2, 3)</code> compiles even when <code>f</code> actually takes two arguments, and the mistake only surfaces at run time. Prefer the full signature <code>func[(&lt;args&gt;) &lt;ret&gt;]</code> by default; it checks calls and is the only form that may cross an actor or native boundary. Reach for <code>func[T]</code> only for internal higher-order helpers that must accept callbacks of varying arity (e.g. a <code>map</code> that takes either <code>(value)</code> or <code>(value, index)</code>).</p></blockquote>
 <h2 id="higher-order-functions">Higher-Order Functions</h2>
 <p>A higher-order function takes a function as a parameter or returns one.</p>
 <h3 id="functions-as-parameters">Functions as Parameters</h3>
-<pre class="code"><code><span class="kw">func</span> apply(<span class="ty">int</span> x, <span class="kw">func</span>[<span class="ty">int</span>] f) <span class="ty">int</span> {
-    <span class="kw">return</span> f(x);
-};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> apply(<span class="ty">int</span> x, <span class="kw">func</span>[<span class="ty">int</span>] f) <span class="ty">int</span> {
+    <span class="kw">return</span> f(x)
+}
 
-<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; };
+<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; }
 
-<span class="ty">int</span> result <span class="op">=</span> apply(<span class="nu">5</span>, square);  <span class="cm"># 25</span></code></pre>
+<span class="ty">int</span> result <span class="op">=</span> apply(<span class="nu">5</span>, square)  <span class="cm"># 25</span></code></pre></div>
 <h3 id="composition">Composition</h3>
 <p>Returning a function from a function lets you build new behaviour by combining existing pieces:</p>
-<pre class="code"><code><span class="kw">func</span> compose(<span class="kw">func</span>[<span class="ty">int</span>] f, <span class="kw">func</span>[<span class="ty">int</span>] g) <span class="kw">func</span>[<span class="ty">int</span>] {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> compose(<span class="kw">func</span>[<span class="ty">int</span>] f, <span class="kw">func</span>[<span class="ty">int</span>] g) <span class="kw">func</span>[<span class="ty">int</span>] {
     <span class="kw">return</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> {
-        <span class="kw">return</span> f(g(x));
-    };
-};
+        <span class="kw">return</span> f(g(x))
+    }
+}
 
-<span class="ty">any</span> inc    <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> <span class="nu">1</span>; };
-<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; };
+<span class="ty">any</span> inc    <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">+</span> <span class="nu">1</span>; }
+<span class="ty">any</span> square <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> x) <span class="ty">int</span> { <span class="kw">return</span> x <span class="op">*</span> x; }
 
-<span class="kw">func</span>[<span class="ty">int</span>] incThenSquare <span class="op">=</span> compose(square, inc);
-<span class="ty">int</span> r <span class="op">=</span> incThenSquare(<span class="nu">4</span>);   <span class="cm"># (4 + 1)^2 = 25</span></code></pre>
+<span class="kw">func</span>[<span class="ty">int</span>] incThenSquare <span class="op">=</span> compose(square, inc)
+<span class="ty">int</span> r <span class="op">=</span> incThenSquare(<span class="nu">4</span>)  <span class="cm"># (4 + 1)^2 = 25</span></code></pre></div>
 <h3 id="predicates">Predicates</h3>
-<pre class="code"><code><span class="kw">func</span> count(<span class="ty">array</span>[<span class="ty">int</span>] arr, <span class="kw">func</span>[<span class="ty">bool</span>] pred) <span class="ty">int</span> {
-    <span class="ty">int</span> n <span class="op">=</span> <span class="nu">0</span>;
-    <span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">func</span> count(<span class="ty">array</span>[<span class="ty">int</span>] arr, <span class="kw">func</span>[<span class="ty">bool</span>] pred) <span class="ty">int</span> {
+    <span class="ty">int</span> n <span class="op">=</span> <span class="nu">0</span>
+    <span class="ty">int</span> i <span class="op">=</span> <span class="nu">0</span>
     <span class="kw">while</span> (i <span class="op">&lt;</span> arr.len()) {
         <span class="kw">if</span> (pred(arr[i])) {
-            n <span class="op">=</span> n <span class="op">+</span> <span class="nu">1</span>;
-        };
-        i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>;
-    };
-    <span class="kw">return</span> n;
-};
+            n <span class="op">=</span> n <span class="op">+</span> <span class="nu">1</span>
+        }
+        i <span class="op">=</span> i <span class="op">+</span> <span class="nu">1</span>
+    }
+    <span class="kw">return</span> n
+}
 
 <span class="ty">int</span> big <span class="op">=</span> count(
     <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">3</span>, <span class="nu">12</span>, <span class="nu">7</span>, <span class="nu">25</span>},
     <span class="kw">func</span>(<span class="ty">int</span> v) <span class="ty">bool</span> { <span class="kw">return</span> v <span class="op">&gt;</span> <span class="nu">10</span>; }
-);  <span class="cm"># 2</span></code></pre>
+)  <span class="cm"># 2</span></code></pre></div>
 <p>See <a href="25-closures.html">Closures</a> for how a function value carries the variables of its defining scope along with it.</p>
-<hr>
-<p><a href="07-loops.html">Previous: Loops ←</a> | <a href="09-arrays.html">Next: Arrays →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="07-loops.html"><span class="pager-dir">← Previous</span><span class="pager-title">Loops</span></a>
+                    <a class="pager next" href="09-arrays.html"><span class="pager-dir">→ Next</span><span class="pager-title">Arrays</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#function-declaration">Function Declaration</a></li><li class="lvl2"><a href="#function-calls">Function Calls</a></li><li class="lvl2"><a href="#functions-without-parameters">Functions Without Parameters</a></li><li class="lvl2"><a href="#functions-without-return-value">Functions Without Return Value</a></li><li class="lvl2"><a href="#lambda-functions">Lambda Functions</a></li><li class="lvl2"><a href="#recursion">Recursion</a></li><li class="lvl2"><a href="#function-values-and-types">Function Values and Types</a></li><li class="lvl2"><a href="#higher-order-functions">Higher-Order Functions</a></li><li class="lvl3"><a href="#functions-as-parameters">Functions as Parameters</a></li><li class="lvl3"><a href="#composition">Composition</a></li><li class="lvl3"><a href="#predicates">Predicates</a></li></ul></nav></aside>
+    </div>

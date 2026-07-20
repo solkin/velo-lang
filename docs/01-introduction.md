@@ -4,11 +4,17 @@
 
 ## Key Features
 
-- **Strict Typing** - All variables have explicit types
-- **Functional Style** - Support for higher-order functions and lambdas
-- **Compilable** - Code compiles to bytecode for a virtual machine
-- **Embeddable** - Easy integration into other applications
-- **Native Classes** - Support for binding to native code via reflection
+- **Strict Typing** — every value has an explicit, checked type
+- **Functional Style** — higher-order functions, lambdas, and lexical closures
+- **Pattern Matching** — `when` expressions and `enum` sum types
+- **Concurrency** — actors with `async`/`await` and `future[T]`
+- **Error Handling** — `try` / `catch` / `throw` with a concrete `Error` value
+- **Generics** — generic classes, functions, and extension functions
+- **Value Types** — immutable `data` classes, compared and copied by value
+- **Interfaces** — structural typing, satisfied without explicit `implements`
+- **Compilable** — code compiles to compact `.vbc` bytecode
+- **Embeddable** — one-call integration into JVM applications
+- **Native Classes** — bind ordinary JVM classes by registration
 
 ---
 

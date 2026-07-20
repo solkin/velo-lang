@@ -5,76 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error Handling — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html" class="active">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Concurrency &amp; errors</p>
 <h1 id="error-handling">Error Handling</h1>
 <p>A runtime failure in Velo is an <strong><code>Error</code></strong> — a small value with a machine-readable <code>kind</code> and a human-readable <code>message</code>. <code>try</code>/<code>catch</code> recovers from one; <code>throw</code> raises your own. An error that is never caught stops the program loudly, exactly as before this feature existed — catching is purely additive.</p>
-<pre class="code"><code>try {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">try</span> {
     <span class="ty">int</span> n <span class="op">=</span> risky()
     term.println(<span class="st">"got $n"</span>)
-} catch (<span class="ty">Error</span> e) {
+} <span class="kw">catch</span> (<span class="ty">Error</span> e) {
     term.println(<span class="st">"failed (${e.kind}): ${e.message}"</span>)
-}</code></pre>
+}</code></pre></div>
 <p>The <code>Error</code> type and the <code>ERR_*</code> constants come from <code>std/error</code>, which is <strong>imported automatically</strong> wherever a program uses <code>try</code> or <code>throw</code> — no explicit <code>import</code> is needed.</p>
 <h2 id="the-error-value">The <code>Error</code> value</h2>
-<pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Error</span>(<span class="ty">str</span> kind, <span class="ty">str</span> message) {}</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">data</span> <span class="kw">class</span> <span class="ty">Error</span>(<span class="ty">str</span> kind, <span class="ty">str</span> message) {}</code></pre></div>
 <p>An <code>Error</code> is an immutable <a href="28-data-classes.html">data class</a>: <code>kind</code> categorises the failure, <code>message</code> describes it. Because it is a data class it compares by value and crosses actor and native boundaries like any other.</p>
 <p>Branch on <code>kind</code> — it is the portable, machine-readable discriminator and is identical on every backend. <code>message</code> is a human-readable diagnostic; for a built-in runtime failure its exact wording is host-dependent (a division by zero may read differently from one VM to the next), so log it rather than parse it.</p>
 <p><code>kind</code> is a plain string, compared against the <code>ERR_*</code> constants rather than hard-coded literals (the same way you would name any set of constants with a top-level <code>let</code>). The runtime uses these kinds:</p>
 <div class="table-wrap"><table><thead><tr><th>Constant</th><th><code>kind</code></th><th>Raised by</th></tr></thead><tbody><tr><td><code>ERR_ARITHMETIC</code></td><td><code>"arithmetic"</code></td><td>division or remainder by zero</td></tr><tr><td><code>ERR_BOUNDS</code></td><td><code>"bounds"</code></td><td>array / string index out of range</td></tr><tr><td><code>ERR_NULL</code></td><td><code>"null"</code></td><td>null pointer dereference</td></tr><tr><td><code>ERR_NATIVE</code></td><td><code>"native"</code></td><td>a native (host) call threw</td></tr><tr><td><code>ERR_ACTOR</code></td><td><code>"actor"</code></td><td>an actor failed, surfaced through <code>await</code></td></tr><tr><td><code>ERR_GENERIC</code></td><td><code>"generic"</code></td><td><code>throw "text"</code> with no explicit kind</td></tr></tbody></table></div>
 <p>By convention every error-kind constant is named <code>ERR_*</code>. Define your own the same way, and use it for both <code>throw</code> and the matching <code>catch</code> check so the two can never drift:</p>
-<pre class="code"><code><span class="kw">let</span> <span class="ty">ERR_NOT_FOUND</span> <span class="op">=</span> <span class="st">"not_found"</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">let</span> <span class="ty">ERR_NOT_FOUND</span> <span class="op">=</span> <span class="st">"not_found"</span>
 
-try {
+<span class="kw">try</span> {
     fetch(id)
-} catch (<span class="ty">Error</span> e) {
+} <span class="kw">catch</span> (<span class="ty">Error</span> e) {
     <span class="kw">if</span> (e.kind <span class="op">==</span> <span class="ty">ERR_NOT_FOUND</span>) {
         showPlaceholder()
     } <span class="kw">else</span> {
-        throw e                 <span class="cm"># not ours — re-raise for an outer handler</span>
+        <span class="kw">throw</span> e                 <span class="cm"># not ours — re-raise for an outer handler</span>
     }
-}</code></pre>
+}</code></pre></div>
 <h2 id="catching-try-catch">Catching: <code>try</code> / <code>catch</code></h2>
 <p><code>try</code> runs a block; if any catchable error occurs — anywhere in the block or in a function it calls — control jumps to the <code>catch</code> block with the <code>Error</code> bound to the named variable. That variable is visible only inside the <code>catch</code>.</p>
-<pre class="code"><code>try {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">try</span> {
     <span class="ty">array</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">2</span>)
     <span class="ty">int</span> x <span class="op">=</span> a[<span class="nu">9</span>]                <span class="cm"># ERR_BOUNDS</span>
-} catch (<span class="ty">Error</span> e) {
+} <span class="kw">catch</span> (<span class="ty">Error</span> e) {
     term.println(e.kind)        <span class="cm"># bounds</span>
-}</code></pre>
+}</code></pre></div>
 <p>The caught type is always <code>Error</code>. <code>try</code>/<code>catch</code> is a statement — it produces no value (unlike <code>if</code>, which can be an expression). A <code>try</code> with no error simply skips its <code>catch</code>.</p>
 <h2 id="throwing-throw">Throwing: <code>throw</code></h2>
 <p><code>throw</code> raises an <code>Error</code>:</p>
-<pre class="code"><code>throw <span class="kw">new</span> <span class="ty">Error</span>(<span class="ty">ERR_NOT_FOUND</span>, <span class="st">"item $id is missing"</span>)</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">throw</span> <span class="kw">new</span> <span class="ty">Error</span>(<span class="ty">ERR_NOT_FOUND</span>, <span class="st">"item $id is missing"</span>)</code></pre></div>
 <p>As a shorthand, <code>throw "text"</code> on a bare string literal is <code>throw new Error(ERR_GENERIC, "text")</code>:</p>
-<pre class="code"><code>throw <span class="st">"something went wrong"</span>    <span class="cm"># kind is "generic"</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">throw</span> <span class="st">"something went wrong"</span>    <span class="cm"># kind is "generic"</span></code></pre></div>
 <p>Inside a <code>catch</code>, <code>throw e</code> re-raises the caught error for an outer <code>try</code> to handle.</p>
 <h2 id="what-is-and-isnt-catchable">What is and isn't catchable</h2>
 <p><strong>Catchable</strong> — routed to the nearest <code>try</code>:</p>
 <ul><li>a <code>throw</code>;</li><li>a runtime failure (arithmetic, bounds, null dereference);</li><li>a failing <strong>native</strong> call;</li><li>an <strong>actor</strong> failure observed at an <code>await</code> — <code>try</code> around the <code>await</code> catches it, with <code>kind == ERR_ACTOR</code>:</li></ul>
-<pre class="code"><code>try {
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">try</span> {
     <span class="ty">Data</span> d <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> worker.load(id)
     render(d)
-} catch (<span class="ty">Error</span> e) {
+} <span class="kw">catch</span> (<span class="ty">Error</span> e) {
     render(fallback())          <span class="cm"># the actor threw; recover here</span>
-}</code></pre>
+}</code></pre></div>
 <p><strong>Not catchable</strong> — a user <code>halt</code> stops the program unconditionally and no <code>try</code> intercepts it (a future execution-budget limit will behave the same way).</p>
 <h2 id="uncaught-errors-are-fatal">Uncaught errors are fatal</h2>
 <p>An error with no enclosing <code>try</code> terminates the program and prints a diagnostic — the pre-existing "every runtime error is fatal" behaviour. This is why a fire-and-forget callback whose body throws (with no observer) is program-fatal: there is nothing to catch it. Wrap the body in a <code>try</code> to recover.</p>
-<hr>
-<p><a href="31-grammar.html">Previous: Grammar ←</a> | <a href="index.html">Back to README →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="26-actors.html"><span class="pager-dir">← Previous</span><span class="pager-title">Actors</span></a>
+                    <a class="pager next" href="21-pointers.html"><span class="pager-dir">→ Next</span><span class="pager-title">Pointers</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#the-error-value">The Error value</a></li><li class="lvl2"><a href="#catching-try-catch">Catching: try / catch</a></li><li class="lvl2"><a href="#throwing-throw">Throwing: throw</a></li><li class="lvl2"><a href="#what-is-and-isnt-catchable">What is and isn't catchable</a></li><li class="lvl2"><a href="#uncaught-errors-are-fatal">Uncaught errors are fatal</a></li></ul></nav></aside>
+    </div>

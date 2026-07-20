@@ -6,9 +6,9 @@ A **callback** is a fully-signed function value — `func[(args…) ret]` — th
 
 ```velo
 func[(int, str) void] cb = func(int code, str message) void {
-    term.println(message.con(": ").con(code.str()));
+    term.println(message.con(": ").con(code.str()))
     void
-};
+}
 ```
 
 Three requirements for a function type to cross a boundary:
@@ -26,17 +26,17 @@ Violations are rejected at the point of declaration with a `not transferable` er
 ```velo
 actor class Worker() {
     func process(int value, func[(int) void] done) void {
-        done(value * 2);    # posts to the owner — returns immediately
+        done(value * 2)  # posts to the owner — returns immediately
         void
-    };
-};
+    }
+}
 
-actor[Worker] w = new Worker();
+actor[Worker] w = new Worker()
 await async w.process(21, func(int v) void {
-    term.println("got: ".con(v.str()));   # runs on the main thread
+    term.println("got: ".con(v.str()))  # runs on the main thread
     void
-});
-term.println("main frame done");        # prints AFTER "got: 42"
+})
+term.println("main frame done")  # prints AFTER "got: 42"
 ```
 
 The main context is itself an actor ("actor #0"). `await` is a *yield point* (VEL-11): while the main frame is parked awaiting `w.process`, the main context keeps draining its mailbox, so the callback `w` posts during that call runs *before* `await` returns. The example prints `got: 42` first, then `main frame done`, and exits once the callback handle is dropped.
@@ -50,13 +50,13 @@ A non-`void` callback hands a result back to the invoker, which blocks until the
 ```velo
 actor class Doubler() {
     func make() func[(int) int] {
-        return func(int v) int { return v * 2; };
-    };
-};
+        return func(int v) int { return v * 2; }
+    }
+}
 
-actor[Doubler] d = new Doubler();
-func[(int) int] twice = await d.make();
-term.println(twice(21).str());   # 42 — ran on Doubler, value returned here
+actor[Doubler] d = new Doubler()
+func[(int) int] twice = await d.make()
+term.println(twice(21).str())  # 42 — ran on Doubler, value returned here
 ```
 
 The deadlock caveat from requirement 3 applies: don't invoke a value-returning callback whose owner is, at that moment, blocked awaiting *you*.
@@ -81,16 +81,16 @@ class Notifications {
 Register the class on the runtime — there is no native declaration in Velo source (see [Native Classes](15-native-classes.md)) — then just use it:
 
 ```velo
-Notifications n = new Notifications();
+Notifications n = new Notifications()
 n.subscribe(func(str text) void {
-    term.println("message: ".con(text));
+    term.println("message: ".con(text))
     void
-});
+})
 ```
 
 `VeloFunction` has two methods:
 
-- `post(args…)` — fire-and-forget, the normal mode for events. Argument count and types are validated eagerly against the declared Velo signature (`Int`/`Float`/`Boolean`/`Byte`/`String`, `List`, `Map`, or another `VeloFunction`); a mismatch throws on the calling thread before anything is shipped.
+- `post(args…)` — fire-and-forget, the normal mode for events. Argument count and types are validated eagerly against the declared Velo signature (`Int`/`Long`/`Float`/`Boolean`/`Byte`/`String`, `List`, or another `VeloFunction`); a mismatch throws on the calling thread before anything is shipped.
 - `call(args…): CompletableFuture<Any?>` — same, but completion (or failure) is observable. The future resolves to the callback's return value (`null` for a `void` callback). When invoked from the owner's own thread (a native called synchronously from Velo code), the body executes **inline** — no self-deadlock.
 
 A live `VeloFunction` **pins** its owner: the program (or actor) stays serviceable for as long as the host holds the reference. Drop the reference and the owner may shut down. In CLI mode this is the program's exit condition — "main frame finished and nobody can call us any more".

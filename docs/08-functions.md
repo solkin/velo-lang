@@ -4,42 +4,42 @@
 
 ```velo
 func add(int a, int b) int {
-    return a + b;
-};
+    return a + b
+}
 ```
 
 ## Function Calls
 
 ```velo
-int result = add(5, 3);  # result = 8
+int result = add(5, 3)  # result = 8
 ```
 
 ## Functions Without Parameters
 
 ```velo
 func getAnswer() int {
-    return 42;
-};
+    return 42
+}
 
-int answer = getAnswer();
+int answer = getAnswer()
 ```
 
 ## Functions Without Return Value
 
 ```velo
 func printHello() void {
-    term.println("Hello");
-};
+    term.println("Hello")
+}
 ```
 
 ## Lambda Functions
 
 ```velo
 any add = func(int a, int b) int {
-    return a + b;
-};
+    return a + b
+}
 
-int result = add(5, 3);
+int result = add(5, 3)
 ```
 
 ## Recursion
@@ -48,12 +48,12 @@ Velo Lang supports recursive calls:
 
 ```velo
 func factorial(int n) int {
-    return if n <= 1 then 1 else n * factorial(n - 1);
-};
+    return if n <= 1 then 1 else n * factorial(n - 1)
+}
 
 func fibonacci(int n) int {
-    return if n < 2 then n else fibonacci(n - 1) + fibonacci(n - 2);
-};
+    return if n < 2 then n else fibonacci(n - 1) + fibonacci(n - 2)
+}
 ```
 
 ## Function Values and Types
@@ -64,15 +64,22 @@ Lambda expressions produce ordinary first-class values. They can be:
 - returned from functions,
 - stored in fields, arrays, dictionaries, or tuples.
 
-When the full signature is known, use the rich form `func(<args>) <ret>` (typically inferred via `any` for the variable). When only the return type matters — for example, declaring a parameter that accepts any callback — use the loose form `func[<ret>]`:
+Keep two things apart: the **lambda literal** — the value — is written
+`func(<args>) <ret> { ... }`, while the **function type** — the annotation — is
+written in brackets. The type has a full form `func[(<args>) <ret>]` (checked at
+every call site — preferred) and a loose form `func[<ret>]` (only the return
+type):
 
 ```velo
-# Full signature is preserved when assigned to `any`.
-any square = func(int x) int { return x * x; };
+# Lambda literal, annotated with its full function type:
+func[(int) int] square = func(int x) int { return x * x; }
+int y = square(7)  # 49
 
-# Loose form — only the return type is part of the type.
-func[int] callback = square;
-int y = callback(7);   # 49
+# Assigning to `any` also keeps the full signature:
+any cube = func(int x) int { return x * x * x; }
+
+# Loose form — only the return type is part of the type:
+func[int] callback = square
 ```
 
 > **The loose form `func[T]` is an unchecked escape hatch.** It declares only the
@@ -92,12 +99,12 @@ A higher-order function takes a function as a parameter or returns one.
 
 ```velo
 func apply(int x, func[int] f) int {
-    return f(x);
-};
+    return f(x)
+}
 
-any square = func(int x) int { return x * x; };
+any square = func(int x) int { return x * x; }
 
-int result = apply(5, square);  # 25
+int result = apply(5, square)  # 25
 ```
 
 ### Composition
@@ -107,36 +114,36 @@ Returning a function from a function lets you build new behaviour by combining e
 ```velo
 func compose(func[int] f, func[int] g) func[int] {
     return func(int x) int {
-        return f(g(x));
-    };
-};
+        return f(g(x))
+    }
+}
 
-any inc    = func(int x) int { return x + 1; };
-any square = func(int x) int { return x * x; };
+any inc    = func(int x) int { return x + 1; }
+any square = func(int x) int { return x * x; }
 
-func[int] incThenSquare = compose(square, inc);
-int r = incThenSquare(4);   # (4 + 1)^2 = 25
+func[int] incThenSquare = compose(square, inc)
+int r = incThenSquare(4)  # (4 + 1)^2 = 25
 ```
 
 ### Predicates
 
 ```velo
 func count(array[int] arr, func[bool] pred) int {
-    int n = 0;
-    int i = 0;
+    int n = 0
+    int i = 0
     while (i < arr.len()) {
         if (pred(arr[i])) {
-            n = n + 1;
-        };
-        i = i + 1;
-    };
-    return n;
-};
+            n = n + 1
+        }
+        i = i + 1
+    }
+    return n
+}
 
 int big = count(
     new array[int]{3, 12, 7, 25},
     func(int v) bool { return v > 10; }
-);  # 2
+)  # 2
 ```
 
 See [Closures](25-closures.md) for how a function value carries the variables of its defining scope along with it.

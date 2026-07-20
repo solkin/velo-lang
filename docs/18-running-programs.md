@@ -5,8 +5,8 @@
 Pass the path to a `.vel` file (paths resolve from the repository root):
 
 ```bash
-./gradlew run --args="velo-cli/src/main/resources/hello.vel"
-./gradlew run --args="velo-cli/src/main/resources/primes-range.vel"
+./gradlew :velo-cli:run --args="velo-cli/src/main/resources/hello.vel"
+./gradlew :velo-cli:run --args="velo-cli/src/main/resources/primes-range.vel"
 ```
 
 `import` paths are resolved relative to the importing file; standard-library
@@ -19,8 +19,8 @@ A second argument compiles the program to a `.vbc` bytecode file instead of
 running it; a `.vbc` file as the first argument runs pre-compiled bytecode:
 
 ```bash
-./gradlew run --args="velo-cli/src/main/resources/hello.vel hello.vbc"
-./gradlew run --args="hello.vbc"
+./gradlew :velo-cli:run --args="velo-cli/src/main/resources/hello.vel hello.vbc"
+./gradlew :velo-cli:run --args="hello.vbc"
 ```
 
 ## Example Programs

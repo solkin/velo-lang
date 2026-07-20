@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modules and Imports — Velo Lang</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
+        </div>
+    </header>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html" class="active">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Systems &amp; interop</p>
+<h1 id="modules-and-imports">Modules and Imports</h1>
+<p>Every <code>.vel</code> file is a module. Use <code>import</code> to bring another module's top-level declarations (functions, classes, extensions) into scope.</p>
+<h2 id="importing">Importing</h2>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">import</span> <span class="st">"std/bool"</span>                <span class="cm"># standard-library module (no .vel needed)</span>
+<span class="kw">import</span> <span class="st">"util/hash"</span>               <span class="cm"># a file util/hash.vel, relative to THIS file</span>
+<span class="kw">import</span> <span class="st">"./sibling"</span>               <span class="cm"># a sibling module</span>
+
+<span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
+term.println(<span class="kw">true</span>.<span class="ty">str</span>())         <span class="cm"># "true" — from std/bool</span></code></pre></div>
+<p>Rules:</p>
+<ul><li><strong>The <code>.vel</code> extension is optional</strong> — <code>import "std/map"</code> loads <code>std/map.vel</code>.</li><li><strong><code>std/</code> names</strong> resolve to the bundled standard library.</li><li><strong>Any other path</strong> resolves <strong>relative to the importing file</strong>, so code can be organised in sub-directories (a module in <code>util/</code> can <code>import "./helper"</code>).</li><li><strong>Each module is loaded once</strong> per compilation, keyed by its real path — the same file reached two ways (directly and transitively) is not re-imported.</li><li><strong>A name clash between modules is a compile error</strong>, not a silent override. Rename one of the declarations to resolve it, or import under a namespace (below).</li></ul>
+<h2 id="namespaced-imports-as">Namespaced imports (<code>as</code>)</h2>
+<p><code>import "path" as ns</code> brings a module's declarations in under the prefix <code>ns</code> instead of into the top-level scope. Reach every top-level function and class of that module qualified as <code>ns.name</code>:</p>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">import</span> <span class="st">"geom"</span> as g
+<span class="kw">import</span> <span class="st">"shapes"</span> as s          <span class="cm"># both modules may define `area` — no clash</span>
+
+term.println(g.area(<span class="nu">3</span>).<span class="ty">str</span>())
+g.<span class="ty">Point</span> p <span class="op">=</span> <span class="kw">new</span> g.<span class="ty">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>) <span class="cm"># a namespaced class is a type AND a constructor</span></code></pre></div>
+<p>Rules:</p>
+<ul><li><strong>Members are reached qualified</strong> — <code>ns.func(...)</code>, <code>new ns.Class(...)</code>, and the type <code>ns.Class</code> (e.g. <code>g.Point p = ...</code>). Bare <code>func()</code> / <code>Class</code> do not see a namespaced module's names.</li><li><strong>Namespacing sidesteps clashes</strong> — two modules that both export <code>area</code> can be imported <code>as a</code> / <code>as b</code> and used as <code>a.area()</code> / <code>b.area()</code>.</li><li><strong>Inside the module nothing changes</strong> — its own functions, methods, and class references resolve to each other normally; the namespace is only how <em>callers</em> see it.</li><li><strong>One alias per module</strong> — a module already loaded (by any import) keeps its first binding; importing the same file again under a different alias is a no-op.</li></ul>
+<h2 id="standard-modules">Standard modules</h2>
+<p>The standard library lives under <code>std/</code> — real Velo code you import:</p>
+<ul><li><code>std/bool</code> — Boolean extensions (<code>int</code>; <code>bool.str()</code> is a built-in, no import needed)</li><li><code>std/int</code> — Integer extensions (<code>abs</code>, <code>format</code>)</li><li><code>std/str</code> — String extensions (<code>bytes</code>)</li><li><code>std/array</code> — Array extensions (<code>str</code>)</li><li><code>std/map</code> — Generic hash map (<code>dict[K:V]</code> imports this automatically)</li><li><code>std/error</code> — the <code>Error</code> type and <code>ERR_*</code> codes (auto-imported by <code>try</code>/<code>catch</code>/<code>throw</code>; see <a href="32-error-handling.html">Error Handling</a>)</li><li><code>std/base64</code> — Base64 encoding/decoding</li><li><code>std/crc32</code> — CRC-32 checksum</li><li><code>std/deflate</code> — raw DEFLATE compression</li><li><code>std/zip</code> — single-entry ZIP archives</li><li><code>std/random</code> — <code>Random</code>, a bit-for-bit reimplementation of <code>java.util.Random</code></li></ul>
+<p>The native classes Terminal, Time, Http, FileSystem and Socket need <strong>no</strong> import: the runtime provides them and the compiler knows their types from the registration (see <a href="15-native-classes.html">Native Classes</a>).</p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="17-standard-library.html"><span class="pager-dir">← Previous</span><span class="pager-title">Standard Library</span></a>
+                    <a class="pager next" href="18-running-programs.html"><span class="pager-dir">→ Next</span><span class="pager-title">Running Programs</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
+    </footer>
+</body>
+</html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#importing">Importing</a></li><li class="lvl2"><a href="#namespaced-imports-as">Namespaced imports (as)</a></li><li class="lvl2"><a href="#standard-modules">Standard modules</a></li></ul></nav></aside>
+    </div>

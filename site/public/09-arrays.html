@@ -5,69 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arrays — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html" class="active">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Collections &amp; text</p>
 <h1 id="arrays">Arrays</h1>
 <h2 id="creating-arrays">Creating Arrays</h2>
-<pre class="code"><code><span class="cm"># With initialization</span>
-<span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># With initialization</span>
+<span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>}
 
-<span class="cm"># With size specification</span>
-<span class="ty">array</span>[<span class="ty">int</span>] empty <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">10</span>);
+<span class="cm"># With a size (allocates 10 cells; contents are NOT zero-initialized —</span>
+<span class="cm"># write each slot before you read it)</span>
+<span class="ty">array</span>[<span class="ty">int</span>] sized <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>](<span class="nu">10</span>)
 
 <span class="cm"># Multidimensional arrays</span>
 <span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]] matrix <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]]{
     <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>},
     <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">4</span>, <span class="nu">5</span>, <span class="nu">6</span>}
-};</code></pre>
+}</code></pre></div>
 <h2 id="accessing-elements">Accessing Elements</h2>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>};
-<span class="ty">int</span> first <span class="op">=</span> arr[<span class="nu">0</span>];      <span class="cm"># 10</span>
-<span class="ty">int</span> second <span class="op">=</span> arr[<span class="nu">1</span>];     <span class="cm"># 20</span>
-arr[<span class="nu">2</span>] <span class="op">=</span> <span class="nu">40</span>;             <span class="cm"># Change element</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>}
+<span class="ty">int</span> first <span class="op">=</span> arr[<span class="nu">0</span>]  <span class="cm"># 10</span>
+<span class="ty">int</span> second <span class="op">=</span> arr[<span class="nu">1</span>]  <span class="cm"># 20</span>
+arr[<span class="nu">2</span>] <span class="op">=</span> <span class="nu">40</span>  <span class="cm"># Change element</span></code></pre></div>
 <h2 id="array-properties-and-methods">Array Properties and Methods</h2>
 <h3 id="len-array-length"><code>len</code> — Array Length</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>};
-<span class="ty">int</span> length <span class="op">=</span> arr.len();     <span class="cm"># 3</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>}
+<span class="ty">int</span> length <span class="op">=</span> arr.len()  <span class="cm"># 3</span></code></pre></div>
 <h3 id="substart-end-subarray"><code>sub(start, end)</code> — Subarray</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>};
-<span class="ty">array</span>[<span class="ty">int</span>] sub <span class="op">=</span> arr.sub(<span class="nu">1</span>, <span class="nu">4</span>);  <span class="cm"># [2, 3, 4]</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>}
+<span class="ty">array</span>[<span class="ty">int</span>] sub <span class="op">=</span> arr.sub(<span class="nu">1</span>, <span class="nu">4</span>)  <span class="cm"># [2, 3, 4]</span></code></pre></div>
 <h3 id="conother-concatenation"><code>con(other)</code> — Concatenation</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>};
-<span class="ty">array</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">3</span>, <span class="nu">4</span>};
-<span class="ty">array</span>[<span class="ty">int</span>] combined <span class="op">=</span> a.con(b);  <span class="cm"># [1, 2, 3, 4]</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>}
+<span class="ty">array</span>[<span class="ty">int</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">3</span>, <span class="nu">4</span>}
+<span class="ty">array</span>[<span class="ty">int</span>] combined <span class="op">=</span> a.con(b)  <span class="cm"># [1, 2, 3, 4]</span></code></pre></div>
 <h3 id="pluselement-add-element"><code>plus(element)</code> — Add Element</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>};
-<span class="ty">array</span>[<span class="ty">int</span>] extended <span class="op">=</span> arr.plus(<span class="nu">3</span>);  <span class="cm"># [1, 2, 3]</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] arr <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>}
+<span class="ty">array</span>[<span class="ty">int</span>] extended <span class="op">=</span> arr.plus(<span class="nu">3</span>)  <span class="cm"># [1, 2, 3]</span></code></pre></div>
 <h3 id="mapfunc-transform-elements"><code>map(func)</code> — Transform Elements</h3>
 <p>The callback takes the value first; the index is an optional second parameter.</p>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>}
 <span class="ty">array</span>[<span class="ty">int</span>] doubled <span class="op">=</span> numbers.map(
     <span class="kw">func</span>(<span class="ty">int</span> value) <span class="ty">int</span> {
         <span class="kw">return</span> value <span class="op">*</span> <span class="nu">2</span>
     }
-);  <span class="cm"># [2, 4, 6, 8, 10]</span>
+)  <span class="cm"># [2, 4, 6, 8, 10]</span>
 
 <span class="cm"># With the index:</span>
 <span class="ty">array</span>[<span class="ty">int</span>] offset <span class="op">=</span> numbers.map(
     <span class="kw">func</span>(<span class="ty">int</span> value, <span class="ty">int</span> index) <span class="ty">int</span> {
         <span class="kw">return</span> value <span class="op">+</span> index
     }
-);  <span class="cm"># [1, 3, 5, 7, 9]</span></code></pre>
-<hr>
-<p><a href="08-functions.html">Previous: Functions ←</a> | <a href="10-dictionaries.html">Next: Dictionaries →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+)  <span class="cm"># [1, 3, 5, 7, 9]</span></code></pre></div>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="08-functions.html"><span class="pager-dir">← Previous</span><span class="pager-title">Functions</span></a>
+                    <a class="pager next" href="10-dictionaries.html"><span class="pager-dir">→ Next</span><span class="pager-title">Dictionaries</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#creating-arrays">Creating Arrays</a></li><li class="lvl2"><a href="#accessing-elements">Accessing Elements</a></li><li class="lvl2"><a href="#array-properties-and-methods">Array Properties and Methods</a></li><li class="lvl3"><a href="#len-array-length">len — Array Length</a></li><li class="lvl3"><a href="#substart-end-subarray">sub(start, end) — Subarray</a></li><li class="lvl3"><a href="#conother-concatenation">con(other) — Concatenation</a></li><li class="lvl3"><a href="#pluselement-add-element">plus(element) — Add Element</a></li><li class="lvl3"><a href="#mapfunc-transform-elements">map(func) — Transform Elements</a></li></ul></nav></aside>
+    </div>

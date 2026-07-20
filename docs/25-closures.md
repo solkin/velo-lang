@@ -11,16 +11,16 @@ In Velo every `func` literal is a closure. The captured environment is bound at 
 ```velo
 func makeAdder(int n) func[int] {
     return func(int x) int {
-        return x + n;
-    };
-};
+        return x + n
+    }
+}
 
-func[int] add5  = makeAdder(5);
-func[int] add10 = makeAdder(10);
+func[int] add5  = makeAdder(5)
+func[int] add10 = makeAdder(10)
 
-add5(3);    # 8
-add10(3);   # 13
-add5(100);  # 105
+add5(3)  # 8
+add10(3)  # 13
+add5(100)  # 105
 ```
 
 Note that `add5` and `add10` were created by the same factory; they share neither code nor state.
@@ -31,20 +31,20 @@ Captured variables are not snapshots — closures read and write the same storag
 
 ```velo
 func makeCounter() func[int] {
-    int count = 0;
+    int count = 0
     return func() int {
-        count = count + 1;
-        return count;
-    };
-};
+        count = count + 1
+        return count
+    }
+}
 
-func[int] c1 = makeCounter();
-func[int] c2 = makeCounter();
+func[int] c1 = makeCounter()
+func[int] c2 = makeCounter()
 
-c1();  # 1
-c1();  # 2
-c2();  # 1 — independent state
-c1();  # 3
+c1()  # 1
+c1()  # 2
+c2()  # 1 — independent state
+c1()  # 3
 ```
 
 Two counters built from the same factory have separate `count` variables because each invocation of `makeCounter` creates a new local `count`.
@@ -54,20 +54,20 @@ Two counters built from the same factory have separate `count` variables because
 A factory can return several closures that close over the same variable. This is the canonical recipe for encapsulated mutable state without a class:
 
 ```velo
-class Pair(func[void] add, func[int] get) {};
+class Pair(func[void] add, func[int] get) {}
 
 func makeAccumulator() Pair {
-    int total = 0;
+    int total = 0
     return new Pair(
         func(int v) void { total = total + v; },
         func() int { return total; }
-    );
-};
+    )
+}
 
-Pair acc = makeAccumulator();
-acc.add(7);
-acc.add(35);
-acc.get();   # 42
+Pair acc = makeAccumulator()
+acc.add(7)
+acc.add(35)
+acc.get()  # 42
 ```
 
 ## Closures Created in a Loop
@@ -77,13 +77,13 @@ loop body's locals — a `for` variable, or any variable declared in the body �
 so each closure keeps its own iteration's value, not the final one:
 
 ```velo
-array[func[int]] fns = new array[func[int]](3);
+array[func[int]] fns = new array[func[int]](3)
 for i in 0..3 {
-    fns[i] = func() int { return i; };
-};
-fns[0]();  # 0
-fns[1]();  # 1  (each closure kept its iteration's i)
-fns[2]();  # 2
+    fns[i] = func() int { return i; }
+}
+fns[0]()  # 0
+fns[1]()  # 1  (each closure kept its iteration's i)
+fns[2]()  # 2
 ```
 
 Variables declared **outside** the loop stay shared — closures that mutate them
@@ -97,13 +97,13 @@ A function that returns another function lets you bind arguments one at a time:
 ```velo
 func add(int a) func[int] {
     return func(int b) int {
-        return a + b;
-    };
-};
+        return a + b
+    }
+}
 
-func[int] addTen = add(10);
-addTen(5);    # 15
-add(3)(4);    # 7
+func[int] addTen = add(10)
+addTen(5)  # 15
+add(3)(4)  # 7
 ```
 
 ## Storing Closures in Classes
@@ -111,17 +111,17 @@ add(3)(4);    # 7
 Closures are ordinary values, so you can keep them in class fields, arrays, dictionaries, or tuples. The captured environment stays alive for as long as the closure itself is reachable.
 
 ```velo
-class Button(str label, func[void] onClick) {};
+class Button(str label, func[void] onClick) {}
 
-int clicks = 0;
+int clicks = 0
 
 Button b = new Button("OK", func() void {
-    clicks = clicks + 1;
-});
+    clicks = clicks + 1
+})
 
-b.onClick();
-b.onClick();
-b.onClick();
+b.onClick()
+b.onClick()
+b.onClick()
 # clicks is now 3
 ```
 
@@ -133,13 +133,13 @@ Velo closures use **lexical** (sometimes called *definition-site*) scoping. The 
 
 ```velo
 func make() func[int] {
-    int x = 100;
-    return func() int { return x; };
-};
+    int x = 100
+    return func() int { return x; }
+}
 
-int x = 1;            # outer x — irrelevant to the closure
-func[int] f = make();
-f();                   # 100, not 1
+int x = 1  # outer x — irrelevant to the closure
+func[int] f = make()
+f()  # 100, not 1
 ```
 
 ## Lifetime and Memory

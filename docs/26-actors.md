@@ -15,15 +15,15 @@ The synchronous form `await receiver.method(args)` is sugar for `await async rec
 
 ```velo
 actor class Counter(int start) {
-    int n = start;
+    int n = start
 
     func bump() int {
-        n += 1;
-        return n;
-    };
+        n += 1
+        return n
+    }
 
-    func value() int { return n; };
-};
+    func value() int { return n; }
+}
 ```
 
 The body of an `actor class` is identical to a regular class — fields, methods, init code. The only difference is that constructing an instance creates an isolated actor — its own private state and mailbox — and runs the constructor there: on the shared cooperative event loop by default, or on a dedicated thread if the host opted into a thread backend.
@@ -31,11 +31,11 @@ The body of an `actor class` is identical to a regular class — fields, methods
 ## Spawning and Calling
 
 ```velo
-actor[Counter] counter = new Counter(0);
+actor[Counter] counter = new Counter(0)
 
-term.println((await async counter.bump()).str());  # 1
-term.println((await async counter.bump()).str());  # 2
-term.println((await async counter.value()).str()); # 2
+term.println((await async counter.bump()).str())  # 1
+term.println((await async counter.bump()).str())  # 2
+term.println((await async counter.value()).str())  # 2
 ```
 
 `new Counter(0)` produces a value of type `actor[Counter]` — a typed remote handle. The `async ... .method(args)` step does three things at runtime:
@@ -53,8 +53,8 @@ A naked `counter.bump()` doesn't compile, because the type `actor[Counter]` expo
 The common case — start a call and immediately wait for it — has a one-keyword form: `await` accepts an actor method call directly, and `async` is implied.
 
 ```velo
-term.println((await counter.bump()).str());        # sugar
-term.println((await async counter.bump()).str());  # the same thing, spelled out
+term.println((await counter.bump()).str())  # sugar
+term.println((await async counter.bump()).str())  # the same thing, spelled out
 ```
 
 `await` still does just one thing — produce the result of a cross-thread operation. Reach for a bare `async` (without `await`) only when you want the `future[T]` itself, to overlap work — see [Parallel Work](#parallel-work-with-async).
@@ -69,20 +69,20 @@ Because a not-yet-ready `await` suspends the current fiber instead of blocking t
 
 ```velo
 actor class Account() {
-    int balance = 100;
+    int balance = 100
 
     func withdraw(actor[Bank] bank, int amount) bool {
-        bool ok = await bank.authorize(amount);   # ← yield point
+        bool ok = await bank.authorize(amount)  # ← yield point
         # Another message may have run while we were parked here, so re-read
         # state rather than trusting a value captured before the await.
         if (ok && balance >= amount) {
-            balance = balance - amount;
-            return true;
+            balance = balance - amount
+            return true
         } else {
-            return false;
-        };
-    };
-};
+            return false
+        }
+    }
+}
 ```
 
 This is the same model as a JavaScript event loop or coroutines on a single dispatcher. Two habits keep it manageable:
@@ -98,9 +98,10 @@ What does **not** yield: an `await` reached inside a synchronously-invoked callb
 
 The compiler enforces a static notion of **transferable** types — anything that can either be structurally copied or shipped as a typed handle:
 
-- primitives (`int`, `float`, `byte`, `bool`, `str`)
+- primitives (`int`, `long`, `float`, `byte`, `bool`, `str`)
 - `array[T]`, `tuple[…]` whose element types are themselves transferable
 - [`data class`](28-data-classes.md) values — immutable structs, copied by value
+- [`enum`](06-conditionals.md#sum-types-enum) values — each variant is a value-type record, so an enum crosses by value
 - another actor's `actor[T]` handle
 - callbacks — a fully-signed `func[(args…) ret]`: the closure stays with its
   owner, the receiver gets a handle, and invoking it runs on the owner's
@@ -117,44 +118,44 @@ Everything else is non-transferable and rejected **at the point of declaration**
 - `any`, generics, native (JVM) objects — no defined wire format
 
 ```velo
-class Pair(int a, int b) {};
+class Pair(int a, int b) {}
 
 actor class Bad() {
-    func make() Pair { return new Pair(1, 2); };  # compile error:
+    func make() Pair { return new Pair(1, 2); }  # compile error:
     # Actor method 'Bad.make' return type has type 'Pair',
     # which is not transferable across an actor boundary
-};
+}
 ```
 
-To share structured data, make it a [`data class`](28-data-classes.md) (copied by value) or a tuple; to share an object *identity*, wrap it as another `actor class`.
+To share structured data, make it a [`data class`](28-data-classes.md) (copied by value) or a tuple; to send a map's contents, ship `d.arr()` — an `array[tuple[K, V]]`, which is transferable; to share an object *identity*, wrap it as another `actor class`.
 
 ## Parallel Work with `async`
 
 `async` returns immediately, so two computations on different actors run concurrently:
 
 ```velo
-actor[Worker] a = new Worker();
-actor[Worker] b = new Worker();
+actor[Worker] a = new Worker()
+actor[Worker] b = new Worker()
 
-future[int] fa = async a.compute(input1);   # both calls dispatched
-future[int] fb = async b.compute(input2);   # before either blocks
-int x = await fa;                            # wall time ≈ max(a, b),
-int y = await fb;                            # not a + b
+future[int] fa = async a.compute(input1)  # both calls dispatched
+future[int] fb = async b.compute(input2)  # before either blocks
+int x = await fa  # wall time ≈ max(a, b),
+int y = await fb  # not a + b
 ```
 
 The same pattern works inside an actor for fan-out:
 
 ```velo
 actor class Coordinator() {
-    actor[Worker] w1 = new Worker();
-    actor[Worker] w2 = new Worker();
+    actor[Worker] w1 = new Worker()
+    actor[Worker] w2 = new Worker()
 
     func process(int p, int q) tuple[int, int] {
-        future[int] fp = async w1.compute(p);
-        future[int] fq = async w2.compute(q);
-        return new tuple(await fp, await fq);
-    };
-};
+        future[int] fp = async w1.compute(p)
+        future[int] fq = async w2.compute(q)
+        return new tuple(await fp, await fq)
+    }
+}
 ```
 
 The `Coordinator.process` method is itself synchronous from the outside (the caller does `await async coordinator.process(...)`), but internally it gets parallel execution on `w1` and `w2`.
@@ -167,16 +168,16 @@ An actor's method may return an `actor[T]` — either itself or another actor. T
 
 ```velo
 actor class Container() {
-    actor[Counter] inner = new Counter(0);
+    actor[Counter] inner = new Counter(0)
 
-    func get() actor[Counter] { return inner; };
-};
+    func get() actor[Counter] { return inner; }
+}
 
-actor[Container] box = new Container();
-actor[Counter] held = await async box.get();
+actor[Container] box = new Container()
+actor[Counter] held = await async box.get()
 
-await async held.bump();    # 1 — runs on `inner`'s worker, not Container's
-await async held.bump();    # 2
+await async held.bump()  # 1 — runs on `inner`'s worker, not Container's
+await async held.bump()  # 2
 ```
 
 Repeated `await async box.get()` yields handles that compare equal — same actor, same internal `objectId`. The second `held` and the first one share state.
@@ -210,8 +211,8 @@ This changes only *where* actor code runs, never its semantics: each actor keeps
 Two `actor[T]` values compare equal when they refer to the same internal object on the same actor:
 
 ```velo
-actor[Counter] a = await async box.get();
-actor[Counter] b = await async box.get();
+actor[Counter] a = await async box.get()
+actor[Counter] b = await async box.get()
 # a == b — both point at Container's `inner`
 ```
 
@@ -228,22 +229,22 @@ Think of an `actor[T]` as a typed channel to a single-threaded service:
 ## Example: Independent Counters
 
 ```velo
-Terminal term = new Terminal();
+Terminal term = new Terminal()
 
 actor class Counter(int start) {
-    int n = start;
+    int n = start
     func bump() int {
-        n += 1;
-        return n;
-    };
-};
+        n += 1
+        return n
+    }
+}
 
-actor[Counter] a = new Counter(10);
-actor[Counter] b = new Counter(100);
+actor[Counter] a = new Counter(10)
+actor[Counter] b = new Counter(100)
 
-term.println((await async a.bump()).str());  # 11
-term.println((await async b.bump()).str());  # 101
-term.println((await async a.bump()).str());  # 12
+term.println((await async a.bump()).str())  # 11
+term.println((await async b.bump()).str())  # 101
+term.println((await async a.bump()).str())  # 12
 ```
 
 Two actors, two private `n`s — no `mutex`, no race.
@@ -263,13 +264,13 @@ Two actors, two private `n`s — no `mutex`, no race.
 If you start an asynchronous call with `async` but never `await` the resulting `future[T]`, and the actor's method throws, **no one observes the error**. The completion is recorded inside the underlying `CompletableFuture`, but with no awaiter the failure is lost when the `FutureRecord` is garbage-collected (just as JVM `CompletableFuture` does).
 
 ```velo
-async worker.boom();   # if boom() throws, the error vanishes
+async worker.boom()  # if boom() throws, the error vanishes
 ```
 
 This is intentional — fire-and-forget is a useful pattern for void operations — but it means you should `await` any future whose completion you care about, even when you don't need the value. For void methods that's:
 
 ```velo
-await async worker.notify();   # ensures errors propagate to the caller
+await async worker.notify()  # ensures errors propagate to the caller
 ```
 
 If a future does need to be discarded knowingly (e.g. you're broadcasting to many actors and don't want any single failure to block), make that explicit in the calling code with a comment. A future warning facility may be added later if this pattern proves error-prone in real programs.

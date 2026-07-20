@@ -19,29 +19,29 @@ Apply blocks allow executing operations in the context of an expression's result
 
 ```velo
 class Person(str name, int age) {
-    func setName(str n) void { name = n; };
-    func setAge(int a) void { age = a; };
-};
+    func setName(str n) void { name = n; }
+    func setAge(int a) void { age = a; }
+}
 
 # Without apply block:
-Person p = new Person("", 0);
-p.setName("John");
-p.setAge(25);
+Person p = new Person("", 0)
+p.setName("John")
+p.setAge(25)
 
 # With apply block:
 Person p = new Person("", 0) {
-    it.setName("John");
-    it.setAge(25);
-};
+    it.setName("John")
+    it.setAge(25)
+}
 ```
 
 ### Call Chaining
 
 ```velo
 str result = "hello" {
-    it = it + " world";
-    it = it + "!";
-};
+    it = it + " world"
+    it = it + "!"
+}
 # result = "hello world!"
 ```
 
@@ -49,34 +49,34 @@ str result = "hello" {
 
 ```velo
 array[int] arr = new array[int](5) {
-    it[0] = 1;
-    it[1] = 2;
-    it[2] = 3;
-    it[3] = 4;
-    it[4] = 5;
-};
+    it[0] = 1
+    it[1] = 2
+    it[2] = 3
+    it[3] = 4
+    it[4] = 5
+}
 ```
 
 ### Nested Apply Blocks
 
 ```velo
 class Point(int x, int y) {
-    func setX(int val) void { x = val; };
-    func setY(int val) void { y = val; };
-};
+    func setX(int val) void { x = val; }
+    func setY(int val) void { y = val; }
+}
 
-class Line(Point start, Point end) {};
+class Line(Point start, Point end) {}
 
 Line line = new Line(new Point(0, 0), new Point(0, 0)) {
     it.start {
-        it.setX(10);
-        it.setY(20);
-    };
+        it.setX(10)
+        it.setY(20)
+    }
     it.end {
-        it.setX(100);
-        it.setY(200);
-    };
-};
+        it.setX(100)
+        it.setY(200)
+    }
+}
 ```
 
 ## Semantics
@@ -97,20 +97,20 @@ Line line = new Line(new Point(0, 0), new Point(0, 0)) {
 # Creation and initialization in a single expression
 func createConfiguredPerson() Person {
     return new Person("", 0) {
-        it.setName("Default");
-        it.setAge(18);
-    };
-};
+        it.setName("Default")
+        it.setAge(18)
+    }
+}
 ```
 
 ### Working with Dictionaries
 
 ```velo
 dict[str:int] scores = new dict[str:int]{} {
-    it["Alice"] = 100;
-    it["Bob"] = 95;
-    it["Charlie"] = 87;
-};
+    it["Alice"] = 100
+    it["Bob"] = 95
+    it["Charlie"] = 87
+}
 ```
 
 ### Conditional Initialization
@@ -118,12 +118,12 @@ dict[str:int] scores = new dict[str:int]{} {
 ```velo
 Person p = new Person("", 0) {
     if (needsDefault) {
-        it.setName("Anonymous");
+        it.setName("Anonymous")
     } else {
-        it.setName(userName);
-    };
-    it.setAge(calculateAge());
-};
+        it.setName(userName)
+    }
+    it.setAge(calculateAge())
+}
 ```
 
 ## Edge Cases
@@ -132,15 +132,15 @@ Person p = new Person("", 0) {
 
 ```velo
 int x = 5 {
-    it = it * 2;  # it = 10
-};
+    it = it * 2  # it = 10
+}
 # x = 10
 ```
 
 ### Empty Apply Block
 
 ```velo
-Person p = new Person("John", 25) {};
+Person p = new Person("John", 25) {}
 # Equivalent to: Person p = new Person("John", 25);
 ```
 
@@ -148,16 +148,16 @@ Person p = new Person("John", 25) {};
 
 ```velo
 Person p = new Person("", 0) {
-    it.setName("John");
+    it.setName("John")
 } {
-    it.setAge(25);
-};
+    it.setAge(25)
+}
 ```
 
 ### Apply Block in Expression
 
 ```velo
-int total = (new Counter() { it.add(5); }).value + 10;
+int total = (new Counter() { it.add(5); }).value + 10
 ```
 
 ---

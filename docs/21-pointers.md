@@ -14,15 +14,15 @@ Pointers in Velo Lang are:
 ### With Initial Value
 
 ```velo
-ptr[int] p = new ptr[int](42);
+ptr[int] p = new ptr[int](42)
 ```
 
 ### Null Pointer
 
 ```velo
-ptr[int] nullPtr = new ptr[int];
+ptr[int] nullPtr = new ptr[int]
 # or using null literal
-ptr[int] nullPtr2 = null;
+ptr[int] nullPtr2 = null
 ```
 
 ### Assigning Null
@@ -30,13 +30,13 @@ ptr[int] nullPtr2 = null;
 You can assign `null` to any pointer to nullify it:
 
 ```velo
-import "std/bool";
+import "std/bool"
 
-ptr[int] p = new ptr[int](42);
-term.println(p.val().str());  # 42
+ptr[int] p = new ptr[int](42)
+term.println(p.val().str())  # 42
 
-p = null;                  # nullify the pointer
-term.println((p == null).str()); # true
+p = null  # nullify the pointer
+term.println((p == null).str())  # true
 ```
 
 ## Dereferencing
@@ -46,15 +46,15 @@ it by assigning to `.val` or to `*p` — as an assignment target `val` is writte
 bare:
 
 ```velo
-ptr[int] p = new ptr[int](42);
+ptr[int] p = new ptr[int](42)
 
 # Reading
-int value = p.val();  # value = 42
-int value2 = *p;      # prefix-operator form
+int value = p.val()  # value = 42
+int value2 = *p  # prefix-operator form
 
 # Writing
-p.val = 100;
-*p = 200;             # prefix-operator form
+p.val = 100
+*p = 200  # prefix-operator form
 ```
 
 ### Using the `*` Operator
@@ -62,10 +62,10 @@ p.val = 100;
 The prefix `*` operator reads and writes through a pointer:
 
 ```velo
-ptr[int] p = new ptr[int](42);
+ptr[int] p = new ptr[int](42)
 
-int value = *p;       # read
-*p = 100;             # write
+int value = *p  # read
+*p = 100  # write
 ```
 
 ## Address-of Operator
@@ -73,20 +73,20 @@ int value = *p;       # read
 Use `&` to create a pointer to an existing variable:
 
 ```velo
-int x = 10;
-ptr[int] px = &x;
+int x = 10
+ptr[int] px = &x
 
-px.val = 20;
+px.val = 20
 # x is now 20
 ```
 
 ### Pointer to Array Element
 
 ```velo
-array[int] arr = new array[int]{10, 20, 30};
-ptr[int] p = &arr[1];
+array[int] arr = new array[int]{10, 20, 30}
+ptr[int] p = &arr[1]
 
-p.val = 999;
+p.val = 999
 # arr is now {10, 999, 30}
 ```
 
@@ -95,19 +95,19 @@ p.val = 999;
 Use `== null` or `!= null` to check if a pointer is null:
 
 ```velo
-import "std/bool";
+import "std/bool"
 
-ptr[int] p = new ptr[int];
+ptr[int] p = new ptr[int]
 
 if (p == null) {
-    term.println("Pointer is null");
+    term.println("Pointer is null")
 } else {
-    term.println("Value: ".con(p.val().str()));
-};
+    term.println("Value: ".con(p.val().str()))
+}
 
 # Using bool.str extension
-term.println("Is null: ".con((p == null).str()));
-term.println("Not null: ".con((p != null).str()));
+term.println("Is null: ".con((p == null).str()))
+term.println("Not null: ".con((p != null).str()))
 ```
 
 ## Common Use Cases
@@ -116,14 +116,14 @@ term.println("Not null: ".con((p != null).str()));
 
 ```velo
 func swap(ptr[int] a, ptr[int] b) void {
-    int tmp = a.val();
-    a.val = b.val();
-    b.val = tmp;
-};
+    int tmp = a.val()
+    a.val = b.val()
+    b.val = tmp
+}
 
-int x = 10;
-int y = 20;
-swap(&x, &y);
+int x = 10
+int y = 20
+swap(&x, &y)
 # x = 20, y = 10
 ```
 
@@ -131,13 +131,13 @@ swap(&x, &y);
 
 ```velo
 func divmod(int a, int b, ptr[int] quotient, ptr[int] remainder) void {
-    quotient.val = a / b;
-    remainder.val = a % b;
-};
+    quotient.val = a / b
+    remainder.val = a % b
+}
 
-int q = 0;
-int r = 0;
-divmod(17, 5, &q, &r);
+int q = 0
+int r = 0
+divmod(17, 5, &q, &r)
 # q = 3, r = 2
 ```
 
@@ -145,27 +145,27 @@ divmod(17, 5, &q, &r);
 
 ```velo
 func increment(ptr[int] counter) void {
-    counter.val = counter.val() + 1;
-};
+    counter.val = counter.val() + 1
+}
 
-int count = 0;
-increment(&count);  # count = 1
-increment(&count);  # count = 2
+int count = 0
+increment(&count)  # count = 1
+increment(&count)  # count = 2
 ```
 
 ### Modify Multiple Values
 
 ```velo
 func addToAll(ptr[int] a, ptr[int] b, ptr[int] c, int delta) void {
-    a.val = a.val() + delta;
-    b.val = b.val() + delta;
-    c.val = c.val() + delta;
-};
+    a.val = a.val() + delta
+    b.val = b.val() + delta
+    c.val = c.val() + delta
+}
 
-int v1 = 1;
-int v2 = 2;
-int v3 = 3;
-addToAll(&v1, &v2, &v3, 10);
+int v1 = 1
+int v2 = 2
+int v3 = 3
+addToAll(&v1, &v2, &v3, 10)
 # v1 = 11, v2 = 12, v3 = 13
 ```
 
@@ -173,21 +173,21 @@ addToAll(&v1, &v2, &v3, 10);
 
 ```velo
 class SharedCounter() {
-    ptr[int] valuePtr = new ptr[int](0);
+    ptr[int] valuePtr = new ptr[int](0)
     
     func increment() void {
-        valuePtr.val = valuePtr.val() + 1;
-    };
+        valuePtr.val = valuePtr.val() + 1
+    }
     
     func getValue() int {
-        return valuePtr.val();
-    };
-};
+        return valuePtr.val()
+    }
+}
 
-SharedCounter c = new SharedCounter();
-c.increment();
-c.increment();
-int value = c.getValue();  # 2
+SharedCounter c = new SharedCounter()
+c.increment()
+c.increment()
+int value = c.getValue()  # 2
 ```
 
 ## Pointer Types
@@ -196,22 +196,22 @@ Pointers can reference any type:
 
 ```velo
 # Primitive types
-ptr[int] pi = new ptr[int](42);
-ptr[float] pf = new ptr[float](3.14);
-ptr[str] ps = new ptr[str]("hello");
-ptr[bool] pb = new ptr[bool](true);
+ptr[int] pi = new ptr[int](42)
+ptr[float] pf = new ptr[float](3.14)
+ptr[str] ps = new ptr[str]("hello")
+ptr[bool] pb = new ptr[bool](true)
 
 # Arrays
-ptr[array[int]] parr = new ptr[array[int]](new array[int]{1, 2, 3});
+ptr[array[int]] parr = new ptr[array[int]](new array[int]{1, 2, 3})
 
 # Classes
-Point point = new Point(10, 20);
-ptr[Point] pp = &point;
+Point point = new Point(10, 20)
+ptr[Point] pp = &point
 
 # Pointers to pointers are allowed (deref twice)
-ptr[int] a = new ptr[int](5);
-ptr[ptr[int]] ppi = &a;
-int deref = ppi.val().val();   # 5
+ptr[int] a = new ptr[int](5)
+ptr[ptr[int]] ppi = &a
+int deref = ppi.val().val()  # 5
 ```
 
 ## Restrictions
@@ -224,8 +224,8 @@ int deref = ppi.val().val();   # 5
 1. **Check for null** before dereferencing if pointer may be null:
    ```velo
    if (p != null) {
-       int value = p.val();
-   };
+       int value = p.val()
+   }
    ```
 
 2. **Prefer address-of** (`&`) for existing variables instead of creating new boxes

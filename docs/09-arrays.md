@@ -4,25 +4,26 @@
 
 ```velo
 # With initialization
-array[int] numbers = new array[int]{1, 2, 3, 4, 5};
+array[int] numbers = new array[int]{1, 2, 3, 4, 5}
 
-# With size specification
-array[int] empty = new array[int](10);
+# With a size (allocates 10 cells; contents are NOT zero-initialized —
+# write each slot before you read it)
+array[int] sized = new array[int](10)
 
 # Multidimensional arrays
 array[array[int]] matrix = new array[array[int]]{
     new array[int]{1, 2, 3},
     new array[int]{4, 5, 6}
-};
+}
 ```
 
 ## Accessing Elements
 
 ```velo
-array[int] arr = new array[int]{10, 20, 30};
-int first = arr[0];      # 10
-int second = arr[1];     # 20
-arr[2] = 40;             # Change element
+array[int] arr = new array[int]{10, 20, 30}
+int first = arr[0]  # 10
+int second = arr[1]  # 20
+arr[2] = 40  # Change element
 ```
 
 ## Array Properties and Methods
@@ -30,30 +31,30 @@ arr[2] = 40;             # Change element
 ### `len` — Array Length
 
 ```velo
-array[int] arr = new array[int]{1, 2, 3};
-int length = arr.len();     # 3
+array[int] arr = new array[int]{1, 2, 3}
+int length = arr.len()  # 3
 ```
 
 ### `sub(start, end)` — Subarray
 
 ```velo
-array[int] arr = new array[int]{1, 2, 3, 4, 5};
-array[int] sub = arr.sub(1, 4);  # [2, 3, 4]
+array[int] arr = new array[int]{1, 2, 3, 4, 5}
+array[int] sub = arr.sub(1, 4)  # [2, 3, 4]
 ```
 
 ### `con(other)` — Concatenation
 
 ```velo
-array[int] a = new array[int]{1, 2};
-array[int] b = new array[int]{3, 4};
-array[int] combined = a.con(b);  # [1, 2, 3, 4]
+array[int] a = new array[int]{1, 2}
+array[int] b = new array[int]{3, 4}
+array[int] combined = a.con(b)  # [1, 2, 3, 4]
 ```
 
 ### `plus(element)` — Add Element
 
 ```velo
-array[int] arr = new array[int]{1, 2};
-array[int] extended = arr.plus(3);  # [1, 2, 3]
+array[int] arr = new array[int]{1, 2}
+array[int] extended = arr.plus(3)  # [1, 2, 3]
 ```
 
 ### `map(func)` — Transform Elements
@@ -61,19 +62,19 @@ array[int] extended = arr.plus(3);  # [1, 2, 3]
 The callback takes the value first; the index is an optional second parameter.
 
 ```velo
-array[int] numbers = new array[int]{1, 2, 3, 4, 5};
+array[int] numbers = new array[int]{1, 2, 3, 4, 5}
 array[int] doubled = numbers.map(
     func(int value) int {
         return value * 2
     }
-);  # [2, 4, 6, 8, 10]
+)  # [2, 4, 6, 8, 10]
 
 # With the index:
 array[int] offset = numbers.map(
     func(int value, int index) int {
         return value + index
     }
-);  # [1, 3, 5, 7, 9]
+)  # [1, 3, 5, 7, 9]
 ```
 
 ---

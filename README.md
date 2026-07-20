@@ -369,6 +369,8 @@ can be used independently:
   application can run `.vbc` programs without the compiler.
 - `velo-vm2` — a clean-room reimplementation of the VM written from the `.vbc`
   spec and verified against the golden tests (a parity gate for the format).
+- `velo-vm3` — a second clean-room, performance-oriented VM, also verified
+  against the corpus (a second parity gate alongside `velo-vm2`).
 - `velo-cli` — the command-line tool plus the default native classes
   (`Terminal`, `Time`, `FileSystem`, `Http`, `Socket`). The only module that
   links the compiler and the VM together.

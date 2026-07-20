@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (53 operations). It is designed to be embeddable in JVM applications.
+Velo Lang is a functional, strictly-typed, compilable programming language that runs on a minimal stack-based virtual machine (57 operations). It is designed to be embeddable in JVM applications.
 
 Key characteristics:
 - **Source language**: Velo (`.vel` files)
-- **Bytecode format**: `.vbc` (custom format, v12: magic `0x5e10`, native pool + frames)
+- **Bytecode format**: `.vbc` (custom format, v13.2: magic `0x5e10`, native pool + frames)
 - **Implementation language**: Kotlin (JVM)
 - **License**: MIT (Igor Solkin)
 
@@ -24,7 +24,7 @@ Notable language features:
 
 | Component | Version / Details |
 |-----------|-------------------|
-| Language | Kotlin (JVM), plugin 1.8.0 |
+| Language | Kotlin (JVM), plugin 1.9.24 |
 | Gradle | 8.8 (Kotlin DSL) |
 | JVM Toolchain | 11 |
 | Test Framework | JUnit Platform via `kotlin("test")` |
@@ -43,6 +43,8 @@ velo-vm        Back-end (depends on core): interpreter, records/memory, actors,
                NativeBridge, VeloRuntime (embedding API) — the VM the CLI ships
 velo-vm2       Clean-room VM reimplemented from the .vbc spec, verified against the
                golden tests; test-only parity gate (the CLI does not ship it)
+velo-vm3       Second clean-room / performance-oriented VM, also verified against the
+               corpus; a second test-only parity gate alongside velo-vm2 (not shipped)
 velo-cli       CLI (depends on compiler + vm): Main.kt, default native classes
                (Terminal, Time, FileSystem, Http, Socket), demo programs, integration tests
 ```
@@ -75,7 +77,7 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 
 ## Virtual Machine (`velo-vm`)
 
-1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 53 ops.
+1. **VM** — `VM.kt` loads frames and runs; `VMExecutor.kt` drives the loop; `Interpreter.kt` is the single `when`-dispatch over all 57 ops.
 2. **Memory** — `MemoryArea.kt` heap; `Record` subclasses (`ValueRecord`, `RefRecord` array/class/native, `FuncRecord`, `PtrRecord`) hold values.
 3. **Actors** — `vm/actors/`: `ActorRuntime`, `ActorHandle` (isolated VMContext + serial dispatcher), `Dispatcher` (thread / pump / host executor), `StructuredClone` (transferable values only), `VeloFunction`/`CallbackRecord` two-way callbacks, `Pins` refcount machinery.
 4. **Native interop** — `NativeRegistry`/`NativeDescriptor` (core) synthesize descriptors from JVM classes once; `NativeLinker` links a program's native pool at load; `NativeBridge.kt` is the single Velo⇄JVM conversion point; `Op.NativeCall` dispatches via MethodHandle by pool index. `java.util.Map` does not cross the boundary (no dict in the VM).
@@ -91,7 +93,7 @@ Demo programs live in `velo-cli/src/main/resources/*.vel` (some are interactive 
 - `velo-core`: `BytecodeRoundTripTest` — every op and VmType round-trips through `.vbc` (keep its op list in sync with `Op.kt`).
 - `velo-compiler`: `ParserTest`, `TokenStreamTest`, `StringInputTest`, `InputStackTest`.
 - `velo-vm`: `vm/VMTest`, `HeapTest`, `LifoStackTest`, `VarsTest`, `vm/operations/*` op unit tests.
-- `velo-cli`: integration — `ConformanceTest` (runs the language-neutral `/conformance` corpus on **both** `velo-vm` and `velo-vm2`, asserting each case matches its `.out` and the two agree), plus `ActorsTest`, `CallbacksTest`, `DataClassTest`, `NativeBindingTest`, `ImportTest`, `Vm2ParityTest`.
+- `velo-cli`: integration — `ConformanceTest` (runs the language-neutral `/conformance` corpus on **all three** `velo-vm`, `velo-vm2`, and `velo-vm3`, asserting each case matches its `.out` and the VMs agree), plus `ActorsTest`, `CallbacksTest`, `DataClassTest`, `NativeBindingTest`, `ImportTest`, `TryCatchTest`, and the `Vm2*`/`Vm3*` parity/fuzz suites.
 
 To add a conformance case: drop `myfeature.vel` + `myfeature.out` into `conformance/cases/<category>/` (byte-exact expected stdout). A missing `.out` is auto-recorded on first run when both VMs agree and no `FAIL` self-check line prints, then the run fails asking for review. See `conformance/README.md`.
 
@@ -116,4 +118,4 @@ One workflow (`.github/workflows/pages.yml`): regenerates the site from `site/` 
 - New VM op: add to `core/Op.kt` (pick a free opcode byte), handle it in `vm/Interpreter.kt`, add read/write support in `core/Bytecode.kt`, list it in `BytecodeRoundTripTest`. Think twice — the project goal is a *minimal* ISA; prefer expressing features in pure Velo stdlib (`velo-compiler/src/main/resources/std/`) like dict/Map does.
 - New stdlib module: put `name.vel` under `velo-compiler/src/main/resources/std/`; users get it via `import "std/name";`.
 - Changing the `.vbc` layout or opcode bytes: bump `Bytecode.VERSION_MAJOR`.
-- `docs/` holds the language reference (27 chapters); `site/` is the generated website.
+- `docs/` holds the language reference (32 chapters); `site/` is the generated website.

@@ -5,104 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Types — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html" class="active">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Getting started</p>
 <h1 id="data-types">Data Types</h1>
 <h2 id="primitive-types">Primitive Types</h2>
 <h3 id="integers-int">Integers (<code>int</code>)</h3>
-<pre class="code"><code><span class="ty">int</span> decimal <span class="op">=</span> <span class="nu">42</span>;
-<span class="ty">int</span> negative <span class="op">=</span> <span class="nu">-10</span>;       <span class="cm"># Negative numbers</span>
-<span class="ty">int</span> hex <span class="op">=</span> <span class="nu">0xCAFE</span>;         <span class="cm"># Hexadecimal notation</span>
-<span class="ty">int</span> binary <span class="op">=</span> <span class="nu">0b101010</span>;    <span class="cm"># Binary notation</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">int</span> decimal <span class="op">=</span> <span class="nu">42</span>
+<span class="ty">int</span> negative <span class="op">=</span> <span class="nu">-10</span>  <span class="cm"># Negative numbers</span>
+<span class="ty">int</span> hex <span class="op">=</span> <span class="nu">0xCAFE</span>  <span class="cm"># Hexadecimal notation</span>
+<span class="ty">int</span> binary <span class="op">=</span> <span class="nu">0b101010</span>  <span class="cm"># Binary notation</span></code></pre></div>
 <h3 id="floating-point-numbers-float">Floating-Point Numbers (<code>float</code>)</h3>
-<pre class="code"><code><span class="ty">float</span> pi <span class="op">=</span> <span class="nu">3.14</span>;
-<span class="ty">float</span> e <span class="op">=</span> <span class="nu">2.71828</span>;
-<span class="ty">float</span> negative <span class="op">=</span> <span class="nu">-1.5</span>;    <span class="cm"># A '.' makes a literal a float</span>
-<span class="ty">float</span> whole <span class="op">=</span> <span class="nu">5</span>;          <span class="cm"># An int literal widens to a float (-&gt; 5.0)</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">float</span> pi <span class="op">=</span> <span class="nu">3.14</span>
+<span class="ty">float</span> e <span class="op">=</span> <span class="nu">2.71828</span>
+<span class="ty">float</span> negative <span class="op">=</span> <span class="nu">-1.5</span>  <span class="cm"># A '.' makes a literal a float</span>
+<span class="ty">float</span> whole <span class="op">=</span> <span class="nu">5</span>  <span class="cm"># An int literal widens to a float (-&gt; 5.0)</span></code></pre></div>
 <h3 id="bytes-byte">Bytes (<code>byte</code>)</h3>
-<pre class="code"><code><span class="ty">byte</span> b <span class="op">=</span> <span class="nu">65</span>;              <span class="cm"># An int literal in range (-128..255) fits a byte</span>
-<span class="ty">byte</span> negative <span class="op">=</span> <span class="nu">-5</span>;</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">byte</span> b <span class="op">=</span> <span class="nu">65</span>  <span class="cm"># An int literal in range (-128..255) fits a byte</span>
+<span class="ty">byte</span> negative <span class="op">=</span> <span class="nu">-5</span></code></pre></div>
 <h3 id="long-integers-long">Long Integers (<code>long</code>)</h3>
 <p><code>long</code> is a 64-bit signed integer, one rank wider than <code>int</code>:</p>
-<pre class="code"><code><span class="ty">long</span> big <span class="op">=</span> <span class="nu">5000000000</span>;    <span class="cm"># too large for a 32-bit int → a long literal</span>
-<span class="ty">long</span> wide <span class="op">=</span> <span class="nu">0x1_0000_0000</span>; <span class="cm"># a hex literal wider than 32 bits is a long</span>
-<span class="ty">long</span> fromInt <span class="op">=</span> <span class="nu">42</span>;        <span class="cm"># an int literal widens to long</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">long</span> big <span class="op">=</span> <span class="nu">5000000000</span>  <span class="cm"># too large for a 32-bit int → a long literal</span>
+<span class="ty">long</span> wide <span class="op">=</span> <span class="nu">0x1_0000_0000</span>  <span class="cm"># a hex literal wider than 32 bits is a long</span>
+<span class="ty">long</span> fromInt <span class="op">=</span> <span class="nu">42</span>  <span class="cm"># an int literal widens to long</span></code></pre></div>
 <p>A decimal literal that overflows a signed 32-bit <code>int</code>, or a hex/binary literal wider than 32 bits, is automatically a <code>long</code>; smaller literals stay <code>int</code> and widen on assignment. The numeric rank is <code>byte &lt; int &lt; long &lt; float</code>.</p>
 <blockquote><p>Numeric literals have no type suffixes (<code>2y</code>, <code>3.0f</code> are gone). A literal takes the type of its target: an int literal widens to <code>long</code> or <code>float</code>, or fits into a <code>byte</code> (out-of-range values are a compile error). A <code>.</code> makes a literal a <code>float</code>.</p></blockquote>
 <h3 id="numeric-conversions">Numeric conversions</h3>
 <p>Widening is implicit and lossless — a <code>byte</code> flows into an <code>int</code>, an <code>int</code> into a <code>long</code>, and any of them into a <code>float</code> (so <code>float f = 5</code> really holds <code>5.0</code> and <code>f / 2</code> is <code>2.5</code>, not <code>2</code>). Mixed arithmetic promotes to the wider type.</p>
 <p>Narrowing loses data, so it must be explicit:</p>
-<pre class="code"><code><span class="ty">float</span> pi <span class="op">=</span> <span class="nu">3.75</span>;
-<span class="ty">int</span>   i  <span class="op">=</span> pi.<span class="ty">int</span>();      <span class="cm"># 3 — truncates toward zero</span>
-<span class="ty">byte</span>  b  <span class="op">=</span> <span class="nu">322.</span><span class="ty">byte</span>();    <span class="cm"># 66 — low 8 bits</span>
-<span class="ty">long</span>  l  <span class="op">=</span> i.<span class="ty">long</span>();      <span class="cm"># widen to 64-bit (also works implicitly)</span>
-<span class="ty">int</span>   j  <span class="op">=</span> l.<span class="ty">int</span>();       <span class="cm"># narrow a long back to 32 bits (low 32 bits)</span>
-<span class="ty">float</span> f  <span class="op">=</span> i.<span class="ty">float</span>();     <span class="cm"># widen back (i.float() also works implicitly)</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">float</span> pi <span class="op">=</span> <span class="nu">3.75</span>
+<span class="ty">int</span>   i  <span class="op">=</span> pi.<span class="ty">int</span>()  <span class="cm"># 3 — truncates toward zero</span>
+<span class="ty">byte</span>  b  <span class="op">=</span> <span class="nu">322.</span><span class="ty">byte</span>()  <span class="cm"># 66 — low 8 bits</span>
+<span class="ty">long</span>  l  <span class="op">=</span> i.<span class="ty">long</span>()  <span class="cm"># widen to 64-bit (also works implicitly)</span>
+<span class="ty">int</span>   j  <span class="op">=</span> l.<span class="ty">int</span>()  <span class="cm"># narrow a long back to 32 bits (low 32 bits)</span>
+<span class="ty">float</span> f  <span class="op">=</span> i.<span class="ty">float</span>()  <span class="cm"># widen back (i.float() also works implicitly)</span></code></pre></div>
 <p><code>int x = pi</code> (float → int) and <code>byte b = someInt</code> (int → byte) are <strong>compile errors</strong> that tell you to convert with <code>.int()</code> / <code>.byte()</code>. The conversion methods are <code>.byte()</code>, <code>.int()</code>, <code>.long()</code>, and <code>.float()</code>.</p>
 <h3 id="strings-str">Strings (<code>str</code>)</h3>
-<pre class="code"><code><span class="ty">str</span> greeting <span class="op">=</span> <span class="st">"Hello"</span>;
-<span class="ty">str</span> multiline <span class="op">=</span> <span class="st">"Line 1\nLine 2"</span>;</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">str</span> greeting <span class="op">=</span> <span class="st">"Hello"</span>
+<span class="ty">str</span> multiline <span class="op">=</span> <span class="st">"Line 1\nLine 2"</span></code></pre></div>
+<p>Supported escape sequences: <code>\n</code> (newline), <code>\t</code> (tab), <code>\r</code> (carriage return), <code>\"</code> (quote), and <code>\\</code> (backslash). Strings also support interpolation with <code>$name</code> and <code>${expr}</code> — see <a href="11-strings.html#string-interpolation">Strings</a>.</p>
 <h3 id="boolean-type-bool">Boolean Type (<code>bool</code>)</h3>
-<pre class="code"><code><span class="ty">bool</span> isTrue <span class="op">=</span> <span class="kw">true</span>;
-<span class="ty">bool</span> isFalse <span class="op">=</span> <span class="kw">false</span>;</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">bool</span> isTrue <span class="op">=</span> <span class="kw">true</span>
+<span class="ty">bool</span> isFalse <span class="op">=</span> <span class="kw">false</span></code></pre></div>
 <h3 id="universal-type-any">Universal Type (<code>any</code>)</h3>
 <p>The <code>any</code> type allows storing values of any type:</p>
-<pre class="code"><code><span class="ty">any</span> value <span class="op">=</span> <span class="nu">42</span>;        <span class="cm"># Can be int</span>
-value <span class="op">=</span> <span class="st">"Hello"</span>;       <span class="cm"># Can be str</span>
-value <span class="op">=</span> <span class="kw">true</span>;          <span class="cm"># Can be bool</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">any</span> value <span class="op">=</span> <span class="nu">42</span>  <span class="cm"># Can be int</span>
+value <span class="op">=</span> <span class="st">"Hello"</span>  <span class="cm"># Can be str</span>
+value <span class="op">=</span> <span class="kw">true</span>  <span class="cm"># Can be bool</span></code></pre></div>
 <h2 id="composite-types">Composite Types</h2>
 <h3 id="arrays-arrayt">Arrays (<code>array[T]</code>)</h3>
-<pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>};
-<span class="ty">array</span>[<span class="ty">str</span>] words <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">str</span>]{<span class="st">"hello"</span>, <span class="st">"world"</span>};
-<span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]] matrix <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]]{};</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">array</span>[<span class="ty">int</span>] numbers <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">int</span>]{<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>}
+<span class="ty">array</span>[<span class="ty">str</span>] words <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">str</span>]{<span class="st">"hello"</span>, <span class="st">"world"</span>}
+<span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]] matrix <span class="op">=</span> <span class="kw">new</span> <span class="ty">array</span>[<span class="ty">array</span>[<span class="ty">int</span>]]{}</code></pre></div>
 <h3 id="dictionaries-dictkv">Dictionaries (<code>dict[K:V]</code>)</h3>
-<pre class="code"><code><span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>] map <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>]{
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>] map <span class="op">=</span> <span class="kw">new</span> <span class="ty">dict</span>[<span class="ty">int</span>:<span class="ty">str</span>]{
     <span class="nu">1</span>: <span class="st">"one"</span>,
     <span class="nu">2</span>: <span class="st">"two"</span>,
     <span class="nu">3</span>: <span class="st">"three"</span>
-};</code></pre>
+}</code></pre></div>
 <h3 id="tuples-tuplet1-t2-">Tuples (<code>tuple[T1, T2, ...]</code>)</h3>
-<pre class="code"><code><span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] pair <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"second"</span>);
-<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>, <span class="ty">float</span>] triple <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">42</span>, <span class="st">"text"</span>, <span class="nu">3.14</span>);</code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>] pair <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">1</span>, <span class="st">"second"</span>)
+<span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">str</span>, <span class="ty">float</span>] triple <span class="op">=</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="nu">42</span>, <span class="st">"text"</span>, <span class="nu">3.14</span>)</code></pre></div>
 <h3 id="functions-funcparams-returntype-or-loose-funcreturntype">Functions (<code>func[(Params) ReturnType]</code> or loose <code>func[ReturnType]</code>)</h3>
-<pre class="code"><code><span class="cm"># Full signature — checked at every call site (preferred):</span>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Full signature — checked at every call site (preferred):</span>
 <span class="kw">func</span>[(<span class="ty">int</span>, <span class="ty">int</span>) <span class="ty">int</span>] add <span class="op">=</span> <span class="kw">func</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) <span class="ty">int</span> {
-    <span class="kw">return</span> a <span class="op">+</span> b;
-};
+    <span class="kw">return</span> a <span class="op">+</span> b
+}
 
 <span class="cm"># Loose form — only the return type; an unchecked escape hatch:</span>
-<span class="kw">func</span>[<span class="ty">int</span>] callback <span class="op">=</span> add;</code></pre>
+<span class="kw">func</span>[<span class="ty">int</span>] callback <span class="op">=</span> add</code></pre></div>
 <p>See <a href="08-functions.html#function-values-and-types">Functions</a> for when to use each.</p>
 <h3 id="pointers-ptrt">Pointers (<code>ptr[T]</code>)</h3>
 <p>Pointers allow pass-by-reference semantics:</p>
-<pre class="code"><code><span class="cm"># Pointer with initial value</span>
-<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="cm"># Pointer with initial value</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] p <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>](<span class="nu">42</span>)
 
 <span class="cm"># Null pointer</span>
-<span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>];
+<span class="ty">ptr</span>[<span class="ty">int</span>] nullPtr <span class="op">=</span> <span class="kw">new</span> <span class="ty">ptr</span>[<span class="ty">int</span>]
 
 <span class="cm"># Pointer to existing variable</span>
-<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>;
-<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x;
+<span class="ty">int</span> x <span class="op">=</span> <span class="nu">10</span>
+<span class="ty">ptr</span>[<span class="ty">int</span>] px <span class="op">=</span> <span class="op">&amp;</span>x
 
 <span class="cm"># Dereference</span>
-<span class="ty">int</span> value <span class="op">=</span> p.val();  <span class="cm"># read: or *p</span>
-p.val <span class="op">=</span> <span class="nu">100</span>;          <span class="cm"># write: modify through pointer (bare val as assignment target)</span></code></pre>
+<span class="ty">int</span> value <span class="op">=</span> p.val()  <span class="cm"># read: or *p</span>
+p.val <span class="op">=</span> <span class="nu">100</span>  <span class="cm"># write: modify through pointer (bare val as assignment target)</span></code></pre></div>
 <p>See <a href="21-pointers.html">Pointers</a> for detailed documentation.</p>
-<hr>
-<p><a href="02-language-basics.html">Previous: Language Basics ←</a> | <a href="04-variables-and-assignment.html">Next: Variables and Assignment →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="02-language-basics.html"><span class="pager-dir">← Previous</span><span class="pager-title">Language Basics</span></a>
+                    <a class="pager next" href="04-variables-and-assignment.html"><span class="pager-dir">→ Next</span><span class="pager-title">Variables and Assignment</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#primitive-types">Primitive Types</a></li><li class="lvl3"><a href="#integers-int">Integers (int)</a></li><li class="lvl3"><a href="#floating-point-numbers-float">Floating-Point Numbers (float)</a></li><li class="lvl3"><a href="#bytes-byte">Bytes (byte)</a></li><li class="lvl3"><a href="#long-integers-long">Long Integers (long)</a></li><li class="lvl3"><a href="#numeric-conversions">Numeric conversions</a></li><li class="lvl3"><a href="#strings-str">Strings (str)</a></li><li class="lvl3"><a href="#boolean-type-bool">Boolean Type (bool)</a></li><li class="lvl3"><a href="#universal-type-any">Universal Type (any)</a></li><li class="lvl2"><a href="#composite-types">Composite Types</a></li><li class="lvl3"><a href="#arrays-arrayt">Arrays (array[T])</a></li><li class="lvl3"><a href="#dictionaries-dictkv">Dictionaries (dict[K:V])</a></li><li class="lvl3"><a href="#tuples-tuplet1-t2-">Tuples (tuple[T1, T2, ...])</a></li><li class="lvl3"><a href="#functions-funcparams-returntype-or-loose-funcreturntype">Functions (func[(Params) ReturnType] or loose func[ReturnType])</a></li><li class="lvl3"><a href="#pointers-ptrt">Pointers (ptr[T])</a></li></ul></nav></aside>
+    </div>

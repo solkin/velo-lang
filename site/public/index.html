@@ -5,34 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentation — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
-        <div class="hero">
-            <h1>Velo Lang</h1>
-            <p class="tagline">Simple. Embeddable. Yours.</p>
-            <p class="lead">A functional, strictly-typed, compilable language that runs on a
-            lightweight stack-based virtual machine — strict typing, higher-order functions,
-            generics, actors, and easy embedding into JVM applications.</p>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html" class="active">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <div class="content home">
+                <section class="hero">
+                    <span class="logo hero-logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span>
+                    <h1>Velo</h1>
+                    <p class="tagline">Simple. Embeddable. Yours.</p>
+                    <p class="lead">A functional, strictly-typed, compilable language on a small stack-based virtual machine — with generics, actors, and one-call JVM embedding.</p>
+                    <div class="hero-actions">
+                        <a class="btn primary" href="02-language-basics.html">Start learning</a>
+                        <a class="btn" href="30-llm-guide.html">Cheat-sheet</a>
+                    </div>
+                </section>
+
+                <div class="code-wrap hero-code"><pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
+
+<span class="kw">let</span> name <span class="op">=</span> <span class="st">"Velo"</span>
+term.println(<span class="st">"Hello, $name!"</span>)</code></pre></div>
+
+                <section class="features">
+                    <h2 id="highlights">Highlights</h2>
+                    <ul class="feature-list"><li><b>Strict typing</b> — every value has a checked type</li><li><b>Functional</b> — higher-order functions and closures</li><li><b>Pattern matching</b> — when expressions, enum sum types</li><li><b>Concurrency</b> — actors with async / await</li><li><b>Error handling</b> — try / catch / throw</li><li><b>Generics</b> — classes, functions, extensions</li><li><b>Value types</b> — immutable data classes</li><li><b>Embeddable</b> — one-call JVM integration</li></ul>
+                </section>
+
+                <section class="path">
+                    <h2 id="start-here">Start here · ~30 minutes</h2>
+                    <p class="section-sub">Read these eight in order and you can write real Velo. Everything else is reference in the sidebar.</p>
+                    <div class="steps"><a class="step" href="02-language-basics.html"><span class="step-n">1</span><span class="step-body"><span class="step-title">Language Basics</span><span class="step-hook">Program shape, comments, semicolons.</span></span></a><a class="step" href="03-data-types.html"><span class="step-n">2</span><span class="step-body"><span class="step-title">Data Types</span><span class="step-hook">The primitive and composite types.</span></span></a><a class="step" href="04-variables-and-assignment.html"><span class="step-n">3</span><span class="step-body"><span class="step-title">Variables and Assignment</span><span class="step-hook">Declaring, typing, re-binding.</span></span></a><a class="step" href="05-operators.html"><span class="step-n">4</span><span class="step-body"><span class="step-title">Operators</span><span class="step-hook">Arithmetic, comparison, logic, bitwise.</span></span></a><a class="step" href="06-conditionals.html"><span class="step-n">5</span><span class="step-body"><span class="step-title">Conditional Statements</span><span class="step-hook">if / else, when pattern-matching.</span></span></a><a class="step" href="07-loops.html"><span class="step-n">6</span><span class="step-body"><span class="step-title">Loops</span><span class="step-hook">while and for over ranges and arrays.</span></span></a><a class="step" href="08-functions.html"><span class="step-n">7</span><span class="step-body"><span class="step-title">Functions</span><span class="step-hook">Parameters, returns, lambdas.</span></span></a><a class="step" href="13-classes.html"><span class="step-n">8</span><span class="step-body"><span class="step-title">Classes</span><span class="step-hook">Group data and behaviour.</span></span></a></div>
+                </section>
+
+                <section class="explore">
+                    <h2 id="keep-going">Keep going</h2>
+                    <div class="chips"><a class="chip" href="17-standard-library.html">Standard library</a><a class="chip" href="26-actors.html">Actors &amp; concurrency</a><a class="chip" href="32-error-handling.html">Error handling</a><a class="chip" href="23-generics.html">Generics</a><a class="chip" href="15-native-classes.html">Native classes</a><a class="chip" href="31-grammar.html">Grammar &amp; precedence</a></div>
+                </section>
+            </div>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
         </div>
-<h1 id="velo-lang---complete-documentation">Velo Lang - Complete Documentation</h1>
-<h2 id="table-of-contents">Table of Contents</h2>
-<ol><li><a href="01-introduction.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables and Assignment</a></li><li><a href="05-operators.html">Operators</a></li><li><a href="06-conditionals.html">Conditional Statements</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li><li><a href="13-classes.html">Classes</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="16-modules-and-includes.html">Modules and Imports</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="21-pointers.html">Pointers</a></li><li><a href="22-apply-blocks.html">Apply Blocks</a></li><li><a href="23-generics.html">Generics</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="25-closures.html">Closures</a></li><li><a href="26-actors.html">Actors</a></li><li><a href="27-callbacks.html">Callbacks</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="30-llm-guide.html">LLM Guide (cheat-sheet)</a></li><li><a href="31-grammar.html">Grammar &amp; Precedence</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ol>
-<hr>
-<h2 id="license">License</h2>
-<p>MIT License</p>
-<p>Copyright (c) 2025 Igor Solkin</p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
     </footer>
 </body>
 </html>
+        </main>
+    </div>

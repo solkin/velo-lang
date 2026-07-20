@@ -5,118 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actors — Velo Lang</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="search-index.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <header class="topbar">
         <div class="topbar-inner">
-            <a href="index.html">Velo Lang</a>
-            <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            <button class="menu-btn" aria-label="Menu">☰</button>
+            <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="32" r="8.2"/><circle cx="35" cy="32" r="8.2"/><path d="M13 32 22 32 20 16 30 17.5 35 32"/><path d="M22 32 30 17.5"/><path d="M20 16 13 32"/><path d="M16.5 15 22 15.2"/><path d="M30 17.5 33.5 13.5"/></svg></span><span class="brand-name">Velo</span></a>
+            <div class="search">
+                <input type="search" id="q" placeholder="Search…  ( / )"
+                       autocomplete="off" spellcheck="false" aria-label="Search">
+                <div class="search-results" id="results"></div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-btn" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3 a9 9 0 0 0 0 18 Z"/></svg></button>
+                <a class="gh" href="https://github.com/solkin/velo-lang">GitHub</a>
+            </div>
         </div>
     </header>
-    <main class="content">
+    <div class="layout">
+        <aside class="sidebar" id="sidebar"><nav class="side-nav" aria-label="Documentation"><div class="side-group"><span class="side-group-label">Getting started</span><ul><li><a href="index.html">Introduction</a></li><li><a href="02-language-basics.html">Language Basics</a></li><li><a href="03-data-types.html">Data Types</a></li><li><a href="04-variables-and-assignment.html">Variables</a></li><li><a href="05-operators.html">Operators</a></li></ul></div><div class="side-group"><span class="side-group-label">Control flow</span><ul><li><a href="06-conditionals.html">Conditionals</a></li><li><a href="07-loops.html">Loops</a></li><li><a href="08-functions.html">Functions</a></li></ul></div><div class="side-group"><span class="side-group-label">Collections &amp; text</span><ul><li><a href="09-arrays.html">Arrays</a></li><li><a href="10-dictionaries.html">Dictionaries</a></li><li><a href="11-strings.html">Strings</a></li><li><a href="12-tuples.html">Tuples</a></li></ul></div><div class="side-group"><span class="side-group-label">Types &amp; objects</span><ul><li><a href="13-classes.html">Classes</a></li><li><a href="28-data-classes.html">Data Classes</a></li><li><a href="29-interfaces.html">Interfaces</a></li><li><a href="14-extension-functions.html">Extension Functions</a></li><li><a href="24-operator-overloading.html">Operator Overloading</a></li><li><a href="23-generics.html">Generics</a></li></ul></div><div class="side-group"><span class="side-group-label">Functional</span><ul><li><a href="25-closures.html">Closures</a></li><li><a href="22-apply-blocks.html">Apply blocks</a></li><li><a href="27-callbacks.html">Callbacks</a></li></ul></div><div class="side-group"><span class="side-group-label">Concurrency &amp; errors</span><ul><li><a href="26-actors.html" class="active">Actors</a></li><li><a href="32-error-handling.html">Error Handling</a></li></ul></div><div class="side-group"><span class="side-group-label">Systems &amp; interop</span><ul><li><a href="21-pointers.html">Pointers</a></li><li><a href="15-native-classes.html">Native Classes</a></li><li><a href="17-standard-library.html">Standard Library</a></li><li><a href="16-modules-and-imports.html">Modules &amp; imports</a></li></ul></div><div class="side-group"><span class="side-group-label">Reference</span><ul><li><a href="18-running-programs.html">Running Programs</a></li><li><a href="19-language-features.html">Language Features</a></li><li><a href="20-best-practices.html">Best Practices</a></li><li><a href="30-llm-guide.html">LLM cheat-sheet</a></li><li><a href="31-grammar.html">Grammar</a></li></ul></div></nav></aside>
+        <div class="sidebar-scrim" id="scrim"></div>
+        <main class="main">
+            <article class="content">
+                <p class="crumb">Concurrency &amp; errors</p>
 <h1 id="actors">Actors</h1>
 <p>An <strong>actor</strong> in Velo is a class with private state: every interaction goes through serialised method calls, and there is no way to read or write an actor's fields directly — the type system makes that mistake a compile-time error. By default all actors run cooperatively on a single event loop with <strong>no host threads</strong>; a host can opt into real multicore parallelism by plugging in a thread backend (see <a href="#thread-placement-host-option">Thread placement</a>).</p>
 <p>The model is small and explicit:</p>
 <ul><li>Declare an actor with <code>actor class</code>.</li><li>Instantiate with <code>new ActorClass(args)</code>. The result is typed <code>actor[T]</code>.</li><li>Call it synchronously with <code>await receiver.method(args)</code>.</li><li>For parallelism, start a call with <code>async receiver.method(args)</code> (typed <code>future[T]</code>) and <code>await</code> the future later.</li></ul>
 <p>The synchronous form <code>await receiver.method(args)</code> is sugar for <code>await async receiver.method(args)</code>: <code>async</code> starts a call and yields a <code>future[T]</code>, <code>await</code> drains a future, and the sugar simply implies the <code>async</code> when you want the result right away.</p>
 <h2 id="declaring-an-actor">Declaring an Actor</h2>
-<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Counter</span>(<span class="ty">int</span> start) {
-    <span class="ty">int</span> n <span class="op">=</span> start;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Counter</span>(<span class="ty">int</span> start) {
+    <span class="ty">int</span> n <span class="op">=</span> start
 
     <span class="kw">func</span> bump() <span class="ty">int</span> {
-        n <span class="op">+=</span> <span class="nu">1</span>;
-        <span class="kw">return</span> n;
-    };
+        n <span class="op">+=</span> <span class="nu">1</span>
+        <span class="kw">return</span> n
+    }
 
-    <span class="kw">func</span> value() <span class="ty">int</span> { <span class="kw">return</span> n; };
-};</code></pre>
+    <span class="kw">func</span> value() <span class="ty">int</span> { <span class="kw">return</span> n; }
+}</code></pre></div>
 <p>The body of an <code>actor class</code> is identical to a regular class — fields, methods, init code. The only difference is that constructing an instance creates an isolated actor — its own private state and mailbox — and runs the constructor there: on the shared cooperative event loop by default, or on a dedicated thread if the host opted into a thread backend.</p>
 <h2 id="spawning-and-calling">Spawning and Calling</h2>
-<pre class="code"><code><span class="kw">actor</span>[<span class="ty">Counter</span>] counter <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">0</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span>[<span class="ty">Counter</span>] counter <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">0</span>)
 
-term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>());  <span class="cm"># 1</span>
-term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>());  <span class="cm"># 2</span>
-term.println((<span class="kw">await</span> <span class="kw">async</span> counter.value()).<span class="ty">str</span>()); <span class="cm"># 2</span></code></pre>
+term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>())  <span class="cm"># 1</span>
+term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>())  <span class="cm"># 2</span>
+term.println((<span class="kw">await</span> <span class="kw">async</span> counter.value()).<span class="ty">str</span>())  <span class="cm"># 2</span></code></pre></div>
 <p><code>new Counter(0)</code> produces a value of type <code>actor[Counter]</code> — a typed remote handle. The <code>async ... .method(args)</code> step does three things at runtime:</p>
 <ul><li>structurally clones the arguments so the actor cannot see caller memory;</li><li>posts a <code>Call</code> message to the actor's mailbox;</li><li>pushes a <code>future[T]</code> value (no waiting yet — the call site stays running).</li></ul>
 <p>The matching <code>await</code> then suspends the caller until that future resolves, and decodes the response into a fresh value in the caller's memory area. A not-yet-ready <code>await</code> parks the current fiber and frees the thread rather than blocking it (VEL-11), so the actor — or the main context on a UI thread — keeps servicing its mailbox while parked.</p>
 <p>A naked <code>counter.bump()</code> doesn't compile, because the type <code>actor[Counter]</code> exposes no properties — the call has to be marked as crossing the boundary.</p>
 <h3 id="the-synchronous-shortcut-await-receivermethodargs">The synchronous shortcut: <code>await receiver.method(args)</code></h3>
 <p>The common case — start a call and immediately wait for it — has a one-keyword form: <code>await</code> accepts an actor method call directly, and <code>async</code> is implied.</p>
-<pre class="code"><code>term.println((<span class="kw">await</span> counter.bump()).<span class="ty">str</span>());        <span class="cm"># sugar</span>
-term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>());  <span class="cm"># the same thing, spelled out</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code>term.println((<span class="kw">await</span> counter.bump()).<span class="ty">str</span>())  <span class="cm"># sugar</span>
+term.println((<span class="kw">await</span> <span class="kw">async</span> counter.bump()).<span class="ty">str</span>())  <span class="cm"># the same thing, spelled out</span></code></pre></div>
 <p><code>await</code> still does just one thing — produce the result of a cross-thread operation. Reach for a bare <code>async</code> (without <code>await</code>) only when you want the <code>future[T]</code> itself, to overlap work — see <a href="#parallel-work-with-async">Parallel Work</a>.</p>
 <h3 id="why-a-visible-marker">Why a visible marker?</h3>
 <p><code>await</code> is a deliberate signal that <em>this call crosses a thread boundary</em> — and a <strong>yield point</strong>. A not-yet-ready <code>await</code> suspends the current fiber and lets the actor (or main context) service other messages until the reply arrives (VEL-11, "coroutines without threads"), rather than blocking the thread. The signal is the same as in JS/Swift/C#: "something interesting happens here, I'd better notice" — including that the actor's own state may have advanced while you were parked, since another message can run at the yield point.</p>
 <h3 id="reentrancy-await-is-a-yield-point">Reentrancy: <code>await</code> is a yield point</h3>
 <p>Because a not-yet-ready <code>await</code> suspends the current fiber instead of blocking the thread, the actor (or main context) is free to run <strong>other</strong> mailbox messages while one call is parked. An actor still does exactly one thing at a time — but an <code>await</code> is a point where it may switch to another message and resume this one later. The practical consequence: <strong>actor state can change across an <code>await</code>.</strong></p>
-<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Account</span>() {
-    <span class="ty">int</span> balance <span class="op">=</span> <span class="nu">100</span>;
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Account</span>() {
+    <span class="ty">int</span> balance <span class="op">=</span> <span class="nu">100</span>
 
     <span class="kw">func</span> withdraw(<span class="kw">actor</span>[<span class="ty">Bank</span>] bank, <span class="ty">int</span> amount) <span class="ty">bool</span> {
-        <span class="ty">bool</span> ok <span class="op">=</span> <span class="kw">await</span> bank.authorize(amount);   <span class="cm"># ← yield point</span>
+        <span class="ty">bool</span> ok <span class="op">=</span> <span class="kw">await</span> bank.authorize(amount)  <span class="cm"># ← yield point</span>
         <span class="cm"># Another message may have run while we were parked here, so re-read</span>
         <span class="cm"># state rather than trusting a value captured before the await.</span>
         <span class="kw">if</span> (ok <span class="op">&amp;&amp;</span> balance <span class="op">&gt;=</span> amount) {
-            balance <span class="op">=</span> balance <span class="op">-</span> amount;
-            <span class="kw">return</span> <span class="kw">true</span>;
+            balance <span class="op">=</span> balance <span class="op">-</span> amount
+            <span class="kw">return</span> <span class="kw">true</span>
         } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="kw">false</span>;
-        };
-    };
-};</code></pre>
+            <span class="kw">return</span> <span class="kw">false</span>
+        }
+    }
+}</code></pre></div>
 <p>This is the same model as a JavaScript event loop or coroutines on a single dispatcher. Two habits keep it manageable:</p>
 <ul><li><strong>Read after the await, not before.</strong> Don't cache actor state across an <code>await</code> and assume it is still current — read it again once the await resolves.</li><li><strong>Keep an invariant on one side of an <code>await</code>.</strong> If two field updates must be atomic with respect to other messages, don't put an <code>await</code> between them.</li></ul>
 <p>The flip side is the same coin: a <code>void</code> callback or an un-awaited <code>async</code> posted to an actor runs at the next yield point or after the current message finishes — never in the middle of straight-line code.</p>
 <p>What does <strong>not</strong> yield: an <code>await</code> reached inside a synchronously-invoked callback (a value-returning callback running inline on its owner) still blocks the thread, because that call lives on the JVM stack and cannot be parked. Likewise, constructing an actor whose constructor <code>await</code>s blocks the spawning code until construction finishes.</p>
 <h2 id="what-crosses-the-boundary">What Crosses the Boundary</h2>
 <p>The compiler enforces a static notion of <strong>transferable</strong> types — anything that can either be structurally copied or shipped as a typed handle:</p>
-<ul><li>primitives (<code>int</code>, <code>float</code>, <code>byte</code>, <code>bool</code>, <code>str</code>)</li><li><code>array[T]</code>, <code>tuple[…]</code> whose element types are themselves transferable</li><li><a href="28-data-classes.html"><code>data class</code></a> values — immutable structs, copied by value</li><li>another actor's <code>actor[T]</code> handle</li><li>callbacks — a fully-signed <code>func[(args…) ret]</code>: the closure stays with its owner, the receiver gets a handle, and invoking it runs on the owner's thread. A <code>void</code> return is a fire-and-forget notification; a value return is a blocking call back to the owner (see <a href="27-callbacks.html">Callbacks</a>)</li><li><code>void</code></li></ul>
+<ul><li>primitives (<code>int</code>, <code>long</code>, <code>float</code>, <code>byte</code>, <code>bool</code>, <code>str</code>)</li><li><code>array[T]</code>, <code>tuple[…]</code> whose element types are themselves transferable</li><li><a href="28-data-classes.html"><code>data class</code></a> values — immutable structs, copied by value</li><li><a href="06-conditionals.html#sum-types-enum"><code>enum</code></a> values — each variant is a value-type record, so an enum crosses by value</li><li>another actor's <code>actor[T]</code> handle</li><li>callbacks — a fully-signed <code>func[(args…) ret]</code>: the closure stays with its owner, the receiver gets a handle, and invoking it runs on the owner's thread. A <code>void</code> return is a fire-and-forget notification; a value return is a blocking call back to the owner (see <a href="27-callbacks.html">Callbacks</a>)</li><li><code>void</code></li></ul>
 <p>Everything else is non-transferable and rejected <strong>at the point of declaration</strong> — not at the call site:</p>
 <ul><li>non-actor <code>class</code> instances (including <code>dict</code>/<code>Map</code>) — they live in a single <code>MemoryArea</code> and would race if shared</li><li>loose function values (<code>func[T]</code>, no argument signature)</li><li>pointers (<code>ptr[T]</code>) — refer to specific var slots</li><li><code>any</code>, generics, native (JVM) objects — no defined wire format</li></ul>
-<pre class="code"><code><span class="kw">class</span> <span class="ty">Pair</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {};
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">class</span> <span class="ty">Pair</span>(<span class="ty">int</span> a, <span class="ty">int</span> b) {}
 
 <span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Bad</span>() {
-    <span class="kw">func</span> make() <span class="ty">Pair</span> { <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Pair</span>(<span class="nu">1</span>, <span class="nu">2</span>); };  <span class="cm"># compile error:</span>
+    <span class="kw">func</span> make() <span class="ty">Pair</span> { <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Pair</span>(<span class="nu">1</span>, <span class="nu">2</span>); }  <span class="cm"># compile error:</span>
     <span class="cm"># Actor method 'Bad.make' return type has type 'Pair',</span>
     <span class="cm"># which is not transferable across an actor boundary</span>
-};</code></pre>
-<p>To share structured data, make it a <a href="28-data-classes.html"><code>data class</code></a> (copied by value) or a tuple; to share an object <em>identity</em>, wrap it as another <code>actor class</code>.</p>
+}</code></pre></div>
+<p>To share structured data, make it a <a href="28-data-classes.html"><code>data class</code></a> (copied by value) or a tuple; to send a map's contents, ship <code>d.arr()</code> — an <code>array[tuple[K, V]]</code>, which is transferable; to share an object <em>identity</em>, wrap it as another <code>actor class</code>.</p>
 <h2 id="parallel-work-with-async">Parallel Work with <code>async</code></h2>
 <p><code>async</code> returns immediately, so two computations on different actors run concurrently:</p>
-<pre class="code"><code><span class="kw">actor</span>[<span class="ty">Worker</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>();
-<span class="kw">actor</span>[<span class="ty">Worker</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>();
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span>[<span class="ty">Worker</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>()
+<span class="kw">actor</span>[<span class="ty">Worker</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>()
 
-<span class="ty">future</span>[<span class="ty">int</span>] fa <span class="op">=</span> <span class="kw">async</span> a.compute(input1);   <span class="cm"># both calls dispatched</span>
-<span class="ty">future</span>[<span class="ty">int</span>] fb <span class="op">=</span> <span class="kw">async</span> b.compute(input2);   <span class="cm"># before either blocks</span>
-<span class="ty">int</span> x <span class="op">=</span> <span class="kw">await</span> fa;                            <span class="cm"># wall time ≈ max(a, b),</span>
-<span class="ty">int</span> y <span class="op">=</span> <span class="kw">await</span> fb;                            <span class="cm"># not a + b</span></code></pre>
+<span class="ty">future</span>[<span class="ty">int</span>] fa <span class="op">=</span> <span class="kw">async</span> a.compute(input1)  <span class="cm"># both calls dispatched</span>
+<span class="ty">future</span>[<span class="ty">int</span>] fb <span class="op">=</span> <span class="kw">async</span> b.compute(input2)  <span class="cm"># before either blocks</span>
+<span class="ty">int</span> x <span class="op">=</span> <span class="kw">await</span> fa  <span class="cm"># wall time ≈ max(a, b),</span>
+<span class="ty">int</span> y <span class="op">=</span> <span class="kw">await</span> fb  <span class="cm"># not a + b</span></code></pre></div>
 <p>The same pattern works inside an actor for fan-out:</p>
-<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Coordinator</span>() {
-    <span class="kw">actor</span>[<span class="ty">Worker</span>] w1 <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>();
-    <span class="kw">actor</span>[<span class="ty">Worker</span>] w2 <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>();
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Coordinator</span>() {
+    <span class="kw">actor</span>[<span class="ty">Worker</span>] w1 <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>()
+    <span class="kw">actor</span>[<span class="ty">Worker</span>] w2 <span class="op">=</span> <span class="kw">new</span> <span class="ty">Worker</span>()
 
     <span class="kw">func</span> process(<span class="ty">int</span> p, <span class="ty">int</span> q) <span class="ty">tuple</span>[<span class="ty">int</span>, <span class="ty">int</span>] {
-        <span class="ty">future</span>[<span class="ty">int</span>] fp <span class="op">=</span> <span class="kw">async</span> w1.compute(p);
-        <span class="ty">future</span>[<span class="ty">int</span>] fq <span class="op">=</span> <span class="kw">async</span> w2.compute(q);
-        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="kw">await</span> fp, <span class="kw">await</span> fq);
-    };
-};</code></pre>
+        <span class="ty">future</span>[<span class="ty">int</span>] fp <span class="op">=</span> <span class="kw">async</span> w1.compute(p)
+        <span class="ty">future</span>[<span class="ty">int</span>] fq <span class="op">=</span> <span class="kw">async</span> w2.compute(q)
+        <span class="kw">return</span> <span class="kw">new</span> <span class="ty">tuple</span>(<span class="kw">await</span> fp, <span class="kw">await</span> fq)
+    }
+}</code></pre></div>
 <p>The <code>Coordinator.process</code> method is itself synchronous from the outside (the caller does <code>await async coordinator.process(...)</code>), but internally it gets parallel execution on <code>w1</code> and <code>w2</code>.</p>
 <p><code>future[T]</code> is <strong>not</strong> transferable across actor boundaries — it's pinned to the actor that completes it. Trying to pass or return a future from an actor method is a compile error. (Want to expose parallelism through a façade actor? Have it expose <code>actor[T]</code> handles instead and let the caller call <code>async</code> itself.)</p>
 <h2 id="returning-other-actors">Returning Other Actors</h2>
 <p>An actor's method may return an <code>actor[T]</code> — either itself or another actor. The receiver gets a handle pinned to the original actor:</p>
-<pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Container</span>() {
-    <span class="kw">actor</span>[<span class="ty">Counter</span>] inner <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">0</span>);
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Container</span>() {
+    <span class="kw">actor</span>[<span class="ty">Counter</span>] inner <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">0</span>)
 
-    <span class="kw">func</span> get() <span class="kw">actor</span>[<span class="ty">Counter</span>] { <span class="kw">return</span> inner; };
-};
+    <span class="kw">func</span> get() <span class="kw">actor</span>[<span class="ty">Counter</span>] { <span class="kw">return</span> inner; }
+}
 
-<span class="kw">actor</span>[<span class="ty">Container</span>] box <span class="op">=</span> <span class="kw">new</span> <span class="ty">Container</span>();
-<span class="kw">actor</span>[<span class="ty">Counter</span>] held <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get();
+<span class="kw">actor</span>[<span class="ty">Container</span>] box <span class="op">=</span> <span class="kw">new</span> <span class="ty">Container</span>()
+<span class="kw">actor</span>[<span class="ty">Counter</span>] held <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get()
 
-<span class="kw">await</span> <span class="kw">async</span> held.bump();    <span class="cm"># 1 — runs on `inner`'s worker, not Container's</span>
-<span class="kw">await</span> <span class="kw">async</span> held.bump();    <span class="cm"># 2</span></code></pre>
+<span class="kw">await</span> <span class="kw">async</span> held.bump()  <span class="cm"># 1 — runs on `inner`'s worker, not Container's</span>
+<span class="kw">await</span> <span class="kw">async</span> held.bump()  <span class="cm"># 2</span></code></pre></div>
 <p>Repeated <code>await async box.get()</code> yields handles that compare equal — same actor, same internal <code>objectId</code>. The second <code>held</code> and the first one share state.</p>
 <h2 id="lifetime">Lifetime</h2>
 <p>By default actors have no threads of their own — they run on the program's single event loop — so nothing blocks JVM exit. (With a host thread backend the workers are JVM <strong>daemon</strong> threads, same effect.) Beyond that, two mechanisms collect actors:</p>
@@ -125,53 +142,59 @@ term.println((<span class="kw">await</span> <span class="kw">async</span> counte
 <h3 id="thread-placement-host-option">Thread placement (host option)</h3>
 <p>By default every actor runs cooperatively on the program's single event loop — no host threads at all. That is what runs everywhere, including single-threaded targets (web/WASM). Independent actors take turns rather than running in parallel, so a blocking call (a blocking native, <code>Time.sleep</code>, an inline value-returning callback) blocks the loop for its duration.</p>
 <p>For real multicore parallelism a host plugs in a thread backend, which multiplexes actors onto a shared bounded pool:</p>
-<pre class="code"><code>import host.PooledDispatcherFactory
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code>import host.PooledDispatcherFactory
 
 val runtime = VeloRuntime()
-    .actorPlacement { PooledDispatcherFactory(parallelism = Runtime.getRuntime().availableProcessors()) }</code></pre>
+    .actorPlacement { PooledDispatcherFactory(parallelism = Runtime.getRuntime().availableProcessors()) }</code></pre></div>
 <p>This changes only <em>where</em> actor code runs, never its semantics: each actor keeps strict serial execution and its own private state. It is safe precisely because a parked <code>await</code> releases its thread (see <a href="#reentrancy-await-is-a-yield-point">Reentrancy</a>); size the pool with headroom for actors that genuinely <em>block</em>, since those hold a thread for their duration. The backend is a host capability — the VM core stays thread-agnostic — so a host without threads simply runs cooperatively.</p>
 <h2 id="identity-and-equality">Identity and Equality</h2>
 <p>Two <code>actor[T]</code> values compare equal when they refer to the same internal object on the same actor:</p>
-<pre class="code"><code><span class="kw">actor</span>[<span class="ty">Counter</span>] a <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get();
-<span class="kw">actor</span>[<span class="ty">Counter</span>] b <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get();
-<span class="cm"># a == b — both point at Container's `inner`</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">actor</span>[<span class="ty">Counter</span>] a <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get()
+<span class="kw">actor</span>[<span class="ty">Counter</span>] b <span class="op">=</span> <span class="kw">await</span> <span class="kw">async</span> box.get()
+<span class="cm"># a == b — both point at Container's `inner`</span></code></pre></div>
 <p>The runtime preserves this by maintaining an <code>objectId ↔ Frame</code> map per actor: returning the same Velo object twice always reuses the same id.</p>
 <h2 id="mental-model">Mental Model</h2>
 <p>Think of an <code>actor[T]</code> as a typed channel to a single-threaded service:</p>
 <ul><li>the service's local data is <em>its</em> alone, no shared memory;</li><li>the wire format is "method name + cloned args" in, "cloned result" out;</li><li><code>async</code> puts the call on the wire and gives you a future; <code>await</code> collects the response off the wire.</li></ul>
 <h2 id="example-independent-counters">Example: Independent Counters</h2>
-<pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>();
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="ty">Terminal</span> term <span class="op">=</span> <span class="kw">new</span> <span class="ty">Terminal</span>()
 
 <span class="kw">actor</span> <span class="kw">class</span> <span class="ty">Counter</span>(<span class="ty">int</span> start) {
-    <span class="ty">int</span> n <span class="op">=</span> start;
+    <span class="ty">int</span> n <span class="op">=</span> start
     <span class="kw">func</span> bump() <span class="ty">int</span> {
-        n <span class="op">+=</span> <span class="nu">1</span>;
-        <span class="kw">return</span> n;
-    };
-};
+        n <span class="op">+=</span> <span class="nu">1</span>
+        <span class="kw">return</span> n
+    }
+}
 
-<span class="kw">actor</span>[<span class="ty">Counter</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">10</span>);
-<span class="kw">actor</span>[<span class="ty">Counter</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">100</span>);
+<span class="kw">actor</span>[<span class="ty">Counter</span>] a <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">10</span>)
+<span class="kw">actor</span>[<span class="ty">Counter</span>] b <span class="op">=</span> <span class="kw">new</span> <span class="ty">Counter</span>(<span class="nu">100</span>)
 
-term.println((<span class="kw">await</span> <span class="kw">async</span> a.bump()).<span class="ty">str</span>());  <span class="cm"># 11</span>
-term.println((<span class="kw">await</span> <span class="kw">async</span> b.bump()).<span class="ty">str</span>());  <span class="cm"># 101</span>
-term.println((<span class="kw">await</span> <span class="kw">async</span> a.bump()).<span class="ty">str</span>());  <span class="cm"># 12</span></code></pre>
+term.println((<span class="kw">await</span> <span class="kw">async</span> a.bump()).<span class="ty">str</span>())  <span class="cm"># 11</span>
+term.println((<span class="kw">await</span> <span class="kw">async</span> b.bump()).<span class="ty">str</span>())  <span class="cm"># 101</span>
+term.println((<span class="kw">await</span> <span class="kw">async</span> a.bump()).<span class="ty">str</span>())  <span class="cm"># 12</span></code></pre></div>
 <p>Two actors, two private <code>n</code>s — no <code>mutex</code>, no race.</p>
 <h2 id="restrictions">Restrictions</h2>
 <ul><li><code>actor class</code> cannot be <code>native</code> — there's nothing on the JVM side to dispatch to.</li><li><code>actor class</code> is not generic. Wrap your generic logic in plain classes and let the actor hold them.</li><li><code>async</code> parses tightly: <code>async receiver.method(args)</code>. Use parentheses around the receiver (<code>async (foo()).method()</code>) or around the result (<code>(await async x.foo()).str()</code>) when chaining.</li><li><code>await receiver.method(args)</code> is the synchronous sugar (<code>async</code> implied). When the awaited value is a plain <code>future[T]</code>, <code>await</code> accepts any expression but only that type — <code>await someInt</code> is a compile error.</li><li><code>await</code> shares precedence with <code>.</code> / <code>[]</code> / <code>()</code>, so <code>await arr[i]</code> parses as <code>(await arr)[i]</code>. When the future comes from indexing, calling, or any other postfix, wrap it: <code>await (arr[i])</code>, <code>await (someFunc())</code>.</li><li><code>future[T]</code> is pinned to its producing actor. It cannot appear in another <code>actor class</code>'s method signatures (param or return).</li><li>Loose function values (<code>func[T]</code>) and pointers cannot cross the boundary. A fully-signed <code>func[(int) str]</code> <em>can</em>: it travels as a callback run on its owner's thread — <code>void</code>-returning ones are fire-and-forget, value-returning ones block for the result (see <a href="27-callbacks.html">Callbacks</a>).</li></ul>
 <h3 id="errors-in-unawaited-futures-are-silently-dropped">Errors in unawaited futures are silently dropped</h3>
 <p>If you start an asynchronous call with <code>async</code> but never <code>await</code> the resulting <code>future[T]</code>, and the actor's method throws, <strong>no one observes the error</strong>. The completion is recorded inside the underlying <code>CompletableFuture</code>, but with no awaiter the failure is lost when the <code>FutureRecord</code> is garbage-collected (just as JVM <code>CompletableFuture</code> does).</p>
-<pre class="code"><code><span class="kw">async</span> worker.boom();   <span class="cm"># if boom() throws, the error vanishes</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">async</span> worker.boom()  <span class="cm"># if boom() throws, the error vanishes</span></code></pre></div>
 <p>This is intentional — fire-and-forget is a useful pattern for void operations — but it means you should <code>await</code> any future whose completion you care about, even when you don't need the value. For void methods that's:</p>
-<pre class="code"><code><span class="kw">await</span> <span class="kw">async</span> worker.notify();   <span class="cm"># ensures errors propagate to the caller</span></code></pre>
+<div class="code-wrap"><button class="copy" type="button" aria-label="Copy">Copy</button><pre class="code"><code><span class="kw">await</span> <span class="kw">async</span> worker.notify()  <span class="cm"># ensures errors propagate to the caller</span></code></pre></div>
 <p>If a future does need to be discarded knowingly (e.g. you're broadcasting to many actors and don't want any single failure to block), make that explicit in the calling code with a comment. A future warning facility may be added later if this pattern proves error-prone in real programs.</p>
-<hr>
-<p><a href="25-closures.html">Previous: Closures ←</a> | <a href="27-callbacks.html">Next: Callbacks →</a></p>
-    </main>
-    <footer class="site-footer">
-        <p>by <a href="https://github.com/solkin/velo-lang">Velo Lang</a> &middot;
-        <a href="https://github.com/solkin/velo-lang">source</a> &middot;
-        <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">license</a></p>
+                <nav class="pager-row" aria-label="Chapter">
+                    <a class="pager prev" href="27-callbacks.html"><span class="pager-dir">← Previous</span><span class="pager-title">Callbacks</span></a>
+                    <a class="pager next" href="32-error-handling.html"><span class="pager-dir">→ Next</span><span class="pager-title">Error Handling</span></a>
+                </nav>
+            </article>
+                <footer class="site-footer">
+        <div class="site-footer-inner">
+            <span>Velo Lang — MIT licensed.</span>
+            <span><a href="https://github.com/solkin/velo-lang">Source</a> · <a href="https://github.com/solkin/velo-lang/blob/main/LICENSE">License</a></span>
+        </div>
     </footer>
 </body>
 </html>
+        </main>
+        <aside class="rightbar"><nav class="toc" aria-label="On this page"><span class="toc-label">On this page</span><ul><li class="lvl2"><a href="#declaring-an-actor">Declaring an Actor</a></li><li class="lvl2"><a href="#spawning-and-calling">Spawning and Calling</a></li><li class="lvl3"><a href="#the-synchronous-shortcut-await-receivermethodargs">The synchronous shortcut: await receiver.method(args)</a></li><li class="lvl3"><a href="#why-a-visible-marker">Why a visible marker?</a></li><li class="lvl3"><a href="#reentrancy-await-is-a-yield-point">Reentrancy: await is a yield point</a></li><li class="lvl2"><a href="#what-crosses-the-boundary">What Crosses the Boundary</a></li><li class="lvl2"><a href="#parallel-work-with-async">Parallel Work with async</a></li><li class="lvl2"><a href="#returning-other-actors">Returning Other Actors</a></li><li class="lvl2"><a href="#lifetime">Lifetime</a></li><li class="lvl3"><a href="#thread-placement-host-option">Thread placement (host option)</a></li><li class="lvl2"><a href="#identity-and-equality">Identity and Equality</a></li><li class="lvl2"><a href="#mental-model">Mental Model</a></li><li class="lvl2"><a href="#example-independent-counters">Example: Independent Counters</a></li><li class="lvl2"><a href="#restrictions">Restrictions</a></li><li class="lvl3"><a href="#errors-in-unawaited-futures-are-silently-dropped">Errors in unawaited futures are silently dropped</a></li></ul></nav></aside>
+    </div>
