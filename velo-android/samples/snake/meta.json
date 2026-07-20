@@ -1,0 +1,6 @@
+{
+  "id": "snake",
+  "name": "Snake",
+  "description": "Classic Snake on a Material3 Canvas: swipe or use the D-pad to steer, eat to grow, don't bite yourself.",
+  "interactive": true
+}

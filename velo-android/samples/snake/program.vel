@@ -1,0 +1,470 @@
+# Material Snake — the arcade classic as a native-style Android screen.
+#
+# The snake moves one cell per tick on a fixed grid. A swipe on the board (or the
+# on-screen D-pad) sets the queued direction; it is applied on the next tick so a
+# quick double-turn can't reverse you into your own neck. Eating food grows the
+# tail and respawns the food on a free cell. Run into the wall or yourself and the
+# game ends — tap the board (or press Play) to start again.
+#
+# The game loop runs on a Ticker actor that sleeps off the event loop and fires
+# the tick callback back on the main actor, exactly like tetris/pac-man.
+
+import "std/random";
+
+Terminal term = new Terminal();
+Ui ui = new Ui();
+Colors colors = new Colors();
+Icons icons = new Icons();
+TextStyles styles = new TextStyles();
+Time time = new Time();
+Random rng = new Random(time.unix());
+
+# ---- fixed board (dp); cells are square, the grid is centred inside the box ----------------
+int BOARD_PX = 320;
+int COLS = 16;
+int ROWS = 16;
+int CELL = BOARD_PX / COLS;
+int GRID_PX = COLS * CELL;
+int OFF = (BOARD_PX - GRID_PX) / 2;
+
+# ---- directions (dx, dy); UP/DOWN/LEFT/RIGHT and their reverses ----------------------------
+int DIR_NONE  = 0;
+int DIR_UP    = 1;
+int DIR_DOWN  = 2;
+int DIR_LEFT  = 3;
+int DIR_RIGHT = 4;
+
+int TICK_MS = 130;
+
+# Cap on simultaneous body segments; one array carries the whole snake so we
+# never allocate while playing — head/tail are just indices into it.
+int CAP = COLS * ROWS;
+
+# ---- game state (top-level: closures capture it by reference) ------------------------------
+array[int] bodyX = new array[int](CAP);
+array[int] bodyY = new array[int](CAP);
+int head = 0;
+int tail = 0;
+int dir = DIR_RIGHT;
+int wantDir = DIR_RIGHT;
+int foodX = 0;
+int foodY = 0;
+int score = 0;
+int best = 0;
+bool playing = false;
+bool gameOver = false;
+int loopToken = 0;
+
+# Swipe tracking: pointer-down captures the start, pointer-up classifies the gesture.
+int swipeX = 0;
+int swipeY = 0;
+
+func iabs(int v) int {
+    return if (v < 0) then 0 - v else v;
+};
+
+func dxOf(int d) int {
+    return if (d == DIR_LEFT) then 0 - 1 else if (d == DIR_RIGHT) then 1 else 0;
+};
+
+func dyOf(int d) int {
+    return if (d == DIR_UP) then 0 - 1 else if (d == DIR_DOWN) then 1 else 0;
+};
+
+func reverseOf(int d) int {
+    return if (d == DIR_LEFT) then DIR_RIGHT
+    else if (d == DIR_RIGHT) then DIR_LEFT
+    else if (d == DIR_UP) then DIR_DOWN
+    else if (d == DIR_DOWN) then DIR_UP
+    else DIR_NONE;
+};
+
+# Queue a turn. Reversals are rejected so the snake can't fold back onto the neck
+# it is about to leave; the new direction is applied on the next tick.
+func setWant(int d) void {
+    if (gameOver == false) {
+        if (d != DIR_NONE & d != reverseOf(dir)) {
+            wantDir = d;
+        };
+    };
+    void
+};
+
+# Number of segments currently on the board (head + tail span in the ring buffer).
+func segmentCount() int {
+    int n = head - tail;
+    if (n < 0) { n = n + CAP; };
+    return n + 1;
+};
+
+# Place food on any cell that is not occupied by the snake. The body is a sparse
+# ring buffer; sweep it to mark occupied cells, then probe random free cells.
+func placeFood() void {
+    array[int] occ = new array[int](COLS * ROWS);
+    int i = tail;
+    while (i != head) {
+        occ[bodyY[i] * COLS + bodyX[i]] = 1;
+        i = i + 1;
+        if (i >= CAP) { i = 0; };
+    };
+    occ[bodyY[head] * COLS + bodyX[head]] = 1;
+    int free = (COLS * ROWS) - segmentCount();
+    if (free <= 0) {
+        foodX = 0 - 1;
+        foodY = 0 - 1;
+        return;
+    };
+    int pick = rng.nextIntBound(free);
+    int seen = 0;
+    int c = 0;
+    while (c < COLS * ROWS) {
+        if (occ[c] == 0) {
+            if (seen == pick) {
+                foodX = c % COLS;
+                foodY = c / COLS;
+                void
+            };
+            seen = seen + 1;
+        };
+        c = c + 1;
+    };
+    void
+};
+
+# Start a fresh game: a 3-segment snake heading right in the middle of the board.
+func newGame() void {
+    int cx = COLS / 2;
+    int cy = ROWS / 2;
+    tail = 0;
+    head = 2;
+    bodyX[0] = cx - 1; bodyY[0] = cy;
+    bodyX[1] = cx;     bodyY[1] = cy;
+    bodyX[2] = cx + 1; bodyY[2] = cy;
+    dir = DIR_RIGHT;
+    wantDir = DIR_RIGHT;
+    score = 0;
+    gameOver = false;
+    placeFood();
+    void
+};
+
+# Does the proposed head cell overlap any body segment (excluding the head itself)?
+func hitsBody(int x, int y) bool {
+    int i = tail;
+    while (i != head) {
+        if (bodyX[i] == x & bodyY[i] == y) {
+            return true;
+        };
+        i = i + 1;
+        if (i >= CAP) { i = 0; };
+    };
+    return false;
+};
+
+# Advance one cell. The head extends into the queued direction; if it lands on
+# food the tail stays put (the snake grows), otherwise the tail advances too.
+# Hitting a wall or any body cell ends the game.
+func step() void {
+    dir = wantDir;
+    int nx = bodyX[head] + dxOf(dir);
+    int ny = bodyY[head] + dyOf(dir);
+    if (nx < 0 | nx >= COLS | ny < 0 | ny >= ROWS) {
+        gameOver = true;
+        if (score > best) { best = score; };
+        return;
+    };
+    bool ate = (nx == foodX & ny == foodY);
+    int savedTail = tail;
+    if (ate == false) {
+        # Tentatively vacate the tail cell before testing self-collision, so a head that
+        # slides into the cell the tail is just leaving is allowed; rolled back below if
+        # this move turns out to be fatal, so a dead snake freezes at its true length.
+        tail = tail + 1;
+        if (tail >= CAP) { tail = 0; };
+    };
+    if (hitsBody(nx, ny)) {
+        tail = savedTail;
+        gameOver = true;
+        if (score > best) { best = score; };
+        return;
+    };
+    head = head + 1;
+    if (head >= CAP) { head = 0; };
+    bodyX[head] = nx;
+    bodyY[head] = ny;
+    if (ate) {
+        score = score + 1;
+        placeFood();
+    };
+    void
+};
+
+# ---- the timer actor (drives the game loop off the event loop) -----------------------------
+actor class Ticker() {
+    Time t = new Time();
+    func after(int millis, int token, func[(int) void] done) void {
+        t.sleep(millis);
+        done(token);
+        void
+    };
+};
+
+actor[Ticker] ticker = new Ticker();
+
+# ---- UI skeleton ---------------------------------------------------------------------------
+Container root = ui.box().fillWidth().fillHeight();
+Container page = ui.column().fillWidth().fillHeight();
+root.add(page);
+
+AppBar bar = ui.appBar("Snake");
+page.add(bar);
+
+Container content = ui.column().padding(16).gap(14).fillWidth().center();
+
+Container stats = ui.row().gap(10).fillWidth();
+Text scoreLabel = ui.text("0").style(styles.titleLarge()).bold();
+Text bestLabel = ui.text("0").style(styles.titleLarge()).bold();
+
+func statTile(str label, Text value) Surface {
+    Surface tile = ui.surface().corner(16).weight(1);
+    tile.elevation(2);
+    Container col = ui.column().padding(12).gap(2);
+    col.add(ui.text(label).style(styles.labelSmall()).color(colors.onSurfaceVariant()));
+    col.add(value);
+    tile.add(col);
+    return tile;
+};
+stats.add(statTile("Score", scoreLabel));
+stats.add(statTile("Best", bestLabel));
+content.add(stats);
+
+Canvas board = ui.canvas().width(BOARD_PX).height(BOARD_PX).corner(16).background(colors.surfaceVariant());
+content.add(board);
+
+Container hintWrap = ui.column().fillWidth().center();
+Text hint = ui.text("Swipe or use the D-pad to steer").style(styles.bodySmall()).color(colors.onSurfaceVariant());
+hintWrap.add(hint);
+content.add(hintWrap);
+
+# D-pad: a cross built from three equal-width columns (no weighted spacers — those balloon a
+# wrap-height row), same shape as bomberman. The middle column stacks ▲ / ▼ (Play/Pause stays
+# on the FAB, so there's no third button to share the middle slot); the side columns hold
+# ◀ / ▶ vertically centred.
+Button upBtn = ui.tonalButton("▲").fillWidth();
+Button downBtn = ui.tonalButton("▼").fillWidth();
+Button leftBtn = ui.tonalButton("◀").fillWidth();
+Button rightBtn = ui.tonalButton("▶").fillWidth();
+
+Container centerCol = ui.column().weight(1).gap(8);
+centerCol.add(upBtn);
+centerCol.add(downBtn);
+
+Container leftCol = ui.column().weight(1).center();
+leftCol.add(leftBtn);
+
+Container rightCol = ui.column().weight(1).center();
+rightCol.add(rightBtn);
+
+Container dpadRow = ui.row().fillWidth().gap(8);
+dpadRow.add(leftCol);
+dpadRow.add(centerCol);
+dpadRow.add(rightCol);
+
+content.add(dpadRow);
+
+page.add(content);
+
+# FAB: primary Play/Pause affordance, floats over the content.
+Container fabStack = ui.column().gap(12).padding(16).align("bottomEnd");
+Button playFab = ui.fab(icons.play()).background(colors.primaryContainer()).tint(colors.onPrimaryContainer());
+fabStack.add(playFab);
+root.add(fabStack);
+
+# ---- rendering -----------------------------------------------------------------------------
+func cellPx(int c) int {
+    return OFF + c * CELL;
+};
+
+func drawCenter(str message, str color) void {
+    int cx = BOARD_PX / 2;
+    int cy = BOARD_PX / 2;
+    board.drawText(OFF + 4, cy - 10, message, 22).color(color);
+    void
+};
+
+func render() void {
+    board.clear();
+
+    # Subtle grid for orientation.
+    int gx = 0;
+    while (gx <= COLS) {
+        int x = OFF + gx * CELL;
+        board.drawLine(x, OFF, x, OFF + GRID_PX).color(colors.outlineVariant()).stroke(1).alpha(40);
+        gx = gx + 1;
+    };
+    int gy = 0;
+    while (gy <= ROWS) {
+        int y = OFF + gy * CELL;
+        board.drawLine(OFF, y, OFF + GRID_PX, y).color(colors.outlineVariant()).stroke(1).alpha(40);
+        gy = gy + 1;
+    };
+
+    # Food — a filled circle with a touch of padding inside the cell.
+    if (foodX >= 0) {
+        int fx = cellPx(foodX) + CELL / 2;
+        int fy = cellPx(foodY) + CELL / 2;
+        board.drawCircle(fx, fy, CELL / 2 - 2).color(colors.error()).fill();
+    };
+
+    # Snake body — rounded segments; the head is emphasised with the primary tone.
+    int inset = if (CELL >= 10) then 1 else 0;
+    int radius = if (CELL >= 12) then 3 else if (CELL >= 8) then 2 else 1;
+    int i = tail;
+    while (i != head) {
+        board.drawRoundRect(cellPx(bodyX[i]) + inset, cellPx(bodyY[i]) + inset, CELL - 2 * inset, CELL - 2 * inset, radius)
+            .color(colors.secondary()).fill();
+        i = i + 1;
+        if (i >= CAP) { i = 0; };
+    };
+    board.drawRoundRect(cellPx(bodyX[head]) + inset, cellPx(bodyY[head]) + inset, CELL - 2 * inset, CELL - 2 * inset, radius)
+        .color(colors.primary()).fill();
+
+    scoreLabel.text(score.str());
+    bestLabel.text(best.str());
+
+    if (gameOver) {
+        drawCenter("GAME OVER", colors.error());
+        hint.text("Tap to play again");
+    } else {
+        if (playing == false) {
+            drawCenter("SNAKE", colors.onSurface());
+            hint.text("Swipe or use the D-pad to steer");
+        };
+    };
+    void
+};
+
+# ---- the animation clock -------------------------------------------------------------------
+func tick(int token) void {
+    if (token == loopToken) {
+        if (playing & gameOver == false) {
+            step();
+            # If that step ended the game, flip the FAB back to Play so the
+            # affordance matches the "tap to restart" state rendered below.
+            if (gameOver) {
+                playing = false;
+                playFab.icon(icons.play());
+                bar.actionIcon("Pause", icons.play());
+            };
+        };
+        render();
+        if (playing & gameOver == false) {
+            async ticker.after(TICK_MS, token, func(int x) void {
+                tick(x);
+                void
+            });
+        };
+    };
+    void
+};
+
+# Start the loop with a fresh token; cancels any in-flight tick chain.
+func startLoop() void {
+    loopToken = loopToken + 1;
+    int t = loopToken;
+    async ticker.after(TICK_MS, t, func(int x) void {
+        tick(x);
+        void
+    });
+    void
+};
+
+func togglePause() void {
+    if (gameOver) {
+        # Restart from the game-over screen.
+        newGame();
+        playing = true;
+        playFab.icon(icons.pause());
+        bar.actionIcon("Pause", icons.pause());
+        render();
+        startLoop();
+    } else {
+        if (playing) {
+            playing = false;
+            playFab.icon(icons.play());
+            bar.actionIcon("Pause", icons.play());
+            loopToken = loopToken + 1;
+            render();
+        } else {
+            playing = true;
+            playFab.icon(icons.pause());
+            bar.actionIcon("Pause", icons.pause());
+            render();
+            startLoop();
+        };
+    };
+    void
+};
+
+# ---- wiring --------------------------------------------------------------------------------
+bar.onNav(func() void {
+    loopToken = loopToken + 1;
+    playing = false;
+    ui.close();
+    void
+});
+bar.action("Pause", icons.pause(), func() void {
+    togglePause();
+    void
+});
+
+playFab.onClick(func() void {
+    togglePause();
+    void
+});
+
+upBtn.onClick(func() void { setWant(DIR_UP); void });
+leftBtn.onClick(func() void { setWant(DIR_LEFT); void });
+downBtn.onClick(func() void { setWant(DIR_DOWN); void });
+rightBtn.onClick(func() void { setWant(DIR_RIGHT); void });
+
+# Swipe on the board: pointer-down remembers the start, pointer-up classifies.
+board.onPointerDown(func(int x, int y) void {
+    swipeX = x;
+    swipeY = y;
+    void
+});
+
+board.onPointerUp(func(int x, int y) void {
+    int ddx = x - swipeX;
+    int ddy = y - swipeY;
+    if (iabs(ddx) < 8 & iabs(ddy) < 8) {
+        # A short tap: starts a paused game, or restarts a finished one.
+        if (gameOver) {
+            newGame();
+            playing = true;
+            playFab.icon(icons.pause());
+            bar.actionIcon("Pause", icons.pause());
+            render();
+            startLoop();
+        } else {
+            if (playing == false) {
+                togglePause();
+            };
+        };
+    } else {
+        if (iabs(ddx) > iabs(ddy)) {
+            setWant(if (ddx > 0) then DIR_RIGHT else DIR_LEFT);
+        } else {
+            setWant(if (ddy > 0) then DIR_DOWN else DIR_UP);
+        };
+    };
+    void
+});
+
+# ---- go ------------------------------------------------------------------------------------
+newGame();
+render();
+ui.open(root);
+
+term.println("Snake opened — swipe or use the D-pad to steer. Tap Play to start.");
