@@ -196,7 +196,8 @@ class TokenStream(private val input: Input) {
             if (escaped) {
                 str += when (ch) {
                     'n' -> '\n'
-                    't' -> '\r'
+                    't' -> '\t'
+                    'r' -> '\r'
                     else -> ch
                 }
                 escaped = false
@@ -231,7 +232,8 @@ class TokenStream(private val input: Input) {
                 literal.append(
                     when (ch) {
                         'n' -> '\n'
-                        't' -> '\r'
+                        't' -> '\t'
+                        'r' -> '\r'
                         else -> ch
                     }
                 )

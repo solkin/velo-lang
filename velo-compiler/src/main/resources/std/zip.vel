@@ -12,26 +12,26 @@ class Zip() {
     };
 
     func writeU16(array[byte] out, int pos, int value) int {
-        out[pos] = value & 255;
-        out[pos + 1] = ushr(value, 8) & 255;
+        out[pos] = (value & 255).byte();
+        out[pos + 1] = (ushr(value, 8) & 255).byte();
         return pos + 2;
     };
 
     func writeU32(array[byte] out, int pos, int value) int {
-        out[pos] = value & 255;
-        out[pos + 1] = ushr(value, 8) & 255;
-        out[pos + 2] = ushr(value, 16) & 255;
-        out[pos + 3] = ushr(value, 24) & 255;
+        out[pos] = (value & 255).byte();
+        out[pos + 1] = (ushr(value, 8) & 255).byte();
+        out[pos + 2] = (ushr(value, 16) & 255).byte();
+        out[pos + 3] = (ushr(value, 24) & 255).byte();
         return pos + 4;
     };
 
-    func copyBytes(array[byte] out, int pos, array[byte] data) int {
+    func copyBytes(array[byte] out, int pos, array[byte] buf) int {
         int i = 0;
-        while (i < data.len()) {
-            out[pos + i] = data[i];
+        while (i < buf.len()) {
+            out[pos + i] = buf[i];
             i = i + 1;
         };
-        return pos + data.len();
+        return pos + buf.len();
     };
 
     func create(array[byte] input, str entryName) array[byte] {

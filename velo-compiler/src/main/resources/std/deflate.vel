@@ -2,13 +2,13 @@
 # compress() emits fixed-Huffman blocks (BTYPE=01) with a simple LZ77 matcher.
 # compressStored() keeps the no-compression stored-block path for debugging.
 class DeflateBitWriter(int capacity) {
-    array[byte] data = new array[byte](capacity);
+    array[byte] buf = new array[byte](capacity);
     int bytePos = 0;
     int bitPos = 0;
 
     int initPos = 0;
     while (initPos < capacity) {
-        data[initPos] = 0;
+        buf[initPos] = 0;
         initPos = initPos + 1;
     };
 
@@ -24,7 +24,7 @@ class DeflateBitWriter(int capacity) {
 
     func writeBit(int bit) void {
         if (bit != 0) {
-            data[bytePos] = data[bytePos] + pow2(bitPos);
+            buf[bytePos] = (buf[bytePos] + pow2(bitPos)).byte();
         };
 
         bitPos = bitPos + 1;
@@ -49,7 +49,7 @@ class DeflateBitWriter(int capacity) {
     };
 
     func bytes() array[byte] {
-        return data.sub(0, len());
+        return buf.sub(0, len());
     };
 };
 
@@ -114,11 +114,11 @@ class RawDeflate() {
     };
 
     func lowByte(int value) byte {
-        return value % 256;
+        return (value % 256).byte();
     };
 
     func highByte(int value) byte {
-        return (value / 256) % 256;
+        return ((value / 256) % 256).byte();
     };
 
     func storedOutputLen(int inputLen) int {
@@ -161,9 +161,9 @@ class RawDeflate() {
         } else if (symbol <= 255) {
             return 400 + symbol - 144;
         } else if (symbol <= 279) {
-            symbol - 256;
+            return symbol - 256;
         } else {
-            192 + symbol - 280;
+            return 192 + symbol - 280;
         };
     };
 
@@ -173,9 +173,9 @@ class RawDeflate() {
         } else if (symbol <= 255) {
             return 9;
         } else if (symbol <= 279) {
-            7;
+            return 7;
         } else {
-            8;
+            return 8;
         };
     };
 

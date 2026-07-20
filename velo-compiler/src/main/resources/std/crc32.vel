@@ -38,11 +38,11 @@ class Crc32() {
 
     initTable();
 
-    func checksum(array[byte] data) int {
+    func checksum(array[byte] buf) int {
         int crc = -1;
         int i = 0;
-        while (i < data.len()) {
-            int idx = (crc ^ byteToInt(data[i])) & 255;
+        while (i < buf.len()) {
+            int idx = (crc ^ byteToInt(buf[i])) & 255;
             crc = ushr(crc, 8) ^ table[idx];
             i = i + 1;
         };
